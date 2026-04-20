@@ -160,6 +160,29 @@ export default function MdxBody({ source }: { source: string }) {
         hr: () => (
           <hr className="my-12 border-0 h-px bg-gradient-to-r from-transparent via-corbeau/15 to-transparent" />
         ),
+        // FAQ accordion. Articles use <details><summary>Q</summary>A</details>
+        // inline HTML (passed through by rehype-raw) for their FAQ sections.
+        // Styled here so they read as a single coherent accordion module.
+        details: (p: ComponentProps<"details">) => (
+          <details
+            className="group not-prose border-b border-corbeau/10 py-5 first:border-t first:pt-6 last:pb-6 [&_summary::-webkit-details-marker]:hidden [&_summary]:list-none"
+            {...p}
+          />
+        ),
+        summary: ({ children, ...rest }: ComponentProps<"summary">) => (
+          <summary
+            className="flex items-start justify-between gap-4 cursor-pointer font-display font-bold text-corbeau text-[1.02rem] md:text-[1.08rem] tracking-[-0.015em] leading-[1.35] hover:text-papaya transition-colors"
+            {...rest}
+          >
+            <span className="flex-1">{children}</span>
+            <span
+              aria-hidden
+              className="mt-1 flex-shrink-0 w-5 h-5 rounded-full border border-corbeau/20 flex items-center justify-center text-corbeau/60 text-[0.9rem] leading-none transition-transform group-open:rotate-45 group-hover:border-papaya group-hover:text-papaya"
+            >
+              +
+            </span>
+          </summary>
+        ),
       }}
     >
       {source}

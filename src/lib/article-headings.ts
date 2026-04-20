@@ -14,6 +14,11 @@ export interface HeadingEntry {
 }
 
 // Strip inline markdown so the ToC label reads cleanly.
+//
+// Also unescapes backslash-escaped ASCII punctuation (\., \*, \[, etc.) —
+// WordPress exports love to over-escape list-marker dots in headings like
+// "## 1\. Big Bang" which would otherwise leak `\` into the ToC even though
+// the rendered heading body shows a clean `1.`.
 function stripInline(md: string): string {
   return md
     .replace(/`([^`]+)`/g, "$1") // inline code
@@ -22,6 +27,7 @@ function stripInline(md: string): string {
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1") // links
     .replace(/<[^>]+>/g, "") // stray html tags
     .replace(/&[a-z]+;/gi, "") // html entities
+    .replace(/\\([!-/:-@[-`{-~])/g, "$1") // unescape ASCII punct
     .trim();
 }
 
