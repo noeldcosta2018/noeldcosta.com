@@ -15,15 +15,15 @@ export default function KeyTakeaways({
   if (!items.length) return null;
   return (
     <aside
-      className="my-10 p-6 md:p-8 rounded-[14px] bg-cream border border-corbeau/[0.06]"
+      className="my-10 p-6 md:p-8 rounded-xl bg-cream border border-corbeau/[0.06]"
       aria-label={title}
     >
-      <p className="font-mono text-[0.62rem] font-semibold tracking-[2.5px] uppercase text-papaya mb-4">
+      <p className="font-mono text-[0.68rem] font-medium tracking-[2px] uppercase text-papaya mb-4">
         {title}
       </p>
       <ul className="space-y-3">
         {items.map((item, i) => (
-          <li key={i} className="flex gap-3 text-corbeau leading-[1.6]">
+          <li key={i} className="flex gap-3 text-corbeau leading-[1.6] text-[0.98rem]">
             <span
               aria-hidden
               className="mt-[0.55rem] flex-shrink-0 w-1.5 h-1.5 rounded-full bg-papaya"

@@ -86,8 +86,8 @@ export default function RelatedArticles({
         : "md:grid-cols-3";
 
   return (
-    <section className="my-14">
-      <p className="font-mono text-[0.62rem] font-semibold tracking-[2.5px] uppercase text-papaya mb-5">
+    <section className="my-16">
+      <p className="font-mono text-[0.68rem] font-medium tracking-[2px] uppercase text-papaya mb-5">
         {label}
       </p>
       <div className={`grid grid-cols-1 ${colsClass} gap-5`}>
@@ -98,18 +98,18 @@ export default function RelatedArticles({
             <Link
               key={r.slug}
               href={href}
-              className="group block bg-paper border border-corbeau/[0.06] rounded-[12px] p-5 hover:border-corbeau/20 hover:shadow-[0_1px_0_rgba(14,16,32,0.04),0_20px_40px_-30px_rgba(14,16,32,0.2)] transition-all"
+              className="group block bg-paper border border-corbeau/[0.06] rounded-xl p-5 hover:border-corbeau/20 hover:-translate-y-px hover:shadow-[0_8px_32px_rgba(14,16,32,0.08)] transition-all"
             >
               {catMeta && (
-                <p className="font-mono text-[0.6rem] font-semibold tracking-[2px] uppercase text-papaya mb-2">
+                <p className="font-mono text-[0.62rem] font-medium tracking-[2px] uppercase text-papaya mb-2">
                   {catMeta.label}
                 </p>
               )}
-              <h3 className="font-display font-bold text-corbeau text-[1.05rem] tracking-[-0.01em] leading-[1.25] mb-2 group-hover:text-canyon transition-colors">
+              <h3 className="font-display font-bold text-corbeau text-[1.02rem] tracking-[-0.02em] leading-[1.25] mb-2 group-hover:text-papaya transition-colors">
                 {r.title}
               </h3>
               {r.excerpt && (
-                <p className="text-night/80 text-[0.88rem] leading-[1.55] line-clamp-3">
+                <p className="text-night/80 text-[0.86rem] leading-[1.55] line-clamp-3">
                   {r.excerpt}
                 </p>
               )}

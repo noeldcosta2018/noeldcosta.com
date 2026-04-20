@@ -18,11 +18,11 @@ export default function PullQuote({
       >
         “
       </span>
-      <blockquote className="font-display font-bold text-corbeau text-[1.4rem] md:text-[1.7rem] leading-[1.3] tracking-[-0.015em]">
+      <blockquote className="font-display font-black text-corbeau text-[1.35rem] md:text-[1.55rem] leading-[1.3] tracking-[-0.02em]">
         {children}
       </blockquote>
       {attribution && (
-        <figcaption className="mt-4 font-mono text-[0.7rem] uppercase tracking-[1.6px] text-night/70">
+        <figcaption className="mt-4 font-mono text-[0.68rem] uppercase tracking-[1.6px] text-silver">
           — {attribution}
         </figcaption>
       )}

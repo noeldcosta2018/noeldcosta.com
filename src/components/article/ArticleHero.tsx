@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 interface ArticleHeroProps {
@@ -14,10 +15,12 @@ interface ArticleHeroProps {
 }
 
 /**
- * Editorial-style article hero. Keeps the writing width narrow so headlines
- * land cleanly; reserves generous breathing room between category → H1 → deck
- * → byline row; the hero image sits below the metadata to avoid shoving
- * content below the fold.
+ * Editorial article hero. Scale and weight tuned to match the site's Hero
+ * component (Epilogue font-black, tracking-[-0.04em], clamp-scaled H1) so an
+ * article page doesn't look like a different site from the homepage.
+ *
+ * Byline uses the real headshot from /public/headshot.png — never a letter
+ * placeholder.
  */
 export default function ArticleHero({
   category,
@@ -39,45 +42,51 @@ export default function ArticleHero({
   });
 
   return (
-    <header className="mb-10">
+    <header className="mb-12">
       {category && (
         <Link
           href={`${localePrefix}/category/${category.slug}`}
-          className="inline-block font-mono text-[0.68rem] font-semibold tracking-[2.5px] uppercase text-papaya mb-4 hover:text-canyon transition-colors"
+          className="inline-flex items-center gap-2 font-mono text-[0.68rem] font-medium tracking-[2px] uppercase text-papaya mb-5 hover:text-canyon transition-colors"
         >
+          <span className="w-[7px] h-[7px] rounded-full bg-papaya" />
           {category.label}
         </Link>
       )}
 
-      <h1 className="font-display font-black text-corbeau tracking-[-0.03em] leading-[1.05] text-[2.25rem] md:text-[3.25rem] mb-5">
+      <h1
+        className="font-display font-black text-corbeau tracking-[-0.035em] leading-[1.08] mb-5"
+        style={{ fontSize: "clamp(2rem, 4.2vw, 2.9rem)" }}
+      >
         {title}
       </h1>
 
       {deck && (
-        <p className="text-night leading-[1.55] text-[1.15rem] md:text-[1.25rem] max-w-[44rem] mb-7 font-light">
+        <p className="text-night leading-[1.6] text-[1.1rem] md:text-[1.18rem] max-w-[40rem] mb-8 font-normal">
           {deck}
         </p>
       )}
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[0.72rem] uppercase tracking-[1.4px] text-night/70 pb-6 border-b border-corbeau/10">
-        <span className="flex items-center gap-2">
-          <span
-            aria-hidden
-            className="inline-block w-6 h-6 rounded-full bg-corbeau text-bone font-display text-[0.65rem] font-bold uppercase leading-6 text-center"
-          >
-            {author.charAt(0)}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3 pb-6 border-b border-corbeau/[0.08]">
+        <span className="flex items-center gap-3">
+          <span className="relative w-9 h-9 rounded-full overflow-hidden border border-corbeau/[0.08] flex-shrink-0">
+            <Image
+              src="/headshot.png"
+              alt={author}
+              fill
+              sizes="36px"
+              className="object-cover object-top"
+            />
           </span>
-          <span className="text-corbeau not-italic font-semibold tracking-[1.4px]">
-            {author}
+          <span className="flex flex-col leading-tight">
+            <span className="text-corbeau font-display font-bold text-[0.92rem] tracking-[-0.01em]">
+              {author}
+            </span>
+            <span className="font-mono text-[0.65rem] uppercase tracking-[1.4px] text-silver mt-0.5">
+              {updated ? "Updated " : ""}
+              {dateLabel} · {readingMinutes} min read
+            </span>
           </span>
         </span>
-        <span aria-hidden className="text-corbeau/20">·</span>
-        <time dateTime={updated || date}>
-          {updated ? "Updated " : ""}
-          {dateLabel}
-        </time>
-        <span aria-hidden className="text-corbeau/20">·</span>
-        <span>{readingMinutes} min read</span>
       </div>
 
       {heroImage && (
@@ -86,7 +95,7 @@ export default function ArticleHero({
           <img
             src={heroImage}
             alt={heroAlt || title}
-            className="w-full h-auto rounded-[14px] shadow-[0_1px_0_rgba(14,16,32,0.05),0_20px_40px_-20px_rgba(14,16,32,0.15)]"
+            className="w-full h-auto rounded-xl border border-corbeau/[0.06] shadow-[0_8px_32px_rgba(14,16,32,0.08)]"
           />
         </figure>
       )}
