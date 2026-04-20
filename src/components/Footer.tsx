@@ -1,4 +1,28 @@
+import Link from "next/link";
+
 export default function Footer() {
+  const solutions: { label: string; href: string }[] = [
+    { label: "ERP Implementation", href: "/category/erp-implementation" },
+    { label: "Platforms & Modules", href: "/category/platforms-modules" },
+    { label: "ERP Strategy", href: "/category/erp-strategy" },
+    { label: "AI Governance", href: "/category/ai-governance" },
+    { label: "Agentic AI", href: "/category/agentic-ai" },
+    { label: "Case Studies", href: "/category/case-studies" },
+    { label: "Consulting Career", href: "/category/consulting-career" },
+  ];
+  const tools: { label: string; href: string }[] = [
+    { label: "ERP Cost Calculator", href: "/erp-implementation-cost-calculator" },
+    { label: "SAP Cost Calculator", href: "/sap-implementation-cost-calculator" },
+    { label: "Migration Estimator", href: "/free-data-migration-estimator-sap-oracle-microsoft" },
+    { label: "JD Generator", href: "/sap-job-description-generator" },
+    { label: "Solution Builder", href: "/sap-solution-builder" },
+  ];
+  const company: { label: string; href: string; external?: boolean }[] = [
+    { label: "About", href: "/about" },
+    { label: "Case Studies", href: "/category/case-studies" },
+    { label: "YouTube", href: "https://www.youtube.com/@NoelDCostaERPAI", external: true },
+    { label: "Contact", href: "/contact" },
+  ];
   return (
     <footer
       className="bg-corbeau text-moon"
@@ -9,12 +33,12 @@ export default function Footer() {
         <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr] gap-8 pb-12 border-b border-white/[0.06] max-lg:grid-cols-2 max-sm:grid-cols-1">
           {/* Brand */}
           <div>
-            <a
-              href="#"
+            <Link
+              href="/"
               className="font-display font-black text-[1.2rem] text-bone no-underline tracking-[-0.04em] block mb-3"
             >
               noel<span className="text-papaya">dcosta</span>
-            </a>
+            </Link>
             <p className="text-[0.85rem] text-silver leading-[1.6] max-w-[280px]">
               ERP, Data & AI consulting. 25+ years helping companies get real
               value from SAP, Oracle, and AI systems.
@@ -58,15 +82,19 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Services */}
+          {/* Solutions (includes Consulting Career — footer only) */}
           <div>
             <h5 className="font-mono text-[0.68rem] font-semibold tracking-[2px] uppercase text-silver mb-4">
-              Services
+              Solutions
             </h5>
-            {["SAP Implementation", "AI & Agentic AI", "Programme Recovery", "ERP Consulting Careers"].map((l) => (
-              <a key={l} href="#" className="block text-moon no-underline text-[0.88rem] mb-2.5 font-medium transition-colors hover:text-bone">
-                {l}
-              </a>
+            {solutions.map((l) => (
+              <Link
+                key={l.label}
+                href={l.href}
+                className="block text-moon no-underline text-[0.88rem] mb-2.5 font-medium transition-colors hover:text-bone"
+              >
+                {l.label}
+              </Link>
             ))}
           </div>
 
@@ -75,21 +103,14 @@ export default function Footer() {
             <h5 className="font-mono text-[0.68rem] font-semibold tracking-[2px] uppercase text-silver mb-4">
               Free Tools
             </h5>
-            {[
-              { label: "Command Central", href: "#" },
-              { label: "ERPCV", href: "https://erpcv3.vercel.app/" },
-              { label: "Cost Calculator", href: "#" },
-              { label: "Migration Assessment", href: "#" },
-            ].map((l) => (
-              <a
+            {tools.map((l) => (
+              <Link
                 key={l.label}
                 href={l.href}
-                target={l.href.startsWith("http") ? "_blank" : undefined}
-                rel={l.href.startsWith("http") ? "noopener noreferrer" : undefined}
                 className="block text-moon no-underline text-[0.88rem] mb-2.5 font-medium transition-colors hover:text-bone"
               >
                 {l.label}
-              </a>
+              </Link>
             ))}
           </div>
 
@@ -98,23 +119,27 @@ export default function Footer() {
             <h5 className="font-mono text-[0.68rem] font-semibold tracking-[2px] uppercase text-silver mb-4">
               Company
             </h5>
-            {[
-              { label: "About", href: "#" },
-              { label: "Blog", href: "#" },
-              { label: "Case Studies", href: "#" },
-              { label: "YouTube", href: "https://www.youtube.com/@NoelDCostaERPAI" },
-              { label: "Contact", href: "#cta" },
-            ].map((l) => (
-              <a
-                key={l.label}
-                href={l.href}
-                target={l.href.startsWith("http") ? "_blank" : undefined}
-                rel={l.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                className="block text-moon no-underline text-[0.88rem] mb-2.5 font-medium transition-colors hover:text-bone"
-              >
-                {l.label}
-              </a>
-            ))}
+            {company.map((l) =>
+              l.external ? (
+                <a
+                  key={l.label}
+                  href={l.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-moon no-underline text-[0.88rem] mb-2.5 font-medium transition-colors hover:text-bone"
+                >
+                  {l.label}
+                </a>
+              ) : (
+                <Link
+                  key={l.label}
+                  href={l.href}
+                  className="block text-moon no-underline text-[0.88rem] mb-2.5 font-medium transition-colors hover:text-bone"
+                >
+                  {l.label}
+                </Link>
+              )
+            )}
           </div>
         </div>
 
@@ -124,11 +149,15 @@ export default function Footer() {
             © 2026 Quantinoid LLC. All rights reserved.
           </span>
           <div className="flex gap-6">
-            {["Support", "Privacy", "Terms"].map((l) => (
-              <a key={l} href="#" className="text-[0.8rem] text-silver no-underline transition-colors hover:text-moon">
-                {l}
-              </a>
-            ))}
+            <Link href="/privacy" className="text-[0.8rem] text-silver no-underline transition-colors hover:text-moon">
+              Privacy
+            </Link>
+            <Link href="/terms" className="text-[0.8rem] text-silver no-underline transition-colors hover:text-moon">
+              Terms
+            </Link>
+            <Link href="/contact" className="text-[0.8rem] text-silver no-underline transition-colors hover:text-moon">
+              Support
+            </Link>
           </div>
         </div>
       </div>

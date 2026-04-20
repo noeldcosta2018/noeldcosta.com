@@ -1,3 +1,10 @@
+// TODO: update Tools.tsx hrefs — this component currently showcases commercial products (Command Central, ERPCV),
+// not the 5 LLM tool slugs. When this section is repurposed to list the free tools, replace with:
+//   { name: "ERP Cost Calculator", href: "/erp-implementation-cost-calculator", ... }
+//   { name: "SAP Cost Calculator", href: "/sap-implementation-cost-calculator", ... }
+//   { name: "Migration Estimator", href: "/free-data-migration-estimator-sap-oracle-microsoft", ... }
+//   { name: "JD Generator", href: "/sap-job-description-generator", ... }
+//   { name: "Solution Builder", href: "/sap-solution-builder", ... }
 const TOOLS = [
   {
     icon: (
