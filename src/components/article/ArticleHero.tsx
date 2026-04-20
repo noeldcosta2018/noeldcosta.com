@@ -22,11 +22,17 @@ interface ArticleHeroProps {
  * Byline uses the real headshot from /public/headshot.png — never a letter
  * placeholder.
  */
+// Single-author publication. Raw WordPress author slugs (e.g. "noeldcosta")
+// leaked in via frontmatter — normalise to the display name unconditionally
+// rather than asking the migration to clean 1,700 files.
+const DISPLAY_AUTHOR = "Noel D'Costa";
+
 export default function ArticleHero({
   category,
   title,
   deck,
-  author = "Noel D'Costa",
+  // Kept for prop compatibility but intentionally ignored — see above.
+  author: _author,
   date,
   updated,
   readingMinutes,
@@ -34,6 +40,8 @@ export default function ArticleHero({
   heroAlt,
   localePrefix,
 }: ArticleHeroProps) {
+  const author = DISPLAY_AUTHOR;
+  void _author;
   const displayDate = new Date(updated || date);
   const dateLabel = displayDate.toLocaleDateString("en-US", {
     year: "numeric",
