@@ -86,11 +86,25 @@ export default function RelatedArticles({
         : "md:grid-cols-3";
 
   return (
-    <section className="my-16">
-      <p className="font-mono text-[0.68rem] font-medium tracking-[2px] uppercase text-papaya mb-5">
-        {label}
-      </p>
-      <div className={`grid grid-cols-1 ${colsClass} gap-5`}>
+    <section className="mt-16 mb-4 rounded-[20px] bg-gradient-to-br from-cream to-paper border border-corbeau/[0.08] p-8 md:p-10 shadow-[0_2px_20px_rgba(14,16,32,0.04)]">
+      <header className="flex items-baseline justify-between mb-7 pb-5 border-b border-corbeau/[0.08]">
+        <div>
+          <p className="font-mono text-[0.68rem] font-medium tracking-[2px] uppercase text-papaya mb-1.5">
+            {label}
+          </p>
+          <h2 className="font-display font-black text-corbeau text-[1.35rem] md:text-[1.5rem] tracking-[-0.025em] leading-[1.1]">
+            More from the archive
+          </h2>
+        </div>
+        <Link
+          href={`${localePrefix}/`}
+          className="hidden md:inline-flex items-center gap-1.5 font-mono text-[0.68rem] font-medium tracking-[2px] uppercase text-corbeau/60 hover:text-papaya transition-colors"
+        >
+          Browse all
+          <span aria-hidden>→</span>
+        </Link>
+      </header>
+      <div className={`grid grid-cols-1 ${colsClass} gap-4`}>
         {items.map((r) => {
           const catMeta = CATEGORIES[r.category as keyof typeof CATEGORIES];
           const href = `${localePrefix}/${r.slug}`;
@@ -98,7 +112,7 @@ export default function RelatedArticles({
             <Link
               key={r.slug}
               href={href}
-              className="group block bg-paper border border-corbeau/[0.06] rounded-xl p-5 hover:border-corbeau/20 hover:-translate-y-px hover:shadow-[0_8px_32px_rgba(14,16,32,0.08)] transition-all"
+              className="group relative block rounded-xl bg-paper border border-corbeau/[0.08] p-5 hover:border-papaya/40 hover:-translate-y-px hover:shadow-[0_8px_32px_rgba(14,16,32,0.08)] transition-all"
             >
               {catMeta && (
                 <p className="font-mono text-[0.62rem] font-medium tracking-[2px] uppercase text-papaya mb-2">

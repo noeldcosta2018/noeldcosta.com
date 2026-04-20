@@ -62,16 +62,25 @@ export default function TableOfContents({
 
   if (!headings.length) return null;
 
+  // Numbering only the H2 entries; H3s sit underneath their parent section
+  // without a number. Gives a clean editorial "01 / 02 / 03" spine.
+  let h2Count = 0;
+  const numbered = headings.map((h) => ({
+    ...h,
+    number: h.level === 2 ? String(++h2Count).padStart(2, "0") : null,
+  }));
+
   return (
-    <nav aria-label="Table of contents" className="text-sm">
-      <p className="font-mono text-[0.68rem] font-medium tracking-[2px] uppercase text-papaya mb-4">
-        On this page
+    <nav aria-label="Table of contents">
+      <p className="font-mono text-[0.62rem] font-medium tracking-[2.4px] uppercase text-corbeau/50 mb-5">
+        Contents
       </p>
-      <ul className="border-l border-corbeau/10 space-y-1">
-        {headings.map((h) => {
+      <ul className="space-y-0.5">
+        {numbered.map((h) => {
           const isActive = h.id === activeId;
+          const isH3 = h.level === 3;
           return (
-            <li key={h.id} className={h.level === 3 ? "ml-3" : ""}>
+            <li key={h.id}>
               <a
                 href={`#${h.id}`}
                 onClick={() => {
@@ -79,23 +88,49 @@ export default function TableOfContents({
                   setActiveId(h.id);
                 }}
                 className={[
-                  "group relative block py-1.5 pl-4 pr-2 leading-snug transition-colors",
-                  h.level === 3
-                    ? "text-[0.82rem] text-night/70"
-                    : "text-[0.92rem] text-night/90",
-                  isActive
-                    ? "text-corbeau font-semibold"
-                    : "hover:text-corbeau",
+                  "group flex items-start gap-3 py-1.5 leading-[1.4] transition-colors",
+                  isH3 ? "pl-8" : "",
                 ].join(" ")}
               >
+                {!isH3 && (
+                  <span
+                    aria-hidden
+                    className={[
+                      "font-mono text-[0.68rem] tabular-nums pt-[0.18rem] transition-colors flex-shrink-0 w-5",
+                      isActive
+                        ? "text-papaya"
+                        : "text-corbeau/30 group-hover:text-corbeau/60",
+                    ].join(" ")}
+                  >
+                    {h.number}
+                  </span>
+                )}
+                {isH3 && (
+                  <span
+                    aria-hidden
+                    className={[
+                      "mt-[0.65rem] w-1 h-1 rounded-full transition-colors flex-shrink-0",
+                      isActive
+                        ? "bg-papaya"
+                        : "bg-corbeau/20 group-hover:bg-corbeau/50",
+                    ].join(" ")}
+                  />
+                )}
                 <span
-                  aria-hidden
                   className={[
-                    "absolute left-[-1px] top-0 bottom-0 w-[2px] transition-colors",
-                    isActive ? "bg-papaya" : "bg-transparent group-hover:bg-corbeau/30",
+                    "transition-colors",
+                    isH3
+                      ? "text-[0.82rem] text-night/60 group-hover:text-corbeau"
+                      : "text-[0.9rem] text-night/80 group-hover:text-corbeau",
+                    isActive
+                      ? isH3
+                        ? "text-corbeau font-medium"
+                        : "text-corbeau font-semibold"
+                      : "",
                   ].join(" ")}
-                />
-                {h.text}
+                >
+                  {h.text}
+                </span>
               </a>
             </li>
           );

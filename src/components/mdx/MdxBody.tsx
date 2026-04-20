@@ -137,10 +137,7 @@ export default function MdxBody({ source }: { source: string }) {
           </FadeUp>
         ),
         thead: (p: ComponentProps<"thead">) => (
-          <thead
-            className="bg-gradient-to-b from-bone/80 to-bone/40 border-b border-corbeau/10"
-            {...p}
-          />
+          <thead className="bg-papaya" {...p} />
         ),
         tbody: (p: ComponentProps<"tbody">) => (
           <tbody
@@ -150,7 +147,7 @@ export default function MdxBody({ source }: { source: string }) {
         ),
         th: (p: ComponentProps<"th">) => (
           <th
-            className="text-left font-mono text-[0.7rem] font-semibold tracking-[1.4px] uppercase text-corbeau py-4 px-5 first:pl-6 last:pr-6 whitespace-nowrap"
+            className="text-left font-display font-black tracking-[-0.01em] text-corbeau text-[0.95rem] md:text-[1rem] py-4 px-5 first:pl-6 last:pr-6 whitespace-nowrap"
             {...p}
           />
         ),

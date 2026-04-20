@@ -147,37 +147,67 @@ export default function PostPage({
               )}
 
               {/* Inline ToC for < lg — single disclosure block, not a second
-                  persistent sidebar. */}
-              {hasToc && (
-                <details className="lg:hidden mb-10 rounded-xl border border-corbeau/[0.08] bg-paper p-5 group">
-                  <summary className="cursor-pointer font-mono text-[0.68rem] font-medium tracking-[2px] uppercase text-papaya list-none flex items-center justify-between">
-                    <span>On this page</span>
-                    <span
-                      aria-hidden
-                      className="text-corbeau/40 group-open:rotate-180 transition-transform"
-                    >
-                      ▾
-                    </span>
-                  </summary>
-                  <ul className="mt-4 space-y-1 border-l border-corbeau/10">
-                    {headings.map((h) => (
-                      <li key={h.id} className={h.level === 3 ? "ml-3" : ""}>
-                        <a
-                          href={`#${h.id}`}
-                          className={[
-                            "block py-1.5 pl-4 text-night hover:text-corbeau transition-colors",
-                            h.level === 3
-                              ? "text-[0.82rem] text-night/70"
-                              : "text-[0.92rem]",
-                          ].join(" ")}
-                        >
-                          {h.text}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              )}
+                  persistent sidebar. Mirrors the desktop numbered spine. */}
+              {hasToc && (() => {
+                let mh2 = 0;
+                const mobileNumbered = headings.map((h) => ({
+                  ...h,
+                  number: h.level === 2 ? String(++mh2).padStart(2, "0") : null,
+                }));
+                return (
+                  <details className="lg:hidden mb-10 rounded-xl border border-corbeau/[0.08] bg-paper p-5 group">
+                    <summary className="cursor-pointer font-mono text-[0.62rem] font-medium tracking-[2.4px] uppercase text-corbeau/60 list-none flex items-center justify-between">
+                      <span>Contents</span>
+                      <span
+                        aria-hidden
+                        className="text-corbeau/40 group-open:rotate-180 transition-transform"
+                      >
+                        ▾
+                      </span>
+                    </summary>
+                    <ul className="mt-5 space-y-0.5">
+                      {mobileNumbered.map((h) => {
+                        const isH3 = h.level === 3;
+                        return (
+                          <li key={h.id}>
+                            <a
+                              href={`#${h.id}`}
+                              className={[
+                                "flex items-start gap-3 py-1.5 leading-[1.4]",
+                                isH3 ? "pl-8" : "",
+                              ].join(" ")}
+                            >
+                              {!isH3 && (
+                                <span
+                                  aria-hidden
+                                  className="font-mono text-[0.68rem] tabular-nums pt-[0.18rem] text-corbeau/30 flex-shrink-0 w-5"
+                                >
+                                  {h.number}
+                                </span>
+                              )}
+                              {isH3 && (
+                                <span
+                                  aria-hidden
+                                  className="mt-[0.65rem] w-1 h-1 rounded-full bg-corbeau/20 flex-shrink-0"
+                                />
+                              )}
+                              <span
+                                className={
+                                  isH3
+                                    ? "text-[0.82rem] text-night/60"
+                                    : "text-[0.9rem] text-night/80"
+                                }
+                              >
+                                {h.text}
+                              </span>
+                            </a>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </details>
+                );
+              })()}
 
               {/* Article body — first half */}
               <div className="prose-noel">
