@@ -5,6 +5,7 @@ import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import Link from "next/link";
 import type { ComponentProps } from "react";
+import FadeUp from "@/components/article/FadeUp";
 
 /**
  * Renders post/page markdown. Uses react-markdown so we never go through the
@@ -72,10 +73,12 @@ export default function MdxBody({ source }: { source: string }) {
           />
         ),
         h2: (p: ComponentProps<"h2">) => (
-          <h2
-            className="font-display font-black tracking-[-0.025em] text-corbeau text-[1.5rem] md:text-[1.75rem] leading-[1.2] mt-14 mb-3 scroll-mt-28"
-            {...p}
-          />
+          <FadeUp as="div" className="mt-14 mb-3">
+            <h2
+              className="font-display font-black tracking-[-0.025em] text-corbeau text-[1.5rem] md:text-[1.75rem] leading-[1.2] scroll-mt-28"
+              {...p}
+            />
+          </FadeUp>
         ),
         h3: (p: ComponentProps<"h3">) => (
           <h3
@@ -126,25 +129,34 @@ export default function MdxBody({ source }: { source: string }) {
           />
         ),
         table: (p: ComponentProps<"table">) => (
-          <div className="overflow-x-auto my-8 rounded-xl border border-corbeau/[0.08]">
+          <FadeUp as="figure" className="not-prose my-10 -mx-2 md:mx-0 overflow-x-auto rounded-xl border border-corbeau/[0.08] bg-paper shadow-[0_2px_20px_rgba(14,16,32,0.04)]">
             <table
               className="min-w-full text-[0.92rem] border-collapse"
               {...p}
             />
-          </div>
+          </FadeUp>
         ),
         thead: (p: ComponentProps<"thead">) => (
-          <thead className="bg-bone/60" {...p} />
+          <thead
+            className="bg-gradient-to-b from-bone/80 to-bone/40 border-b border-corbeau/10"
+            {...p}
+          />
+        ),
+        tbody: (p: ComponentProps<"tbody">) => (
+          <tbody
+            className="[&>tr:nth-child(even)]:bg-bone/30 [&>tr]:transition-colors [&>tr:hover]:bg-papaya/[0.04]"
+            {...p}
+          />
         ),
         th: (p: ComponentProps<"th">) => (
           <th
-            className="text-left font-display font-semibold text-corbeau text-[0.9rem] border-b border-corbeau/15 py-3 px-4"
+            className="text-left font-mono text-[0.7rem] font-semibold tracking-[1.4px] uppercase text-corbeau py-4 px-5 first:pl-6 last:pr-6 whitespace-nowrap"
             {...p}
           />
         ),
         td: (p: ComponentProps<"td">) => (
           <td
-            className="text-night border-b border-corbeau/[0.06] py-3 px-4 leading-[1.6]"
+            className="text-night border-t border-corbeau/[0.06] py-4 px-5 first:pl-6 last:pr-6 leading-[1.6] align-top first:font-semibold first:text-corbeau"
             {...p}
           />
         ),

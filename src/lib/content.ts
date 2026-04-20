@@ -122,13 +122,47 @@ function listSlugs(kind: "posts" | "pages"): string[] {
 }
 
 /**
- * Drop <style>/<script> and their orphan CSS/JS content so they don't render
- * inline. react-markdown + rehype-raw handles the rest of the HTML safely.
+ * Normalise markdown bodies coming out of the WordPress migration so they
+ * don't leak chrome into the editorial reading view.
+ *
+ * Three passes:
+ *   1. Strip <style>/<script> blocks whose tags are intact.
+ *   2. Strip *orphan* CSS that leaked in as prose (WP plugins occasionally
+ *      emit `<style>…</style>` where only the tags were consumed; the CSS
+ *      body survived as a paragraph). We detect by CSS signature, not by
+ *      regex over the full line, so we don't accidentally eat markdown.
+ *   3. Preserve fenced code blocks — ```lang…``` content is never touched.
+ *
+ * react-markdown + rehype-raw handles the rest of the HTML safely downstream.
  */
 function sanitizeMdxBody(body: string): string {
-  return body
+  let out = body
     .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
     .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
+
+  const lines = out.split("\n");
+  let inFence = false;
+  const CSS_PROPS = /\b(?:margin|padding|border(?:-[a-z]+)?|color|background(?:-[a-z]+)?|font-(?:family|size|weight|style)|display|flex|flex-direction|grid|grid-[a-z]+|width|max-width|min-width|height|max-height|min-height|position|top|right|bottom|left|z-index|transform|transition|align-items|justify-content|gap|line-height|text-align|letter-spacing|border-radius|object-fit|box-sizing|box-shadow|overflow|opacity|cursor|text-decoration)\b/gi;
+
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    if (/^```/.test(l.trim())) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) continue;
+    if (l.length < 40) continue; // orphan CSS blobs are long; skip prose.
+
+    // Signature: multiple rulesets (≥2 `{…}` groups), many declarations
+    // (≥4 semicolons), and recognisable CSS property names (≥2 hits).
+    const braces = (l.match(/\{/g) || []).length;
+    const semis = (l.match(/;/g) || []).length;
+    const cssProps = (l.match(CSS_PROPS) || []).length;
+    if (braces >= 2 && semis >= 4 && cssProps >= 2) {
+      lines[i] = "";
+    }
+  }
+  return lines.join("\n");
 }
 
 function loadMdx<T>(path: string, locale: Locale): { frontmatter: T; body: string; locale: Locale } | null {
