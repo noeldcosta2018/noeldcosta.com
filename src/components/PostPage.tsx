@@ -10,7 +10,6 @@ import KeyTakeaways from "@/components/article/KeyTakeaways";
 import PullQuote from "@/components/article/PullQuote";
 import ProductPromoCard from "@/components/article/ProductPromoCard";
 import AuthorBox from "@/components/article/AuthorBox";
-import CTASection from "@/components/article/CTASection";
 import RelatedArticles, {
   pickRelated,
 } from "@/components/article/RelatedArticles";
@@ -245,16 +244,14 @@ export default function PostPage({
               <ProductPromoCard
                 tone="light"
                 kicker="Tool · Free to start"
-                title="Compare ERP vendors with ERPCV"
-                description="Score SAP, Oracle, and Microsoft shortlists against the criteria that actually matter to your programme. Takes ten minutes; replaces a week of internal spreadsheet wrangling."
+                title="Build a professional ERP CV in minutes"
+                description="Turn years of SAP, Oracle, and Microsoft programme work into a polished CV structured by role, modules, and outcomes. Used by senior ERP consultants across the Middle East, Europe, and North America."
                 href="https://erpcv.com"
-                cta="Start your ERPCV comparison"
+                cta="Generate your ERP CV"
                 external
               />
 
               <AuthorBox localePrefix={localePrefix} />
-
-              <CTASection localePrefix={localePrefix} />
 
               <RelatedArticles
                 label="Continue reading"

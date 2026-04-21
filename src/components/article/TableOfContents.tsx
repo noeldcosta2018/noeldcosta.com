@@ -110,11 +110,14 @@ export default function TableOfContents({
     : "transition-[grid-template-rows,opacity] duration-[400ms] ease-out";
 
   return (
-    <nav aria-label="Table of contents">
-      <p className="font-mono text-[0.62rem] font-medium tracking-[2.4px] uppercase text-corbeau/50 mb-5">
+    <nav
+      aria-label="Table of contents"
+      className="rounded-xl bg-paper border border-corbeau/[0.08] shadow-[0_2px_14px_rgba(14,16,32,0.04)] px-5 py-5"
+    >
+      <p className="font-mono text-[0.58rem] font-medium tracking-[2.4px] uppercase text-corbeau/50 mb-4">
         Contents
       </p>
-      <ol className="space-y-0.5">
+      <ol className="space-y-[1px]">
         {groups.map((g, gi) => {
           const isActive = gi === activeGroupIdx;
           const h2 = g.h2;
@@ -132,7 +135,7 @@ export default function TableOfContents({
                   <span
                     aria-hidden
                     className={[
-                      "font-mono text-[0.68rem] tabular-nums pt-[0.18rem] flex-shrink-0 w-5 transition-colors",
+                      "font-mono text-[0.62rem] tabular-nums pt-[0.22rem] flex-shrink-0 w-4 transition-colors",
                       isActive ? "text-papaya" : "text-corbeau/30 group-hover:text-corbeau/60",
                     ].join(" ")}
                   >
@@ -140,12 +143,12 @@ export default function TableOfContents({
                   </span>
                   <span
                     className={[
-                      "text-[0.9rem] transition-colors",
+                      "text-[0.82rem] transition-colors",
                       h2IsActive
                         ? "text-corbeau font-semibold"
                         : isActive
                           ? "text-corbeau/90 font-medium group-hover:text-corbeau"
-                          : "text-night/70 group-hover:text-corbeau",
+                          : "text-night/65 group-hover:text-corbeau",
                     ].join(" ")}
                   >
                     {h2.text}
@@ -163,7 +166,7 @@ export default function TableOfContents({
                   ].join(" ")}
                 >
                   <div className="overflow-hidden">
-                    <ul className="border-l border-corbeau/10 ml-0 pt-1 pb-2 space-y-0.5">
+                    <ul className="border-l border-corbeau/10 ml-0 pt-1 pb-2 space-y-[1px]">
                       {g.children.map((c) => {
                         const cActive = c.id === activeId;
                         return (
@@ -182,10 +185,10 @@ export default function TableOfContents({
                               />
                               <span
                                 className={[
-                                  "text-[0.82rem] leading-[1.4] transition-colors",
+                                  "text-[0.76rem] leading-[1.4] transition-colors",
                                   cActive
                                     ? "text-corbeau font-medium"
-                                    : "text-night/60 group-hover:text-corbeau",
+                                    : "text-night/55 group-hover:text-corbeau",
                                 ].join(" ")}
                               >
                                 {c.text}
