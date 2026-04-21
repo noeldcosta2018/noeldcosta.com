@@ -221,9 +221,9 @@ export default function PostPage({
                   tone="dark"
                   kicker="Built by Noel"
                   title="Command Centre"
-                  description="Executive visibility, risk posture, and decision governance for ERP and SAP programmes. See where delivery is actually bleeding, before it hits the steering committee."
-                  href="https://commandcentre.noeldcosta.com"
-                  cta="See Command Centre"
+                  description="Executive visibility, risk posture, and decision governance for ERP and SAP programmes. See where delivery is actually bleeding — before it hits the steering committee."
+                  href="https://commandcc.io"
+                  cta="Try Command Centre free"
                   external
                 />
               )}
@@ -244,11 +244,11 @@ export default function PostPage({
               {/* ERPCV reference — light tone with papaya side-rule */}
               <ProductPromoCard
                 tone="light"
-                kicker="Tool"
-                title="ERPCV"
-                description="A structured evaluation framework for comparing SAP, Oracle, and Microsoft shortlists against the criteria that actually matter to your programme."
+                kicker="Tool · Free to start"
+                title="Compare ERP vendors with ERPCV"
+                description="Score SAP, Oracle, and Microsoft shortlists against the criteria that actually matter to your programme. Takes ten minutes; replaces a week of internal spreadsheet wrangling."
                 href="https://erpcv.com"
-                cta="Open ERPCV"
+                cta="Start your ERPCV comparison"
                 external
               />
 

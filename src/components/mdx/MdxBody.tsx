@@ -81,10 +81,12 @@ export default function MdxBody({ source }: { source: string }) {
           </FadeUp>
         ),
         h3: (p: ComponentProps<"h3">) => (
-          <h3
-            className="font-display font-bold tracking-[-0.015em] text-corbeau text-[1.15rem] md:text-[1.25rem] leading-[1.3] mt-10 mb-2 scroll-mt-28"
-            {...p}
-          />
+          <FadeUp as="div" className="mt-10 mb-2">
+            <h3
+              className="font-display font-bold tracking-[-0.015em] text-corbeau text-[1.15rem] md:text-[1.25rem] leading-[1.3] scroll-mt-28"
+              {...p}
+            />
+          </FadeUp>
         ),
         h4: (p: ComponentProps<"h4">) => (
           <h4
@@ -111,10 +113,12 @@ export default function MdxBody({ source }: { source: string }) {
           />
         ),
         blockquote: (p: ComponentProps<"blockquote">) => (
-          <blockquote
-            className="my-8 border-l-[3px] border-papaya pl-6 py-1 text-corbeau/90 italic text-[1.05rem] md:text-[1.1rem] leading-[1.6] [&>p]:my-2"
-            {...p}
-          />
+          <FadeUp as="div" className="my-8">
+            <blockquote
+              className="border-l-[3px] border-papaya pl-6 py-1 text-corbeau/90 italic text-[1.05rem] md:text-[1.1rem] leading-[1.6] [&>p]:my-2"
+              {...p}
+            />
+          </FadeUp>
         ),
         code: (p: ComponentProps<"code">) => (
           <code

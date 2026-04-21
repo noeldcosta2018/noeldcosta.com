@@ -64,13 +64,13 @@ export default function FadeUp({
     ? undefined
     : {
         transitionDelay: `${delay}ms`,
-        transform: visible ? "translateY(0)" : "translateY(12px)",
+        transform: visible ? "translateY(0)" : "translateY(24px)",
         opacity: visible ? 1 : 0,
       };
 
   const baseMotion = reduced
     ? ""
-    : "transition-[transform,opacity] duration-[600ms] ease-out will-change-transform";
+    : "transition-[transform,opacity] duration-[800ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform";
 
   return (
     <Tag
