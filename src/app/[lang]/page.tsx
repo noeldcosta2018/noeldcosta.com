@@ -12,6 +12,7 @@ import Tools from "@/components/Tools";
 import YouTubeSection from "@/components/YouTubeSection";
 import Credentials from "@/components/Credentials";
 import Testimonials from "@/components/Testimonials";
+import FAQ from "@/components/FAQ";
 import CTABanner from "@/components/CTABanner";
 import Footer from "@/components/Footer";
 import { LOCALES, type Locale } from "@/lib/content";
@@ -141,6 +142,7 @@ export default async function Home(props: { params: Promise<{ lang: string }> })
         </Suspense>
         <Credentials />
         <Testimonials />
+        <FAQ />
         <CTABanner />
       </main>
       <Footer />

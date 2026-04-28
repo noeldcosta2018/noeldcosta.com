@@ -34,7 +34,7 @@ export default function Testimonials() {
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
           They&apos;ll tell you{" "}
-          <em className="not-italic text-canyon font-extrabold">what it&apos;s like.</em>
+          <span className="cc-emphasis-italic">what it&apos;s like.</span>
         </h2>
 
         <div className="grid grid-cols-3 gap-3.5 max-md:grid-cols-2 max-sm:grid-cols-1">

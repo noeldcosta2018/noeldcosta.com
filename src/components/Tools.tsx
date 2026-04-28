@@ -55,7 +55,7 @@ export default function Tools() {
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
           Tools I build{" "}
-          <em className="not-italic text-papaya font-extrabold">for the ERP world.</em>
+          <span className="cc-emphasis-italic">for the ERP world.</span>
         </h2>
         <p className="text-moon text-[1rem] max-w-[520px] leading-[1.7] mb-12">
           I don&apos;t just advise. I build products. Used by consultants and companies

@@ -1,3 +1,4 @@
+// TODO F-09: replace text logos with SVG <img> tags when /public/logos/ is populated — see PRD.md F-09
 const LOGOS = [
   "EDGE Group",
   "Etihad Airways",

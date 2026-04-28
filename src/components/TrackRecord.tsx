@@ -68,7 +68,7 @@ export default function TrackRecord() {
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
           Programmes I&apos;ve led.{" "}
-          <em className="not-italic text-canyon font-extrabold">Not advised on. Led.</em>
+          <span className="cc-emphasis-italic">Not advised on. Led.</span>
         </h2>
         <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-12">
           Real companies. Real numbers. I was in the room running these.
@@ -95,7 +95,8 @@ export default function TrackRecord() {
           </div>
 
           {/* Dashboard mockup */}
-          <div className="bg-paper border border-corbeau/[0.08] rounded-2xl overflow-hidden shadow-[0_4px_24px_rgba(14,16,32,0.06),0_20px_60px_rgba(14,16,32,0.04)] max-lg:max-w-[500px] sticky top-[84px]">
+          <div className="cc-card relative rounded-2xl overflow-hidden max-lg:max-w-[500px] sticky top-[84px]" style={{ boxShadow: '0 24px 48px -12px rgba(14,16,32,0.15)' }}>
+            <div className="cc-scan-line" />
             <div className="flex items-center justify-between px-[18px] py-3 bg-corbeau/[0.02] border-b border-corbeau/[0.06]">
               <div className="flex items-center gap-1.5">
                 <div className="flex gap-1.5">
@@ -147,7 +148,7 @@ export default function TrackRecord() {
                 </div>
               </div>
               {/* Entity tags */}
-              <div className="flex flex-wrap gap-[5px] mt-2.5">
+              <div className="flex flex-wrap gap-[5px] mt-2.5 pt-2.5 border-t border-corbeau/[0.06]">
                 {ENTITIES.map((e) => (
                   <span
                     key={e}

@@ -75,7 +75,7 @@ export default async function YouTubeSection() {
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
           Videos from the field.{" "}
-          <em className="not-italic text-canyon font-extrabold">Not theory. Real projects.</em>
+          <span className="cc-emphasis-italic">Not theory. Real projects.</span>
         </h2>
         <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-12">
           I share what I&apos;ve learned from 25 years of ERP and AI implementations.

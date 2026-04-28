@@ -77,9 +77,9 @@ export default function AICapabilities() {
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
           AI on top of your ERP.{" "}
-          <em className="not-italic text-canyon font-extrabold">
+          <span className="cc-emphasis-italic">
             Not buzzwords. Real systems.
-          </em>
+          </span>
         </h2>
         <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-12">
           I build practical AI that works with your SAP data. Agentic AI,
@@ -107,7 +107,8 @@ export default function AICapabilities() {
           </div>
 
           {/* Terminal mockup */}
-          <div className="bg-paper border border-corbeau/[0.08] rounded-2xl overflow-hidden shadow-[0_4px_24px_rgba(14,16,32,0.06),0_20px_60px_rgba(14,16,32,0.04)] max-lg:max-w-[500px] sticky top-[84px]">
+          <div className="cc-card relative rounded-2xl overflow-hidden max-lg:max-w-[500px] sticky top-[84px]" style={{ boxShadow: '0 24px 48px -12px rgba(14,16,32,0.15)' }}>
+            <div className="cc-scan-line" />
             <div className="flex items-center justify-between px-[18px] py-3 bg-corbeau/[0.02] border-b border-corbeau/[0.06]">
               <div className="flex items-center gap-1.5">
                 <div className="flex gap-1.5">
@@ -129,8 +130,8 @@ export default function AICapabilities() {
                   <span className="text-night">{line.content}</span>
                 </div>
               ))}
-              <hr className="border-none border-t border-corbeau/[0.06] my-3" />
-              <p className="font-mono text-[0.6rem] text-silver uppercase tracking-[1.5px] mb-2">AI Stack</p>
+              <hr className="border-t border-corbeau/[0.06] my-3" />
+              <p className="font-mono text-[0.6rem] text-silver uppercase tracking-[1.5px] mb-2 cc-cursor">AI Stack</p>
               <div className="flex flex-wrap gap-1.5">
                 {STACK_TAGS.map((t) => (
                   <span

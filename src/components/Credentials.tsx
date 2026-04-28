@@ -54,7 +54,7 @@ export default function Credentials() {
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
           Not just a tech guy.{" "}
-          <em className="not-italic text-canyon font-extrabold">I understand the numbers.</em>
+          <span className="cc-emphasis-italic">I understand the numbers.</span>
         </h2>
         <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-10">
           Most SAP consultants understand the system. Few understand the

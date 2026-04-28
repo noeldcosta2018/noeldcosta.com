@@ -5,8 +5,8 @@ import BookCallButton from './BookCallButton';
 export default function Hero({ lang }: { lang: string }) {
   return (
     <section
-      className="relative overflow-hidden py-16 md:py-24 lg:py-32"
-      style={{ background: 'var(--cc-page-bg)' }}
+      className="relative overflow-hidden py-16 md:py-24 lg:py-32 cc-grid-faint"
+      style={{ backgroundColor: 'var(--cc-page-bg)' }}
     >
       {/* Decorative warm glow — static, not animated */}
       <div
@@ -22,12 +22,12 @@ export default function Hero({ lang }: { lang: string }) {
           <div className="lg:col-span-7 hero-stagger">
 
             {/* Eyebrow */}
-            <p
-              className="text-sm font-medium mb-4"
-              style={{ color: 'var(--cc-accent)', letterSpacing: '0.05em' }}
-            >
-              ERP · AI · 25 years
-            </p>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="cc-pulse-dot w-[6px] h-[6px] rounded-full bg-papaya inline-block" aria-hidden="true" />
+              <span className="cc-mono text-[0.68rem] font-medium tracking-[2.5px] uppercase text-papaya">
+                ERP · AI · 25 years
+              </span>
+            </div>
 
             {/* H1 */}
             <h1
@@ -114,6 +114,31 @@ export default function Hero({ lang }: { lang: string }) {
                   <circle cx="4" cy="4" r="2" />
                 </svg>
               </a>
+            </div>
+
+            {/* Four-stat strip */}
+            <div className="flex flex-wrap gap-x-0 mt-8 border-t border-corbeau/[0.08] pt-6">
+              {[
+                { num: '$700M+', label: 'delivered' },
+                { num: '84', label: 'entities migrated' },
+                { num: '25 yrs', label: 'in ERP & AI' },
+                { num: '5', label: 'continents' },
+              ].map((s, i) => (
+                <div
+                  key={s.label}
+                  className={`pr-6 mr-6 max-sm:mb-4 ${i < 3 ? 'border-r border-corbeau/[0.10]' : ''}`}
+                >
+                  <div
+                    className="font-display font-black tracking-[-0.03em] leading-none text-corbeau"
+                    style={{ fontSize: 'clamp(1.4rem,2.5vw,1.75rem)' }}
+                  >
+                    {s.num}
+                  </div>
+                  <div className="font-mono text-[0.65rem] uppercase tracking-[1.5px] text-silver mt-1">
+                    {s.label}
+                  </div>
+                </div>
+              ))}
             </div>
 
           </div>

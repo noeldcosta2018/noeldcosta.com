@@ -16,9 +16,10 @@ export default function CTABanner() {
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
+            opacity: 0.1,
             backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.08) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.08) 1px,transparent 1px)",
-            backgroundSize: "30px 30px",
+              "linear-gradient(rgba(14,16,32,0.5) 1px,transparent 1px),linear-gradient(90deg,rgba(14,16,32,0.5) 1px,transparent 1px)",
+            backgroundSize: "40px 40px",
           }}
         />
 

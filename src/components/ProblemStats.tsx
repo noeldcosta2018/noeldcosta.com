@@ -37,9 +37,9 @@ export default function ProblemStats() {
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
           Most ERP projects fail.{" "}
-          <em className="not-italic text-canyon font-extrabold">
+          <span className="cc-emphasis-italic">
             Yours doesn&apos;t have to.
-          </em>
+          </span>
         </h2>
         <p className="text-night text-[1rem] max-w-[520px] leading-[1.7]">
           You already know this. The numbers just confirm it.
