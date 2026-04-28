@@ -1,120 +1,140 @@
-import Image from "next/image";
+import Image from 'next/image';
+import Link from 'next/link';
+import BookCallButton from './BookCallButton';
 
-function FloatCard({
-  position,
-  icon,
-  strong,
-  sub,
-}: {
-  position: "bottom-left" | "top-right";
-  icon: React.ReactNode;
-  strong: string;
-  sub: string;
-}) {
-  const pos =
-    position === "bottom-left"
-      ? "absolute bottom-[-16px] left-[-20px]"
-      : "absolute top-[20px] right-[-20px]";
-  return (
-    <div
-      className={`${pos} bg-paper border border-corbeau/[0.08] rounded-xl px-[18px] py-[14px] shadow-[0_8px_32px_rgba(14,16,32,0.08)] flex items-center gap-3 max-md:hidden`}
-    >
-      <div className="w-[38px] h-[38px] rounded-lg flex items-center justify-center text-papaya" style={{ background: "rgba(252,152,90,0.1)" }}>
-        {icon}
-      </div>
-      <div className="flex flex-col">
-        <strong className="font-display text-[0.85rem] font-black tracking-[-0.02em]">{strong}</strong>
-        <span className="font-mono text-[0.65rem] text-silver tracking-[0.5px]">{sub}</span>
-      </div>
-    </div>
-  );
-}
-
-export default function Hero() {
+export default function Hero({ lang }: { lang: string }) {
   return (
     <section
-      className="bg-bone"
-      style={{ padding: "clamp(5rem,12vw,10rem) clamp(1.5rem,5vw,4rem) clamp(4rem,8vw,7rem)" }}
+      className="relative overflow-hidden py-16 md:py-24 lg:py-32"
+      style={{ background: 'var(--cc-page-bg)' }}
     >
-      <div className="max-w-[1200px] mx-auto grid grid-cols-[1.1fr_0.9fr] gap-[clamp(2rem,5vw,5rem)] items-center max-lg:grid-cols-1">
-        {/* Left */}
-        <div>
-          <div className="inline-flex items-center gap-2 font-mono text-[0.68rem] font-medium tracking-[2px] uppercase text-papaya mb-6">
-            <span className="w-[7px] h-[7px] rounded-full bg-brand-green animate-pulse-dot" />
-            ERP · Data · AI
-          </div>
+      {/* Decorative warm glow — static, not animated */}
+      <div
+        className="cc-glow-warm absolute inset-0 pointer-events-none"
+        style={{ opacity: 0.5 }}
+        aria-hidden="true"
+      />
 
-          <h1
-            className="font-display font-black leading-[1.04] tracking-[-0.04em] mb-6 text-corbeau"
-            style={{ fontSize: "clamp(2.8rem,5.5vw,4.2rem)" }}
-          >
-            Your ERP is moving to S/4HANA.{" "}
-            <em className="not-italic text-papaya font-extrabold">
-              Let&apos;s make sure it actually works.
-            </em>
-          </h1>
+      <div className="relative max-w-7xl mx-auto px-6 md:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
 
-          <p
-            className="text-night max-w-[480px] leading-[1.75] mb-10"
-            style={{ fontSize: "1.05rem" }}
-          >
-            I help companies migrate from ECC to S/4HANA. Build AI on top of
-            ERP. Get real value from systems that cost millions. 25 years doing
-            this. Finance background. I build my own tools.
-          </p>
+          {/* Left content stack — stagger animation on entry */}
+          <div className="lg:col-span-7 hero-stagger">
 
-          <div className="flex gap-3 flex-wrap max-sm:flex-col">
-            <a
-              href="#cta"
-              className="inline-flex items-center gap-1.5 bg-papaya text-corbeau px-7 py-3.5 rounded-[10px] no-underline font-bold text-[0.92rem] transition-all hover:bg-[#fdaa78] hover:-translate-y-px hover:shadow-[0_8px_30px_rgba(252,152,90,0.3)] max-sm:justify-center"
+            {/* Eyebrow */}
+            <p
+              className="text-sm font-medium mb-4"
+              style={{ color: 'var(--cc-accent)', letterSpacing: '0.05em' }}
             >
-              Talk about your project →
-            </a>
-            <a
-              href="#services"
-              className="inline-flex items-center gap-1.5 bg-transparent text-corbeau px-7 py-3.5 rounded-[10px] no-underline font-semibold text-[0.92rem] border border-corbeau/[0.15] transition-all hover:border-corbeau/35 hover:-translate-y-px max-sm:justify-center"
+              ERP · AI · 25 years
+            </p>
+
+            {/* H1 */}
+            <h1
+              className="cc-display text-4xl md:text-5xl lg:text-6xl xl:text-7xl leading-tight mb-6"
+              style={{ color: 'var(--cc-text-primary)' }}
             >
-              See how I help
-            </a>
-          </div>
-        </div>
+              I run ERP transformations the board can defend.
+            </h1>
 
-        {/* Right — headshot */}
-        <div className="relative max-lg:max-w-[400px] max-lg:mt-8">
-          <div
-            className="relative w-full aspect-[4/5] rounded-[20px] border border-corbeau/[0.06] overflow-hidden"
-            style={{ background: "linear-gradient(135deg,#faf6f0,#fffdf9)", maxWidth: 420 }}
-          >
-            <Image
-              src="/headshot.png"
-              alt="Noel D'Costa"
-              fill
-              className="object-cover object-top"
-              priority
-            />
+            {/* Sub-headline */}
+            <p
+              className="text-base md:text-lg leading-relaxed max-w-2xl mb-8"
+              style={{ color: 'var(--cc-text-body)' }}
+            >
+              ECC to S/4HANA. AI on SAP. 25 years delivering for{' '}
+              <strong className="font-semibold" style={{ color: 'var(--cc-text-primary)' }}>EDGE Group</strong>{' '}
+              ($60M saved),{' '}
+              <strong className="font-semibold" style={{ color: 'var(--cc-text-primary)' }}>Etihad Airways</strong>{' '}
+              ($400M+ impact),{' '}
+              <strong className="font-semibold" style={{ color: 'var(--cc-text-primary)' }}>ADNOC</strong>,{' '}
+              <strong className="font-semibold" style={{ color: 'var(--cc-text-primary)' }}>PIF entities</strong>, and the{' '}
+              <strong className="font-semibold" style={{ color: 'var(--cc-text-primary)' }}>UAE Government</strong>.
+              {' '}CIMA-qualified. I lead the engagement. I don&apos;t subcontract.
+            </p>
+
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+              {/* Primary — opens Calendly popup */}
+              <BookCallButton
+                className="cc-btn-primary group inline-flex items-center justify-center gap-2 px-6 py-3 rounded-md text-sm font-semibold sm:w-auto w-full"
+              >
+                Book a 30-min call
+                <span
+                  className="transition-transform duration-200 group-hover:translate-x-0.5"
+                  aria-hidden="true"
+                >
+                  →
+                </span>
+              </BookCallButton>
+
+              {/* Secondary */}
+              <Link
+                href={`/${lang}/case-studies/`}
+                className="cc-btn-secondary group inline-flex items-center justify-center gap-2 px-6 py-3 rounded-md text-sm font-semibold sm:w-auto w-full"
+              >
+                See case studies
+                <span
+                  className="transition-transform duration-200 group-hover:translate-x-0.5"
+                  aria-hidden="true"
+                >
+                  →
+                </span>
+              </Link>
+            </div>
+
+            {/* Credibility line + LinkedIn */}
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--cc-text-muted)' }}>
+                CIMA{' '}
+                <span style={{ color: 'var(--cc-accent)' }}>·</span>{' '}
+                AICPA{' '}
+                <span style={{ color: 'var(--cc-accent)' }}>·</span>{' '}
+                Masters in Accounting{' '}
+                <span style={{ color: 'var(--cc-accent)' }}>·</span>{' '}
+                25+ years across EDGE Group, Etihad, ADNOC, PIF entities, DXC, and the UAE Government
+              </p>
+              <a
+                href="https://www.linkedin.com/in/noeldcosta/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Noel D'Costa on LinkedIn"
+                className="cc-linkedin-icon flex-shrink-0 rounded"
+              >
+                {/* LinkedIn logo SVG — lucide-react 1.x removed this icon */}
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+                  <rect x="2" y="9" width="4" height="12" />
+                  <circle cx="4" cy="4" r="2" />
+                </svg>
+              </a>
+            </div>
+
           </div>
 
-          <FloatCard
-            position="bottom-left"
-            strong="25+ Years"
-            sub="SAP · Oracle · AI"
-            icon={
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 20V10M18 20V4M6 20v-4" />
-              </svg>
-            }
-          />
-          <FloatCard
-            position="top-right"
-            strong="CIMA · AICPA"
-            sub="Masters in Accounting"
-            icon={
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-                <path d="M6 12v5c0 1 4 3 6 3s6-2 6-3v-5" />
-              </svg>
-            }
-          />
+          {/* Headshot — desktop only */}
+          <div className="hidden lg:flex lg:col-span-5 justify-end">
+            <div
+              className="relative cc-hero-card rounded-2xl overflow-hidden"
+              style={{ width: 360, height: 360 }}
+            >
+              <Image
+                src="/headshot.png"
+                alt="Noel D'Costa"
+                fill
+                priority
+                sizes="(min-width: 1024px) 360px, 0px"
+                className="object-cover object-top"
+              />
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
