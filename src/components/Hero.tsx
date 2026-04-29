@@ -217,7 +217,7 @@ export default function Hero({ lang }: { lang: string }) {
                 marginLeft: 'auto'
               }}>
                 <Image
-                  src="/images/image-1777451570300.jpg"
+                  src="/images/headshot.png"
                   alt="Noel D'Costa"
                   fill
                   priority

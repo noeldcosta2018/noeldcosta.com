@@ -117,7 +117,7 @@ export default function Nav() {
         borderBottom: '1px solid rgba(14, 16, 32, 0.1)'
       }}
     >
-      <div className="max-w-[1200px] mx-auto px-[clamp(1.5rem,5vw,4rem)] h-16 flex items-center justify-between">
+      <div className="h-16 flex items-center justify-between" style={{ maxWidth: 1480, margin: '0 auto', padding: '0 24px' }}>
         {/* Brand */}
         <Link
           href="/"
