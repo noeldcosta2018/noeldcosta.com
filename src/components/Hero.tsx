@@ -1,47 +1,88 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import BookCallButton from './BookCallButton';
+import { ArrowUpRight, ArrowRight } from 'lucide-react';
 
 export default function Hero({ lang }: { lang: string }) {
   return (
-    <section
-      className="relative overflow-hidden py-16 md:py-24 lg:py-32 cc-grid-faint"
-      style={{ backgroundColor: 'var(--cc-page-bg)' }}
-    >
-      {/* Decorative warm glow — static, not animated */}
-      <div
-        className="cc-glow-warm absolute inset-0 pointer-events-none"
-        style={{ opacity: 0.5 }}
-        aria-hidden="true"
-      />
+    <section style={{ position: 'relative', overflow: 'hidden' }}>
+      {/* Warm glow */}
+      <div className="cc-glow-warm" style={{
+        position: 'absolute',
+        inset: 0,
+        pointerEvents: 'none'
+      }} />
+      {/* Faint grid — cc-grid-faint used as cc-grid-lines per brief */}
+      <div className="cc-grid-faint" style={{
+        position: 'absolute',
+        inset: 0,
+        pointerEvents: 'none',
+        opacity: 0.6
+      }} />
 
-      <div className="relative max-w-7xl mx-auto px-6 md:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+      <div style={{
+        position: 'relative',
+        maxWidth: 1480,
+        margin: '0 auto',
+        padding: '40px 24px 48px'
+      }}>
+        <div className="grid lg:grid-cols-12" style={{
+          gap: 32,
+          alignItems: 'center'
+        }}>
 
-          {/* Left content stack — stagger animation on entry */}
-          <div className="lg:col-span-7 hero-stagger">
+          {/* Left content stack */}
+          <div className="lg:col-span-6 hero-stagger">
 
             {/* Eyebrow */}
-            <div className="flex items-center gap-2 mb-4">
-              <span className="cc-pulse-dot w-[6px] h-[6px] rounded-full bg-papaya inline-block" aria-hidden="true" />
-              <span className="cc-mono text-[0.68rem] font-medium tracking-[2.5px] uppercase text-papaya">
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              marginBottom: 24
+            }}>
+              <span className="cc-pulse-dot" style={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background: 'var(--cc-papaya)'
+              }} />
+              <span className="cc-mono" style={{
+                fontSize: 11,
+                letterSpacing: '0.2em',
+                color: 'var(--cc-night)',
+                textTransform: 'uppercase'
+              }}>
                 ERP · AI · 25 years
               </span>
             </div>
 
             {/* H1 */}
-            <h1
-              className="cc-display text-4xl md:text-5xl lg:text-6xl xl:text-7xl leading-tight mb-6"
-              style={{ color: 'var(--cc-text-primary)' }}
-            >
-              I run ERP transformations the board can defend.
+            <h1 className="cc-display" style={{
+              fontWeight: 900,
+              fontSize: 'clamp(36px, 5.5vw, 64px)',
+              lineHeight: 0.95,
+              color: 'var(--cc-text-primary)',
+              margin: 0,
+              letterSpacing: '-0.02em'
+            }}>
+              I run ERP transformations{' '}
+              <span style={{
+                fontStyle: 'italic',
+                fontWeight: 300,
+                color: 'var(--cc-canyon)'
+              }}>
+                the board can defend.
+              </span>
             </h1>
 
             {/* Sub-headline */}
-            <p
-              className="text-base md:text-lg leading-relaxed max-w-2xl mb-8"
-              style={{ color: 'var(--cc-text-body)' }}
-            >
+            <p style={{
+              marginTop: 24,
+              fontSize: 16,
+              color: 'var(--cc-text-body)',
+              maxWidth: 500,
+              lineHeight: 1.65
+            }}>
               ECC to S/4HANA. AI on SAP. 25 years delivering for{' '}
               <strong className="font-semibold" style={{ color: 'var(--cc-text-primary)' }}>EDGE Group</strong>{' '}
               ($60M saved),{' '}
@@ -54,37 +95,56 @@ export default function Hero({ lang }: { lang: string }) {
             </p>
 
             {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              {/* Primary — opens Calendly popup */}
-              <BookCallButton
-                className="cc-btn-primary group inline-flex items-center justify-center gap-2 px-6 py-3 rounded-md text-sm font-semibold sm:w-auto w-full"
+            <div style={{
+              marginTop: 28,
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: 12
+            }}>
+              {/* Primary — direct Calendly link per brief (Change 3) */}
+              <a
+                href="https://calendly.com/noeldcosta/30min"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  background: 'var(--cc-corbeau)',
+                  color: 'var(--cc-bone)',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  padding: '12px 22px',
+                  borderRadius: 999,
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8
+                }}
               >
-                Book a 30-min call
-                <span
-                  className="transition-transform duration-200 group-hover:translate-x-0.5"
-                  aria-hidden="true"
-                >
-                  →
-                </span>
-              </BookCallButton>
+                Book a 30-min call <ArrowUpRight size={16} />
+              </a>
 
               {/* Secondary */}
               <Link
-                href={`/${lang}/case-studies/`}
-                className="cc-btn-secondary group inline-flex items-center justify-center gap-2 px-6 py-3 rounded-md text-sm font-semibold sm:w-auto w-full"
+                href={`/${lang}/case-studies`}
+                style={{
+                  color: 'var(--cc-corbeau)',
+                  fontWeight: 600,
+                  fontSize: 14,
+                  padding: '12px 20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  textDecoration: 'none',
+                  background: 'var(--cc-papaya)',
+                  borderRadius: 999
+                }}
               >
-                See case studies
-                <span
-                  className="transition-transform duration-200 group-hover:translate-x-0.5"
-                  aria-hidden="true"
-                >
-                  →
-                </span>
+                See case studies <ArrowRight size={16} />
               </Link>
             </div>
 
             {/* Credibility line + LinkedIn */}
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1" style={{ marginTop: 20 }}>
               <p className="text-sm leading-relaxed" style={{ color: 'var(--cc-text-muted)' }}>
                 CIMA{' '}
                 <span style={{ color: 'var(--cc-accent)' }}>·</span>{' '}
@@ -144,19 +204,28 @@ export default function Hero({ lang }: { lang: string }) {
           </div>
 
           {/* Headshot — desktop only */}
-          <div className="hidden lg:flex lg:col-span-5 justify-end">
-            <div
-              className="relative cc-hero-card rounded-2xl overflow-hidden"
-              style={{ width: 360, height: 360 }}
-            >
-              <Image
-                src="/headshot.png"
-                alt="Noel D'Costa"
-                fill
-                priority
-                sizes="(min-width: 1024px) 360px, 0px"
-                className="object-cover object-top"
-              />
+          <div className="hidden lg:block lg:col-span-6">
+            <div style={{ position: 'relative' }}>
+              <div style={{
+                position: 'relative',
+                borderRadius: 20,
+                overflow: 'hidden',
+                background: 'var(--cc-paper)',
+                border: '1px solid var(--cc-card-border)',
+                boxShadow: '0 20px 40px rgba(252,152,90,0.12), 0 8px 16px rgba(14,16,32,0.08)',
+                aspectRatio: '4/5',
+                maxWidth: 480,
+                marginLeft: 'auto'
+              }}>
+                <Image
+                  src="/headshot.png"
+                  alt="Noel D'Costa"
+                  fill
+                  priority
+                  sizes="(min-width: 1024px) 480px, 0px"
+                  className="object-cover"
+                />
+              </div>
             </div>
           </div>
 

@@ -105,9 +105,17 @@ export default function Nav() {
   return (
     <nav
       ref={navRef}
-      className={`sticky top-0 z-50 bg-bone/90 backdrop-blur-[20px] border-b border-corbeau/[0.06] transition-shadow duration-200 ${
-        scrolled ? "shadow-md" : ""
-      }`}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 50,
+        background: 'rgba(244, 237, 228, 0.92)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(14, 16, 32, 0.1)'
+      }}
     >
       <div className="max-w-[1200px] mx-auto px-[clamp(1.5rem,5vw,4rem)] h-16 flex items-center justify-between">
         {/* Brand */}
@@ -134,9 +142,20 @@ export default function Nav() {
           <li className="relative">
             <button
               type="button"
-              className={`text-night text-[0.85rem] font-medium transition-colors hover:text-corbeau flex items-center gap-1 py-2 ${
-                pathname?.startsWith("/category/") ? "text-corbeau" : ""
-              }`}
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: pathname?.startsWith("/category/") ? 'var(--cc-text-primary)' : 'var(--cc-text-primary)',
+                fontFamily: 'var(--font-display)',
+                textDecoration: 'none',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '8px 0'
+              }}
               onClick={(e) => {
                 e.stopPropagation();
                 setOpenMenu((m) => (m === "solutions" ? null : "solutions"));
@@ -144,7 +163,7 @@ export default function Nav() {
               aria-expanded={openMenu === "solutions"}
             >
               Solutions
-              <span className="text-[0.6rem]">▾</span>
+              <span style={{ fontSize: 10 }}>▾</span>
             </button>
             {openMenu === "solutions" && (
               <div className="absolute left-0 top-full mt-1 w-[360px] bg-bone border border-corbeau/[0.08] rounded-lg shadow-xl p-2 z-50">
@@ -170,9 +189,20 @@ export default function Nav() {
           <li className="relative">
             <button
               type="button"
-              className={`text-night text-[0.85rem] font-medium transition-colors hover:text-corbeau flex items-center gap-1 py-2 ${
-                TOOLS.some((t) => isActive(`/${t.slug}`)) ? "text-corbeau" : ""
-              }`}
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: 'var(--cc-text-primary)',
+                fontFamily: 'var(--font-display)',
+                textDecoration: 'none',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '8px 0'
+              }}
               onClick={(e) => {
                 e.stopPropagation();
                 setOpenMenu((m) => (m === "tools" ? null : "tools"));
@@ -180,7 +210,7 @@ export default function Nav() {
               aria-expanded={openMenu === "tools"}
             >
               Tools
-              <span className="text-[0.6rem]">▾</span>
+              <span style={{ fontSize: 10 }}>▾</span>
             </button>
             {openMenu === "tools" && (
               <div className="absolute left-0 top-full mt-1 w-[360px] bg-bone border border-corbeau/[0.08] rounded-lg shadow-xl p-2 z-50">
@@ -205,9 +235,13 @@ export default function Nav() {
           <li>
             <Link
               href="/category/case-studies"
-              className={`text-night no-underline text-[0.85rem] font-medium transition-colors hover:text-corbeau ${
-                isActive("/category/case-studies") ? "text-corbeau" : ""
-              }`}
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: 'var(--cc-text-primary)',
+                textDecoration: 'none',
+                fontFamily: 'var(--font-display)'
+              }}
             >
               Case Studies
             </Link>
@@ -216,9 +250,13 @@ export default function Nav() {
           <li>
             <Link
               href="/about"
-              className={`text-night no-underline text-[0.85rem] font-medium transition-colors hover:text-corbeau ${
-                isActive("/about") ? "text-corbeau" : ""
-              }`}
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: 'var(--cc-text-primary)',
+                textDecoration: 'none',
+                fontFamily: 'var(--font-display)'
+              }}
             >
               About
             </Link>
@@ -227,7 +265,15 @@ export default function Nav() {
           <li>
             <Link
               href="/contact"
-              className="bg-papaya text-corbeau px-[18px] py-2 rounded-lg no-underline font-bold text-[0.85rem] transition-colors hover:bg-[#fdaa78]"
+              style={{
+                background: 'var(--cc-papaya)',
+                color: 'var(--cc-corbeau)',
+                fontSize: 13,
+                fontWeight: 700,
+                padding: '10px 20px',
+                borderRadius: 8,
+                textDecoration: 'none'
+              }}
             >
               Contact
             </Link>
