@@ -210,20 +210,19 @@ export default function Hero({ lang }: { lang: string }) {
                 position: 'relative',
                 borderRadius: 20,
                 overflow: 'hidden',
-                background: 'var(--cc-paper)',
-                border: '1px solid var(--cc-card-border)',
-                boxShadow: '0 20px 40px rgba(252,152,90,0.12), 0 8px 16px rgba(14,16,32,0.08)',
+                border: '6px solid #ffffff',
+                boxShadow: '0 20px 40px rgba(252,152,90,0.12), 0 8px 16px rgba(14,16,32,0.08), 0 0 0 1px rgba(14,16,32,0.06)',
                 aspectRatio: '4/5',
                 maxWidth: 480,
                 marginLeft: 'auto'
               }}>
                 <Image
-                  src="/headshot.png"
+                  src="/images/image-1777451570300.jpg"
                   alt="Noel D'Costa"
                   fill
                   priority
                   sizes="(min-width: 1024px) 480px, 0px"
-                  className="object-cover"
+                  className="object-cover object-top"
                 />
               </div>
             </div>
