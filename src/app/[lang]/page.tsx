@@ -118,7 +118,7 @@ export default async function Home(props: { params: Promise<{ lang: string }> })
         dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
       />
       <Nav />
-      <main>
+      <main style={{ paddingTop: 64 }}>
         <Hero lang={lang} />
         <LogoScroll />
         <ProblemStats />
