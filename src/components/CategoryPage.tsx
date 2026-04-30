@@ -1,7 +1,20 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ArrowRight, ArrowUpRight, Clock, BookOpen, Star, Zap, BarChart2 } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Clock,
+  Target,
+  Layers,
+  Settings,
+  RefreshCw,
+  AlertCircle,
+  Globe,
+  BookOpen,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import StickyCTA from "@/components/StickyCTA";
@@ -15,85 +28,49 @@ import {
 } from "@/lib/content";
 import { breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
 
-// ─── Authority data ─────────────────────────────────────────────────────────
+// ─── Tag display config ──────────────────────────────────────────────────────
 
-const CLIENTS = ["EDGE Group", "Etihad Airways", "ADNOC", "PIF entities", "UAE Government", "DXC"];
-
-const CREDENTIALS = ["CIMA", "AICPA", "Masters in Accounting"];
-
-const TESTIMONIALS = [
-  {
-    quote: "The programme delivered on time, on budget, and with no major issues. A very substantial undertaking and it is huge credit to Noel.",
-    name: "Andrew MacFarlane",
-    role: "Ex-CIO, Etihad / Managing Partner, Cumbrae",
-  },
-  {
-    quote: "His functional expertise combined with his financial and accounting knowledge are invaluable tools that Noel uses to drive business change.",
-    name: "Mike Papamichael",
-    role: "Ex-CIO, Etihad Aviation Group",
-  },
-];
-
-// ─── Tag config ─────────────────────────────────────────────────────────────
-
-const TAG_LABELS: Record<string, string> = {
-  "sap-planning-and-selection": "Planning",
-  "sap-implementation-strategies": "Strategy",
-  "sap-technical-decisions": "Technical",
-  "sap-erp-modernization": "Modernization",
-  "sap-crisis-management": "Crisis",
-  "sap-industry-topics": "Industry",
-};
-
-type SectionKey = "start-here" | "important" | "advanced" | "case-study";
-
-const TAG_TO_SECTION: Record<string, SectionKey> = {
-  "sap-planning-and-selection": "start-here",
-  "sap-industry-topics": "start-here",
-  "sap-implementation-strategies": "important",
-  "sap-erp-modernization": "advanced",
-  "sap-technical-decisions": "advanced",
-  "sap-crisis-management": "case-study",
-};
-
-const SECTION_META: Record<
-  SectionKey,
-  { label: string; sublabel: string; desc: string; color: string }
+const TAG_META: Record<
+  string,
+  { label: string; description: string; icon: React.ElementType }
 > = {
-  "start-here": {
-    label: "Start here",
-    sublabel: "01",
-    desc: "New to this topic? These cover the essentials before anything else.",
-    color: "#22c55e",
+  "sap-planning-and-selection": {
+    label: "Planning & Selection",
+    description: "Vendor shortlisting, readiness, and programme setup.",
+    icon: Target,
   },
-  important: {
-    label: "Most important guides",
-    sublabel: "02",
-    desc: "The articles I'd send a CIO on day one of an engagement.",
-    color: "var(--cc-papaya)",
+  "sap-implementation-strategies": {
+    label: "Strategy",
+    description: "Delivery frameworks, governance, and go-live planning.",
+    icon: Layers,
   },
-  advanced: {
-    label: "Advanced topics",
-    sublabel: "03",
-    desc: "Deep technical content. Requires some implementation context.",
-    color: "#e2826b",
+  "sap-technical-decisions": {
+    label: "Technical",
+    description: "Architecture, integration, and technical risk decisions.",
+    icon: Settings,
   },
-  "case-study": {
-    label: "Case studies",
-    sublabel: "04",
-    desc: "Real outcomes. Named clients, hard numbers, honest lessons.",
-    color: "var(--cc-night)",
+  "sap-erp-modernization": {
+    label: "Modernization",
+    description: "Cloud migration, clean core, and ERP transformation.",
+    icon: RefreshCw,
+  },
+  "sap-crisis-management": {
+    label: "Crisis & Recovery",
+    description: "Programme recovery, risk mitigation, and escalation.",
+    icon: AlertCircle,
+  },
+  "sap-industry-topics": {
+    label: "Industry",
+    description: "Sector-specific ERP patterns and case examples.",
+    icon: Globe,
   },
 };
 
-// ─── Sidebar tools ───────────────────────────────────────────────────────────
+const TAG_LABEL: Record<string, string> = Object.fromEntries(
+  Object.entries(TAG_META).map(([k, v]) => [k, v.label])
+);
 
-const SIDEBAR_TOOLS = [
-  { label: "SAP Cost Calculator", slug: "sap-implementation-cost-calculator" },
-  { label: "Migration Estimator", slug: "free-data-migration-estimator-sap-oracle-microsoft" },
-  { label: "JD Generator", slug: "sap-job-description-generator" },
-  { label: "Solution Builder", slug: "sap-solution-builder" },
-];
+// ─── Other categories for navigation ────────────────────────────────────────
 
 const ALL_CATEGORIES = [
   { slug: "erp-implementation", label: "ERP Implementation" },
@@ -106,48 +83,27 @@ const ALL_CATEGORIES = [
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function getSection(post: PostRecord): SectionKey {
-  const slug = post.frontmatter.slug;
-  if (slug.includes("case-study") || slug.includes("case-studies")) return "case-study";
-  const tags = post.frontmatter.tags ?? [];
-  for (const tag of tags) {
-    const mapped = TAG_TO_SECTION[tag];
-    if (mapped) return mapped;
-  }
-  const mins = readingTime(post.body);
-  if (mins <= 8) return "start-here";
-  if (mins > 30) return "advanced";
-  return "important";
-}
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function TagChip({ tag }: { tag: string }) {
-  const label = TAG_LABELS[tag] ?? tag.split("-").slice(0, 2).map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
+function tagLabel(tag: string) {
   return (
-    <span
-      className="inline-block font-mono text-[0.55rem] tracking-[1.5px] uppercase px-2 py-0.5 rounded-full"
-      style={{
-        background: "rgba(252,152,90,0.12)",
-        color: "var(--cc-papaya)",
-        border: "1px solid rgba(252,152,90,0.2)",
-      }}
-    >
-      {label}
-    </span>
+    TAG_LABEL[tag] ??
+    tag
+      .split("-")
+      .slice(0, 2)
+      .map((w) => w[0].toUpperCase() + w.slice(1))
+      .join(" ")
   );
 }
+
+// ─── PostCard ────────────────────────────────────────────────────────────────
 
 function PostCard({
   post,
   locale,
-  index,
-  badge,
+  priority,
 }: {
   post: PostRecord;
   locale: string;
-  index: number;
-  badge?: string;
+  priority?: boolean;
 }) {
   const localePrefix = locale === "en" ? "" : `/${locale}`;
   const mins = readingTime(post.body);
@@ -155,26 +111,25 @@ function PostCard({
     year: "numeric",
     month: "short",
   });
-  const tags = (post.frontmatter.tags ?? []).slice(0, 2);
-  const delay = Math.min(index, 8) * 70;
+  const tags = (post.frontmatter.tags ?? []).slice(0, 1);
 
   return (
     <Link
       href={`${localePrefix}/${post.frontmatter.slug}`}
-      className="block bg-paper rounded-[14px] overflow-hidden group transition-all duration-300 hover:-translate-y-1"
+      className="group flex flex-col bg-paper rounded-2xl overflow-hidden transition-all duration-200 hover:-translate-y-0.5"
       style={{
-        boxShadow: "0 1px 3px rgba(14,16,32,0.06), 0 4px 12px rgba(14,16,32,0.04)",
-        border: "1px solid rgba(14,16,32,0.06)",
-        animation: index < 9 ? `cc-fade-in 0.5s ease-out ${delay}ms both` : undefined,
+        border: "1px solid rgba(14,16,32,0.07)",
+        boxShadow: "0 1px 3px rgba(14,16,32,0.04)",
       }}
     >
-      {/* Thumbnail */}
+      {/* Image */}
       <div
         style={{
           position: "relative",
           aspectRatio: "16/9",
+          background: "linear-gradient(135deg, var(--cc-bone), var(--cc-cream))",
           overflow: "hidden",
-          background: "linear-gradient(135deg, #0e1020 0%, #282937 100%)",
+          flexShrink: 0,
         }}
       >
         {post.frontmatter.hero && (
@@ -182,166 +137,77 @@ function PostCard({
             src={post.frontmatter.hero}
             alt={post.frontmatter.title}
             fill
-            className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-            sizes="(min-width: 1024px) 300px, (min-width: 640px) 50vw, 100vw"
+            priority={priority}
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            sizes="(min-width: 1024px) 360px, (min-width: 640px) 50vw, 100vw"
           />
         )}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(to top, rgba(14,16,32,0.85) 0%, rgba(14,16,32,0.3) 45%, transparent 75%)",
-          }}
-        />
-        {badge && (
-          <div
-            className="absolute top-3 left-3 px-2.5 py-1 rounded-full font-mono text-[0.55rem] tracking-widest uppercase font-bold"
-            style={{ background: "var(--cc-papaya)", color: "var(--cc-corbeau)" }}
-          >
-            {badge}
-          </div>
-        )}
-        <div className="absolute bottom-0 left-0 right-0 flex items-center gap-2 px-4 pb-3">
-          <span
-            className="font-mono text-[0.58rem] tracking-[2px] uppercase font-semibold"
-            style={{ color: "var(--cc-papaya)" }}
-          >
-            {dateStr}
-          </span>
-          <span style={{ color: "rgba(244,237,228,0.3)", fontSize: 9 }}>·</span>
-          <span
-            className="flex items-center gap-1 font-mono text-[0.58rem]"
-            style={{ color: "rgba(244,237,228,0.55)" }}
-          >
-            <Clock size={9} /> {mins} min
-          </span>
-        </div>
       </div>
 
-      {/* Content */}
-      <div className="p-5">
+      {/* Body */}
+      <div className="flex flex-col flex-1 p-5">
         {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-2.5">
-            {tags.map((t) => <TagChip key={t} tag={t} />)}
-          </div>
+          <p
+            className="font-mono text-[0.6rem] tracking-[2px] uppercase font-semibold mb-2"
+            style={{ color: "var(--cc-papaya)" }}
+          >
+            {tags.map(tagLabel).join(" · ")}
+          </p>
         )}
-        <h3 className="font-display font-bold text-corbeau text-[0.97rem] leading-snug mb-2 group-hover:text-papaya transition-colors duration-200 line-clamp-2">
+        <h3 className="font-display font-bold text-corbeau text-[1rem] leading-snug mb-2 group-hover:text-papaya transition-colors duration-200 line-clamp-2">
           {post.frontmatter.title}
         </h3>
         {post.frontmatter.excerpt && (
-          <p className="text-night/70 text-[0.82rem] leading-[1.55] line-clamp-2 mb-3">
+          <p className="text-night/70 text-[0.83rem] leading-[1.55] line-clamp-2 mb-4 flex-1">
             {post.frontmatter.excerpt}
           </p>
         )}
-        <span className="inline-flex items-center gap-1.5 text-[0.78rem] font-semibold" style={{ color: "var(--cc-papaya)" }}>
-          Read article <ArrowRight size={12} />
-        </span>
+        <div className="flex items-center justify-between mt-auto">
+          <span
+            className="flex items-center gap-1 font-mono text-[0.6rem] tracking-[1px]"
+            style={{ color: "var(--cc-silver)" }}
+          >
+            <Clock size={9} /> {mins} min read
+          </span>
+          <span
+            className="inline-flex items-center gap-1 text-[0.78rem] font-semibold"
+            style={{ color: "var(--cc-papaya)" }}
+          >
+            Read article <ArrowRight size={11} />
+          </span>
+        </div>
       </div>
     </Link>
   );
 }
 
-function SectionHeader({ sectionKey, count }: { sectionKey: SectionKey; count: number }) {
-  const s = SECTION_META[sectionKey];
-  const icons: Record<SectionKey, React.ReactNode> = {
-    "start-here": <BookOpen size={16} />,
-    important: <Star size={16} />,
-    advanced: <Zap size={16} />,
-    "case-study": <BarChart2 size={16} />,
-  };
-  return (
-    <div
-      className="flex flex-col sm:flex-row sm:items-end gap-3 mb-6 pb-4"
-      style={{ borderBottom: `2px solid ${s.color}` }}
-    >
-      <div className="flex items-center gap-3 flex-1">
-        <span
-          className="flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0"
-          style={{ background: `${s.color}18`, color: s.color }}
-        >
-          {icons[sectionKey]}
-        </span>
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-[0.58rem] tracking-[2px] uppercase" style={{ color: s.color }}>
-              {s.sublabel}
-            </span>
-            <h2 className="font-display font-black text-corbeau text-lg leading-none">
-              {s.label}
-            </h2>
-            <span
-              className="font-mono text-[0.6rem] tracking-[1px] px-1.5 py-0.5 rounded"
-              style={{ background: "rgba(14,16,32,0.05)", color: "var(--cc-silver)" }}
-            >
-              {count}
-            </span>
-          </div>
-          <p className="text-[0.8rem] text-night/65 mt-0.5">{s.desc}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
+// ─── StartHereRow ────────────────────────────────────────────────────────────
 
-function InlineCTA({ variant }: { variant: "book" | "checklist" }) {
-  if (variant === "checklist") {
-    return (
+function StartHereRow({ post, locale }: { post: PostRecord; locale: string }) {
+  const localePrefix = locale === "en" ? "" : `/${locale}`;
+  const mins = readingTime(post.body);
+  return (
+    <Link
+      href={`${localePrefix}/${post.frontmatter.slug}`}
+      className="flex items-center gap-3 group py-3"
+      style={{ borderBottom: "1px solid rgba(14,16,32,0.07)" }}
+    >
       <div
-        className="rounded-2xl p-6 mb-8 flex flex-col sm:flex-row items-center gap-5 relative overflow-hidden"
-        style={{ background: "linear-gradient(135deg, #0e1020 0%, #1a1b2e 100%)", border: "1px solid rgba(255,255,255,0.05)" }}
+        className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
+        style={{ background: "rgba(252,152,90,0.1)" }}
       >
-        <div style={{ position: "absolute", top: -30, right: -30, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(34,197,94,0.15) 0%, transparent 70%)", pointerEvents: "none" }} />
-        <div className="flex-1" style={{ position: "relative" }}>
-          <p className="font-mono text-[0.6rem] tracking-[2.5px] uppercase mb-1.5 font-semibold" style={{ color: "rgba(34,197,94,0.8)" }}>
-            Free resource
-          </p>
-          <p className="font-display font-black text-lg leading-snug mb-1.5" style={{ color: "#ffffff" }}>
-            ERP implementation checklist
-          </p>
-          <p className="text-[0.84rem] leading-relaxed" style={{ color: "rgba(244,237,228,0.55)" }}>
-            47 checkpoints I run through on every programme. Book a call and I&apos;ll share it.
-          </p>
-        </div>
-        <a
-          href="https://calendly.com/noeldcosta/30min"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-shrink-0 flex items-center gap-2 text-sm font-bold px-5 py-3 rounded-full whitespace-nowrap"
-          style={{ background: "#22c55e", color: "#0e1020", position: "relative" }}
-        >
-          Get the checklist <ArrowUpRight size={14} />
-        </a>
+        <BookOpen size={14} style={{ color: "var(--cc-papaya)" }} />
       </div>
-    );
-  }
-
-  return (
-    <div
-      className="rounded-2xl p-6 mb-8 flex flex-col sm:flex-row items-center gap-5 relative overflow-hidden"
-      style={{ background: "linear-gradient(135deg, #0e1020 0%, #1a1b2e 60%, #1f1a2e 100%)" }}
-    >
-      <div style={{ position: "absolute", top: -30, right: -30, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(252,152,90,0.2) 0%, transparent 70%)", pointerEvents: "none" }} />
-      <div className="flex-1" style={{ position: "relative" }}>
-        <p className="font-mono text-[0.6rem] tracking-[2.5px] uppercase mb-1.5 font-semibold" style={{ color: "rgba(252,152,90,0.8)" }}>
-          Senior ERP advisory
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-corbeau text-[0.85rem] leading-snug group-hover:text-papaya transition-colors line-clamp-1">
+          {post.frontmatter.title}
         </p>
-        <p className="font-display font-black text-lg leading-snug mb-1.5" style={{ color: "#ffffff" }}>
-          Running an ERP programme?
-        </p>
-        <p className="text-[0.84rem] leading-relaxed" style={{ color: "rgba(244,237,228,0.55)" }}>
-          25 years. $700M+ delivered. I lead the engagement — no junior team.
+        <p className="font-mono text-[0.6rem] tracking-[1px] mt-0.5" style={{ color: "var(--cc-silver)" }}>
+          {mins} min read
         </p>
       </div>
-      <a
-        href="https://calendly.com/noeldcosta/30min"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex-shrink-0 flex items-center gap-2 text-sm font-bold px-5 py-3 rounded-full whitespace-nowrap"
-        style={{ background: "var(--cc-papaya)", color: "var(--cc-corbeau)", position: "relative" }}
-      >
-        Book a 30-min call <ArrowUpRight size={14} />
-      </a>
-    </div>
+      <ArrowRight size={13} className="flex-shrink-0 text-silver group-hover:text-papaya transition-colors" />
+    </Link>
   );
 }
 
@@ -355,6 +221,7 @@ export default function CategoryPage({
   locale: Locale;
 }) {
   if (!(category in CATEGORIES)) notFound();
+
   const meta = CATEGORIES[category as keyof typeof CATEGORIES];
   const posts = getPostsByCategory(category as Category, locale);
   const localePrefix = locale === "en" ? "" : `/${locale}`;
@@ -364,23 +231,26 @@ export default function CategoryPage({
     { name: meta.label, url: `${SITE_URL}${localePrefix}/category/${meta.slug}` },
   ];
 
-  // Bin posts into sections
-  const sections: Record<SectionKey, PostRecord[]> = {
-    "start-here": [],
-    important: [],
-    advanced: [],
-    "case-study": [],
-  };
-  const [featured, ...rest] = posts;
-  for (const post of rest) {
-    sections[getSection(post)].push(post);
+  // Partition posts
+  const byReadTime = [...posts].sort(
+    (a, b) => readingTime(a.body) - readingTime(b.body)
+  );
+  const startHerePosts = byReadTime.slice(0, 3);
+  const featured = posts.slice(0, 3);
+  const latest = posts.slice(3);
+
+  // Tag counts for "Browse by topic"
+  const tagCounts: Record<string, number> = {};
+  for (const post of posts) {
+    for (const tag of post.frontmatter.tags ?? []) {
+      tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
+    }
   }
+  const topicTags = Object.entries(tagCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6);
 
-  // Tags present in this category (for the topics strip)
-  const allTags = [...new Set(posts.flatMap((p) => p.frontmatter.tags ?? []))];
   const otherCategories = ALL_CATEGORIES.filter((c) => c.slug !== category);
-
-  const SECTION_ORDER: SectionKey[] = ["start-here", "important", "advanced", "case-study"];
 
   return (
     <>
@@ -388,406 +258,470 @@ export default function CategoryPage({
       <StickyCTA />
       <main style={{ paddingTop: 64 }}>
 
-        {/* ── Dark category header ── */}
+        {/* ── 1. Category Hero ── */}
         <section
-          style={{
-            background: "linear-gradient(135deg, #0e1020 0%, #1a1b2e 60%, #1f1a2e 100%)",
-            position: "relative",
-            overflow: "hidden",
-          }}
+          className="relative overflow-hidden"
+          style={{ background: "var(--cc-page-bg)", borderBottom: "1px solid rgba(14,16,32,0.07)" }}
         >
-          <div style={{ position: "absolute", top: -60, right: -80, width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(252,152,90,0.15) 0%, transparent 70%)", pointerEvents: "none" }} />
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 64, background: "linear-gradient(to bottom, transparent, var(--cc-page-bg))", pointerEvents: "none" }} />
+          <div className="cc-grid-faint absolute inset-0 pointer-events-none" style={{ opacity: 0.5 }} />
+          <div className="cc-glow-warm absolute inset-0 pointer-events-none" />
 
-          <div style={{ position: "relative", maxWidth: 1200, margin: "0 auto", padding: "clamp(2.5rem,5vw,4.5rem) clamp(1.5rem,5vw,3rem) clamp(3rem,5vw,4.5rem)" }}>
-            <nav className="flex items-center gap-2 mb-8" aria-label="Breadcrumb">
-              <Link href="/" className="font-mono text-[0.6rem] tracking-widest uppercase transition-colors" style={{ color: "rgba(244,237,228,0.4)" }}>
+          <div
+            className="relative"
+            style={{
+              maxWidth: 1200,
+              margin: "0 auto",
+              padding: "clamp(2.5rem,5vw,4rem) clamp(1.5rem,5vw,3rem)",
+            }}
+          >
+            {/* Breadcrumb */}
+            <nav className="flex items-center gap-2 mb-6">
+              <Link
+                href="/"
+                className="font-mono text-[0.6rem] tracking-widest uppercase text-silver hover:text-papaya transition-colors"
+              >
                 Home
               </Link>
-              <span className="font-mono text-[0.58rem]" style={{ color: "rgba(244,237,228,0.2)" }}>/</span>
-              <span className="font-mono text-[0.6rem] tracking-widest uppercase font-semibold" style={{ color: "var(--cc-papaya)" }}>
+              <span className="font-mono text-[0.58rem] text-silver/40">/</span>
+              <span
+                className="font-mono text-[0.6rem] tracking-widest uppercase font-semibold"
+                style={{ color: "var(--cc-papaya)" }}
+              >
                 {meta.label}
               </span>
             </nav>
 
-            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
-              <div>
-                <p className="font-mono text-[0.65rem] font-semibold tracking-[3px] uppercase mb-4" style={{ color: "rgba(252,152,90,0.7)" }}>
+            <div className="grid lg:grid-cols-12 gap-8 lg:gap-12">
+              {/* Left — headline */}
+              <div className="lg:col-span-7">
+                <p
+                  className="font-mono text-[0.65rem] tracking-[3px] uppercase font-semibold mb-4"
+                  style={{ color: "var(--cc-papaya)" }}
+                >
                   Category
                 </p>
                 <h1
-                  className="font-display font-black leading-[1.02] tracking-[-0.03em]"
-                  style={{ fontSize: "clamp(2.6rem,7vw,4.5rem)", color: "#ffffff" }}
+                  className="font-display font-black text-corbeau tracking-[-0.03em] leading-[1.04] mb-4"
+                  style={{ fontSize: "clamp(2rem,5.5vw,3.5rem)" }}
                 >
                   {meta.label}
                 </h1>
-                <div style={{ width: 56, height: 4, borderRadius: 2, background: "linear-gradient(90deg, var(--cc-papaya), rgba(252,152,90,0.25))", margin: "18px 0" }} />
-                <p className="text-lg leading-[1.65] max-w-[560px]" style={{ color: "rgba(244,237,228,0.65)" }}>
+                <p
+                  className="text-night leading-[1.65] mb-6"
+                  style={{ fontSize: "clamp(1rem,1.5vw,1.15rem)", maxWidth: 520 }}
+                >
                   {meta.description}
                 </p>
-              </div>
 
-              {/* Stats badges */}
-              <div className="flex gap-4 flex-wrap">
-                {[
-                  { num: posts.length.toString(), label: "articles" },
-                  { num: "25", label: "years exp." },
-                  { num: "$700M+", label: "delivered" },
-                ].map((s) => (
-                  <div
-                    key={s.label}
-                    className="rounded-2xl px-5 py-4 text-center"
-                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", minWidth: 90 }}
-                  >
-                    <div
-                      className="font-display font-black leading-none mb-1"
-                      style={{ fontSize: "clamp(1.4rem,3vw,2rem)", background: "linear-gradient(135deg, #ffffff, var(--cc-papaya))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}
+                {/* Feature badges */}
+                <div className="flex flex-wrap gap-3">
+                  {[
+                    { icon: BookOpen, text: "Senior advisory" },
+                    { icon: ShieldCheck, text: "25 years field experience" },
+                    { icon: Users, text: `${posts.length} articles` },
+                  ].map((b) => (
+                    <span
+                      key={b.text}
+                      className="inline-flex items-center gap-2 text-[0.82rem] font-medium px-3.5 py-1.5 rounded-full"
+                      style={{
+                        background: "rgba(14,16,32,0.05)",
+                        color: "var(--cc-night)",
+                        border: "1px solid rgba(14,16,32,0.08)",
+                      }}
                     >
-                      {s.num}
+                      <b.icon size={12} style={{ color: "var(--cc-papaya)" }} />
+                      {b.text}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right — Start Here panel */}
+              {startHerePosts.length > 0 && (
+                <div className="lg:col-span-5">
+                  <div
+                    className="rounded-2xl p-6 h-full"
+                    style={{
+                      background: "var(--cc-paper)",
+                      border: "1px solid rgba(14,16,32,0.08)",
+                      boxShadow: "0 4px 20px rgba(14,16,32,0.05)",
+                    }}
+                  >
+                    <p
+                      className="font-mono text-[0.62rem] tracking-[2.5px] uppercase font-bold mb-4"
+                      style={{ color: "var(--cc-papaya)" }}
+                    >
+                      Start here
+                    </p>
+                    <div>
+                      {startHerePosts.map((p) => (
+                        <StartHereRow
+                          key={p.frontmatter.slug}
+                          post={p}
+                          locale={locale}
+                        />
+                      ))}
                     </div>
-                    <div className="font-mono text-[0.55rem] tracking-[2px] uppercase" style={{ color: "rgba(244,237,228,0.4)" }}>
-                      {s.label}
-                    </div>
+                    <Link
+                      href={`/category/${meta.slug}`}
+                      className="inline-flex items-center gap-1.5 text-[0.8rem] font-semibold mt-4 hover:underline"
+                      style={{ color: "var(--cc-papaya)" }}
+                    >
+                      View all {posts.length} articles <ArrowRight size={12} />
+                    </Link>
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </section>
 
-        {/* ── Authority strip ── */}
-        <section
-          className="bg-paper"
-          style={{ borderBottom: "1px solid rgba(14,16,32,0.07)" }}
-        >
-          <div
-            style={{ maxWidth: 1200, margin: "0 auto", padding: "clamp(1.5rem,3vw,2.5rem) clamp(1.5rem,5vw,3rem)" }}
+        {/* ── 2. Browse by topic ── */}
+        {topicTags.length > 0 && (
+          <section
+            style={{
+              background: "var(--cc-paper)",
+              borderBottom: "1px solid rgba(14,16,32,0.07)",
+            }}
           >
-            {/* Credentials + clients */}
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 mb-5">
-              <span className="font-mono text-[0.6rem] tracking-[2.5px] uppercase text-silver flex-shrink-0">
-                Track record
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {CLIENTS.map((c) => (
-                  <span
-                    key={c}
-                    className="font-mono text-[0.65rem] tracking-[1px] px-3 py-1 rounded-full"
-                    style={{ background: "rgba(14,16,32,0.05)", color: "var(--cc-night)", border: "1px solid rgba(14,16,32,0.08)" }}
-                  >
-                    {c}
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2 ml-auto">
-                {CREDENTIALS.map((c) => (
-                  <span
-                    key={c}
-                    className="font-mono text-[0.65rem] tracking-[1px] px-3 py-1 rounded-full font-semibold"
-                    style={{ background: "rgba(252,152,90,0.1)", color: "var(--cc-papaya)", border: "1px solid rgba(252,152,90,0.2)" }}
-                  >
-                    {c}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Testimonial strip — one quote */}
             <div
-              className="rounded-xl p-5 flex flex-col sm:flex-row sm:items-center gap-4"
-              style={{ background: "linear-gradient(135deg, rgba(14,16,32,0.03), rgba(252,152,90,0.04))", border: "1px solid rgba(14,16,32,0.06)" }}
+              style={{
+                maxWidth: 1200,
+                margin: "0 auto",
+                padding: "clamp(2rem,4vw,3rem) clamp(1.5rem,5vw,3rem)",
+              }}
             >
-              <div className="flex gap-0.5 flex-shrink-0 text-papaya text-[0.75rem]">★★★★★</div>
-              <p className="text-[0.85rem] text-night/80 italic leading-relaxed flex-1">
-                &ldquo;{TESTIMONIALS[0].quote}&rdquo;
-              </p>
-              <div className="flex-shrink-0">
-                <div className="font-display font-bold text-corbeau text-[0.85rem]">{TESTIMONIALS[0].name}</div>
-                <div className="font-mono text-[0.6rem] text-silver tracking-[0.5px]">{TESTIMONIALS[0].role}</div>
-              </div>
-            </div>
-
-            {/* Topics covered */}
-            {allTags.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 mt-4">
-                <span className="font-mono text-[0.58rem] tracking-[2px] uppercase text-silver">
-                  Topics in this category:
-                </span>
-                {allTags.map((t) => <TagChip key={t} tag={t} />)}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* ── Main 2-col layout ── */}
-        <div
-          style={{ maxWidth: 1200, margin: "0 auto", padding: "clamp(2rem,4vw,3rem) clamp(1.5rem,5vw,3rem) clamp(3rem,6vw,5rem)" }}
-        >
-          {posts.length === 0 ? (
-            <p className="text-night/60 py-16 text-center">No posts yet in this category.</p>
-          ) : (
-            <div className="flex flex-col lg:flex-row gap-10">
-
-              {/* ── Left: article content ── */}
-              <div className="flex-1 min-w-0">
-
-                {/* Featured hero card */}
-                {featured && (
-                  <Link
-                    href={`${localePrefix}/${featured.frontmatter.slug}`}
-                    className="block mb-10 rounded-[18px] overflow-hidden group transition-all duration-300 hover:-translate-y-1"
-                    style={{ boxShadow: "0 4px 24px rgba(14,16,32,0.12), 0 1px 4px rgba(14,16,32,0.06)", border: "1px solid rgba(14,16,32,0.07)", animation: "cc-fade-in 0.5s ease-out 0ms both" }}
-                  >
-                    <div className="flex flex-col md:flex-row bg-paper">
-                      <div
-                        className="relative md:w-[48%] flex-shrink-0 overflow-hidden"
-                        style={{ aspectRatio: "4/3", minHeight: 220, background: "linear-gradient(135deg, #0e1020, #1a1b2e)" }}
-                      >
-                        {featured.frontmatter.hero && (
-                          <Image
-                            src={featured.frontmatter.hero}
-                            alt={featured.frontmatter.title}
-                            fill
-                            priority
-                            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                            sizes="(min-width: 768px) 48vw, 100vw"
-                          />
-                        )}
-                        <div className="absolute inset-0" style={{ background: "linear-gradient(to right, rgba(14,16,32,0.6) 0%, rgba(14,16,32,0.1) 60%, transparent 100%)" }} />
-                        <div
-                          className="absolute top-4 left-4 px-3 py-1 rounded-full font-mono text-[0.58rem] tracking-widest uppercase font-bold"
-                          style={{ background: "var(--cc-papaya)", color: "var(--cc-corbeau)" }}
-                        >
-                          Latest
-                        </div>
-                        <div className="absolute bottom-0 left-0 right-0 flex items-center gap-2 px-5 pb-4">
-                          <span className="font-mono text-[0.6rem] tracking-[2px] uppercase font-semibold" style={{ color: "var(--cc-papaya)" }}>
-                            {new Date(featured.frontmatter.date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
-                          </span>
-                          <span style={{ color: "rgba(244,237,228,0.3)", fontSize: 9 }}>·</span>
-                          <span className="flex items-center gap-1 font-mono text-[0.6rem]" style={{ color: "rgba(244,237,228,0.55)" }}>
-                            <Clock size={10} /> {readingTime(featured.body)} min read
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex-1 p-7 flex flex-col justify-between">
-                        <div>
-                          {(featured.frontmatter.tags ?? []).slice(0, 2).length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mb-3">
-                              {(featured.frontmatter.tags ?? []).slice(0, 2).map((t) => <TagChip key={t} tag={t} />)}
-                            </div>
-                          )}
-                          <h2
-                            className="font-display font-black text-corbeau leading-tight mb-3 group-hover:text-papaya transition-colors duration-200"
-                            style={{ fontSize: "clamp(1.3rem,2.5vw,1.65rem)" }}
-                          >
-                            {featured.frontmatter.title}
-                          </h2>
-                          {featured.frontmatter.excerpt && (
-                            <p className="text-night/70 leading-[1.65] line-clamp-3 text-[0.93rem]">
-                              {featured.frontmatter.excerpt}
-                            </p>
-                          )}
-                        </div>
-                        <div className="mt-5">
-                          <span
-                            className="inline-flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-full"
-                            style={{ background: "var(--cc-corbeau)", color: "var(--cc-bone)" }}
-                          >
-                            Read article <ArrowRight size={14} />
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                )}
-
-                {/* Sections */}
-                {SECTION_ORDER.map((sKey, si) => {
-                  const sectionPosts = sections[sKey];
-                  if (sectionPosts.length === 0) return null;
-
-                  // Inject inline CTA every other section
-                  const ctaVariant = si % 2 === 0 ? "checklist" : "book";
-
+              <h2
+                className="font-display font-black text-corbeau tracking-[-0.02em] mb-6"
+                style={{ fontSize: "clamp(1.1rem,2vw,1.4rem)" }}
+              >
+                Browse by topic
+              </h2>
+              <div
+                className="grid gap-4"
+                style={{
+                  gridTemplateColumns: `repeat(auto-fill, minmax(160px, 1fr))`,
+                }}
+              >
+                {topicTags.map(([tag, count]) => {
+                  const tagInfo = TAG_META[tag];
+                  const Icon = tagInfo?.icon ?? Globe;
+                  const label = tagInfo?.label ?? tagLabel(tag);
+                  const desc = tagInfo?.description ?? "";
                   return (
-                    <div key={sKey} className="mb-12">
-                      <SectionHeader sectionKey={sKey} count={sectionPosts.length} />
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
-                        {sectionPosts.map((p, i) => (
-                          <PostCard
-                            key={p.frontmatter.slug}
-                            post={p}
-                            locale={locale}
-                            index={i + (si * 8)}
-                            badge={sKey === "important" && i === 0 ? "Popular" : undefined}
-                          />
-                        ))}
+                    <div
+                      key={tag}
+                      className="rounded-xl p-4 flex flex-col gap-2.5 transition-all duration-200 hover:-translate-y-0.5"
+                      style={{
+                        background: "var(--cc-cream)",
+                        border: "1px solid rgba(14,16,32,0.07)",
+                        boxShadow: "0 1px 3px rgba(14,16,32,0.04)",
+                      }}
+                    >
+                      <div
+                        className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ background: "rgba(252,152,90,0.12)" }}
+                      >
+                        <Icon size={16} style={{ color: "var(--cc-papaya)" }} />
                       </div>
-                      {/* Inline CTA after each section */}
-                      <InlineCTA variant={ctaVariant} />
+                      <div>
+                        <p className="font-display font-bold text-corbeau text-[0.9rem] leading-snug mb-0.5">
+                          {label}
+                        </p>
+                        <p className="text-night/60 text-[0.75rem] leading-snug line-clamp-2">
+                          {desc}
+                        </p>
+                      </div>
+                      <p
+                        className="font-mono text-[0.62rem] tracking-[1px] font-semibold mt-auto"
+                        style={{ color: "var(--cc-papaya)" }}
+                      >
+                        {count} {count === 1 ? "article" : "articles"}
+                      </p>
                     </div>
                   );
                 })}
               </div>
-
-              {/* ── Sidebar ── */}
-              <aside
-                className="lg:w-[280px] xl:w-[300px] flex-shrink-0 flex flex-col gap-5"
-                style={{ alignSelf: "flex-start", position: "sticky", top: 88 }}
-              >
-                {/* Book a call */}
-                <div
-                  className="rounded-2xl p-6 relative overflow-hidden"
-                  style={{ background: "linear-gradient(135deg, #0e1020 0%, #1a1b2e 70%, #1f1a2e 100%)" }}
-                >
-                  <div style={{ position: "absolute", top: -30, right: -30, width: 160, height: 160, borderRadius: "50%", background: "radial-gradient(circle, rgba(252,152,90,0.25) 0%, transparent 70%)", pointerEvents: "none" }} />
-                  <span className="cc-pulse-dot block mb-3" style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--cc-papaya)", position: "relative" }} />
-                  <p className="font-mono text-[0.6rem] tracking-[2.5px] uppercase mb-2 font-semibold" style={{ color: "rgba(252,152,90,0.8)", position: "relative" }}>
-                    Available now
-                  </p>
-                  <h3 className="font-display font-black text-xl leading-snug mb-3" style={{ color: "#ffffff", position: "relative" }}>
-                    Talk to Noel directly.
-                  </h3>
-                  <p className="text-[0.84rem] leading-relaxed mb-5" style={{ color: "rgba(244,237,228,0.55)", position: "relative" }}>
-                    ECC to S/4HANA. AI on SAP. CIMA-qualified. I lead every engagement.
-                  </p>
-                  <a
-                    href="https://calendly.com/noeldcosta/30min"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full text-sm font-bold py-3 rounded-full"
-                    style={{ background: "var(--cc-papaya)", color: "var(--cc-corbeau)", position: "relative" }}
-                  >
-                    Book a 30-min call <ArrowUpRight size={13} />
-                  </a>
-                </div>
-
-                {/* Lead magnet */}
-                <div
-                  className="rounded-2xl p-6 relative overflow-hidden"
-                  style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.06), rgba(34,197,94,0.02))", border: "1px solid rgba(34,197,94,0.15)" }}
-                >
-                  <p className="font-mono text-[0.6rem] tracking-[2.5px] uppercase mb-2 font-semibold" style={{ color: "#22c55e" }}>
-                    Free resource
-                  </p>
-                  <h3 className="font-display font-bold text-corbeau text-base leading-snug mb-2">
-                    ERP implementation checklist
-                  </h3>
-                  <p className="text-[0.82rem] text-night/65 leading-relaxed mb-4">
-                    47 checkpoints I run through on every programme. Book a call and I&apos;ll share it.
-                  </p>
-                  <a
-                    href="https://calendly.com/noeldcosta/30min"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full text-[0.82rem] font-bold py-2.5 rounded-full"
-                    style={{ background: "rgba(34,197,94,0.12)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.2)" }}
-                  >
-                    Get the checklist <ArrowUpRight size={12} />
-                  </a>
-                </div>
-
-                {/* Second testimonial */}
-                <div
-                  className="rounded-2xl p-5"
-                  style={{ background: "var(--cc-paper)", border: "1px solid rgba(14,16,32,0.07)" }}
-                >
-                  <div className="flex gap-0.5 mb-2.5 text-papaya text-[0.72rem]">★★★★★</div>
-                  <p className="text-[0.82rem] text-night/75 italic leading-relaxed mb-3">
-                    &ldquo;{TESTIMONIALS[1].quote}&rdquo;
-                  </p>
-                  <div>
-                    <span className="font-display font-bold text-corbeau text-[0.85rem] block">{TESTIMONIALS[1].name}</span>
-                    <span className="font-mono text-[0.58rem] text-silver tracking-[0.5px]">{TESTIMONIALS[1].role}</span>
-                  </div>
-                </div>
-
-                {/* About */}
-                <div className="bg-paper rounded-2xl p-6" style={{ border: "1px solid rgba(14,16,32,0.07)" }}>
-                  <p className="font-mono text-[0.6rem] tracking-[2.5px] uppercase mb-3" style={{ color: "var(--cc-papaya)" }}>
-                    About the author
-                  </p>
-                  <p className="font-display font-black text-corbeau text-lg mb-2">Noel D&apos;Costa</p>
-                  <p className="text-night/70 text-[0.84rem] leading-relaxed mb-4">
-                    Senior ERP and AI advisor. 25 years across EDGE Group, Etihad Airways, ADNOC, PIF entities, and the UAE Government.
-                  </p>
-                  <Link href="/sap-erp-consultant-my-story-noel-dcosta" className="inline-flex items-center gap-1.5 text-[0.8rem] font-semibold hover:underline" style={{ color: "var(--cc-papaya)" }}>
-                    Full bio <ArrowRight size={12} />
-                  </Link>
-                </div>
-
-                {/* Tools */}
-                <div className="bg-paper rounded-2xl p-6" style={{ border: "1px solid rgba(14,16,32,0.07)" }}>
-                  <p className="font-mono text-[0.6rem] tracking-[2.5px] uppercase mb-4" style={{ color: "var(--cc-papaya)" }}>
-                    Free tools
-                  </p>
-                  <div className="flex flex-col">
-                    {SIDEBAR_TOOLS.map((t, i) => (
-                      <Link
-                        key={t.slug}
-                        href={`/${t.slug}`}
-                        className="flex items-center justify-between text-[0.84rem] text-corbeau font-medium hover:text-papaya transition-colors py-2.5"
-                        style={{ borderBottom: i < SIDEBAR_TOOLS.length - 1 ? "1px solid rgba(14,16,32,0.06)" : undefined }}
-                      >
-                        {t.label}
-                        <ArrowRight size={12} style={{ color: "var(--cc-papaya)", flexShrink: 0 }} />
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Browse topics */}
-                <div className="bg-paper rounded-2xl p-6" style={{ border: "1px solid rgba(14,16,32,0.07)" }}>
-                  <p className="font-mono text-[0.6rem] tracking-[2.5px] uppercase mb-4" style={{ color: "var(--cc-papaya)" }}>
-                    Browse topics
-                  </p>
-                  <div className="flex flex-col gap-0.5">
-                    {otherCategories.map((c) => (
-                      <Link
-                        key={c.slug}
-                        href={`/category/${c.slug}`}
-                        className="text-[0.84rem] py-2 transition-colors text-night hover:text-papaya"
-                      >
-                        {c.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              </aside>
             </div>
-          )}
-        </div>
+          </section>
+        )}
 
-        {/* ── Bottom CTA ── */}
+        {/* ── 3. Featured insights ── */}
+        {featured.length > 0 && (
+          <section
+            style={{
+              background: "var(--cc-cream)",
+              borderBottom: "1px solid rgba(14,16,32,0.07)",
+            }}
+          >
+            <div
+              style={{
+                maxWidth: 1200,
+                margin: "0 auto",
+                padding: "clamp(2.5rem,5vw,4rem) clamp(1.5rem,5vw,3rem)",
+              }}
+            >
+              <div className="flex items-center justify-between mb-7">
+                <h2
+                  className="font-display font-black text-corbeau tracking-[-0.02em]"
+                  style={{ fontSize: "clamp(1.1rem,2vw,1.4rem)" }}
+                >
+                  Featured insights
+                </h2>
+                <Link
+                  href={`/category/${meta.slug}`}
+                  className="inline-flex items-center gap-1 text-[0.82rem] font-semibold hover:underline"
+                  style={{ color: "var(--cc-papaya)" }}
+                >
+                  View all insights <ArrowRight size={12} />
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {featured.map((p, i) => (
+                  <PostCard
+                    key={p.frontmatter.slug}
+                    post={p}
+                    locale={locale}
+                    priority={i === 0}
+                  />
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ── 4. Latest articles ── */}
+        {latest.length > 0 && (
+          <section
+            style={{
+              background: "var(--cc-page-bg)",
+              borderBottom: "1px solid rgba(14,16,32,0.07)",
+            }}
+          >
+            <div
+              style={{
+                maxWidth: 1200,
+                margin: "0 auto",
+                padding: "clamp(2.5rem,5vw,4rem) clamp(1.5rem,5vw,3rem)",
+              }}
+            >
+              <div className="flex items-center justify-between mb-7">
+                <h2
+                  className="font-display font-black text-corbeau tracking-[-0.02em]"
+                  style={{ fontSize: "clamp(1.1rem,2vw,1.4rem)" }}
+                >
+                  Latest articles
+                </h2>
+                <span
+                  className="font-mono text-[0.6rem] tracking-[1.5px] uppercase px-3 py-1 rounded-full"
+                  style={{
+                    background: "rgba(14,16,32,0.05)",
+                    color: "var(--cc-silver)",
+                  }}
+                >
+                  {latest.length} more
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {latest.map((p) => (
+                  <PostCard key={p.frontmatter.slug} post={p} locale={locale} />
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ── 5. About Noel strip ── */}
         <section
-          style={{ background: "linear-gradient(135deg, #0e1020 0%, #1a1b2e 60%, #1f1a2e 100%)", position: "relative", overflow: "hidden" }}
+          style={{
+            background: "var(--cc-paper)",
+            borderBottom: "1px solid rgba(14,16,32,0.07)",
+          }}
         >
-          <div style={{ position: "absolute", bottom: -60, left: "50%", transform: "translateX(-50%)", width: 600, height: 300, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(252,152,90,0.15) 0%, transparent 70%)", pointerEvents: "none" }} />
-          <div style={{ maxWidth: 1200, margin: "0 auto", padding: "clamp(3rem,6vw,5rem) clamp(1.5rem,5vw,3rem)", textAlign: "center", position: "relative" }}>
-            <p className="font-mono text-[0.62rem] tracking-[2.5px] uppercase mb-4 font-semibold" style={{ color: "rgba(252,152,90,0.75)" }}>
-              Senior advisory
-            </p>
-            <h2
-              className="font-display font-black leading-tight mb-4 tracking-[-0.02em]"
-              style={{ fontSize: "clamp(1.8rem,4.5vw,3rem)", background: "linear-gradient(135deg, #ffffff 40%, var(--cc-papaya))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}
-            >
-              Reading about ERP isn&apos;t enough.
-            </h2>
-            <p className="text-lg max-w-[440px] mx-auto mb-8 leading-relaxed" style={{ color: "rgba(244,237,228,0.55)" }}>
-              If you&apos;re planning a migration or mid-programme, a 30-min call saves months.
-            </p>
-            <a
-              href="https://calendly.com/noeldcosta/30min"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-bold px-7 py-3.5 rounded-full"
-              style={{ background: "var(--cc-papaya)", color: "var(--cc-corbeau)" }}
-            >
-              Book a 30-min call <ArrowUpRight size={15} />
-            </a>
+          <div
+            style={{
+              maxWidth: 1200,
+              margin: "0 auto",
+              padding: "clamp(2rem,4vw,3rem) clamp(1.5rem,5vw,3rem)",
+            }}
+          >
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+              {/* Headshot */}
+              <div
+                className="flex-shrink-0 rounded-full overflow-hidden"
+                style={{
+                  width: 72,
+                  height: 72,
+                  border: "3px solid var(--cc-bone)",
+                  boxShadow: "0 2px 12px rgba(14,16,32,0.1)",
+                  position: "relative",
+                }}
+              >
+                <Image
+                  src="/images/headshot.png"
+                  alt="Noel D'Costa"
+                  fill
+                  className="object-cover object-top"
+                  sizes="72px"
+                />
+              </div>
+
+              {/* Bio */}
+              <div className="flex-1 min-w-0">
+                <p className="font-display font-black text-corbeau text-lg mb-1">
+                  Noel D&apos;Costa
+                </p>
+                <p className="text-night/75 text-[0.88rem] leading-relaxed max-w-lg">
+                  Senior ERP and AI advisor. 25 years delivering for EDGE Group, Etihad Airways, ADNOC, PIF entities, and the UAE Government. CIMA, AICPA, Masters in Accounting.
+                </p>
+              </div>
+
+              {/* Credentials */}
+              <div className="flex flex-col gap-2 flex-shrink-0">
+                {[
+                  { icon: ShieldCheck, text: "Board-level perspective" },
+                  { icon: Users, text: "Independent advice" },
+                  { icon: BookOpen, text: "Enterprise delivery experience" },
+                ].map((item) => (
+                  <span
+                    key={item.text}
+                    className="flex items-center gap-2 text-[0.82rem] font-medium"
+                    style={{ color: "var(--cc-night)" }}
+                  >
+                    <item.icon size={13} style={{ color: "var(--cc-papaya)", flexShrink: 0 }} />
+                    {item.text}
+                  </span>
+                ))}
+              </div>
+
+              <Link
+                href="/sap-erp-consultant-my-story-noel-dcosta"
+                className="flex-shrink-0 text-[0.82rem] font-semibold hover:underline"
+                style={{ color: "var(--cc-papaya)" }}
+              >
+                Full bio →
+              </Link>
+            </div>
           </div>
         </section>
+
+        {/* ── 6. Lead magnet / CTA ── */}
+        <section
+          style={{ background: "var(--cc-corbeau)" }}
+        >
+          <div
+            style={{
+              maxWidth: 1200,
+              margin: "0 auto",
+              padding: "clamp(3rem,6vw,5rem) clamp(1.5rem,5vw,3rem)",
+            }}
+          >
+            <div className="flex flex-col lg:flex-row items-center gap-10">
+              {/* Left — checklist visual */}
+              <div
+                className="flex-shrink-0 rounded-2xl p-6 hidden lg:block"
+                style={{
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  width: 200,
+                }}
+              >
+                <p
+                  className="font-mono text-[0.58rem] tracking-[2.5px] uppercase mb-3 font-semibold"
+                  style={{ color: "rgba(252,152,90,0.75)" }}
+                >
+                  ERP Executive
+                </p>
+                <p className="font-display font-black text-bone text-base leading-snug mb-4">
+                  Risk Checklist
+                </p>
+                {[1, 2, 3, 4].map((n) => (
+                  <div
+                    key={n}
+                    className="flex items-center gap-2 mb-2"
+                  >
+                    <div
+                      className="w-3.5 h-3.5 rounded border-2 flex-shrink-0"
+                      style={{ borderColor: "rgba(252,152,90,0.5)" }}
+                    />
+                    <div
+                      className="flex-1 h-2 rounded"
+                      style={{ background: "rgba(255,255,255,0.12)" }}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Center — copy */}
+              <div className="flex-1 text-center lg:text-left">
+                <p
+                  className="font-mono text-[0.62rem] tracking-[2.5px] uppercase mb-3 font-semibold"
+                  style={{ color: "rgba(252,152,90,0.75)" }}
+                >
+                  Free resource
+                </p>
+                <h2
+                  className="font-display font-black text-bone leading-tight mb-3 tracking-[-0.02em]"
+                  style={{ fontSize: "clamp(1.6rem,4vw,2.5rem)" }}
+                >
+                  Get the ERP implementation checklist
+                </h2>
+                <p
+                  className="text-[0.95rem] leading-relaxed mb-6 max-w-md mx-auto lg:mx-0"
+                  style={{ color: "rgba(244,237,228,0.65)" }}
+                >
+                  47 checkpoints I run through on every programme — budget risk, governance, go-live readiness, and post-migration. Book a call and I&apos;ll share it.
+                </p>
+                <div className="flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start">
+                  <a
+                    href="https://calendly.com/noeldcosta/30min"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-bold px-6 py-3.5 rounded-full"
+                    style={{ background: "var(--cc-papaya)", color: "var(--cc-corbeau)" }}
+                  >
+                    Book a 30-min call <ArrowUpRight size={14} />
+                  </a>
+                  <a
+                    href="https://www.linkedin.com/in/noeldcosta/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[0.85rem] font-medium hover:underline"
+                    style={{ color: "rgba(244,237,228,0.5)" }}
+                  >
+                    Or message me on LinkedIn
+                  </a>
+                </div>
+              </div>
+
+              {/* Right — other categories (desktop) */}
+              <div
+                className="hidden lg:flex flex-col gap-2 flex-shrink-0"
+                style={{ minWidth: 180 }}
+              >
+                <p
+                  className="font-mono text-[0.58rem] tracking-[2.5px] uppercase mb-2 font-semibold"
+                  style={{ color: "rgba(244,237,228,0.35)" }}
+                >
+                  Explore
+                </p>
+                {otherCategories.slice(0, 5).map((c) => (
+                  <Link
+                    key={c.slug}
+                    href={`/category/${c.slug}`}
+                    className="text-[0.84rem] font-medium transition-colors py-0.5"
+                    style={{ color: "rgba(244,237,228,0.5)" }}
+                  >
+                    {c.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
       </main>
       <Footer />
       <script
