@@ -73,6 +73,17 @@ const TAG_LABEL: Record<string, string> = Object.fromEntries(
   Object.entries(TAG_META).map(([k, v]) => [k, v.label])
 );
 
+// ─── Per-category taglines for the hero H1 italic emphasis ──────────────────
+
+const CATEGORY_TAGLINES: Record<string, string> = {
+  "erp-implementation": "From the field, not the slides.",
+  "platforms-modules":  "Deep technical. Real projects.",
+  "erp-strategy":       "Real numbers. Not estimates.",
+  "ai-governance":      "Grounded. Not hype.",
+  "agentic-ai":         "What works now.",
+  "case-studies":       "Named clients. Real outcomes.",
+};
+
 // ─── Other categories for navigation ────────────────────────────────────────
 
 const ALL_CATEGORIES = [
@@ -250,6 +261,7 @@ export default function CategoryPage({
     .slice(0, 6);
 
   const otherCategories = ALL_CATEGORIES.filter((c) => c.slug !== category);
+  const heroTagline = CATEGORY_TAGLINES[category] ?? "Practical. Not theoretical.";
 
   return (
     <>
@@ -307,7 +319,8 @@ export default function CategoryPage({
                   className="font-display font-black text-corbeau tracking-[-0.03em] leading-[1.04] mb-4"
                   style={{ fontSize: "clamp(2rem,5.5vw,3.5rem)" }}
                 >
-                  {meta.label}
+                  {meta.label}.{" "}
+                  <span className="cc-emphasis-italic">{heroTagline}</span>
                 </h1>
                 <p
                   className="text-night leading-[1.65] mb-6"
@@ -346,8 +359,8 @@ export default function CategoryPage({
                     className="rounded-2xl p-6 h-full"
                     style={{
                       background: "var(--cc-paper)",
-                      border: "2px solid var(--cc-papaya)",
-                      boxShadow: "0 4px 24px rgba(252,152,90,0.15)",
+                      border: "4px solid var(--cc-papaya)",
+                      boxShadow: "0 4px 28px rgba(252,152,90,0.2)",
                     }}
                   >
                     <p
@@ -517,11 +530,11 @@ export default function CategoryPage({
                 className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
                 style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
               >
-                Everything I&apos;ve written here.{" "}
-                <span className="cc-emphasis-italic">All of it.</span>
+                The full archive.{" "}
+                <span className="cc-emphasis-italic">Field notes, not theory.</span>
               </h2>
               <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-10">
-                Real experience. Real numbers. From the projects, not the marketing slides.
+                Every article in this category. Written from delivery experience, not vendor decks.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">

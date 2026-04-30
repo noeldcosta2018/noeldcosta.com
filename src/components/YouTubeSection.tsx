@@ -26,10 +26,29 @@ function VideoCard({ video }: { video: YouTubeVideo }) {
             className="object-cover"
           />
         ) : (
-          <div className="w-12 h-12 rounded-full bg-papaya flex items-center justify-center shadow-[0_4px_16px_rgba(252,152,90,0.3)]">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="#0e1020" style={{ marginLeft: 3 }}>
-              <polygon points="5,3 19,12 5,21" />
-            </svg>
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center gap-3"
+            style={{ background: "var(--cc-corbeau)" }}
+          >
+            {/* YouTube play button */}
+            <div
+              className="flex items-center justify-center rounded-xl"
+              style={{
+                width: 52,
+                height: 36,
+                background: "#FF0000",
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                <polygon points="5,3 19,12 5,21" />
+              </svg>
+            </div>
+            <p
+              className="font-mono text-[0.58rem] tracking-[1.5px] uppercase"
+              style={{ color: "rgba(255,255,255,0.3)" }}
+            >
+              NoelDCostaERPAI
+            </p>
           </div>
         )}
         {video.badge && (
