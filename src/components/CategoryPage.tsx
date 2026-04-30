@@ -18,6 +18,9 @@ import {
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import StickyCTA from "@/components/StickyCTA";
+import Ticker from "@/components/Ticker";
+import YouTubeSection from "@/components/YouTubeSection";
+import CTABanner from "@/components/CTABanner";
 import {
   CATEGORIES,
   getPostsByCategory,
@@ -107,10 +110,6 @@ function PostCard({
 }) {
   const localePrefix = locale === "en" ? "" : `/${locale}`;
   const mins = readingTime(post.body);
-  const dateStr = new Date(post.frontmatter.date).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-  });
   const tags = (post.frontmatter.tags ?? []).slice(0, 1);
 
   return (
@@ -190,7 +189,7 @@ function StartHereRow({ post, locale }: { post: PostRecord; locale: string }) {
     <Link
       href={`${localePrefix}/${post.frontmatter.slug}`}
       className="flex items-center gap-3 group py-3"
-      style={{ borderBottom: "1px solid rgba(14,16,32,0.07)" }}
+      style={{ borderBottom: "1px solid rgba(252,152,90,0.15)" }}
     >
       <div
         className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
@@ -255,8 +254,12 @@ export default function CategoryPage({
   return (
     <>
       <Nav />
+      {/* ── Ticker strip — directly below nav, same as homepage ── */}
+      <div style={{ marginTop: 64 }}>
+        <Ticker />
+      </div>
       <StickyCTA />
-      <main style={{ paddingTop: 64 }}>
+      <main>
 
         {/* ── 1. Category Hero ── */}
         <section
@@ -336,15 +339,15 @@ export default function CategoryPage({
                 </div>
               </div>
 
-              {/* Right — Start Here panel */}
+              {/* Right — Start Here panel (orange border) */}
               {startHerePosts.length > 0 && (
                 <div className="lg:col-span-5">
                   <div
                     className="rounded-2xl p-6 h-full"
                     style={{
                       background: "var(--cc-paper)",
-                      border: "1px solid rgba(14,16,32,0.08)",
-                      boxShadow: "0 4px 20px rgba(14,16,32,0.05)",
+                      border: "2px solid var(--cc-papaya)",
+                      boxShadow: "0 4px 24px rgba(252,152,90,0.15)",
                     }}
                   >
                     <p
@@ -376,31 +379,37 @@ export default function CategoryPage({
           </div>
         </section>
 
-        {/* ── 2. Browse by topic ── */}
+        {/* ── 2. Browse by topic (dark — mirrors Services "Two types of people" section) ── */}
         {topicTags.length > 0 && (
           <section
-            style={{
-              background: "var(--cc-paper)",
-              borderBottom: "1px solid rgba(14,16,32,0.07)",
-            }}
+            className="bg-corbeau text-bone"
+            style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
           >
             <div
               style={{
                 maxWidth: 1200,
                 margin: "0 auto",
-                padding: "clamp(2rem,4vw,3rem) clamp(1.5rem,5vw,3rem)",
+                padding: "clamp(3rem,6vw,5rem) clamp(1.5rem,5vw,3rem)",
               }}
             >
+              <p className="font-mono text-[0.68rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
+                [ Browse by topic ]
+              </p>
               <h2
-                className="font-display font-black text-corbeau tracking-[-0.02em] mb-6"
-                style={{ fontSize: "clamp(1.1rem,2vw,1.4rem)" }}
+                className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-bone"
+                style={{ fontSize: "clamp(1.6rem,3vw,2.2rem)" }}
               >
-                Browse by topic
+                Find what matters to you.{" "}
+                <span className="cc-emphasis-italic">Pick your topic.</span>
               </h2>
+              <p className="text-moon text-[1rem] max-w-[480px] leading-[1.7] mb-10">
+                Every article is tagged by subject. Start where your problem is.
+              </p>
+
               <div
-                className="grid gap-4"
+                className="grid gap-5"
                 style={{
-                  gridTemplateColumns: `repeat(auto-fill, minmax(160px, 1fr))`,
+                  gridTemplateColumns: `repeat(auto-fill, minmax(200px, 1fr))`,
                 }}
               >
                 {topicTags.map(([tag, count]) => {
@@ -411,29 +420,24 @@ export default function CategoryPage({
                   return (
                     <div
                       key={tag}
-                      className="rounded-xl p-4 flex flex-col gap-2.5 transition-all duration-200 hover:-translate-y-0.5"
-                      style={{
-                        background: "var(--cc-cream)",
-                        border: "1px solid rgba(14,16,32,0.07)",
-                        boxShadow: "0 1px 3px rgba(14,16,32,0.04)",
-                      }}
+                      className="relative bg-haiti border border-white/[0.06] rounded-2xl p-6 overflow-hidden transition-all duration-300 hover:border-papaya/20 hover:-translate-y-1 hover:shadow-[0_16px_48px_rgba(0,0,0,0.3)]"
                     >
+                      {/* Top accent line */}
+                      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-papaya to-canyon" />
                       <div
-                        className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                        className="w-10 h-10 rounded-lg flex items-center justify-center mb-4"
                         style={{ background: "rgba(252,152,90,0.12)" }}
                       >
-                        <Icon size={16} style={{ color: "var(--cc-papaya)" }} />
+                        <Icon size={18} style={{ color: "var(--cc-papaya)" }} />
                       </div>
-                      <div>
-                        <p className="font-display font-bold text-corbeau text-[0.9rem] leading-snug mb-0.5">
-                          {label}
-                        </p>
-                        <p className="text-night/60 text-[0.75rem] leading-snug line-clamp-2">
-                          {desc}
-                        </p>
-                      </div>
+                      <p className="font-display font-extrabold text-bone text-[1rem] tracking-[-0.02em] mb-1">
+                        {label}
+                      </p>
+                      <p className="text-moon text-[0.8rem] leading-[1.5] mb-3 line-clamp-2">
+                        {desc}
+                      </p>
                       <p
-                        className="font-mono text-[0.62rem] tracking-[1px] font-semibold mt-auto"
+                        className="font-mono text-[0.62rem] tracking-[1px] font-semibold"
                         style={{ color: "var(--cc-papaya)" }}
                       >
                         {count} {count === 1 ? "article" : "articles"}
@@ -458,24 +462,23 @@ export default function CategoryPage({
               style={{
                 maxWidth: 1200,
                 margin: "0 auto",
-                padding: "clamp(2.5rem,5vw,4rem) clamp(1.5rem,5vw,3rem)",
+                padding: "clamp(3rem,6vw,5rem) clamp(1.5rem,5vw,3rem)",
               }}
             >
-              <div className="flex items-center justify-between mb-7">
-                <h2
-                  className="font-display font-black text-corbeau tracking-[-0.02em]"
-                  style={{ fontSize: "clamp(1.1rem,2vw,1.4rem)" }}
-                >
-                  Featured insights
-                </h2>
-                <Link
-                  href={`/category/${meta.slug}`}
-                  className="inline-flex items-center gap-1 text-[0.82rem] font-semibold hover:underline"
-                  style={{ color: "var(--cc-papaya)" }}
-                >
-                  View all insights <ArrowRight size={12} />
-                </Link>
-              </div>
+              {/* Header — TrackRecord style */}
+              <p className="font-mono text-[0.68rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
+                [ Featured insights ]
+              </p>
+              <h2
+                className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
+                style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
+              >
+                Reads worth your time.{" "}
+                <span className="cc-emphasis-italic">Start with these.</span>
+              </h2>
+              <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-10">
+                The guides I wish existed when I started. Drawn from 25 years of ERP delivery.
+              </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {featured.map((p, i) => (
@@ -503,26 +506,23 @@ export default function CategoryPage({
               style={{
                 maxWidth: 1200,
                 margin: "0 auto",
-                padding: "clamp(2.5rem,5vw,4rem) clamp(1.5rem,5vw,3rem)",
+                padding: "clamp(3rem,6vw,5rem) clamp(1.5rem,5vw,3rem)",
               }}
             >
-              <div className="flex items-center justify-between mb-7">
-                <h2
-                  className="font-display font-black text-corbeau tracking-[-0.02em]"
-                  style={{ fontSize: "clamp(1.1rem,2vw,1.4rem)" }}
-                >
-                  Latest articles
-                </h2>
-                <span
-                  className="font-mono text-[0.6rem] tracking-[1.5px] uppercase px-3 py-1 rounded-full"
-                  style={{
-                    background: "rgba(14,16,32,0.05)",
-                    color: "var(--cc-silver)",
-                  }}
-                >
-                  {latest.length} more
-                </span>
-              </div>
+              {/* Header — TrackRecord style */}
+              <p className="font-mono text-[0.68rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
+                [ Latest articles ]
+              </p>
+              <h2
+                className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
+                style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
+              >
+                Everything I&apos;ve written here.{" "}
+                <span className="cc-emphasis-italic">All of it.</span>
+              </h2>
+              <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-10">
+                Real experience. Real numbers. From the projects, not the marketing slides.
+              </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {latest.map((p) => (
@@ -533,7 +533,10 @@ export default function CategoryPage({
           </section>
         )}
 
-        {/* ── 5. About Noel strip ── */}
+        {/* ── 5. Videos from the field ── */}
+        <YouTubeSection />
+
+        {/* ── 6. About Noel strip ── */}
         <section
           style={{
             background: "var(--cc-paper)",
@@ -607,120 +610,8 @@ export default function CategoryPage({
           </div>
         </section>
 
-        {/* ── 6. Lead magnet / CTA ── */}
-        <section
-          style={{ background: "var(--cc-corbeau)" }}
-        >
-          <div
-            style={{
-              maxWidth: 1200,
-              margin: "0 auto",
-              padding: "clamp(3rem,6vw,5rem) clamp(1.5rem,5vw,3rem)",
-            }}
-          >
-            <div className="flex flex-col lg:flex-row items-center gap-10">
-              {/* Left — checklist visual */}
-              <div
-                className="flex-shrink-0 rounded-2xl p-6 hidden lg:block"
-                style={{
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  width: 200,
-                }}
-              >
-                <p
-                  className="font-mono text-[0.58rem] tracking-[2.5px] uppercase mb-3 font-semibold"
-                  style={{ color: "rgba(252,152,90,0.75)" }}
-                >
-                  ERP Executive
-                </p>
-                <p className="font-display font-black text-bone text-base leading-snug mb-4">
-                  Risk Checklist
-                </p>
-                {[1, 2, 3, 4].map((n) => (
-                  <div
-                    key={n}
-                    className="flex items-center gap-2 mb-2"
-                  >
-                    <div
-                      className="w-3.5 h-3.5 rounded border-2 flex-shrink-0"
-                      style={{ borderColor: "rgba(252,152,90,0.5)" }}
-                    />
-                    <div
-                      className="flex-1 h-2 rounded"
-                      style={{ background: "rgba(255,255,255,0.12)" }}
-                    />
-                  </div>
-                ))}
-              </div>
-
-              {/* Center — copy */}
-              <div className="flex-1 text-center lg:text-left">
-                <p
-                  className="font-mono text-[0.62rem] tracking-[2.5px] uppercase mb-3 font-semibold"
-                  style={{ color: "rgba(252,152,90,0.75)" }}
-                >
-                  Free resource
-                </p>
-                <h2
-                  className="font-display font-black text-bone leading-tight mb-3 tracking-[-0.02em]"
-                  style={{ fontSize: "clamp(1.6rem,4vw,2.5rem)" }}
-                >
-                  Get the ERP implementation checklist
-                </h2>
-                <p
-                  className="text-[0.95rem] leading-relaxed mb-6 max-w-md mx-auto lg:mx-0"
-                  style={{ color: "rgba(244,237,228,0.65)" }}
-                >
-                  47 checkpoints I run through on every programme — budget risk, governance, go-live readiness, and post-migration. Book a call and I&apos;ll share it.
-                </p>
-                <div className="flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start">
-                  <a
-                    href="https://calendly.com/noeldcosta/30min"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-sm font-bold px-6 py-3.5 rounded-full"
-                    style={{ background: "var(--cc-papaya)", color: "var(--cc-corbeau)" }}
-                  >
-                    Book a 30-min call <ArrowUpRight size={14} />
-                  </a>
-                  <a
-                    href="https://www.linkedin.com/in/noeldcosta/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[0.85rem] font-medium hover:underline"
-                    style={{ color: "rgba(244,237,228,0.5)" }}
-                  >
-                    Or message me on LinkedIn
-                  </a>
-                </div>
-              </div>
-
-              {/* Right — other categories (desktop) */}
-              <div
-                className="hidden lg:flex flex-col gap-2 flex-shrink-0"
-                style={{ minWidth: 180 }}
-              >
-                <p
-                  className="font-mono text-[0.58rem] tracking-[2.5px] uppercase mb-2 font-semibold"
-                  style={{ color: "rgba(244,237,228,0.35)" }}
-                >
-                  Explore
-                </p>
-                {otherCategories.slice(0, 5).map((c) => (
-                  <Link
-                    key={c.slug}
-                    href={`/category/${c.slug}`}
-                    className="text-[0.84rem] font-medium transition-colors py-0.5"
-                    style={{ color: "rgba(244,237,228,0.5)" }}
-                  >
-                    {c.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* ── 7. End CTA — same as homepage ── */}
+        <CTABanner />
 
       </main>
       <Footer />
