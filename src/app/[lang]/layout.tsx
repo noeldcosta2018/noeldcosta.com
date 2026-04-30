@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Epilogue, Inter, JetBrains_Mono } from "next/font/google";
+import { Epilogue, Sora, JetBrains_Mono } from "next/font/google";
 import { LOCALES, type Locale } from "@/lib/content";
 import "../globals.css";
 
@@ -12,10 +12,10 @@ const epilogue = Epilogue({
   display: "swap",
 });
 
-const inter = Inter({
-  variable: "--font-inter",
+const sora = Sora({
+  variable: "--font-sora",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700", "800"],
   display: "swap",
 });
 
@@ -75,7 +75,7 @@ export default async function LocaleRootLayout({
     <html
       lang={locale}
       dir={dir}
-      className={`${epilogue.variable} ${inter.variable} ${jetbrainsMono.variable}`}
+      className={`${epilogue.variable} ${sora.variable} ${jetbrainsMono.variable}`}
     >
       <body>{children}</body>
     </html>

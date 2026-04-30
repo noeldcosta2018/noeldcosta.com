@@ -50,18 +50,20 @@ function PostCard({
   return (
     <Link
       href={`${localePrefix}/${post.frontmatter.slug}`}
-      className="block bg-paper border border-corbeau/[0.06] rounded-[14px] overflow-hidden hover:border-papaya/40 hover:shadow-lg transition-all duration-300 group"
+      className="block bg-paper rounded-[14px] overflow-hidden group transition-all duration-300 hover:-translate-y-1"
       style={{
+        boxShadow: "0 1px 3px rgba(14,16,32,0.06), 0 4px 12px rgba(14,16,32,0.04)",
+        border: "1px solid rgba(14,16,32,0.06)",
         animation: index < 9 ? `cc-fade-in 0.5s ease-out ${delay}ms both` : undefined,
       }}
     >
-      {/* Thumbnail */}
+      {/* Thumbnail with gradient overlay */}
       <div
         style={{
           position: "relative",
           aspectRatio: "16/9",
-          background: "rgba(252,152,90,0.06)",
           overflow: "hidden",
+          background: "linear-gradient(135deg, #0e1020 0%, #282937 100%)",
         }}
       >
         {post.frontmatter.hero ? (
@@ -69,41 +71,53 @@ function PostCard({
             src={post.frontmatter.hero}
             alt={post.frontmatter.title}
             fill
-            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
             sizes="(min-width: 1024px) 320px, (min-width: 640px) 50vw, 100vw"
           />
-        ) : (
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(14,16,32,0.04) 0%, rgba(252,152,90,0.10) 100%)",
-            }}
-          />
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="p-5">
-        <div className="flex items-center gap-2.5 mb-3">
-          <span className="font-mono text-[0.6rem] tracking-[2px] uppercase text-papaya">
+        ) : null}
+        {/* Gradient overlay — always present */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to top, rgba(14,16,32,0.85) 0%, rgba(14,16,32,0.35) 45%, rgba(14,16,32,0) 75%)",
+          }}
+        />
+        {/* Date + reading time overlaid at bottom of image */}
+        <div className="absolute bottom-0 left-0 right-0 flex items-center gap-2 px-4 pb-3">
+          <span
+            className="font-mono text-[0.58rem] tracking-[2px] uppercase font-semibold"
+            style={{ color: "var(--cc-papaya)" }}
+          >
             {dateStr}
           </span>
-          <span style={{ color: "rgba(14,16,32,0.18)", fontSize: 10 }}>·</span>
-          <span className="flex items-center gap-1 font-mono text-[0.6rem] tracking-[1px] text-silver">
+          <span style={{ color: "rgba(244,237,228,0.3)", fontSize: 9 }}>·</span>
+          <span
+            className="flex items-center gap-1 font-mono text-[0.58rem] tracking-[1px]"
+            style={{ color: "rgba(244,237,228,0.55)" }}
+          >
             <Clock size={9} />
             {mins} min
           </span>
         </div>
-        <h2 className="font-display font-bold text-corbeau text-[0.98rem] leading-snug mb-2 group-hover:text-papaya transition-colors duration-200 line-clamp-2">
+      </div>
+
+      {/* Content */}
+      <div className="p-5">
+        <h2
+          className="font-display font-bold text-corbeau text-[0.97rem] leading-snug mb-2.5 group-hover:text-papaya transition-colors duration-200 line-clamp-2"
+        >
           {post.frontmatter.title}
         </h2>
         {post.frontmatter.excerpt && (
-          <p className="text-night/75 text-[0.83rem] leading-[1.55] line-clamp-2 mb-3">
+          <p className="text-night/70 text-[0.82rem] leading-[1.55] line-clamp-2 mb-3">
             {post.frontmatter.excerpt}
           </p>
         )}
-        <span className="inline-flex items-center gap-1.5 text-[0.78rem] font-semibold text-papaya">
+        <span
+          className="inline-flex items-center gap-1.5 text-[0.78rem] font-semibold"
+          style={{ color: "var(--cc-papaya)" }}
+        >
           Read article <ArrowRight size={12} />
         </span>
       </div>
@@ -139,67 +153,129 @@ export default function CategoryPage({
       <Nav />
       <main style={{ paddingTop: 64 }}>
 
-        {/* ── Category Header ── */}
+        {/* ── Category Header — dark editorial ── */}
         <section
-          className="relative overflow-hidden"
-          style={{ background: "var(--cc-page-bg)", borderBottom: "1px solid rgba(14,16,32,0.07)" }}
+          style={{
+            background: "linear-gradient(135deg, #0e1020 0%, #1a1b2e 60%, #1f1a2e 100%)",
+            position: "relative",
+            overflow: "hidden",
+          }}
         >
-          <div className="cc-grid-faint absolute inset-0 pointer-events-none" style={{ opacity: 0.5 }} />
-          <div className="cc-glow-warm absolute inset-0 pointer-events-none" />
+          {/* Papaya glow */}
+          <div
+            style={{
+              position: "absolute",
+              top: "-60px",
+              right: "-80px",
+              width: 500,
+              height: 500,
+              borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(252,152,90,0.18) 0%, transparent 70%)",
+              pointerEvents: "none",
+            }}
+          />
+          {/* Bottom fade to page bg */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 60,
+              background: "linear-gradient(to bottom, transparent, var(--cc-page-bg))",
+              pointerEvents: "none",
+            }}
+          />
+
           <div
             style={{
               position: "relative",
               maxWidth: 1200,
               margin: "0 auto",
-              padding:
-                "clamp(2.5rem,5vw,4.5rem) clamp(1.5rem,5vw,3rem) clamp(2rem,4vw,3.5rem)",
+              padding: "clamp(2.5rem,5vw,4.5rem) clamp(1.5rem,5vw,3rem) clamp(3rem,5vw,4rem)",
             }}
           >
             {/* Breadcrumb */}
-            <nav
-              className="flex items-center gap-2 mb-7"
-              aria-label="Breadcrumb"
-            >
+            <nav className="flex items-center gap-2 mb-8" aria-label="Breadcrumb">
               <Link
                 href="/"
-                className="font-mono text-[0.62rem] tracking-widest uppercase text-silver hover:text-papaya transition-colors"
+                className="font-mono text-[0.6rem] tracking-widest uppercase transition-colors"
+                style={{ color: "rgba(244,237,228,0.45)" }}
               >
                 Home
               </Link>
-              <span className="font-mono text-[0.6rem] text-silver/40">/</span>
-              <span className="font-mono text-[0.62rem] tracking-widest uppercase text-papaya">
+              <span className="font-mono text-[0.58rem]" style={{ color: "rgba(244,237,228,0.2)" }}>
+                /
+              </span>
+              <span
+                className="font-mono text-[0.6rem] tracking-widest uppercase font-semibold"
+                style={{ color: "var(--cc-papaya)" }}
+              >
                 {meta.label}
               </span>
             </nav>
 
-            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
               <div>
-                <p className="font-mono text-[0.68rem] font-semibold tracking-[2.5px] uppercase text-papaya mb-3">
+                <p
+                  className="font-mono text-[0.65rem] font-semibold tracking-[3px] uppercase mb-4"
+                  style={{ color: "rgba(252,152,90,0.7)" }}
+                >
                   Category
                 </p>
                 <h1
-                  className="font-display font-black text-corbeau tracking-[-0.03em] leading-[1.05]"
-                  style={{ fontSize: "clamp(2.5rem,6vw,4rem)" }}
+                  className="font-display font-black leading-[1.02] tracking-[-0.03em]"
+                  style={{
+                    fontSize: "clamp(2.6rem,7vw,4.5rem)",
+                    color: "#ffffff",
+                  }}
                 >
                   {meta.label}
                 </h1>
-                <p className="text-night text-lg leading-[1.65] max-w-[580px] mt-4">
+                {/* Papaya accent line */}
+                <div
+                  style={{
+                    width: 56,
+                    height: 4,
+                    borderRadius: 2,
+                    background: "linear-gradient(90deg, var(--cc-papaya), rgba(252,152,90,0.3))",
+                    margin: "18px 0",
+                  }}
+                />
+                <p
+                  className="text-lg leading-[1.65] max-w-[560px]"
+                  style={{ color: "rgba(244,237,228,0.65)" }}
+                >
                   {meta.description}
                 </p>
               </div>
 
               {/* Article count badge */}
               <div
-                className="flex-shrink-0 bg-paper border border-corbeau/[0.07] rounded-2xl px-7 py-5 text-center"
-                style={{ minWidth: 130 }}
+                className="flex-shrink-0 rounded-2xl px-8 py-6 text-center"
+                style={{
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  backdropFilter: "blur(12px)",
+                  minWidth: 130,
+                }}
               >
                 <div
-                  className="font-display font-black text-corbeau leading-none mb-1"
-                  style={{ fontSize: "clamp(2.2rem,4vw,3rem)" }}
+                  className="font-display font-black leading-none mb-1"
+                  style={{
+                    fontSize: "clamp(2.5rem,5vw,3.2rem)",
+                    background: "linear-gradient(135deg, #ffffff, var(--cc-papaya))",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
                 >
                   {posts.length}
                 </div>
-                <div className="font-mono text-[0.6rem] tracking-[2px] uppercase text-silver">
+                <div
+                  className="font-mono text-[0.58rem] tracking-[2.5px] uppercase"
+                  style={{ color: "rgba(244,237,228,0.45)" }}
+                >
                   {posts.length === 1 ? "article" : "articles"}
                 </div>
               </div>
@@ -207,13 +283,13 @@ export default function CategoryPage({
           </div>
         </section>
 
-        {/* ── Main content area ── */}
+        {/* ── Main content ── */}
         <div
           style={{
             maxWidth: 1200,
             margin: "0 auto",
             padding:
-              "clamp(2rem,4vw,3.5rem) clamp(1.5rem,5vw,3rem) clamp(3rem,6vw,5rem)",
+              "clamp(2rem,4vw,3rem) clamp(1.5rem,5vw,3rem) clamp(3rem,6vw,5rem)",
           }}
         >
           {posts.length === 0 ? (
@@ -221,43 +297,51 @@ export default function CategoryPage({
           ) : (
             <div className="flex flex-col lg:flex-row gap-10">
 
-              {/* ── Left: article list ── */}
+              {/* ── Article list ── */}
               <div className="flex-1 min-w-0">
 
                 {/* Featured post */}
                 {featured && (
                   <Link
                     href={`${localePrefix}/${featured.frontmatter.slug}`}
-                    className="block mb-10 bg-paper border border-corbeau/[0.06] rounded-[18px] overflow-hidden hover:border-papaya/30 hover:shadow-xl transition-all duration-300 group"
-                    style={{ animation: "cc-fade-in 0.5s ease-out 0ms both" }}
+                    className="block mb-10 rounded-[18px] overflow-hidden group transition-all duration-300 hover:-translate-y-1"
+                    style={{
+                      boxShadow: "0 4px 24px rgba(14,16,32,0.12), 0 1px 4px rgba(14,16,32,0.06)",
+                      border: "1px solid rgba(14,16,32,0.07)",
+                      animation: "cc-fade-in 0.5s ease-out 0ms both",
+                    }}
                   >
-                    <div className="flex flex-col md:flex-row">
-                      {/* Image */}
+                    <div className="flex flex-col md:flex-row bg-paper">
+                      {/* Image with overlay */}
                       <div
-                        className="relative md:w-[45%] flex-shrink-0 overflow-hidden"
-                        style={{ aspectRatio: "4/3", minHeight: 220 }}
+                        className="relative md:w-[48%] flex-shrink-0 overflow-hidden"
+                        style={{
+                          aspectRatio: "4/3",
+                          minHeight: 220,
+                          background: "linear-gradient(135deg, #0e1020, #1a1b2e)",
+                        }}
                       >
-                        {featured.frontmatter.hero ? (
+                        {featured.frontmatter.hero && (
                           <Image
                             src={featured.frontmatter.hero}
                             alt={featured.frontmatter.title}
                             fill
                             priority
                             className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                            sizes="(min-width: 768px) 45vw, 100vw"
-                          />
-                        ) : (
-                          <div
-                            className="absolute inset-0"
-                            style={{
-                              background:
-                                "linear-gradient(135deg, rgba(14,16,32,0.05), rgba(252,152,90,0.12))",
-                            }}
+                            sizes="(min-width: 768px) 48vw, 100vw"
                           />
                         )}
-                        {/* Featured badge */}
+                        {/* Gradient overlay */}
                         <div
-                          className="absolute top-4 left-4 px-3 py-1 rounded-full font-mono text-[0.6rem] tracking-widest uppercase font-bold"
+                          className="absolute inset-0"
+                          style={{
+                            background:
+                              "linear-gradient(to right, rgba(14,16,32,0.6) 0%, rgba(14,16,32,0.1) 60%, transparent 100%)",
+                          }}
+                        />
+                        {/* Latest badge */}
+                        <div
+                          className="absolute top-4 left-4 px-3 py-1 rounded-full font-mono text-[0.58rem] tracking-widest uppercase font-bold"
                           style={{
                             background: "var(--cc-papaya)",
                             color: "var(--cc-corbeau)",
@@ -265,26 +349,32 @@ export default function CategoryPage({
                         >
                           Latest
                         </div>
+                        {/* Date bottom overlay */}
+                        <div className="absolute bottom-0 left-0 right-0 flex items-center gap-2 px-5 pb-4">
+                          <span
+                            className="font-mono text-[0.6rem] tracking-[2px] uppercase font-semibold"
+                            style={{ color: "var(--cc-papaya)" }}
+                          >
+                            {new Date(featured.frontmatter.date).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })}
+                          </span>
+                          <span style={{ color: "rgba(244,237,228,0.3)", fontSize: 9 }}>·</span>
+                          <span
+                            className="flex items-center gap-1 font-mono text-[0.6rem]"
+                            style={{ color: "rgba(244,237,228,0.55)" }}
+                          >
+                            <Clock size={10} />
+                            {readingTime(featured.body)} min read
+                          </span>
+                        </div>
                       </div>
 
                       {/* Content */}
                       <div className="flex-1 p-7 flex flex-col justify-between">
                         <div>
-                          <div className="flex items-center gap-3 mb-4">
-                            <span className="font-mono text-[0.62rem] tracking-[2px] uppercase text-papaya">
-                              {new Date(featured.frontmatter.date).toLocaleDateString(
-                                "en-US",
-                                { year: "numeric", month: "long", day: "numeric" }
-                              )}
-                            </span>
-                            <span style={{ color: "rgba(14,16,32,0.2)", fontSize: 10 }}>
-                              ·
-                            </span>
-                            <span className="flex items-center gap-1 font-mono text-[0.62rem] tracking-[1px] text-silver">
-                              <Clock size={10} />
-                              {readingTime(featured.body)} min read
-                            </span>
-                          </div>
                           <h2
                             className="font-display font-black text-corbeau leading-tight mb-3 group-hover:text-papaya transition-colors duration-200"
                             style={{ fontSize: "clamp(1.3rem,2.5vw,1.65rem)" }}
@@ -292,7 +382,7 @@ export default function CategoryPage({
                             {featured.frontmatter.title}
                           </h2>
                           {featured.frontmatter.excerpt && (
-                            <p className="text-night/75 leading-[1.65] line-clamp-3 text-[0.95rem]">
+                            <p className="text-night/70 leading-[1.65] line-clamp-3 text-[0.93rem]">
                               {featured.frontmatter.excerpt}
                             </p>
                           )}
@@ -313,60 +403,69 @@ export default function CategoryPage({
                   </Link>
                 )}
 
-                {/* Divider before grid */}
+                {/* Divider */}
                 {rest.length > 0 && (
                   <div className="flex items-center gap-4 mb-7">
-                    <span className="font-mono text-[0.62rem] tracking-[2.5px] uppercase text-silver">
+                    <span className="font-mono text-[0.6rem] tracking-[2.5px] uppercase text-silver">
                       All articles
                     </span>
                     <div className="flex-1 border-t border-corbeau/[0.08]" />
-                    <span className="font-mono text-[0.62rem] tracking-[1px] text-silver/70">
+                    <span className="font-mono text-[0.6rem] tracking-[1px] text-silver/60">
                       {rest.length} {rest.length === 1 ? "post" : "posts"}
                     </span>
                   </div>
                 )}
 
-                {/* First 6 cards */}
+                {/* First 6 article cards */}
                 {beforeCta.length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8">
                     {beforeCta.map((p, i) => (
-                      <PostCard
-                        key={p.frontmatter.slug}
-                        post={p}
-                        locale={locale}
-                        index={i + 1}
-                      />
+                      <PostCard key={p.frontmatter.slug} post={p} locale={locale} index={i + 1} />
                     ))}
                   </div>
                 )}
 
-                {/* Mid-list CTA strip — only when there are enough articles */}
+                {/* Mid-list CTA strip */}
                 {rest.length >= 4 && (
                   <div
-                    className="rounded-2xl p-7 mb-8 flex flex-col sm:flex-row items-center justify-between gap-5"
+                    className="rounded-2xl p-7 mb-8 flex flex-col sm:flex-row items-center justify-between gap-5 relative overflow-hidden"
                     style={{
-                      background: "var(--cc-corbeau)",
+                      background:
+                        "linear-gradient(135deg, #0e1020 0%, #1a1b2e 50%, #1f1a2e 100%)",
                       animation: "cc-fade-in 0.5s ease-out 200ms both",
                     }}
                   >
-                    <div>
+                    {/* Glow */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: -40,
+                        right: -40,
+                        width: 200,
+                        height: 200,
+                        borderRadius: "50%",
+                        background: "radial-gradient(circle, rgba(252,152,90,0.2) 0%, transparent 70%)",
+                        pointerEvents: "none",
+                      }}
+                    />
+                    <div style={{ position: "relative" }}>
                       <p
-                        className="font-mono text-[0.62rem] tracking-[2.5px] uppercase mb-2"
-                        style={{ color: "rgba(252,152,90,0.85)" }}
+                        className="font-mono text-[0.6rem] tracking-[2.5px] uppercase mb-2 font-semibold"
+                        style={{ color: "rgba(252,152,90,0.8)" }}
                       >
                         Senior ERP advisory
                       </p>
                       <p
                         className="font-display font-black text-xl leading-snug"
-                        style={{ color: "var(--cc-bone)" }}
+                        style={{ color: "#ffffff" }}
                       >
                         Running an ERP programme?
                       </p>
                       <p
-                        className="text-[0.88rem] mt-1.5 leading-relaxed"
-                        style={{ color: "rgba(244,237,228,0.65)" }}
+                        className="text-[0.87rem] mt-1.5 leading-relaxed"
+                        style={{ color: "rgba(244,237,228,0.55)" }}
                       >
-                        25 years. $700M+ delivered. I lead the engagement — no junior team.
+                        25 years. $700M+ delivered. I lead the engagement.
                       </p>
                     </div>
                     <a
@@ -377,6 +476,7 @@ export default function CategoryPage({
                       style={{
                         background: "var(--cc-papaya)",
                         color: "var(--cc-corbeau)",
+                        position: "relative",
                       }}
                     >
                       Book a 30-min call <ArrowUpRight size={14} />
@@ -388,12 +488,7 @@ export default function CategoryPage({
                 {afterCta.length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     {afterCta.map((p, i) => (
-                      <PostCard
-                        key={p.frontmatter.slug}
-                        post={p}
-                        locale={locale}
-                        index={i + 7}
-                      />
+                      <PostCard key={p.frontmatter.slug} post={p} locale={locale} index={i + 7} />
                     ))}
                   </div>
                 )}
@@ -406,33 +501,48 @@ export default function CategoryPage({
               >
                 {/* Book a call CTA */}
                 <div
-                  className="rounded-2xl p-6"
-                  style={{ background: "var(--cc-corbeau)" }}
+                  className="rounded-2xl p-6 relative overflow-hidden"
+                  style={{
+                    background: "linear-gradient(135deg, #0e1020 0%, #1a1b2e 70%, #1f1a2e 100%)",
+                  }}
                 >
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: -30,
+                      right: -30,
+                      width: 160,
+                      height: 160,
+                      borderRadius: "50%",
+                      background: "radial-gradient(circle, rgba(252,152,90,0.25) 0%, transparent 70%)",
+                      pointerEvents: "none",
+                    }}
+                  />
                   <span
-                    className="cc-pulse-dot mb-3 block"
+                    className="cc-pulse-dot block mb-3"
                     style={{
                       width: 8,
                       height: 8,
                       borderRadius: "50%",
                       background: "var(--cc-papaya)",
+                      position: "relative",
                     }}
                   />
                   <p
-                    className="font-mono text-[0.62rem] tracking-[2.5px] uppercase mb-2"
-                    style={{ color: "rgba(252,152,90,0.85)" }}
+                    className="font-mono text-[0.6rem] tracking-[2.5px] uppercase mb-2 font-semibold"
+                    style={{ color: "rgba(252,152,90,0.8)", position: "relative" }}
                   >
                     Available for engagements
                   </p>
                   <h3
                     className="font-display font-black text-xl leading-snug mb-3"
-                    style={{ color: "var(--cc-bone)" }}
+                    style={{ color: "#ffffff", position: "relative" }}
                   >
                     Talk to Noel directly.
                   </h3>
                   <p
-                    className="text-[0.85rem] leading-relaxed mb-5"
-                    style={{ color: "rgba(244,237,228,0.65)" }}
+                    className="text-[0.84rem] leading-relaxed mb-5"
+                    style={{ color: "rgba(244,237,228,0.55)", position: "relative" }}
                   >
                     ECC to S/4HANA. AI on SAP. CIMA-qualified. I lead every engagement.
                   </p>
@@ -444,6 +554,7 @@ export default function CategoryPage({
                     style={{
                       background: "var(--cc-papaya)",
                       color: "var(--cc-corbeau)",
+                      position: "relative",
                     }}
                   >
                     Book a 30-min call <ArrowUpRight size={13} />
@@ -451,29 +562,36 @@ export default function CategoryPage({
                 </div>
 
                 {/* About the author */}
-                <div className="bg-paper border border-corbeau/[0.07] rounded-2xl p-6">
-                  <p className="font-mono text-[0.62rem] tracking-[2.5px] uppercase text-papaya mb-3">
+                <div
+                  className="bg-paper rounded-2xl p-6"
+                  style={{ border: "1px solid rgba(14,16,32,0.07)" }}
+                >
+                  <p className="font-mono text-[0.6rem] tracking-[2.5px] uppercase mb-3" style={{ color: "var(--cc-papaya)" }}>
                     About the author
                   </p>
                   <p className="font-display font-black text-corbeau text-lg mb-2">
                     Noel D&apos;Costa
                   </p>
-                  <p className="text-night/75 text-[0.85rem] leading-relaxed mb-4">
+                  <p className="text-night/70 text-[0.84rem] leading-relaxed mb-4">
                     Senior ERP and AI advisor. 25 years across EDGE Group, Etihad
                     Airways, ADNOC, PIF entities, and the UAE Government. CIMA,
                     AICPA, Masters in Accounting.
                   </p>
                   <Link
                     href="/sap-erp-consultant-my-story-noel-dcosta"
-                    className="inline-flex items-center gap-1.5 text-[0.8rem] font-semibold text-papaya hover:underline"
+                    className="inline-flex items-center gap-1.5 text-[0.8rem] font-semibold hover:underline"
+                    style={{ color: "var(--cc-papaya)" }}
                   >
                     Full bio <ArrowRight size={12} />
                   </Link>
                 </div>
 
                 {/* Free tools */}
-                <div className="bg-paper border border-corbeau/[0.07] rounded-2xl p-6">
-                  <p className="font-mono text-[0.62rem] tracking-[2.5px] uppercase text-papaya mb-4">
+                <div
+                  className="bg-paper rounded-2xl p-6"
+                  style={{ border: "1px solid rgba(14,16,32,0.07)" }}
+                >
+                  <p className="font-mono text-[0.6rem] tracking-[2.5px] uppercase mb-4" style={{ color: "var(--cc-papaya)" }}>
                     Free tools
                   </p>
                   <div className="flex flex-col">
@@ -481,7 +599,7 @@ export default function CategoryPage({
                       <Link
                         key={t.slug}
                         href={`/${t.slug}`}
-                        className="flex items-center justify-between text-[0.85rem] text-corbeau font-medium hover:text-papaya transition-colors py-2.5"
+                        className="flex items-center justify-between text-[0.84rem] text-corbeau font-medium hover:text-papaya transition-colors py-2.5"
                         style={{
                           borderBottom:
                             i < SIDEBAR_TOOLS.length - 1
@@ -490,18 +608,18 @@ export default function CategoryPage({
                         }}
                       >
                         {t.label}
-                        <ArrowRight
-                          size={12}
-                          style={{ color: "var(--cc-papaya)", flexShrink: 0 }}
-                        />
+                        <ArrowRight size={12} style={{ color: "var(--cc-papaya)", flexShrink: 0 }} />
                       </Link>
                     ))}
                   </div>
                 </div>
 
                 {/* Browse categories */}
-                <div className="bg-paper border border-corbeau/[0.07] rounded-2xl p-6">
-                  <p className="font-mono text-[0.62rem] tracking-[2.5px] uppercase text-papaya mb-4">
+                <div
+                  className="bg-paper rounded-2xl p-6"
+                  style={{ border: "1px solid rgba(14,16,32,0.07)" }}
+                >
+                  <p className="font-mono text-[0.6rem] tracking-[2.5px] uppercase mb-4" style={{ color: "var(--cc-papaya)" }}>
                     Browse topics
                   </p>
                   <div className="flex flex-col gap-0.5">
@@ -509,11 +627,12 @@ export default function CategoryPage({
                       <Link
                         key={c.slug}
                         href={`/category/${c.slug}`}
-                        className={`text-[0.85rem] py-2 transition-colors ${
+                        className={`text-[0.84rem] py-2 transition-colors ${
                           c.slug === category
-                            ? "text-papaya font-semibold"
+                            ? "font-semibold"
                             : "text-night hover:text-papaya"
                         }`}
+                        style={c.slug === category ? { color: "var(--cc-papaya)" } : undefined}
                       >
                         {c.label}
                       </Link>
@@ -528,34 +647,55 @@ export default function CategoryPage({
         {/* ── Bottom CTA ── */}
         <section
           style={{
-            background: "var(--cc-corbeau)",
-            borderTop: "1px solid rgba(255,255,255,0.04)",
+            background: "linear-gradient(135deg, #0e1020 0%, #1a1b2e 60%, #1f1a2e 100%)",
+            position: "relative",
+            overflow: "hidden",
           }}
         >
+          {/* Glow */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: -60,
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: 600,
+              height: 300,
+              borderRadius: "50%",
+              background: "radial-gradient(ellipse, rgba(252,152,90,0.15) 0%, transparent 70%)",
+              pointerEvents: "none",
+            }}
+          />
           <div
             style={{
               maxWidth: 1200,
               margin: "0 auto",
-              padding:
-                "clamp(3rem,6vw,5rem) clamp(1.5rem,5vw,3rem)",
+              padding: "clamp(3rem,6vw,5rem) clamp(1.5rem,5vw,3rem)",
               textAlign: "center",
+              position: "relative",
             }}
           >
             <p
-              className="font-mono text-[0.62rem] tracking-[2.5px] uppercase mb-4"
-              style={{ color: "rgba(252,152,90,0.85)" }}
+              className="font-mono text-[0.62rem] tracking-[2.5px] uppercase mb-4 font-semibold"
+              style={{ color: "rgba(252,152,90,0.75)" }}
             >
               Senior advisory
             </p>
             <h2
-              className="font-display font-black text-bone tracking-[-0.03em] leading-tight mb-4"
-              style={{ fontSize: "clamp(1.75rem,4vw,2.75rem)" }}
+              className="font-display font-black leading-tight mb-4 tracking-[-0.02em]"
+              style={{
+                fontSize: "clamp(1.8rem,4.5vw,3rem)",
+                background: "linear-gradient(135deg, #ffffff 40%, var(--cc-papaya))",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
             >
               Reading about ERP isn&apos;t enough.
             </h2>
             <p
-              className="text-lg max-w-[480px] mx-auto mb-8 leading-relaxed"
-              style={{ color: "rgba(244,237,228,0.7)" }}
+              className="text-lg max-w-[440px] mx-auto mb-8 leading-relaxed"
+              style={{ color: "rgba(244,237,228,0.55)" }}
             >
               If you&apos;re planning a migration or mid-programme, a 30-min call saves months.
             </p>
