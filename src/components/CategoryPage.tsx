@@ -53,19 +53,14 @@ const TAG_META: Record<
     icon: Settings,
   },
   "sap-erp-modernization": {
-    label: "Modernization",
-    description: "Cloud migration, clean core, and ERP transformation.",
+    label: "Modernization & Industry",
+    description: "Cloud migration, clean core, sector-specific patterns, and ERP transformation.",
     icon: RefreshCw,
   },
   "sap-crisis-management": {
     label: "Crisis & Recovery",
     description: "Programme recovery, risk mitigation, and escalation.",
     icon: AlertCircle,
-  },
-  "sap-industry-topics": {
-    label: "Industry",
-    description: "Sector-specific ERP patterns and case examples.",
-    icon: Globe,
   },
 };
 
@@ -253,12 +248,14 @@ export default function CategoryPage({
   const tagCounts: Record<string, number> = {};
   for (const post of posts) {
     for (const tag of post.frontmatter.tags ?? []) {
-      tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
+      // Merge sap-industry-topics into sap-erp-modernization
+      const key = tag === "sap-industry-topics" ? "sap-erp-modernization" : tag;
+      tagCounts[key] = (tagCounts[key] ?? 0) + 1;
     }
   }
   const topicTags = Object.entries(tagCounts)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 6);
+    .slice(0, 5);
 
   const otherCategories = ALL_CATEGORIES.filter((c) => c.slug !== category);
   const heroTagline = CATEGORY_TAGLINES[category] ?? "Practical. Not theoretical.";
