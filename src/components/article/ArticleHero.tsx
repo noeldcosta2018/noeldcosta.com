@@ -62,38 +62,41 @@ export default function ArticleHero({
       )}
 
       <h1
-        className="font-display font-black text-corbeau tracking-[-0.035em] leading-[1.08] mb-5"
-        style={{ fontSize: "clamp(2rem, 4.2vw, 2.9rem)" }}
+        className="font-display font-black text-corbeau tracking-[-0.04em] leading-[1.06] mb-6"
+        style={{ fontSize: "clamp(2.1rem, 4.8vw, 3.1rem)" }}
       >
         {title}
       </h1>
 
       {deck && (
-        <p className="text-night leading-[1.6] text-[1.1rem] md:text-[1.18rem] max-w-[40rem] mb-8 font-normal">
+        <p className="text-night leading-[1.7] text-[1.1rem] md:text-[1.2rem] max-w-[42rem] mb-8 font-normal">
           {deck}
         </p>
       )}
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-3 pb-6 border-b border-corbeau/[0.08]">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-3 pb-7 border-b border-corbeau/[0.08]">
         <span className="flex items-center gap-3">
-          <span className="relative w-9 h-9 rounded-full overflow-hidden border border-corbeau/[0.08] flex-shrink-0">
+          <span className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-papaya/20 flex-shrink-0">
             <Image
               src="/headshot.png"
               alt={author}
               fill
-              sizes="36px"
+              sizes="40px"
               className="object-cover object-top"
             />
           </span>
-          <span className="flex flex-col leading-tight">
-            <span className="text-corbeau font-display font-bold text-[0.92rem] tracking-[-0.01em]">
+          <span className="flex flex-col leading-tight gap-0.5">
+            <span className="text-corbeau font-display font-bold text-[0.94rem] tracking-[-0.01em]">
               {author}
             </span>
-            <span className="font-mono text-[0.65rem] uppercase tracking-[1.4px] text-silver mt-0.5">
-              {updated ? "Updated " : ""}
-              {dateLabel} · {readingMinutes} min read
+            <span className="font-mono text-[0.63rem] uppercase tracking-[1.5px] text-silver">
+              {updated ? "Updated " : ""}{dateLabel}
             </span>
           </span>
+        </span>
+        <span className="h-4 w-px bg-corbeau/[0.12] hidden sm:block" aria-hidden />
+        <span className="font-mono text-[0.63rem] uppercase tracking-[1.5px] text-silver">
+          {readingMinutes} min read
         </span>
       </div>
 

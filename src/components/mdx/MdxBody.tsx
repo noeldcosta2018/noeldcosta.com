@@ -73,17 +73,17 @@ export default function MdxBody({ source }: { source: string }) {
           />
         ),
         h2: (p: ComponentProps<"h2">) => (
-          <FadeUp as="div" className="mt-14 mb-3">
+          <FadeUp as="div" className="mt-16 mb-4">
             <h2
-              className="font-display font-black tracking-[-0.025em] text-corbeau text-[1.5rem] md:text-[1.75rem] leading-[1.2] scroll-mt-28"
+              className="font-display font-black tracking-[-0.03em] text-corbeau text-[1.55rem] md:text-[1.85rem] leading-[1.18] scroll-mt-28 pb-3 border-b border-corbeau/[0.07]"
               {...p}
             />
           </FadeUp>
         ),
         h3: (p: ComponentProps<"h3">) => (
-          <FadeUp as="div" className="mt-10 mb-2">
+          <FadeUp as="div" className="mt-11 mb-2.5">
             <h3
-              className="font-display font-bold tracking-[-0.015em] text-corbeau text-[1.15rem] md:text-[1.25rem] leading-[1.3] scroll-mt-28"
+              className="font-display font-bold tracking-[-0.02em] text-corbeau text-[1.18rem] md:text-[1.3rem] leading-[1.28] scroll-mt-28"
               {...p}
             />
           </FadeUp>
@@ -96,19 +96,19 @@ export default function MdxBody({ source }: { source: string }) {
         ),
         p: (p: ComponentProps<"p">) => (
           <p
-            className="text-night leading-[1.7] text-[1rem] md:text-[1.02rem] my-4 [&>strong]:text-corbeau [&>strong]:font-semibold"
+            className="text-night leading-[1.78] text-[1.02rem] md:text-[1.06rem] my-5 [&>strong]:text-corbeau [&>strong]:font-semibold"
             {...p}
           />
         ),
         ul: (p: ComponentProps<"ul">) => (
           <ul
-            className="text-night my-5 space-y-2 leading-[1.65] text-[1rem] md:text-[1.02rem] [&>li]:relative [&>li]:pl-6 [&>li]:before:content-[''] [&>li]:before:absolute [&>li]:before:left-0 [&>li]:before:top-[0.65em] [&>li]:before:w-[6px] [&>li]:before:h-[6px] [&>li]:before:rounded-full [&>li]:before:bg-papaya"
+            className="text-night my-6 space-y-2.5 leading-[1.72] text-[1.02rem] md:text-[1.06rem] [&>li]:relative [&>li]:pl-6 [&>li]:before:content-[''] [&>li]:before:absolute [&>li]:before:left-0 [&>li]:before:top-[0.68em] [&>li]:before:w-[6px] [&>li]:before:h-[6px] [&>li]:before:rounded-full [&>li]:before:bg-papaya"
             {...p}
           />
         ),
         ol: (p: ComponentProps<"ol">) => (
           <ol
-            className="list-decimal marker:text-papaya marker:font-semibold pl-6 text-night my-5 space-y-2 leading-[1.65] text-[1rem] md:text-[1.02rem]"
+            className="list-decimal marker:text-papaya marker:font-semibold pl-6 text-night my-6 space-y-2.5 leading-[1.72] text-[1.02rem] md:text-[1.06rem]"
             {...p}
           />
         ),
@@ -167,21 +167,23 @@ export default function MdxBody({ source }: { source: string }) {
         // FAQ accordion. Articles use <details><summary>Q</summary>A</details>
         // inline HTML (passed through by rehype-raw) for their FAQ sections.
         // Styled here so they read as a single coherent accordion module.
+        // The group-open: variant handles the +/× toggle and answer reveal.
         details: (p: ComponentProps<"details">) => (
           <details
-            className="group not-prose border-b border-corbeau/10 py-5 first:border-t first:pt-6 last:pb-6 [&_summary::-webkit-details-marker]:hidden [&_summary]:list-none"
+            className="group not-prose border-b border-corbeau/[0.08] py-5 first:border-t first:border-corbeau/[0.08] first:pt-5 last:pb-5 [&_summary::-webkit-details-marker]:hidden [&_summary]:list-none"
             {...p}
           />
         ),
         summary: ({ children, ...rest }: ComponentProps<"summary">) => (
           <summary
-            className="flex items-start justify-between gap-4 cursor-pointer font-display font-bold text-corbeau text-[1.02rem] md:text-[1.08rem] tracking-[-0.015em] leading-[1.35] hover:text-papaya transition-colors"
+            className="flex items-start justify-between gap-4 cursor-pointer font-display font-bold text-corbeau text-[1.02rem] md:text-[1.1rem] tracking-[-0.02em] leading-[1.35] hover:text-papaya transition-colors duration-150 select-none"
+            role="button"
             {...rest}
           >
-            <span className="flex-1">{children}</span>
+            <span className="flex-1 py-0.5">{children}</span>
             <span
               aria-hidden
-              className="mt-1 flex-shrink-0 w-5 h-5 rounded-full border border-corbeau/20 flex items-center justify-center text-corbeau/60 text-[0.9rem] leading-none transition-transform group-open:rotate-45 group-hover:border-papaya group-hover:text-papaya"
+              className="mt-[3px] flex-shrink-0 w-[22px] h-[22px] rounded-full border border-corbeau/[0.15] flex items-center justify-center text-corbeau/50 text-[0.85rem] leading-none transition-all duration-200 group-open:rotate-45 group-open:border-papaya group-open:text-papaya group-hover:border-papaya/60 group-hover:text-papaya/70"
             >
               +
             </span>

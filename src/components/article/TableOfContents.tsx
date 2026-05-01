@@ -112,9 +112,12 @@ export default function TableOfContents({
   return (
     <nav
       aria-label="Table of contents"
-      className="rounded-xl bg-paper border border-corbeau/[0.08] shadow-[0_2px_14px_rgba(14,16,32,0.04)] px-5 py-5"
+      className="rounded-xl bg-paper border border-corbeau/[0.08] shadow-[0_2px_14px_rgba(14,16,32,0.04)] overflow-hidden"
     >
-      <p className="font-mono text-[0.58rem] font-medium tracking-[2.4px] uppercase text-corbeau/50 mb-4">
+      {/* Orange top accent line */}
+      <div className="h-[3px] bg-gradient-to-r from-papaya to-canyon" aria-hidden />
+      <div className="px-5 py-5">
+      <p className="font-mono text-[0.6rem] font-semibold tracking-[2.8px] uppercase text-corbeau/60 mb-4">
         Contents
       </p>
       <ol className="space-y-[1px]">
@@ -205,6 +208,7 @@ export default function TableOfContents({
           );
         })}
       </ol>
+      </div>
     </nav>
   );
 }

@@ -9,6 +9,7 @@ import ArticleHero from "@/components/article/ArticleHero";
 import KeyTakeaways from "@/components/article/KeyTakeaways";
 import PullQuote from "@/components/article/PullQuote";
 import ProductPromoCard from "@/components/article/ProductPromoCard";
+import CTASection from "@/components/article/CTASection";
 import AuthorBox from "@/components/article/AuthorBox";
 import RelatedArticles, {
   pickRelated,
@@ -27,6 +28,23 @@ import {
 } from "@/lib/seo";
 import { extractHeadings } from "@/lib/article-headings";
 import { splitAtMidH2 } from "@/lib/article-split";
+
+/**
+ * Extract question/answer pairs from HTML <details>/<summary> blocks in the
+ * article body. Used to generate FAQPage JSON-LD when an article has FAQs.
+ * Strips inner HTML tags so schema.org receives plain text answers.
+ */
+function extractFaqItems(body: string): { question: string; answer: string }[] {
+  const items: { question: string; answer: string }[] = [];
+  const re = /<details[^>]*>[\s\S]*?<summary[^>]*>([\s\S]*?)<\/summary>([\s\S]*?)<\/details>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(body)) !== null) {
+    const q = m[1].trim().replace(/<[^>]+>/g, "").trim();
+    const a = m[2].trim().replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    if (q) items.push({ question: q, answer: a.slice(0, 600) });
+  }
+  return items;
+}
 
 /**
  * Article page shell. Layout is deliberately restrained:
@@ -60,6 +78,7 @@ export default function PostPage({
 
   const pool = getAllPosts(locale);
   const endRelated = pickRelated(post, pool, 4);
+  const faqItems = extractFaqItems(post.body);
 
   const breadcrumbs = [
     { name: "Home", url: `${SITE_URL}${localePrefix}/` },
@@ -94,7 +113,7 @@ export default function PostPage({
               </li>
               {catMeta && (
                 <>
-                  <li aria-hidden className="text-silver/50">/</li>
+                  <li aria-hidden className="text-silver/40">/</li>
                   <li>
                     <Link
                       href={`${localePrefix}/category/${catMeta.slug}`}
@@ -105,6 +124,13 @@ export default function PostPage({
                   </li>
                 </>
               )}
+              <li aria-hidden className="text-silver/40">/</li>
+              <li
+                aria-current="page"
+                className="text-corbeau/60 truncate max-w-[200px] md:max-w-[360px] normal-case tracking-normal text-[0.68rem]"
+              >
+                {fm.title}
+              </li>
             </ol>
           </nav>
 
@@ -116,9 +142,9 @@ export default function PostPage({
           */}
           <div
             className={[
-              "grid gap-x-12 gap-y-0",
+              "grid gap-x-14 gap-y-0",
               hasToc
-                ? "grid-cols-1 lg:grid-cols-[minmax(0,1fr)_220px]"
+                ? "grid-cols-1 lg:grid-cols-[minmax(0,1fr)_248px]"
                 : "grid-cols-1",
             ].join(" ")}
           >
@@ -253,6 +279,16 @@ export default function PostPage({
 
               <AuthorBox localePrefix={localePrefix} />
 
+              <CTASection
+                title="Running an ERP programme right now?"
+                body="If this article touched on a programme you are live in right now, a 30-minute conversation usually gets further than another week of internal analysis."
+                primaryCta="Book a 30-min call"
+                primaryHref="https://calendly.com/noeldcosta/30min"
+                secondaryCta="See case studies"
+                secondaryHref={`${localePrefix}/category/case-studies`}
+                localePrefix={localePrefix}
+              />
+
               <RelatedArticles
                 label="Continue reading"
                 items={endRelated}
@@ -278,19 +314,40 @@ export default function PostPage({
 
       <Footer />
 
-      {/* JSON-LD */}
+      {/* JSON-LD — Article */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(articleJsonLd(post)),
         }}
       />
+      {/* JSON-LD — Breadcrumb */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(breadcrumbJsonLd(breadcrumbs)),
         }}
       />
+      {/* JSON-LD — FAQPage (only when article contains <details>/<summary> blocks) */}
+      {faqItems.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: faqItems.map((item) => ({
+                "@type": "Question",
+                name: item.question,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: item.answer,
+                },
+              })),
+            }),
+          }}
+        />
+      )}
     </>
   );
 }
