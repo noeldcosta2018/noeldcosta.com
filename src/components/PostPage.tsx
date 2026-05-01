@@ -98,68 +98,58 @@ export default function PostPage({
       <Nav />
       <ReadingProgress />
 
-      {/*
-        Layout: bone page bg, paper card sitting on top.
-        The card has no overflow:hidden so the sticky ToC inside it works.
-        Rounded corners clip the card background only — child elements are unaffected.
-      */}
-      <article className="bg-bone pt-6 md:pt-10 pb-20 min-h-screen">
-        <div className="max-w-[1280px] mx-auto px-[clamp(0.75rem,2.5vw,1.5rem)]">
-
-          {/* ── Paper card ────────────────────────────────────────── */}
-          <div
-            className="bg-paper rounded-[24px] shadow-[0_4px_40px_rgba(14,16,32,0.07)]"
-          >
-            <div className="px-[clamp(1.5rem,5vw,4rem)] pt-10 pb-16">
-
-              {/* Breadcrumb */}
-              <nav aria-label="Breadcrumb" className="mb-10">
-                <ol className="flex flex-wrap gap-x-2 gap-y-1 items-center font-mono text-[0.65rem] font-medium tracking-[2px] uppercase">
+      <article className="bg-bone pt-12 md:pt-16 pb-16">
+        <div className="max-w-[1200px] mx-auto px-[clamp(1.5rem,5vw,4rem)]">
+          {/* Breadcrumb — single-line mono eyebrow, matches Hero pattern */}
+          <nav aria-label="Breadcrumb" className="mb-10">
+            <ol className="flex flex-wrap gap-x-2 gap-y-1 items-center font-mono text-[0.68rem] font-medium tracking-[2px] uppercase">
+              <li>
+                <Link
+                  href={`${localePrefix}/`}
+                  className="text-silver hover:text-papaya transition-colors"
+                >
+                  Home
+                </Link>
+              </li>
+              {catMeta && (
+                <>
+                  <li aria-hidden className="text-silver/40">/</li>
                   <li>
                     <Link
-                      href={`${localePrefix}/`}
+                      href={`${localePrefix}/category/${catMeta.slug}`}
                       className="text-silver hover:text-papaya transition-colors"
                     >
-                      Home
+                      {catMeta.label}
                     </Link>
                   </li>
-                  {catMeta && (
-                    <>
-                      <li aria-hidden className="text-silver/40">/</li>
-                      <li>
-                        <Link
-                          href={`${localePrefix}/category/${catMeta.slug}`}
-                          className="text-silver hover:text-papaya transition-colors"
-                        >
-                          {catMeta.label}
-                        </Link>
-                      </li>
-                    </>
-                  )}
-                  <li aria-hidden className="text-silver/40">/</li>
-                  <li
-                    aria-current="page"
-                    className="text-corbeau/55 truncate max-w-[200px] md:max-w-[380px] normal-case tracking-normal text-[0.65rem]"
-                  >
-                    {fm.title}
-                  </li>
-                </ol>
-              </nav>
-
-              {/*
-                Two-column grid: reading column + sticky ToC rail.
-                No overflow:hidden on any ancestor — sticky ToC stays sticky.
-              */}
-              <div
-                className={[
-                  "grid gap-x-14 gap-y-0",
-                  hasToc
-                    ? "grid-cols-1 lg:grid-cols-[minmax(0,1fr)_248px]"
-                    : "grid-cols-1",
-                ].join(" ")}
+                </>
+              )}
+              <li aria-hidden className="text-silver/40">/</li>
+              <li
+                aria-current="page"
+                className="text-corbeau/60 truncate max-w-[200px] md:max-w-[360px] normal-case tracking-normal text-[0.68rem]"
               >
-                {/* Reading column */}
-                <div className="min-w-0 max-w-[720px] w-full mx-auto lg:mx-0">
+                {fm.title}
+              </li>
+            </ol>
+          </nav>
+
+          {/*
+            Two-column grid: reading column + sticky ToC rail on the right.
+            On < lg we collapse to a single column; the mobile ToC appears
+            inline inside the content column as a <details> element so users
+            never hit a section without a map.
+          */}
+          <div
+            className={[
+              "grid gap-x-14 gap-y-0",
+              hasToc
+                ? "grid-cols-1 lg:grid-cols-[minmax(0,1fr)_248px]"
+                : "grid-cols-1",
+            ].join(" ")}
+          >
+            {/* Reading column */}
+            <div className="min-w-0 max-w-[720px] w-full mx-auto lg:mx-0">
               <ArticleHero
                 category={
                   catMeta
@@ -305,24 +295,20 @@ export default function PostPage({
                 localePrefix={localePrefix}
                 columns={2}
               />
-                </div>
-
-                {/* Right rail — sticky ToC only. */}
-                {hasToc && (
-                  <aside className="hidden lg:block">
-                    <div className="sticky top-24 pt-2">
-                      <TableOfContents headings={headings} />
-                    </div>
-                  </aside>
-                )}
-              </div>
-              {/* ── end two-column grid ── */}
-
             </div>
-            {/* ── end paper card inner padding ── */}
-          </div>
-          {/* ── end paper card ── */}
 
+            {/* Right rail — sticky ToC only. We deliberately do NOT render a
+                second "advisory" card here: the end-of-article CTA already
+                makes the advisory offer, and a persistent sidebar CTA while
+                reading feels needy. */}
+            {hasToc && (
+              <aside className="hidden lg:block">
+                <div className="sticky top-24 pt-2">
+                  <TableOfContents headings={headings} />
+                </div>
+              </aside>
+            )}
+          </div>
         </div>
       </article>
 
