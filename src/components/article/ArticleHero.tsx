@@ -62,8 +62,8 @@ export default function ArticleHero({
       )}
 
       <h1
-        className="font-display font-black text-corbeau tracking-[-0.04em] leading-[1.06] mb-6"
-        style={{ fontSize: "clamp(2.1rem, 4.8vw, 3.1rem)" }}
+        className="font-display font-black text-corbeau tracking-[-0.04em] leading-[1.1] mb-6"
+        style={{ fontSize: "clamp(1.6rem, 2.4vw, 1.95rem)" }}
       >
         {title}
       </h1>

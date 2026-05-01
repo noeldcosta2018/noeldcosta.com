@@ -112,14 +112,17 @@ export default function TableOfContents({
   return (
     <nav
       aria-label="Table of contents"
-      className="rounded-xl bg-paper border border-corbeau/[0.08] shadow-[0_2px_14px_rgba(14,16,32,0.04)] overflow-hidden"
+      className="rounded-xl bg-corbeau overflow-hidden"
     >
-      {/* Orange top accent line */}
-      <div className="h-[3px] bg-gradient-to-r from-papaya to-canyon" aria-hidden />
-      <div className="px-5 py-5">
-      <p className="font-mono text-[0.6rem] font-semibold tracking-[2.8px] uppercase text-corbeau/60 mb-4">
-        Contents
-      </p>
+      {/* Header */}
+      <div className="px-5 pt-5 pb-4 border-b border-bone/[0.08]">
+        <p className="font-display font-black text-bone text-[1.05rem] leading-[1.2]">
+          Table of{" "}
+          <span className="cc-emphasis-italic">contents</span>
+        </p>
+      </div>
+
+      <div className="px-5 py-4">
       <ol className="space-y-[1px]">
         {groups.map((g, gi) => {
           const isActive = gi === activeGroupIdx;
@@ -139,19 +142,19 @@ export default function TableOfContents({
                     aria-hidden
                     className={[
                       "font-mono text-[0.62rem] tabular-nums pt-[0.22rem] flex-shrink-0 w-4 transition-colors",
-                      isActive ? "text-papaya" : "text-corbeau/30 group-hover:text-corbeau/60",
+                      isActive ? "text-papaya" : "text-papaya/35 group-hover:text-papaya/70",
                     ].join(" ")}
                   >
                     {String(g.idx).padStart(2, "0")}
                   </span>
                   <span
                     className={[
-                      "text-[0.82rem] transition-colors",
+                      "text-[0.78rem] transition-colors",
                       h2IsActive
-                        ? "text-corbeau font-semibold"
+                        ? "text-bone font-semibold"
                         : isActive
-                          ? "text-corbeau/90 font-medium group-hover:text-corbeau"
-                          : "text-night/65 group-hover:text-corbeau",
+                          ? "text-bone/85 font-medium group-hover:text-bone"
+                          : "text-bone/50 group-hover:text-bone/80",
                     ].join(" ")}
                   >
                     {h2.text}
@@ -169,7 +172,7 @@ export default function TableOfContents({
                   ].join(" ")}
                 >
                   <div className="overflow-hidden">
-                    <ul className="border-l border-corbeau/10 ml-0 pt-1 pb-2 space-y-[1px]">
+                    <ul className="border-l border-bone/[0.12] ml-0 pt-1 pb-2 space-y-[1px]">
                       {g.children.map((c) => {
                         const cActive = c.id === activeId;
                         return (
@@ -183,15 +186,15 @@ export default function TableOfContents({
                                 aria-hidden
                                 className={[
                                   "absolute left-[-1px] top-0 bottom-0 w-[2px] transition-colors",
-                                  cActive ? "bg-papaya" : "bg-transparent group-hover:bg-corbeau/30",
+                                  cActive ? "bg-papaya" : "bg-transparent group-hover:bg-papaya/40",
                                 ].join(" ")}
                               />
                               <span
                                 className={[
-                                  "text-[0.76rem] leading-[1.4] transition-colors",
+                                  "text-[0.73rem] leading-[1.4] transition-colors",
                                   cActive
-                                    ? "text-corbeau font-medium"
-                                    : "text-night/55 group-hover:text-corbeau",
+                                    ? "text-bone font-medium"
+                                    : "text-bone/45 group-hover:text-bone/75",
                                 ].join(" ")}
                               >
                                 {c.text}
