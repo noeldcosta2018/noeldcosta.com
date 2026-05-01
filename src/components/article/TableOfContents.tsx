@@ -136,13 +136,24 @@ export default function TableOfContents({
                 <a
                   href={`#${h2.id}`}
                   onClick={() => onClickEntry(h2.id)}
-                  className="group flex items-start gap-3 py-1.5 leading-[1.35]"
+                  className={[
+                    "group flex items-start gap-3 py-1.5 px-2 -mx-2 rounded-md leading-[1.35] transition-colors",
+                    h2IsActive
+                      ? "bg-papaya"
+                      : isActive
+                        ? "bg-papaya/10 hover:bg-papaya"
+                        : "hover:bg-papaya",
+                  ].join(" ")}
                 >
                   <span
                     aria-hidden
                     className={[
                       "font-mono text-[0.62rem] tabular-nums pt-[0.22rem] flex-shrink-0 w-4 transition-colors",
-                      isActive ? "text-papaya" : "text-papaya/35 group-hover:text-papaya/70",
+                      h2IsActive
+                        ? "text-corbeau"
+                        : isActive
+                          ? "text-papaya group-hover:text-corbeau"
+                          : "text-papaya/60 group-hover:text-corbeau",
                     ].join(" ")}
                   >
                     {String(g.idx).padStart(2, "0")}
@@ -151,10 +162,10 @@ export default function TableOfContents({
                     className={[
                       "text-[0.78rem] transition-colors",
                       h2IsActive
-                        ? "text-bone font-semibold"
+                        ? "text-corbeau font-semibold"
                         : isActive
-                          ? "text-bone/85 font-medium group-hover:text-bone"
-                          : "text-bone/50 group-hover:text-bone/80",
+                          ? "text-bone font-medium group-hover:text-corbeau"
+                          : "text-bone/75 group-hover:text-corbeau",
                     ].join(" ")}
                   >
                     {h2.text}
@@ -180,21 +191,24 @@ export default function TableOfContents({
                             <a
                               href={`#${c.id}`}
                               onClick={() => onClickEntry(c.id)}
-                              className="group flex items-start gap-3 py-1 pl-4 relative"
+                              className={[
+                                "group flex items-start gap-3 py-1 pl-4 pr-2 -mr-2 rounded-md relative transition-colors",
+                                cActive ? "bg-papaya/80" : "hover:bg-papaya/70",
+                              ].join(" ")}
                             >
                               <span
                                 aria-hidden
                                 className={[
                                   "absolute left-[-1px] top-0 bottom-0 w-[2px] transition-colors",
-                                  cActive ? "bg-papaya" : "bg-transparent group-hover:bg-papaya/40",
+                                  cActive ? "bg-papaya" : "bg-transparent group-hover:bg-corbeau/30",
                                 ].join(" ")}
                               />
                               <span
                                 className={[
                                   "text-[0.73rem] leading-[1.4] transition-colors",
                                   cActive
-                                    ? "text-bone font-medium"
-                                    : "text-bone/45 group-hover:text-bone/75",
+                                    ? "text-corbeau font-medium"
+                                    : "text-bone/65 group-hover:text-corbeau",
                                 ].join(" ")}
                               >
                                 {c.text}

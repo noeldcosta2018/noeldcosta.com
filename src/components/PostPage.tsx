@@ -98,7 +98,7 @@ export default function PostPage({
       <Nav />
       <ReadingProgress />
 
-      <article className="bg-bone pt-12 md:pt-16 pb-16">
+      <article className="bg-paper pt-24 md:pt-28 pb-16">
         <div className="max-w-[1200px] mx-auto px-[clamp(1.5rem,5vw,4rem)]">
           {/* Breadcrumb — single-line mono eyebrow, matches Hero pattern */}
           <nav aria-label="Breadcrumb" className="mb-10">
