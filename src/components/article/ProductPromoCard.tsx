@@ -1,4 +1,5 @@
 import Link from "next/link";
+import FadeUp from "@/components/article/FadeUp";
 
 type Tone = "dark" | "light";
 
@@ -88,6 +89,7 @@ export default function ProductPromoCard({
   );
 
   return (
+    <FadeUp>
     <aside className={outerClass} style={hasImage ? { minHeight: "240px" } : undefined}>
       {isDark && (
         <span
@@ -134,5 +136,6 @@ export default function ProductPromoCard({
         </div>
       </div>
     </aside>
+    </FadeUp>
   );
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { CATEGORIES, type PostRecord } from "@/lib/content";
+import FadeUp from "@/components/article/FadeUp";
 
 export interface RelatedCandidate {
   slug: string;
@@ -108,53 +109,54 @@ export default function RelatedArticles({
         </Link>
       </header>
       <div className={`grid grid-cols-1 ${colsClass} gap-4`}>
-        {items.map((r) => {
+        {items.map((r, idx) => {
           const catMeta = CATEGORIES[r.category as keyof typeof CATEGORIES];
           const href = `${localePrefix}/${r.slug}`;
           return (
-            <Link
-              key={r.slug}
-              href={href}
-              className="group relative flex gap-4 rounded-xl bg-paper border border-corbeau/[0.08] p-4 hover:border-papaya/40 hover:-translate-y-px hover:shadow-[0_8px_32px_rgba(14,16,32,0.08)] transition-all"
-            >
-              <div className="relative flex-shrink-0 w-[92px] h-[92px] md:w-[108px] md:h-[108px] rounded-lg overflow-hidden bg-bone/60 border border-corbeau/[0.06]">
-                {r.hero ? (
-                  <Image
-                    src={r.hero}
-                    alt=""
-                    fill
-                    sizes="108px"
-                    className="object-cover group-hover:scale-[1.04] transition-transform duration-500 ease-out"
-                  />
-                ) : (
-                  <div
-                    aria-hidden
-                    className="absolute inset-0 flex items-center justify-center font-display font-black text-[1.8rem] text-corbeau/20 tracking-[-0.04em]"
-                    style={{
-                      background:
-                        "linear-gradient(135deg,#faf6f0,#fffdf9)",
-                    }}
-                  >
-                    {r.title.slice(0, 2).toUpperCase()}
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
-                {catMeta && (
-                  <p className="font-mono text-[0.58rem] font-medium tracking-[2px] uppercase text-papaya mb-1.5">
-                    {catMeta.label}
-                  </p>
-                )}
-                <h3 className="font-display font-bold text-corbeau text-[0.98rem] tracking-[-0.02em] leading-[1.25] mb-1.5 group-hover:text-papaya transition-colors line-clamp-3">
-                  {r.title}
-                </h3>
-                {r.excerpt && (
-                  <p className="text-night/70 text-[0.8rem] leading-[1.5] line-clamp-2">
-                    {r.excerpt}
-                  </p>
-                )}
-              </div>
-            </Link>
+            <FadeUp key={r.slug} delay={idx * 80}>
+              <Link
+                href={href}
+                className="group relative flex gap-4 rounded-xl bg-paper border border-corbeau/[0.08] p-4 hover:border-papaya/60 hover:-translate-y-[5px] hover:shadow-[0_16px_40px_rgba(14,16,32,0.13)] transition-all duration-300"
+              >
+                <div className="relative flex-shrink-0 w-[92px] h-[92px] md:w-[108px] md:h-[108px] rounded-lg overflow-hidden bg-bone/60 border-2 border-transparent group-hover:border-papaya/40 transition-colors">
+                  {r.hero ? (
+                    <Image
+                      src={r.hero}
+                      alt=""
+                      fill
+                      sizes="108px"
+                      className="object-cover group-hover:scale-[1.07] transition-transform duration-500 ease-out"
+                    />
+                  ) : (
+                    <div
+                      aria-hidden
+                      className="absolute inset-0 flex items-center justify-center font-display font-black text-[1.8rem] text-corbeau/20 tracking-[-0.04em]"
+                      style={{
+                        background:
+                          "linear-gradient(135deg,#faf6f0,#fffdf9)",
+                      }}
+                    >
+                      {r.title.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
+                  {catMeta && (
+                    <p className="font-mono text-[0.58rem] font-medium tracking-[2px] uppercase text-papaya mb-1.5">
+                      {catMeta.label}
+                    </p>
+                  )}
+                  <h3 className="font-display font-bold text-corbeau text-[0.98rem] tracking-[-0.02em] leading-[1.25] mb-1.5 group-hover:text-papaya transition-colors line-clamp-3">
+                    {r.title}
+                  </h3>
+                  {r.excerpt && (
+                    <p className="text-night/70 text-[0.8rem] leading-[1.5] line-clamp-2">
+                      {r.excerpt}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            </FadeUp>
           );
         })}
       </div>
