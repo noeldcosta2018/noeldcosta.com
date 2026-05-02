@@ -63,7 +63,7 @@ export default function MdxBody({ source }: { source: string }) {
           <img
             {...p}
             loading="lazy"
-            className="rounded-xl my-8 w-full h-auto border border-corbeau/[0.06] shadow-[0_8px_32px_rgba(14,16,32,0.06)]"
+            className="rounded-xl my-8 w-full h-auto border-2 border-papaya/60 shadow-[0_8px_32px_rgba(252,152,90,0.12)]"
           />
         ),
         h1: (p: ComponentProps<"h1">) => (
