@@ -126,24 +126,7 @@ export default function AuthorBox({
               href="https://calendly.com/noeldcosta/30min"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-[10px] font-display font-bold text-[0.92rem] transition-all hover:-translate-y-px"
-              style={{
-                background: "#0e1020",
-                color: "#f4ede4",
-                boxShadow: "0 4px 18px rgba(14,16,32,0.28)",
-              }}
-              onMouseOver={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.boxShadow =
-                  "0 8px 28px rgba(14,16,32,0.4)";
-                (e.currentTarget as HTMLAnchorElement).style.background =
-                  "#1c1e2e";
-              }}
-              onMouseOut={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.boxShadow =
-                  "0 4px 18px rgba(14,16,32,0.28)";
-                (e.currentTarget as HTMLAnchorElement).style.background =
-                  "#0e1020";
-              }}
+              className="inline-flex items-center gap-2 bg-corbeau hover:bg-haiti text-bone px-7 py-3.5 rounded-[10px] font-display font-bold text-[0.92rem] transition-all hover:-translate-y-px shadow-[0_4px_18px_rgba(14,16,32,0.28)] hover:shadow-[0_8px_28px_rgba(14,16,32,0.4)]"
             >
               Book a 30-min call
               <span aria-hidden className="text-[1.1em] leading-none">→</span>
@@ -151,12 +134,7 @@ export default function AuthorBox({
 
             <Link
               href={`${localePrefix}/category/case-studies`}
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-[10px] font-semibold text-[0.92rem] transition-all hover:-translate-y-px"
-              style={{
-                background: "rgba(14,16,32,0.12)",
-                color: "#0e1020",
-                border: "1.5px solid rgba(14,16,32,0.2)",
-              }}
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-[10px] font-semibold text-[0.92rem] transition-all hover:-translate-y-px bg-corbeau/10 hover:bg-corbeau/20 text-corbeau border border-corbeau/20"
             >
               See case studies
             </Link>
