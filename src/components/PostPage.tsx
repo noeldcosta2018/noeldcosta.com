@@ -9,7 +9,6 @@ import ArticleHero from "@/components/article/ArticleHero";
 import KeyTakeaways from "@/components/article/KeyTakeaways";
 import PullQuote from "@/components/article/PullQuote";
 import ProductPromoCard from "@/components/article/ProductPromoCard";
-import CTASection from "@/components/article/CTASection";
 import AuthorBox from "@/components/article/AuthorBox";
 import RelatedArticles, {
   pickRelated,
@@ -239,8 +238,7 @@ export default function PostPage({
                 <MdxBody source={bodyTop} />
               </div>
 
-              {/* Mid-article Command Centre reference. Slim dark block now —
-                  editorial sidebar, not a banner. */}
+              {/* Mid-article Command Centre reference — dark card with dashboard screenshot */}
               {hasSplit && (
                 <ProductPromoCard
                   tone="dark"
@@ -250,6 +248,7 @@ export default function PostPage({
                   href="https://commandcc.io"
                   cta="Try Command Centre free"
                   external
+                  image="/images/wp/2025/02/dashboard.webp"
                 />
               )}
 
@@ -266,9 +265,9 @@ export default function PostPage({
                 </div>
               )}
 
-              {/* ERPCV reference — light tone with papaya side-rule */}
+              {/* ERPCV reference — dark tone, matches Command Centre format */}
               <ProductPromoCard
-                tone="light"
+                tone="dark"
                 kicker="Tool · Free to start"
                 title="Build a professional ERP CV in minutes"
                 description="Turn years of SAP, Oracle, and Microsoft programme work into a polished CV structured by role, modules, and outcomes. Used by senior ERP consultants across the Middle East, Europe, and North America."
@@ -277,17 +276,8 @@ export default function PostPage({
                 external
               />
 
+              {/* Combined author + advisory CTA card */}
               <AuthorBox localePrefix={localePrefix} />
-
-              <CTASection
-                title="Running an ERP programme right now?"
-                body="If this article touched on a programme you are live in right now, a 30-minute conversation usually gets further than another week of internal analysis."
-                primaryCta="Book a 30-min call"
-                primaryHref="https://calendly.com/noeldcosta/30min"
-                secondaryCta="See case studies"
-                secondaryHref={`${localePrefix}/category/case-studies`}
-                localePrefix={localePrefix}
-              />
 
               <RelatedArticles
                 label="Continue reading"
