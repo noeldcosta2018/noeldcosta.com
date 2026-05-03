@@ -3,22 +3,33 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 /**
- * Scroll-triggered reveal wrapper. Motion: 28px fade-up + slight scale
- * (0.97 → 1.0) over 700ms spring-eased cubic. Triggers once when ~12%
- * of the element enters the viewport.
+ * Scroll-triggered reveal wrapper.
  *
- * Respects `prefers-reduced-motion: reduce` — users with that preference
- * get content visible immediately with no transform. Always present for
- * screen readers and crawlers; the transition is purely presentational.
+ * Motion: 48px fade-up + scale 0.92→1.0 over 900ms cubic-bezier spring.
+ * Triggers when ~10% of the element enters the viewport. The motion is
+ * deliberately substantial (not subtle) — the brief is "obviously animated,"
+ * not "tasteful microinteraction."
+ *
+ * All transition properties are inlined as JS styles, NOT Tailwind arbitrary
+ * value classes. Tailwind v4's parser handles bracket arbitrary values fine
+ * but combined with CSS layer ordering it can defer them; inline `style` wins
+ * the cascade and renders the same on every browser/build path.
+ *
+ * Respects `prefers-reduced-motion: reduce` — content visible immediately,
+ * no transform. Always present for screen readers and crawlers.
  */
 export default function FadeUp({
   children,
   delay = 0,
+  duration = 900,
+  distance = 48,
   as: Tag = "div",
   className = "",
 }: {
   children: ReactNode;
   delay?: number;
+  duration?: number;
+  distance?: number;
   as?: "div" | "section" | "figure";
   className?: string;
 }) {
@@ -41,40 +52,48 @@ export default function FadeUp({
     }
     const el = ref.current;
     if (!el) return;
+    // Safety net: even if IntersectionObserver mis-fires, force-show after
+    // 1.5s. This guarantees the element is never stuck invisible.
+    const safety = window.setTimeout(() => setVisible(true), 1500);
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
           if (e.isIntersecting) {
             setVisible(true);
             io.disconnect();
+            window.clearTimeout(safety);
             break;
           }
         }
       },
-      { threshold: 0.12, rootMargin: "0px 0px -6% 0px" }
+      { threshold: 0.1, rootMargin: "0px 0px -4% 0px" }
     );
     io.observe(el);
-    return () => io.disconnect();
+    return () => {
+      io.disconnect();
+      window.clearTimeout(safety);
+    };
   }, [reduced]);
 
-  const style = reduced
-    ? undefined
+  // Pure inline styles — no Tailwind arbitrary value classes, no surprises.
+  const style: React.CSSProperties = reduced
+    ? {}
     : {
+        transitionProperty: "transform, opacity",
+        transitionDuration: `${duration}ms`,
+        transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)",
         transitionDelay: `${delay}ms`,
         transform: visible
           ? "translateY(0) scale(1)"
-          : "translateY(28px) scale(0.97)",
+          : `translateY(${distance}px) scale(0.92)`,
         opacity: visible ? 1 : 0,
+        willChange: "transform, opacity",
       };
-
-  const baseMotion = reduced
-    ? ""
-    : "transition-[transform,opacity] duration-[700ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform";
 
   return (
     <Tag
       ref={ref as never}
-      className={`${baseMotion} ${className}`.trim()}
+      className={className}
       style={style}
     >
       {children}

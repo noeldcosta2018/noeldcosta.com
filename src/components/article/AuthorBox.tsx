@@ -22,7 +22,7 @@ export default function AuthorBox({
 }) {
   return (
     <section
-      className="mt-16 rounded-[20px] overflow-hidden border-2 border-papaya shadow-[0_12px_48px_rgba(252,152,90,0.18)]"
+      className="mt-16 rounded-[20px] overflow-hidden border-2 border-papaya shadow-[0_12px_48px_rgba(252,152,90,0.18)] transition-shadow duration-500 hover:shadow-[0_20px_60px_rgba(252,152,90,0.28)]"
       style={{ background: "#fffdf9" }}
     >
       {/* Papaya top accent stripe */}

@@ -113,10 +113,10 @@ export default function RelatedArticles({
           const catMeta = CATEGORIES[r.category as keyof typeof CATEGORIES];
           const href = `${localePrefix}/${r.slug}`;
           return (
-            <FadeUp key={r.slug} delay={idx * 80}>
+            <FadeUp key={r.slug} delay={idx * 140}>
               <Link
                 href={href}
-                className="group relative flex gap-4 rounded-xl bg-paper border border-corbeau/[0.08] p-4 hover:border-papaya/60 hover:-translate-y-[5px] hover:shadow-[0_16px_40px_rgba(14,16,32,0.13)] transition-all duration-300"
+                className="group relative flex gap-4 rounded-xl bg-paper border border-corbeau/[0.08] p-4 hover:border-papaya hover:-translate-y-[8px] hover:shadow-[0_24px_56px_rgba(14,16,32,0.18)] transition-all duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]"
               >
                 <div className="relative flex-shrink-0 w-[92px] h-[92px] md:w-[108px] md:h-[108px] rounded-lg overflow-hidden bg-bone/60 border-2 border-transparent group-hover:border-papaya/40 transition-colors">
                   {r.hero ? (
@@ -125,7 +125,7 @@ export default function RelatedArticles({
                       alt=""
                       fill
                       sizes="108px"
-                      className="object-cover group-hover:scale-[1.07] transition-transform duration-500 ease-out"
+                      className="object-cover group-hover:scale-[1.12] transition-transform duration-700 ease-out"
                     />
                   ) : (
                     <div

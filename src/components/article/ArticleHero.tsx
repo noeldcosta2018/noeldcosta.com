@@ -47,7 +47,7 @@ export default function ArticleHero({
 
   // Shared animation base: fade-up-in keyframe defined in globals.css
   const anim = (delay: string) => ({
-    animation: `fade-up-in 0.65s cubic-bezier(0.22,1,0.36,1) ${delay} both`,
+    animation: `fade-up-in 0.9s cubic-bezier(0.22,1,0.36,1) ${delay} both`,
   });
 
   return (
@@ -55,7 +55,7 @@ export default function ArticleHero({
       {category && (
         <Link
           href={`${localePrefix}/category/${category.slug}`}
-          style={anim("0ms")}
+          style={anim("100ms")}
           className="inline-flex items-center gap-2 font-mono text-[0.68rem] font-medium tracking-[2px] uppercase text-papaya mb-5 hover:text-canyon transition-colors"
         >
           <span className="w-[7px] h-[7px] rounded-full bg-papaya" />
@@ -65,7 +65,7 @@ export default function ArticleHero({
 
       <h1
         className="font-display font-black text-corbeau tracking-[-0.04em] leading-[1.1] mb-6"
-        style={{ fontSize: "clamp(1.6rem, 2.4vw, 1.95rem)", ...anim("80ms") }}
+        style={{ fontSize: "clamp(1.6rem, 2.4vw, 1.95rem)", ...anim("220ms") }}
       >
         {title}
       </h1>
@@ -73,7 +73,7 @@ export default function ArticleHero({
       {deck && (
         <p
           className="text-night leading-[1.7] text-[1.1rem] md:text-[1.2rem] max-w-[42rem] mb-8 font-normal"
-          style={anim("160ms")}
+          style={anim("340ms")}
         >
           {deck}
         </p>
@@ -81,7 +81,7 @@ export default function ArticleHero({
 
       <div
         className="flex flex-wrap items-center gap-x-5 gap-y-3 pb-7 border-b border-corbeau/[0.08]"
-        style={anim("240ms")}
+        style={anim("460ms")}
       >
         <span className="flex items-center gap-3">
           <span className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-papaya/20 flex-shrink-0">
@@ -109,7 +109,7 @@ export default function ArticleHero({
       </div>
 
       {heroImage && (
-        <figure className="mt-10" style={anim("320ms")}>
+        <figure className="mt-10" style={anim("580ms")}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={heroImage}

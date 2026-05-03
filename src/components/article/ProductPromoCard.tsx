@@ -34,8 +34,8 @@ export default function ProductPromoCard({
   const hasImage = isDark && !!image;
 
   const outerClass = isDark
-    ? "my-12 rounded-[20px] bg-corbeau text-bone border border-corbeau shadow-[0_12px_40px_rgba(14,16,32,0.15)] overflow-hidden relative transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_20px_56px_rgba(14,16,32,0.22)]"
-    : "my-12 rounded-[20px] bg-paper border border-corbeau/[0.08] p-7 md:p-9 border-l-[4px] border-l-papaya shadow-[0_2px_20px_rgba(14,16,32,0.04)] transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[0_12px_36px_rgba(252,152,90,0.14)]";
+    ? "my-12 rounded-[20px] bg-corbeau text-bone border border-corbeau shadow-[0_12px_40px_rgba(14,16,32,0.15)] overflow-hidden relative transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:shadow-[0_28px_72px_rgba(14,16,32,0.32)]"
+    : "my-12 rounded-[20px] bg-paper border border-corbeau/[0.08] p-7 md:p-9 border-l-[4px] border-l-papaya shadow-[0_2px_20px_rgba(14,16,32,0.04)] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:shadow-[0_20px_48px_rgba(252,152,90,0.22)]";
 
   // Dark card padding applied inline so we can skip it on the image-panel side
   const innerPad = isDark ? "p-7 md:p-9" : "";
