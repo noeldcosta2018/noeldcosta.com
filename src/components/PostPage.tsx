@@ -10,6 +10,7 @@ import KeyTakeaways from "@/components/article/KeyTakeaways";
 import PullQuote from "@/components/article/PullQuote";
 import ProductPromoCard from "@/components/article/ProductPromoCard";
 import AuthorBox from "@/components/article/AuthorBox";
+import FadeUp from "@/components/article/FadeUp";
 import RelatedArticles, {
   pickRelated,
 } from "@/components/article/RelatedArticles";
@@ -253,9 +254,11 @@ export default function PostPage({
               )}
 
               {hasSplit && fm.pullQuote && (
-                <PullQuote attribution={fm.pullQuoteAttribution}>
-                  {fm.pullQuote}
-                </PullQuote>
+                <FadeUp>
+                  <PullQuote attribution={fm.pullQuoteAttribution}>
+                    {fm.pullQuote}
+                  </PullQuote>
+                </FadeUp>
               )}
 
               {/* Article body — second half */}
@@ -277,7 +280,9 @@ export default function PostPage({
               />
 
               {/* Combined author + advisory CTA card */}
-              <AuthorBox localePrefix={localePrefix} />
+              <FadeUp>
+                <AuthorBox localePrefix={localePrefix} />
+              </FadeUp>
 
               <RelatedArticles
                 label="Continue reading"

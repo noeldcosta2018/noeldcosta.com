@@ -3,16 +3,13 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 /**
- * Subtle reveal-on-scroll wrapper used to give long-form articles a bit of
- * editorial motion without becoming a scroll-jacking show-reel.
+ * Scroll-triggered reveal wrapper. Motion: 28px fade-up + slight scale
+ * (0.97 → 1.0) over 700ms spring-eased cubic. Triggers once when ~12%
+ * of the element enters the viewport.
  *
- * Motion: 12px fade-up over 600ms, ease-out. Triggers once when ~15% of the
- * element enters the viewport.
- *
- * Respects `prefers-reduced-motion: reduce` — users with that preference get
- * the content visible immediately with no transform at all. That means the
- * element is always present for screen readers and crawlers; the transition
- * is purely presentational.
+ * Respects `prefers-reduced-motion: reduce` — users with that preference
+ * get content visible immediately with no transform. Always present for
+ * screen readers and crawlers; the transition is purely presentational.
  */
 export default function FadeUp({
   children,
@@ -54,7 +51,7 @@ export default function FadeUp({
           }
         }
       },
-      { threshold: 0.15, rootMargin: "0px 0px -8% 0px" }
+      { threshold: 0.12, rootMargin: "0px 0px -6% 0px" }
     );
     io.observe(el);
     return () => io.disconnect();
@@ -64,13 +61,15 @@ export default function FadeUp({
     ? undefined
     : {
         transitionDelay: `${delay}ms`,
-        transform: visible ? "translateY(0)" : "translateY(24px)",
+        transform: visible
+          ? "translateY(0) scale(1)"
+          : "translateY(28px) scale(0.97)",
         opacity: visible ? 1 : 0,
       };
 
   const baseMotion = reduced
     ? ""
-    : "transition-[transform,opacity] duration-[800ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform";
+    : "transition-[transform,opacity] duration-[700ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform";
 
   return (
     <Tag
