@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { Locale, PostRecord, PageRecord } from "./content";
-import { LOCALES, getAvailableLocales } from "./content";
+import { LOCALES, getAvailableLocales, CATEGORIES } from "./content";
 
 export const SITE_URL = "https://noeldcosta.com";
 export const SITE_NAME = "Noel D'Costa";
@@ -8,6 +8,7 @@ export const AUTHOR = {
   name: "Noel D'Costa",
   url: "https://noeldcosta.com/about",
   jobTitle: "ERP, Data & AI Consultant",
+  image: "https://noeldcosta.com/headshot.png",
   sameAs: [
     "https://www.linkedin.com/in/noeldcosta/",
     "https://www.youtube.com/@NoelDCostaERPAI",
@@ -33,6 +34,32 @@ const LOCALE_HREFLANG: Record<Locale, string> = {
 
 function localePath(locale: Locale, slug: string): string {
   return locale === "en" ? `/${slug}` : `/${locale}/${slug}`;
+}
+
+/**
+ * Convert a date string of any format into ISO 8601 (`YYYY-MM-DDTHH:mm:ssZ`).
+ * Required by Google for `<meta property="article:published_time">` and
+ * Article JSON-LD `datePublished` / `dateModified`. WordPress exports often
+ * use `"2025-07-12 19:43:57"` which is NOT ISO 8601 — that string fails the
+ * structured-data validator. This helper normalises everything safely.
+ */
+export function toIso(input?: string | null): string | undefined {
+  if (!input) return undefined;
+  const s = String(input).trim();
+  if (!s) return undefined;
+  // Already ISO-ish? Just normalise via Date roundtrip.
+  const parsed = new Date(s.includes("T") ? s : s.replace(" ", "T"));
+  if (isNaN(parsed.getTime())) return undefined;
+  return parsed.toISOString();
+}
+
+/** Rough word count for Article schema. Strips markdown syntax characters. */
+function countWords(body: string): number {
+  return body
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/[#>*_`~\[\]\(\)!\\-]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean).length;
 }
 
 export function buildPostMetadata(post: PostRecord): Metadata {
@@ -68,10 +95,12 @@ export function buildPostMetadata(post: PostRecord): Metadata {
       siteName: SITE_NAME,
       type: "article",
       locale: post.locale,
-      publishedTime: fm.date,
-      modifiedTime: fm.updated,
+      publishedTime: toIso(fm.date),
+      modifiedTime: toIso(fm.updated),
       authors: [AUTHOR.name],
-      images: fm.hero ? [{ url: fm.hero }] : undefined,
+      images: fm.hero
+        ? [{ url: fm.hero, alt: fm.heroAlt || fm.title }]
+        : undefined,
     },
     twitter: {
       card: "summary_large_image",
@@ -125,34 +154,57 @@ export function buildPageMetadata(page: PageRecord): Metadata {
   };
 }
 
-// JSON-LD builders
+// ─── JSON-LD builders ────────────────────────────────────────────────────
+
 export function articleJsonLd(post: PostRecord) {
   const fm = post.frontmatter;
   const url = `${SITE_URL}${localePath(post.locale, fm.slug)}`;
+  const heroAbsolute = fm.hero
+    ? fm.hero.startsWith("http")
+      ? fm.hero
+      : `${SITE_URL}${fm.hero}`
+    : undefined;
+  const cat = CATEGORIES[fm.category as keyof typeof CATEGORIES];
+
   return {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: fm.title,
     description: fm.metaDescription || fm.excerpt,
-    image: fm.hero ? [fm.hero] : undefined,
-    datePublished: fm.date,
-    dateModified: fm.updated || fm.date,
+    image: heroAbsolute
+      ? [
+          {
+            "@type": "ImageObject",
+            url: heroAbsolute,
+            caption: fm.heroAlt || fm.title,
+          },
+        ]
+      : undefined,
+    datePublished: toIso(fm.date),
+    dateModified: toIso(fm.updated || fm.date),
     author: {
       "@type": "Person",
       name: AUTHOR.name,
       url: AUTHOR.url,
       jobTitle: AUTHOR.jobTitle,
+      image: AUTHOR.image,
       sameAs: AUTHOR.sameAs,
     },
     publisher: {
       "@type": "Person",
       name: AUTHOR.name,
       url: AUTHOR.url,
+      logo: {
+        "@type": "ImageObject",
+        url: AUTHOR.image,
+      },
     },
     mainEntityOfPage: {
       "@type": "WebPage",
       "@id": url,
     },
+    articleSection: cat?.label,
+    wordCount: countWords(post.body),
     inLanguage: post.locale,
   };
 }
@@ -164,6 +216,7 @@ export function personJsonLd() {
     name: AUTHOR.name,
     url: AUTHOR.url,
     jobTitle: AUTHOR.jobTitle,
+    image: AUTHOR.image,
     sameAs: AUTHOR.sameAs,
     knowsAbout: [
       "SAP S/4HANA",
@@ -174,6 +227,27 @@ export function personJsonLd() {
       "Agentic AI",
       "Programme Recovery",
     ],
+  };
+}
+
+/**
+ * WebSite schema — emitted once per page in the root layout. Powers branded
+ * search recognition. We deliberately do NOT include `potentialAction`/
+ * `SearchAction` because the site has no `/search` endpoint; advertising one
+ * that doesn't work invites a manual action.
+ */
+export function websiteJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE_NAME,
+    url: SITE_URL,
+    publisher: {
+      "@type": "Person",
+      name: AUTHOR.name,
+      url: AUTHOR.url,
+    },
+    inLanguage: "en",
   };
 }
 

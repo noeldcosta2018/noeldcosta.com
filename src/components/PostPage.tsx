@@ -161,6 +161,7 @@ export default function PostPage({
                 author={fm.author || "Noel D'Costa"}
                 date={fm.date}
                 updated={fm.updated}
+                lastReviewed={fm.lastReviewed}
                 readingMinutes={rt}
                 heroImage={fm.hero}
                 heroAlt={fm.heroAlt}

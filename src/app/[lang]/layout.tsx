@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Epilogue, Sora, JetBrains_Mono } from "next/font/google";
 import { LOCALES, type Locale } from "@/lib/content";
+import { personJsonLd, websiteJsonLd } from "@/lib/seo";
 import "../globals.css";
 
 const epilogue = Epilogue({
@@ -77,7 +78,24 @@ export default async function LocaleRootLayout({
       dir={dir}
       className={`${epilogue.variable} ${sora.variable} ${jetbrainsMono.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        {/* Site-wide WebSite + Person JSON-LD — emitted on every page so
+            branded search picks up the entity graph and the about-the-author
+            authority signal travels with every URL, not just the post page. */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(websiteJsonLd()),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(personJsonLd()),
+          }}
+        />
+        {children}
+      </body>
     </html>
   );
 }

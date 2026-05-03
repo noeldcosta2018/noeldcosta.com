@@ -9,7 +9,18 @@ import {
   LOCALES,
   type Locale,
 } from "@/lib/content";
-import { SITE_URL } from "@/lib/seo";
+import { SITE_URL, toIso } from "@/lib/seo";
+
+/**
+ * Coerce frontmatter date strings (often `"YYYY-MM-DD HH:mm:ss"` from
+ * WordPress exports) into a `Date` so Next.js emits a valid `<lastmod>`.
+ * Without this, sitemap entries lose `<lastmod>` and Google can't see when
+ * each post was updated — which hurts crawl prioritisation.
+ */
+function lastModDate(input?: string): Date | undefined {
+  const iso = toIso(input);
+  return iso ? new Date(iso) : undefined;
+}
 
 const RESERVED_SLUGS = new Set<string>([
   "about",
@@ -69,7 +80,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       if (post.frontmatter.noindex) continue;
       items.push({
         url: urlFor(l, slug),
-        lastModified: post.frontmatter.updated || post.frontmatter.date,
+        lastModified: lastModDate(
+          post.frontmatter.lastReviewed ||
+            post.frontmatter.updated ||
+            post.frontmatter.date,
+        ),
         changeFrequency: "monthly",
         priority: 0.8,
         alternates: alternates("posts", slug),
@@ -88,7 +103,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
       if (page.frontmatter.noindex) continue;
       items.push({
         url: urlFor(l, slug),
-        lastModified: page.frontmatter.updated || page.frontmatter.date,
+        lastModified: lastModDate(
+          page.frontmatter.updated || page.frontmatter.date,
+        ),
         changeFrequency: "monthly",
         priority: 0.6,
         alternates: alternates("pages", slug),

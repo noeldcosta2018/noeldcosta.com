@@ -76,6 +76,11 @@ export interface PostFrontmatter {
   primaryKeyword?: string;
   canonical?: string;
   noindex?: boolean;
+  // E-E-A-T provenance — internal forcing fields per CLAUDE.md.
+  // experienceSource: where the content came from (project, interview, etc).
+  // lastReviewed: ISO date Noel last personally read the post end-to-end.
+  experienceSource?: string;
+  lastReviewed?: string;
 }
 
 export interface PageFrontmatter {

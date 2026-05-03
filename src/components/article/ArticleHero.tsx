@@ -8,6 +8,7 @@ interface ArticleHeroProps {
   author?: string;
   date: string;
   updated?: string;
+  lastReviewed?: string;
   readingMinutes: number;
   heroImage?: string;
   heroAlt?: string;
@@ -30,6 +31,7 @@ export default function ArticleHero({
   author: _author,
   date,
   updated,
+  lastReviewed,
   readingMinutes,
   heroImage,
   heroAlt,
@@ -44,6 +46,16 @@ export default function ArticleHero({
     month: "short",
     day: "numeric",
   });
+
+  // E-E-A-T trustworthiness signal: human-readable "last reviewed" line.
+  // Only shown when set in frontmatter — keeps editorial honesty intact.
+  const reviewedLabel = lastReviewed
+    ? new Date(lastReviewed).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : null;
 
   // Shared animation base: fade-up-in keyframe defined in globals.css
   const anim = (delay: string) => ({
@@ -106,6 +118,14 @@ export default function ArticleHero({
         <span className="font-mono text-[0.63rem] uppercase tracking-[1.5px] text-silver">
           {readingMinutes} min read
         </span>
+        {reviewedLabel && (
+          <>
+            <span className="h-4 w-px bg-corbeau/[0.12] hidden sm:block" aria-hidden />
+            <span className="font-mono text-[0.63rem] uppercase tracking-[1.5px] text-silver">
+              Reviewed {reviewedLabel}
+            </span>
+          </>
+        )}
       </div>
 
       {heroImage && (
