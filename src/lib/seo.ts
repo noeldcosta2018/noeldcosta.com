@@ -82,7 +82,10 @@ export function buildPostMetadata(post: PostRecord): Metadata {
     title,
     description,
     alternates: { canonical, languages },
-    robots: fm.noindex ? { index: false, follow: false } : undefined,
+    // Only override the layout's default robots config when the post is
+    // explicitly noindex; otherwise let the parent indexing directives flow
+    // through (omitting the field — passing `undefined` would shadow it).
+    ...(fm.noindex ? { robots: { index: false, follow: false } } : {}),
     openGraph: {
       title,
       description,
@@ -127,7 +130,10 @@ export function buildPageMetadata(page: PageRecord): Metadata {
     title,
     description,
     alternates: { canonical, languages },
-    robots: fm.noindex ? { index: false, follow: false } : undefined,
+    // Only override the layout's default robots config when the post is
+    // explicitly noindex; otherwise let the parent indexing directives flow
+    // through (omitting the field — passing `undefined` would shadow it).
+    ...(fm.noindex ? { robots: { index: false, follow: false } } : {}),
     openGraph: {
       title,
       description,
