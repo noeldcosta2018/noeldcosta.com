@@ -4,7 +4,7 @@ import MdxBody from "@/components/mdx/MdxBody";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import { getPage, type Locale } from "@/lib/content";
-import { breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
+import { breadcrumbJsonLd, contactPageJsonLd, SITE_URL } from "@/lib/seo";
 
 export default function MdxPageLayout({ slug, locale }: { slug: string; locale: Locale }) {
   const page = getPage(slug, locale);
@@ -12,10 +12,16 @@ export default function MdxPageLayout({ slug, locale }: { slug: string; locale: 
   const fm = page.frontmatter;
   const localePrefix = locale === "en" ? "" : `/${locale}`;
 
+  const pageUrl = `${SITE_URL}${localePrefix}/${fm.slug}`;
   const breadcrumbs = [
     { name: "Home", url: `${SITE_URL}${localePrefix}/` },
-    { name: fm.title, url: `${SITE_URL}${localePrefix}/${fm.slug}` },
+    { name: fm.title, url: pageUrl },
   ];
+
+  // Heuristic: if the page slug starts with `contact`, emit ContactPage
+  // schema in addition to breadcrumbs. Covers contact-noel-erp-support
+  // and any future contact variants without hard-coding the slug.
+  const isContact = /^contact[-_]/i.test(fm.slug) || fm.slug === "contact";
 
   return (
     <>
@@ -49,6 +55,14 @@ export default function MdxPageLayout({ slug, locale }: { slug: string; locale: 
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd(breadcrumbs)) }}
       />
+      {isContact && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(contactPageJsonLd(pageUrl)),
+          }}
+        />
+      )}
     </>
   );
 }

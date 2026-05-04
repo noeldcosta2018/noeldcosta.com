@@ -29,7 +29,7 @@ import {
   type Locale,
   type PostRecord,
 } from "@/lib/content";
-import { breadcrumbJsonLd, SITE_URL } from "@/lib/seo";
+import { breadcrumbJsonLd, collectionPageJsonLd, SITE_URL } from "@/lib/seo";
 
 // ─── Tag display config ──────────────────────────────────────────────────────
 
@@ -231,10 +231,24 @@ export default function CategoryPage({
   const posts = getPostsByCategory(category as Category, locale);
   const localePrefix = locale === "en" ? "" : `/${locale}`;
 
+  const categoryUrl = `${SITE_URL}${localePrefix}/category/${meta.slug}`;
   const crumbs = [
     { name: "Home", url: `${SITE_URL}${localePrefix}/` },
-    { name: meta.label, url: `${SITE_URL}${localePrefix}/category/${meta.slug}` },
+    { name: meta.label, url: categoryUrl },
   ];
+
+  // CollectionPage JSON-LD — declares this URL as a category index that
+  // contains the listed posts. Helps Google understand the taxonomy.
+  const collectionLd = collectionPageJsonLd({
+    url: categoryUrl,
+    name: meta.label,
+    description: meta.description,
+    posts: posts.map((p) => ({
+      slug: p.frontmatter.slug,
+      title: p.frontmatter.title,
+      locale,
+    })),
+  });
 
   // Partition posts
   const byReadTime = [...posts].sort(
@@ -628,6 +642,10 @@ export default function CategoryPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd(crumbs)) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionLd) }}
       />
     </>
   );

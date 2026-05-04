@@ -16,7 +16,7 @@ import FAQ from "@/components/FAQ";
 import CTABanner from "@/components/CTABanner";
 import Footer from "@/components/Footer";
 import { LOCALES, type Locale } from "@/lib/content";
-import { SITE_URL } from "@/lib/seo";
+import { SITE_URL, blogJsonLd, professionalServiceJsonLd } from "@/lib/seo";
 
 const TITLE = "Noel D'Costa | ERP, AI & S/4HANA Advisor";
 const DESCRIPTION =
@@ -73,49 +73,27 @@ export default async function Home(props: { params: Promise<{ lang: string }> })
   const { lang } = await props.params;
   if (!LOCALES.includes(lang as Locale)) notFound();
 
-  const personJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Person",
-    name: "Noel D'Costa",
-    jobTitle: "ERP and AI Advisor",
-    url: "https://noeldcosta.com",
-    image: "https://noeldcosta.com/headshot.png",
-    sameAs: [
-      "https://www.linkedin.com/in/noeldcosta/",
-      "https://x.com/noeldcosta2018",
-      "https://www.youtube.com/@NoelDCostaERPAI",
-    ],
-    hasCredential: [
-      { "@type": "EducationalOccupationalCredential", name: "CIMA" },
-      { "@type": "EducationalOccupationalCredential", name: "AICPA" },
-      { "@type": "EducationalOccupationalCredential", name: "Masters in Accounting" },
-    ],
-    worksFor: {
-      "@type": "Organization",
-      name: "Quantinoid LLC",
-    },
-  };
-
-  const serviceJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "ProfessionalService",
+  // Person + WebSite are emitted sitewide from the root layout; here we add
+  // ProfessionalService (homepage doubles as the service offering hub) and
+  // Blog (declares the corpus of posts so they're linked back to a parent).
+  const serviceLd = professionalServiceJsonLd({
+    url: SITE_URL,
     name: "Noel D'Costa — ERP and AI Advisory",
     description:
-      "Senior advisory on SAP S/4HANA migrations and AI on ERP for enterprise clients.",
-    url: "https://noeldcosta.com",
-    areaServed: ["AE", "SA", "GB", "GCC", "Europe"],
-    serviceType: ["ERP advisory", "SAP S/4HANA migration", "AI on SAP"],
-  };
+      "Senior advisory on SAP S/4HANA migrations and AI on ERP for enterprise clients across the GCC, UK, and Europe.",
+    serviceType: "ERP advisory, SAP S/4HANA migration, AI on SAP",
+  });
+  const blogLd = blogJsonLd();
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogLd) }}
       />
       <Nav />
       <main style={{ paddingTop: 64 }}>

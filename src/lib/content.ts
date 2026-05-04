@@ -81,6 +81,10 @@ export interface PostFrontmatter {
   // lastReviewed: ISO date Noel last personally read the post end-to-end.
   experienceSource?: string;
   lastReviewed?: string;
+  // Per-post entity overrides for schema.org `mentions`. Strings are passed
+  // through as plain `Thing` references; pre-set entities (SAP, S/4HANA,
+  // Fiori, Oracle EBS, etc.) are looked up from the seo.ts ENTITY_MAP.
+  mentions?: string[];
 }
 
 export interface PageFrontmatter {

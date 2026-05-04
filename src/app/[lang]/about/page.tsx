@@ -8,6 +8,7 @@ import { getPage, LOCALES, type Locale } from "@/lib/content";
 import {
   AUTHOR,
   SITE_URL,
+  aboutPageJsonLd,
   breadcrumbJsonLd,
   buildPageMetadata,
   personJsonLd,
@@ -38,12 +39,15 @@ export default async function AboutPage(props: { params: Promise<{ lang: string 
   if (!page) notFound();
   const fm = page.frontmatter;
 
+  const localePrefix = locale === "en" ? "" : `/${locale}`;
+  const aboutUrl = `${SITE_URL}${localePrefix}/about`;
   const breadcrumbs = [
-    { name: "Home", url: `${SITE_URL}/` },
-    { name: "About", url: `${SITE_URL}/about` },
+    { name: "Home", url: `${SITE_URL}${localePrefix}/` },
+    { name: "About", url: aboutUrl },
   ];
 
   const person = personJsonLd();
+  const aboutPage = aboutPageJsonLd(aboutUrl);
 
   return (
     <>
@@ -111,6 +115,10 @@ export default async function AboutPage(props: { params: Promise<{ lang: string 
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(breadcrumbJsonLd(breadcrumbs)),
         }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutPage) }}
       />
       <script
         type="application/ld+json"
