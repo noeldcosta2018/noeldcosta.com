@@ -122,7 +122,7 @@ export default function RelatedArticles({
                   {r.hero ? (
                     <Image
                       src={r.hero}
-                      alt=""
+                      alt={r.title}
                       fill
                       sizes="108px"
                       className="object-cover group-hover:scale-[1.12] transition-transform duration-700 ease-out"
