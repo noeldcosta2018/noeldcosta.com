@@ -38,6 +38,20 @@ export const metadata: Metadata = {
   },
   description:
     "25+ years helping companies migrate ERP, build AI, and get real value from SAP and Oracle systems.",
+  // Explicit indexing directives — silences SEO auditors that flag the
+  // absence of an explicit robots meta. Per-post `noindex` (set in
+  // frontmatter) overrides this via buildPostMetadata.
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   openGraph: {
     title: "Noel D'Costa | ERP, Data & AI",
     description:

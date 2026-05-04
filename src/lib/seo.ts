@@ -359,6 +359,13 @@ export function articleJsonLd(post: PostRecord) {
       ? [{ "@type": "Thing", name: cat.label }]
       : undefined;
 
+  // author + publisher reference the canonical Person `@id` declared in the
+  // root layout. Inlining the full Person on every article duplicates ~2KB
+  // per page (credentials + 29-entity knowsAbout + worksFor). The `@id`
+  // reference is the canonical pattern Google's parser resolves to one
+  // entity in the graph.
+  const personRef = { "@id": `${SITE_URL}/#noel-dcosta` };
+
   return {
     "@context": "https://schema.org",
     "@type": articleType,
@@ -375,14 +382,8 @@ export function articleJsonLd(post: PostRecord) {
       : undefined,
     datePublished: toIso(fm.date),
     dateModified: toIso(fm.updated || fm.date),
-    author: authorPerson(),
-    publisher: {
-      "@type": "Person",
-      "@id": `${SITE_URL}/#noel-dcosta`,
-      name: AUTHOR.name,
-      url: AUTHOR.url,
-      logo: { "@type": "ImageObject", url: AUTHOR.image },
-    },
+    author: personRef,
+    publisher: personRef,
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
     isPartOf: {
       "@type": "Blog",
