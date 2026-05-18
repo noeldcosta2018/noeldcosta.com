@@ -171,6 +171,9 @@ pullQuote:        # optional, one sentence, used mid-article
 ```
 
 ### SEO checks
+- [ ] `title` is 60 characters or fewer. Google truncates titles past roughly 580px wide in SERPs, which works out to 50-60 characters for typical fonts. Anything over 60 risks being cut mid-word.
+- [ ] `metaTitle` is 60 characters or fewer. Same rule. Title Case is conventional here for click-through; sentence case stays on the `title` field for the on-page H1.
+- [ ] `metaDescription` is 140-160 characters. Beyond 160, Google truncates with an ellipsis.
 - [ ] Primary keyword in title, H1 (page title), first paragraph, one H2, meta description.
 - [ ] metaDescription written for a human, not stuffed with keywords. Has to read.
 - [ ] Internal links to 2 to 4 related posts in the same category.
