@@ -6,6 +6,11 @@ const nextConfig: NextConfig = {
       // YouTube thumbnails — RSS feed uses numbered subdomains (i1–i4.ytimg.com)
       { protocol: "https", hostname: "**.ytimg.com" },
       { protocol: "https", hostname: "img.youtube.com" },
+      // Pexels stock imagery used in blog body content. Free, commercial-use,
+      // no attribution required. Article authors embed via raw <img> tags
+      // (which bypass next/image), but listing here keeps the policy clean
+      // if any tool wraps these URLs in next/image later.
+      { protocol: "https", hostname: "images.pexels.com" },
     ],
   },
   // Keep the /content/ tree (268 MB of MDX) and public images out of every

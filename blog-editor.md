@@ -70,9 +70,9 @@ These trigger an instant rewrite, not a suggestion.
 - Sentence case for every level. "How I choose a strategy", not "How I Choose A Strategy".
 
 ### Lists
-- **Numbered lists** when the items are sequential (steps), finite-count enumerations (the four mistakes, the seven phases), or ranked. Numbering is information.
-- **Bulleted lists** when order does not matter and the count is incidental.
-- If a heading promises a count ("Five strategies", "Common mistakes (4)"), the list under it must be numbered.
+- **Every list of three or more items gets numbered.** Numbers improve scan, make the list look intentional, and let readers reference items ("see point 3"). This is a strict rule on this site, not a stylistic choice.
+- Bulleted lists are reserved for two-item juxtapositions or for inline lists embedded in a sentence flow. If you find yourself writing three or more bullets, switch to numbered.
+- If a heading promises a count ("Five strategies", "Common mistakes (4)"), the count in the heading must match the list under it.
 - Max one list per H2 section unless the items are genuinely different categories. More than that is a generated-content tell.
 
 ### Paragraph rhythm
@@ -195,19 +195,32 @@ Asides do NOT earn their place when they:
 - Soften a strong claim ("of course, every business is different")
 - Add a generic caveat ("results may vary depending on your context")
 
-## Graphics and motion
+## Imagery and graphics
 
-Articles benefit from graphics when the topic is:
-- A comparison (e.g. Big Bang vs Phased) — table or side-by-side card pair
-- A timeline (e.g. SAP Activate phases) — horizontal stepper SVG
-- A decision (e.g. Greenfield vs Brownfield vs Bluefield) — flowchart SVG
-- A system architecture — labelled SVG diagram
-- A statistic worth dwelling on — large display number with caption
+Every article needs visual variety so the reader is never staring at a wall of text. Two complementary tools.
 
-Articles do NOT benefit from graphics when the topic is:
-- A short opinion (under 1000 words)
-- A FAQ-style reference
-- Already supported by a table that covers the same comparison
+### Body imagery (required on every long-form post)
+
+The ArticleHero already renders the hero image at the top. Beyond that:
+
+1. **Every post over 1,500 words must include at least one inline body image** placed roughly 30-40% of the way through. This breaks the text wall at the point where readers start scrolling rather than reading.
+2. **Posts over 2,500 words need a second inline image** at the 70% mark.
+3. **Source: Pexels.com (free, commercial-use, no attribution required).** Search terms should be specific to the article topic (e.g. "data center" for migration articles, "boardroom" for governance articles, "financial reports" for finance articles).
+4. **No people imagery unless their faces are obscured or out of frame.** Per BRAND.md: real photos of Noel only when a human is shown.
+5. **Use raw `<img>` tags** in MDX (not next/image) for Pexels URLs. The MdxBody renderer styles them with rounded-xl + papaya border automatically.
+
+### Diagrams (when they earn their place)
+
+Use the four diagram primitives in `src/components/article/diagrams/` when the topic is:
+1. A comparison (Big Bang vs Phased) → `<compare-split>`
+2. A timeline or phased sequence (SAP Activate phases) → `<stepper>`
+3. A decision (Greenfield vs Brownfield vs Bluefield) → `<decision-tree>`
+4. A statistic worth dwelling on → `<stat-block>`
+
+Articles do NOT need a diagram when the topic is:
+1. A short opinion (under 1,000 words)
+2. A FAQ-style reference
+3. Already supported by a table that covers the same comparison
 
 ### Implementation
 - Diagram tags MUST be written on a single line in the MDX source. Multi-line `<stepper>\n  title="..."\n  steps="..."\n></stepper>` is treated as text by the markdown parser and the tag renders as escaped HTML in the page. Keep the entire opening tag on one line, even if it gets long.
