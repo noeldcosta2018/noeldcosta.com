@@ -79,8 +79,13 @@ const BANNED_CLOSERS = [
 ];
 
 const DRAMA_PATTERNS = [
-  /\bdoesn'?t just \w+,/gi,                  // "doesn't just X, ..."
-  /\bnot just \w+,? it/gi,                   // "not just X, it"
+  // The VOICE.md violation pattern: "X doesn't just Y, it Z" where the
+  // second clause elevates the first ("doesn't just deliver projects,
+  // it transforms operations"). Match only the classic forms; require
+  // "doesn't just ... it" within a short window so plain "not just fix
+  // it, reduce it" instructional usage is not falsely flagged.
+  /\bdoesn'?t just \w+(\s+\w+){0,5},? it\b/gi,
+  /\bIt'?s not just \w+(\s+\w+){0,5},? it'?s\b/gi,
 ];
 
 function stripFrontmatter(s) {
@@ -173,8 +178,12 @@ function audit(filepath) {
   // Sentence length
   const sentenceStats = countSentences(clean);
 
-  // Em-dash count (drama signal when used heavily)
-  const emDashCount = (clean.match(/—|–/g) || []).length;
+  // Em-dash count (drama signal when used heavily).
+  //
+  // Only counts the em-dash (—, U+2014). The en-dash (–, U+2013) is
+  // correct typography for numeric ranges (40–60%, $4M–$7M) and is NOT
+  // a voice violation, so it is deliberately excluded.
+  const emDashCount = (clean.match(/—/g) || []).length;
 
   // Specificity
   const spec = specificityProbe(clean);
