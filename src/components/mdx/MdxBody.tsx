@@ -6,6 +6,10 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import Link from "next/link";
 import type { ComponentProps } from "react";
 import FadeUp from "@/components/article/FadeUp";
+import CompareSplit from "@/components/article/diagrams/CompareSplit";
+import Stepper from "@/components/article/diagrams/Stepper";
+import DecisionTree from "@/components/article/diagrams/DecisionTree";
+import StatBlock from "@/components/article/diagrams/StatBlock";
 
 /**
  * Renders post/page markdown. Uses react-markdown so we never go through the
@@ -30,7 +34,12 @@ export default function MdxBody({ source }: { source: string }) {
           { behavior: "wrap", properties: { className: ["heading-anchor"] } },
         ],
       ]}
-      components={{
+      // The Components type in react-markdown is strict about known HTML
+      // element names, but we register custom tag names (compare-split,
+      // stepper, etc.) for our diagram components. The cast lets those
+      // through; everything else stays HTML-typed.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      components={({
         a: ({ href = "", children, ...rest }: ComponentProps<"a">) => {
           const internal =
             typeof href === "string" &&
@@ -174,6 +183,19 @@ export default function MdxBody({ source }: { source: string }) {
         hr: () => (
           <hr className="my-12 border-0 h-px bg-gradient-to-r from-transparent via-corbeau/15 to-transparent" />
         ),
+        // Custom diagram tags. Article authors write lowercase HTML-like
+        // tags (e.g. <compare-split title="..." left-label="..." />) and
+        // react-markdown maps them to these React components. Props arrive
+        // as strings (HTML attribute semantics), so each component parses
+        // its own pipe-separated fields.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "compare-split": ((props: any) => <CompareSplit {...props} />) as never,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "stepper": ((props: any) => <Stepper {...props} />) as never,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "decision-tree": ((props: any) => <DecisionTree {...props} />) as never,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "stat-block": ((props: any) => <StatBlock {...props} />) as never,
         // FAQ accordion. Articles use <details><summary>Q</summary>A</details>
         // inline HTML (passed through by rehype-raw) for their FAQ sections.
         // Styled here so they read as a single coherent accordion module.
@@ -199,7 +221,8 @@ export default function MdxBody({ source }: { source: string }) {
             </span>
           </summary>
         ),
-      }}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      }) as any}
     >
       {source}
     </ReactMarkdown>
