@@ -99,8 +99,10 @@ Body copy is sized for reading density (15-16px). Editorial sites converge there
 - Verify every code block runs / compiles before publishing.
 
 ### FAQ sections
-- Use `<details><summary>Question</summary>Answer</details>` for FAQs. The renderer styles them as accordions.
+- Every article with FAQ content opens the FAQ block with `## Frequently asked questions` as the section H2. Mandatory. The H2 is what makes the FAQ a navigable section for readers, what shows up in the ToC, and what reinforces FAQPage schema for crawlers.
+- Use `<details><summary>Question</summary>Answer</details>` for each Q/A pair. The renderer styles them as accordions and emits FAQPage / Question / Answer JSON-LD automatically (see `extractFaqItems` in PostPage.tsx).
 - Maximum 8 FAQ items. Beyond that, the post owes the reader a deeper section, not more accordion entries.
+- Each `<summary>` must end with a question mark and read as a search query a real user would type. The text is what crawlers and AI search use to match the FAQ to a query.
 
 ## Detection checklist
 
