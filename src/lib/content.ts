@@ -19,7 +19,7 @@ export type Category =
   | "case-studies"
   | "consulting-career";
 
-export const CATEGORIES: Record<Exclude<Category, "consulting-career">, { label: string; slug: string; description: string }> = {
+export const CATEGORIES: Record<Category, { label: string; slug: string; description: string }> = {
   "erp-implementation": {
     label: "ERP Implementation",
     slug: "erp-implementation",
@@ -49,6 +49,11 @@ export const CATEGORIES: Record<Exclude<Category, "consulting-career">, { label:
     label: "Case Studies",
     slug: "case-studies",
     description: "Real programmes, outcomes, and lessons.",
+  },
+  "consulting-career": {
+    label: "Consulting Career",
+    slug: "consulting-career",
+    description: "Career frameworks, skills, and thinking tools for ERP consultants.",
   },
 };
 

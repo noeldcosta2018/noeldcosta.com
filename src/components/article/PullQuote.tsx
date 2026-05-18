@@ -18,7 +18,7 @@ export default function PullQuote({
       >
         “
       </span>
-      <blockquote className="font-display font-black text-corbeau text-[1.35rem] md:text-[1.55rem] leading-[1.3] tracking-[-0.02em]">
+      <blockquote className="font-display font-normal italic text-corbeau text-[1.35rem] md:text-[1.55rem] leading-[1.4] tracking-[-0.01em]">
         {children}
       </blockquote>
       {attribution && (

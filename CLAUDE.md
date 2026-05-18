@@ -12,6 +12,8 @@
 
 @PRD.md
 
+@blog-editor.md
+
 # Noel D'Costa — Personal Brand Site
 
 This is the personal brand site for Noel D'Costa. Senior ERP/AI advisor.

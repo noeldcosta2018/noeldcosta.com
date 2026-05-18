@@ -1,481 +1,166 @@
 ---
-title: "SAP Performance Testing: What IT Leaders Must Know in 2025"
-metaTitle: "SAP Performance Testing for IT Leaders (2025 Guide)"
-metaDescription: "Most SAP performance issues surface after go-live. How IT leaders should plan, scope, and own performance testing before it costs them their cutover."
-excerpt: "Performance issues in SAP programmes are usually caught after go-live, when the cost of fixing them is highest. This guide walks IT leaders through what to test, when to test it, and who owns the outcome."
+title: "SAP performance testing: what IT leaders must know"
+metaTitle: "SAP Performance Testing: What IT Leaders Must Know"
+metaDescription: "Why SAP performance issues surface after go-live and how IT leaders should plan, scope, and govern performance testing before it costs them their cutover."
+excerpt: "Performance issues in SAP programmes are almost always caught after go-live, when the cost of fixing them is highest. Fiori tiles that time out at shift change. Z-reports that freeze on open-ended fiscal year queries. Background jobs that overlap during month-end close. These are not edge cases. They were predictable. The question is whether anyone tested for them."
 slug: "sap-performance-testing-it-leaders"
-date: "2025-07-12T19:43:57Z"
-updated: "2025-08-14T14:03:07Z"
-lastReviewed: "2026-05-04"
+date: "2025-07-12"
+updated: "2026-01-05"
+lastReviewed: "2026-01-05"
 hero: "/images/wp/2025/07/1-1.webp"
 heroAlt: "SAP performance testing dashboard showing response times and load metrics across systems"
 category: "erp-implementation"
 tags: ["sap-technical-decisions"]
 author: "Noel D'Costa"
-experienceSource: "lived ERP programme experience across enterprise SAP cutover, hypercare, and post-go-live performance escalations"
-originalUrl: "https://noeldcosta.com/sap-performance-testing-it-leaders/"
+experienceSource: "Direct experience from SAP programme delivery including ECC and S/4HANA cutover, hypercare, and post-go-live performance escalations in manufacturing, financial services, and public sector."
+keyTakeaways:
+  - "Performance testing should begin during design, not after UAT. The shape of a report, the structure of a job chain, and the design of an OData API all determine performance outcomes before a line of code is written"
+  - "Fiori tile launches spiking at shift change, Z-reports with open-ended fiscal year ranges, and background jobs overlapping during close windows are the most common performance failure patterns. All predictable with testing"
+  - "Volume testing is consistently pushed out when timelines tighten, and is almost never revisited post go-live. That is the single most expensive testing shortcut on SAP programmes"
+  - "Performance ownership cannot sit with QA alone. A central architect or programme-level testing lead needs authority to challenge design decisions that create performance risk"
+  - "On one programme, five background jobs clashed in production during the first month-end close. Nobody had simulated post-close job chains in testing. Everything had looked fine in isolation"
+  - "If your acceptance criteria says the system passed because UAT users said it felt fast enough, you do not have performance acceptance criteria. You have an opinion"
+pullQuote: "Performance risks are seeded during design, through architecture choices, how reports are structured, how much logic is pushed into ABAP. If you wait until the system is fully built, you are testing consequences. By then, rework is expensive."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Fiori"
+  - "SAP CPI"
+  - "SAP BTP"
+  - "SAP Solution Manager"
 ---
 
-[SAP](https://www.sap.com) performance testing is one of the most overlooked areas in system planning and one of the first blamed when things break. A Fiori launch times out. An ATP run freezes during order entry. A journal post lags just long enough to disrupt closing. 
+# SAP performance testing: what IT leaders must know
 
-The finger-pointing starts immediately: maybe the network, maybe a long-running batch job, or some glitch in the frontend. By the time teams trace it back to a performance flaw, the damage is already done. Critical operations miss their window. Business trust takes a hit.
+Performance issues in SAP programmes are almost always caught after go-live. Fiori tiles that time out when 300 users log in at shift change. Z-reports that freeze because someone ran an open-ended fiscal year query against a table with 50 million records. Background jobs that overlap during month-end close and cause the FI posting run to abort.
 
-In my opinion, the real issue isn’t that performance testing is ignored. It’s that teams test the wrong scenarios, test too late, or assume performance is purely a Basis concern. That mindset no longer works, especially in today’s hybrid landscapes and [S/4HANA programs](https://noeldcosta.com/sap-implementation/s4hana/), where system behavior depends on multiple moving parts.
+These are not edge cases. They are predictable failure modes. The question is whether the programme tested for them before go-live.
 
-These are the patterns I see missed most often:
+In most programmes I have worked on, the answer is partial. Functional testing was thorough. Volume testing was planned, then pushed when timelines compressed. Performance simulations happened at low data volumes that did not reflect production reality. The consequences showed up in the first weeks of live operation.
 
--   Fiori tile launches spiking at shift change
-    
--   Z-reports run with open-ended fiscal year ranges
-    
--   [OData APIs](https://noeldcosta.com/sap-cpi/) receiving far more volume than expected
-    
--   Gateway timeouts caused by backend logic, not the interface
-    
--   Background jobs overlapping during critical close windows
-    
+## Why performance testing has changed in S/4HANA
 
-[Teams](https://noeldcosta.com/resource-allocation-planning-for-sap-projects/) often get stuck in functional test cycles and never return to performance simulations once timelines tighten. Volume testing is pushed out, and almost never revisited post go-live.
+Traditional SAP performance testing focused on server-side load: ABAP runtime, database queries, background job scheduling. In an S/4HANA landscape with Fiori frontends, BTP-based extensions, and SAP CPI integration flows, performance depends on multiple layers simultaneously.
 
-Leadership has to step in. If they don’t define what good performance looks like and hold teams accountable to it, projects will settle for what “works.” Until one day, it doesn’t.
+A slow Fiori tile response might come from a long-running ABAP call, or from a gateway timeout, or from an OData service that was not designed for concurrent requests, or from a network latency issue in a hybrid cloud architecture. Testing the backend alone does not find the problem. End-to-end testing across the full stack does.
 
-![SAP Performance Testing](/images/wp/elementor/thumbs/3-1-r8t7135728gt50ygb3snf6igulhdkwoor8b6ljkbuo.webp "SAP Performance Testing")
+CPI integration flows have introduced a specific risk that is not always visible in pre-go-live testing. Flows that worked correctly in development and QA environments, with single-transaction test loads, can fail silently or queue up under production volumes. If the CPI message queues are not sized correctly, delays accumulate. The symptoms appear as intermittent order processing failures, invoice mismatches, or data that is present in one system and missing in another.
 
-Most SAP performance problems are noticed too late, usually after the system is live and things start to slow down or break. The best way to avoid this is to plan and test for performance early, not at the end when changes are harder and more expensive.
+## The four types of performance testing that matter
 
-## 10 Key Takeaways on SAP Performance Testing
+**Load testing** validates how the system behaves under steady expected usage. The key word is expected: you need to know what the actual transaction volumes, user counts, and concurrent session numbers will be. Many load test failures come from testing against volume estimates that were already known to be optimistic.
 
-1.  Performance testing should begin right after architecture is finalized. It’s more effective to align it with your [SAP implementation planning](https://noeldcosta.com/start-your-sap-implementation-project-right/) rather than leave it as a post-UAT activity.
-    
-2.  Data load tests must simulate realistic volumes. Many cutovers struggle because migration scripts weren’t pressure-tested, as discussed in [SAP data migration pitfalls](https://noeldcosta.com/why-sap-data-migration-fails-and-how-to-fix-it/).
-    
-3.  Fiori tiles used across regions need latency profiling. Users in the Middle East or Southeast Asia may experience delays not seen in core locations. It’s often missed unless someone raises it early.
-    
-4.  [SAP CPI flows can create](https://noeldcosta.com/sap-btp-cockpit-issues/) silent failures under load. They’re not always built for high-frequency calls. We covered common patterns to watch in our [SAP CPI guide](https://noeldcosta.com/sap-cpi/).
-    
-5.  Month-end closing runs should be modeled. Batch job overlaps are a major bottleneck and rarely tested under peak concurrency.
-    
-6.  Business process volume modeling needs cross-team alignment. It's not just a test team’s task, it involves finance, logistics, even audit.
-    
-7.  3rd-party interfaces (e.g., Salesforce, Ariba) should be throttled and tested together with SAP, not in isolation.
-    
-8.  There’s often no baseline for acceptable performance. You need response time expectations documented in the [project scope](https://noeldcosta.com/sap-project-scope-template-management-and-control/).
-    
-9.  Test data quality impacts outcomes more than tools. Dirty mock data yields misleading results.
-    
-10.  Governance is essential. Assign one accountable performance lead. Without ownership, findings tend to drift.
-     
+**Stress testing** pushes the system past its designed limits to identify where it breaks. If your organisation's growth trajectory means doubling transaction volume in eighteen months, stress testing tells you whether the current architecture supports that or whether sizing constraints will become a problem before the next infrastructure review cycle.
 
-## Why Performance Testing Has Changed in the SAP Landscape
+**Soak testing** runs the system at steady load for an extended period to identify issues that only emerge over time: memory leaks, database fragmentation, job chain contention that accumulates across multiple runs. Soak testing is the type most consistently skipped, and it is the type that would have caught the background job overlap scenario described above.
 
-![SAP Performance Testing](/images/wp/elementor/thumbs/7-1-r8t718s878oj2oq9e68eu538ewpkv3b2s083h7bytc.webp "SAP Performance Testing")
+**End-to-end testing** validates the complete user journey: Fiori tile launch, OData service call, ABAP backend processing, database retrieval, and response rendering. A problem at any layer affects the user's experience. End-to-end testing is the only way to identify problems that are invisible when each layer is tested in isolation.
 
-In earlier SAP landscapes, performance testing was mainly focused on the backend. With ECC and SAP GUI, the flows were more contained. Most user actions hit the application layer directly. Testing centered on custom ABAP, long reports, and scheduled jobs. That scope worked reasonably well for its time.
+## High-risk scenarios that require specific performance focus
 
-Now, things are more fragmented. With S/4HANA, [testing has to consider more than just server-side load](https://noeldcosta.com/sap-testing-validation-tools-comparison/). The frontend matters. So does the middleware. And with SAP Business Technology Platform (BTP) in the mix, [performance is no longer shaped](https://noeldcosta.com/sap-implementation/business-one/) by one system alone.
+**Shift change and peak login.** When 200 users open Fiori launchpads simultaneously at 8 AM, the authentication and launchpad rendering load spikes. Systems that perform well during off-peak hours can become unusable during this window if the concurrent session load was not tested.
 
-Fiori applications behave differently than SAP GUI. Even basic screens rely on OData calls, browser processing, and client-side rendering. 
+**Month-end and year-end close.** Financial closing runs are the highest-risk performance scenario on most implementations. They combine high-volume journal postings, background job chains with strict sequencing dependencies, and real-time pressure from finance teams trying to close within a fixed window. The specific job chains for the close should be run end-to-end in performance testing against volumes that reflect the closing period, not average daily transaction counts.
 
-That means performance can vary based on browser version, device power, or even Wi-Fi quality. These delays are subtle, but users notice them quickly. Especially in regions where network speeds vary.
+**ECC to S/4HANA conversion.** Stable ECC code behaves differently on HANA. Index structures, join strategies, and memory consumption change. Programs that ran in 30 minutes in ECC may run in 3 minutes on HANA, or may produce unexpected performance profiles on certain data patterns. Performance regression testing specific to the conversion is not optional.
 
-On the integration side, BTP and SAP CPI have introduced more moving parts. Flows that worked fine in a development environment may struggle under [real transaction volumes](https://noeldcosta.com/sap-btp-cockpit-issues/). 
+**Multi-region deployments.** Network latency between users and the SAP system affects every transaction. A sales order creation that takes 2 seconds in the data centre country can feel broken for users 3,000 miles away if network-aware testing was not done during planning.
 
-If CPI queues are not sized correctly, delays ripple across the system. We’ve explored this issue further in our review of [common SAP CPI performance risks](https://noeldcosta.com/sap-cpi/).
+## What IT leaders should expect from their teams
 
-A few scenarios come up often:
-
--   Fiori tiles load inconsistently across global locations
-    
--   CPI interfaces drop messages during volume spikes
-    
--   Parallel background jobs cause process delays at month-end
-    
--   Test environments use clean data, masking real-world load conditions
-    
--   API response times shift when message queues are involved
-    
-
-I can tell you that these are not edge cases. They happen in projects that seemed well-planned on paper. For better preparation, look at this [SAP implementation planning guide](https://noeldcosta.com/mastering-sap-implementation-a-step-by-step-guide-for-2025/) and the section on [resource allocation planning](https://noeldcosta.com/resource-allocation-planning-for-sap-projects/). Both address areas that often get missed until the project is already under pressure.
-
-## Types of SAP Performance Testing That Matter
-
-![SAP Performance Testing](/images/wp/elementor/thumbs/8-1-r8t71anwkwr3pwnj371nz4m5logbahijg9j2fr96gw.webp "SAP Performance Testing")
-
-Not all SAP performance tests serve the same purpose. In my opinion, grouping everything under a general “load test” is one of the most common mistakes. Each type of test checks a different kind of risk. If you skip one, something important may go unnoticed until after go-live.
-
--   **Load Testing** looks at how the system behaves under steady, expected usage. It tells you if your [SAP landscape](https://noeldcosta.com/sap-implementation/) can support normal day-to-day transactions without delays. Teams often underestimate how critical this is for finance, logistics, and core operations. 
--   **Stress Testing** pushes the system past its designed limits. It is meant to break things. This is how you find out whether current infrastructure choices, discussed during [budget and sizing](https://noeldcosta.com/sap-implementation-cost-and-budget-breakdown/), are truly sufficient. If users hit system walls during month-end, this type of testing probably wasn't done.
--   **Soak Testing** runs for longer durations like several hours or even days. It's used to detect memory leaks or slow resource degradation, which are rarely visible in short cycles. One project we reviewed had a nightly batch job that failed quietly after 10 hours of continuous use. The problem didn’t show up in QA. It only appeared in production.
--   **Spike Testing** handles unexpected usage bursts. Payroll runs, large promotions, or data corrections often cause usage surges. Without this test, the system may behave fine, until a single hour of traffic causes cascading delays.
--   **Backend-only Testing** focuses purely on job execution, ABAP logic, and scheduled tasks. This is especially valuable for scenarios like [data migration](https://noeldcosta.com/why-sap-data-migration-fails-and-how-to-fix-it/) or heavy Z-report usage.
--   **End-to-End Testing** looks at the entire flow: Fiori frontend, OData calls, middleware (such as [SAP CPI](https://noeldcosta.com/sap-cpi/)), and database response. It’s the closest simulation of what real users will experience.
-
-Each type solves a different problem. You don’t always need all of them, but knowing which ones you skipped matters.
-
-      
-
-### Types of Performance Testing in SAP Projects
-
-| Testing Type | Why It Matters | Example Scenario |
+| Expectation | What should be delivered | Why it matters |
 |---|---|---|
-| Load Testing | Ensures the system can handle expected user volume during business hours without slowdowns. | 1,000 users logging into Fiori apps and running standard sales reports during peak hours. |
-| Stress Testing | Identifies system breaking points by simulating extreme load conditions. | Bulk material creation during a procurement blackout window. |
-| Volume Testing | Validates performance when large datasets are processed over time. | Migrating 10 million finance records during data cutover and checking runtime. |
-| Spike Testing | Evaluates system behavior under sudden, massive increases in load. | All employees accessing the leave portal simultaneously after policy update. |
-| Endurance Testing | Checks for memory leaks or performance degradation during long-term use. | Simulating 48-hour batch job processing cycles on S/4HANA system. |
-| Scalability Testing | Tests how well the system handles growing users or transactions without a drop in performance. | Doubling concurrent invoice postings and measuring response time impact. |
+| Performance SLA definition | SLAs per transaction type, interface, and job with pass/fail thresholds | Sets acceptance criteria that cannot be overridden by UAT opinion |
+| Risk-based test scope | Documented prioritisation based on user volume, integration points, and data dependency | Ensures cycles target critical workloads |
+| Cross-functional participation | Basis, Infrastructure, Functional, Security, and Integration all present during test execution | Prevents blame-shifting when results reveal gaps |
+| Tooling and environment readiness | Load generators (JMeter, LoadRunner), monitoring tools, and data refreshes ready before test cycles begin | Enables realistic simulation |
+| Realistic test data | Production-volume master data, real interface callouts, and representative transaction mixes | Ensures test output mirrors go-live behaviour |
+| Performance KPIs in reporting | Dashboard showing load mix, response times, CPU/memory, job runtimes, error rates | Supports cutover approval decisions with evidence |
+| Post-go-live monitoring plan | KPIs to watch during first 30 to 60 days post-launch | Ensures live system behaves within tested tolerances |
 
-<div style="position:relative;background:#0e1020;border-radius:12px;overflow:hidden;margin:2.5rem 0;">
-  <div style="margin-right:220px;padding:2rem 2.25rem;display:flex;flex-direction:column;justify-content:flex-start;min-height:280px;">
-    <p style="font-family:monospace;font-size:0.6rem;letter-spacing:3px;text-transform:uppercase;color:#fc985a;margin:0 0 0.85rem 0;line-height:1;">[ Advisory ]</p>
-    <p style="font-weight:900;color:#f4ede4;font-size:1.22rem;line-height:1.25;margin:0 0 1rem 0;letter-spacing:-0.03em;">Running an ERP programme <em style="font-weight:300;color:#e2826b;font-style:italic;">right now?</em></p>
-    <div style="display:flex;flex-direction:column;gap:0.45rem;margin-bottom:1.5rem;">
-      <div style="display:flex;gap:0.55rem;color:#7e7e87;font-size:0.875rem;line-height:1.55;"><span style="color:#fc985a;flex-shrink:0;">&#8594;</span><span>ERP &amp; AI system selection — right platform before you commit.</span></div>
-      <div style="display:flex;gap:0.55rem;color:#7e7e87;font-size:0.875rem;line-height:1.55;"><span style="color:#fc985a;flex-shrink:0;">&#8594;</span><span>Project recovery — keep delivery on track or bring it back.</span></div>
-      <div style="display:flex;gap:0.55rem;color:#7e7e87;font-size:0.875rem;line-height:1.55;"><span style="color:#fc985a;flex-shrink:0;">&#8594;</span><span>ERP modernisation — move to S/4HANA without losing what works.</span></div>
-    </div>
-    <a href="https://calendly.com/noeldcosta/30min" style="display:inline-block;background:#fc985a;color:#0e1020;font-weight:700;font-size:0.82rem;padding:0.6rem 1.3rem;border-radius:6px;text-decoration:none;">Book a 30-min call &#8594;</a>
-  </div>
-  <div style="position:absolute;right:0;top:0;bottom:0;width:220px;background-image:url('/images/image-1777451570300.jpg');background-size:cover;background-position:top center;"></div>
-</div>
+## Common mistakes
 
-## High-Risk Use Cases That Require Performance Testing
+**Confusing functional testing with performance testing.** Functional testing confirms that a transaction produces the correct output. It says nothing about what happens when 150 users run the same transaction simultaneously. These are different tests addressing different risks.
 
-![SAP Performance Testing](/images/wp/elementor/thumbs/6-1-r8t717ue0en8r2rmjnts9nbrtiu7ne7cfvklzxdczk.webp "SAP Performance Testing")
+**Testing with low or incomplete data volumes.** A customer with 200,000 open sales order line items behaves differently from a customer with 5,000 in a test. Filtering and sorting operations that return instantly in test can timeout in production if the data volume was not replicated. Volume seeding for high-risk areas is not optional.
 
-In SAP programs, some moments could tolerate performance risks. Others do not. These are the scenarios where performance testing is non-negotiable. Delays or failures here could send ripples across business-critical processes.
+**Treating performance as a Basis concern.** Basis teams own infrastructure sizing and background job scheduling. They do not own the report design decisions, the OData service architecture, or the CPI flow configuration that determine application-layer performance. Performance requires cross-functional accountability, not delegation to one team.
 
-Below are key situations where testing should never be skipped:
+**No defined acceptance criteria.** If the test is considered passing because "UAT users said it felt fast enough," there is no acceptance criterion. Performance acceptance criteria should specify response times by transaction type under defined concurrent user loads, with pass/fail thresholds agreed before testing begins.
 
--   **Period-close processing (FI/CO)**  
-    Heavy background processing during monthly, quarterly, or year-end close can trigger job collisions. Workflows stack up, and delays in journal entries or reconciliations may cause compliance risks. One company I worked with had invoices stuck in “in process” for hours, only discovered during their final submission run.
-    
--   **Large-scale Fiori rollout (500+ users)**  
-    Gateway requests, frontend rendering, and backend query performance must be validated together. You can’t isolate just one tier. A delay at any layer creates timeouts or degraded UX, especially with business-critical tiles like MIGO or F110. You might find value in aligning this with [SAP training adoption strategies](https://noeldcosta.com/sap-training-strategies-for-employees-to-drive-adoption/).
-    
--   **S/4HANA migration scenarios**  
-    Even stable ECC code behaves differently on HANA. Indexes, joins, and memory consumption change. Without thorough regression and performance runs, [S/4HANA projects](https://noeldcosta.com/ecc-to-s4hana-migration/) can produce runtime shifts that disrupt live operations.
-    
--   **Middleware/API integrations**  
-    OData and SOAP requests routed via CPI or PI/PO can silently overload. Queue sizes grow, threads fail, and systems back up. During bulk vendor uploads, we’ve seen async jobs trigger deadlocks without ever returning errors.
-    
--   **Custom Z transactions or reports**  
-    These often bypass performance guardrails. A well-meaning developer may write nested loops or full-table scans that hold under one user. But in production, with five concurrent runs? The program times out or eats batch capacity.
-    
--   **Multi-region SAP access**  
-    Latency differences across regions affect core workflows. Something as basic as a Create Sales Order screen can feel broken without [network-aware testing](https://noeldcosta.com/project-planning-and-control-get-sap-projects-back-on-track/).
-    
-
-For each of these, the absence of performance testing is rarely visible, until it becomes a crisis.
-
-      
-
-### High-Risk Use Cases That Require Performance Testing
-
-| Business Area | Why It’s High Risk | Example Use Case |
-|---|---|---|
-| Order-to-Cash | Delays in processing sales orders or invoices directly impact revenue recognition. | Peak-season order booking from multiple channels simultaneously. |
-| Procure-to-Pay | Lag in PO creation or goods receipt disrupts supply chain operations. | Bulk PO upload from external procurement system. |
-| Payroll | Calculation or posting errors can delay salaries, leading to legal or HR issues. | Month-end salary run for 10,000+ employees in under 1 hour. |
-| Finance Close | Tight deadlines mean slow batch jobs can delay reporting and audit cycles. | GL closing and reconciliation batch jobs executed at quarter-end. |
-| Inventory Management | Real-time updates are needed for warehouse ops and fulfillment. | High-frequency goods movement via RF devices in large distribution centers. |
-| Manufacturing | Delays in production orders or BOM explosion can halt shop-floor operations. | Mass work order release during MRP run. |
-| Reporting & Analytics | Heavy queries can degrade overall system performance during peak usage. | Running cost center or margin reports over multiple fiscal years. |
-
-<div style="background:#0e1020;border-radius:12px;overflow:hidden;margin:2.5rem 0;padding:1.75rem 2rem 2rem 2rem;">
-  <p style="font-family:monospace;font-size:0.6rem;letter-spacing:3px;text-transform:uppercase;color:#fc985a;margin:0 0 0.4rem 0;line-height:1;">[ Related reading ]</p>
-  <p style="font-weight:900;color:#f4ede4;font-size:1.1rem;line-height:1.2;margin:0 0 1.25rem 0;letter-spacing:-0.02em;">ERP modernisation strategy</p>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.625rem;">
-    <a href="https://noeldcosta.com/sap-clean-core-strategy-what-it-means-for-your-business/" style="display:block;background:#1c1e2e;border-radius:8px;padding:1.1rem 1.25rem;text-decoration:none;color:inherit;border:1px solid rgba(255,255,255,0.06);transition:background 0.2s,border-color 0.2s;" onmouseover="this.style.background='#252838';this.style.borderColor='rgba(252,152,90,0.35)'" onmouseout="this.style.background='#1c1e2e';this.style.borderColor='rgba(255,255,255,0.06)'">
-      <p style="font-family:monospace;font-size:0.55rem;letter-spacing:2.5px;text-transform:uppercase;color:#fc985a;margin:0 0 0.45rem 0;line-height:1;">Architecture</p>
-      <p style="font-weight:700;color:#f4ede4;font-size:0.9rem;line-height:1.3;margin:0 0 0.4rem 0;">SAP Clean Core Strategy</p>
-      <p style="color:#7e7e87;font-size:0.8rem;line-height:1.5;margin:0 0 0.7rem 0;">Simplify customizations and enable long-term modernization through clean-core principles.</p>
-      <span style="color:#fc985a;font-size:0.78rem;font-weight:600;">Read more &#8594;</span>
-    </a>
-    <a href="https://noeldcosta.com/ecc-to-s4hana-migration/" style="display:block;background:#1c1e2e;border-radius:8px;padding:1.1rem 1.25rem;text-decoration:none;color:inherit;border:1px solid rgba(255,255,255,0.06);transition:background 0.2s,border-color 0.2s;" onmouseover="this.style.background='#252838';this.style.borderColor='rgba(252,152,90,0.35)'" onmouseout="this.style.background='#1c1e2e';this.style.borderColor='rgba(255,255,255,0.06)'">
-      <p style="font-family:monospace;font-size:0.55rem;letter-spacing:2.5px;text-transform:uppercase;color:#fc985a;margin:0 0 0.45rem 0;line-height:1;">Migration</p>
-      <p style="font-weight:700;color:#f4ede4;font-size:0.9rem;line-height:1.3;margin:0 0 0.4rem 0;">ECC to S/4HANA Migration</p>
-      <p style="color:#7e7e87;font-size:0.8rem;line-height:1.5;margin:0 0 0.7rem 0;">Move from legacy ERP to S/4HANA with guidance on risks, prep, and project phasing.</p>
-      <span style="color:#fc985a;font-size:0.78rem;font-weight:600;">Read more &#8594;</span>
-    </a>
-    <a href="https://noeldcosta.com/sap-implementation-vs-rollout-differences-challenges-best-practices/" style="display:block;background:#1c1e2e;border-radius:8px;padding:1.1rem 1.25rem;text-decoration:none;color:inherit;border:1px solid rgba(255,255,255,0.06);transition:background 0.2s,border-color 0.2s;" onmouseover="this.style.background='#252838';this.style.borderColor='rgba(252,152,90,0.35)'" onmouseout="this.style.background='#1c1e2e';this.style.borderColor='rgba(255,255,255,0.06)'">
-      <p style="font-family:monospace;font-size:0.55rem;letter-spacing:2.5px;text-transform:uppercase;color:#fc985a;margin:0 0 0.45rem 0;line-height:1;">Deployment</p>
-      <p style="font-weight:700;color:#f4ede4;font-size:0.9rem;line-height:1.3;margin:0 0 0.4rem 0;">Implementation vs Rollout</p>
-      <p style="color:#7e7e87;font-size:0.8rem;line-height:1.5;margin:0 0 0.7rem 0;">Compare centralized ERP builds to phased rollout approaches across global sites.</p>
-      <span style="color:#fc985a;font-size:0.78rem;font-weight:600;">Read more &#8594;</span>
-    </a>
-    <a href="https://noeldcosta.com/sap-implementation-cost-breakdown-why-budgets-explode-50/" style="display:block;background:#1c1e2e;border-radius:8px;padding:1.1rem 1.25rem;text-decoration:none;color:inherit;border:1px solid rgba(255,255,255,0.06);transition:background 0.2s,border-color 0.2s;" onmouseover="this.style.background='#252838';this.style.borderColor='rgba(252,152,90,0.35)'" onmouseout="this.style.background='#1c1e2e';this.style.borderColor='rgba(255,255,255,0.06)'">
-      <p style="font-family:monospace;font-size:0.55rem;letter-spacing:2.5px;text-transform:uppercase;color:#fc985a;margin:0 0 0.45rem 0;line-height:1;">Costs</p>
-      <p style="font-weight:700;color:#f4ede4;font-size:0.9rem;line-height:1.3;margin:0 0 0.4rem 0;">ERP Budget Breakdowns</p>
-      <p style="color:#7e7e87;font-size:0.8rem;line-height:1.5;margin:0 0 0.7rem 0;">Why ERP modernization costs overrun and how to build budget resilience.</p>
-      <span style="color:#fc985a;font-size:0.78rem;font-weight:600;">Read more &#8594;</span>
-    </a>
-  </div>
-</div>
-
-## Common Mistakes Enterprises Still Make in SAP Performance Testing
-
-![SAP Performance Testing](/images/wp/elementor/thumbs/4-1-r8t7150vfwjds8vq04lwk61e1d840aw5fhm5k3hji8.webp "SAP Performance Testing")
-
-Performance issues in SAP programs rarely show up by surprise. Most of the time, they were predictable, just not planned for. 
-
-Even large enterprises with mature delivery models still fall into patterns that quietly weaken their performance testing strategy. Below are four of the most common mistakes, and more importantly, how to fix them.
-
-### Mistake 1: Confusing Functional Testing with Performance Testing
-
-A transaction that runs smoothly during a functional test doesn’t tell you how it behaves when 100 users access it at once. Teams often assume that if a workflow is fast in QA, it will scale in production. But performance degradation usually begins under concurrent load, not during isolated execution.
-
-**What to do:**  
-Functional testing is necessary but insufficient. You need transaction-level concurrency simulations. This is especially true for order creation, outbound delivery, and financial postings. These are daily volume drivers. To make sure this gets addressed early, tie it directly into your [SAP quality gates](https://noeldcosta.com/sap-quality-gates-implementation/) and don’t rely solely on UAT sessions to surface issues.
-
-### Mistake 2: Testing with Incomplete or Low-Volume Data
-
-Most QA and sandbox environments don’t reflect the actual data size of production. They mirror structure, not content. As a result, queries that feel quick in testing environments slow down drastically when executed against full production volumes.
-
-**What to do:**  
-If you can’t refresh full production data due to compliance or cost, prioritize volume seeding for high-risk areas, open line items, materials, change logs, and archived documents. In projects involving [custom SAP modules](https://noeldcosta.com/sap-implementation/sap-modules/) or Fiori apps with filters, small data sets can lead to false confidence. It’s not about copying everything but about injecting enough load to simulate stress.
-
-### Mistake 3: Ignoring Job Chains, Batch Overlap, and Scheduling
-
-SAP batch jobs are often tested in isolation. That doesn’t reflect reality. During month-end, background processing peaks. Multiple programs run in parallel, consuming the same resources. One poorly optimized job can block five others.
-
-**What to do:**  
-Simulate production job chains. Run interdependent jobs in overlapping windows. Validate contention, not just completion. These scenarios are especially relevant for FI/CO closing, where a delay in one job creates a domino effect. Map this testing effort directly into [your planning and execution framework](https://noeldcosta.com/project-planning-and-control-get-sap-projects-back-on-track/) so it doesn’t become an afterthought.
-
-### Mistake 4: Leaving Performance Ownership at the Project Level
-
-Performance testing often gets pushed to individual project teams. When that happens, no one owns the bigger picture. Different teams make different assumptions about acceptable thresholds, test tools, and data loads.
-
-**What to do:**  
-Move ownership to the program level. Ideally, performance should sit under a centralized PMO or SAP Center of Excellence. This reduces redundancy, improves test quality, and ensures shared understanding across projects. For organizations struggling with this, reviewing your [governance and scope boundaries](https://noeldcosta.com/how-to-avoid-scope-creep-in-an-sap-implementation/) is a good place to start.
-
-These are not technical oversights. They’re planning decisions. The longer performance remains fragmented across teams, the more likely you’ll see issues during go-live or peak business cycles. Recognizing these patterns early gives you a chance to fix them before they create visible damage.
-
-      
-
-### Common Mistakes Enterprises Still Make in SAP Performance Testing
-
-| Common Mistake | Why It’s a Problem | How to Address It |
-|---|---|---|
-| Testing only isolated transactions | Misses real-world process chains where multiple actions are executed in sequence or batch. | Build end-to-end process scenarios (e.g. order-to-cash, hire-to-retire) into test scope. |
-| Using a non-representative test environment | Results don’t reflect actual usage patterns, hardware, or data volumes. | Align test environment specs (CPU, memory, users, data sets) to production levels. |
-| Focusing only on average response time | Hides outliers that cause spikes, timeouts, or background job failures under load. | Track 95th and 99th percentile response times. Analyze for extreme cases, not just averages. |
-| No coordination between functional and technical teams | Business scenarios tested incorrectly or with invalid assumptions. Test cases don’t match real usage. | Have joint sign-off on test scripts. Involve business SMEs in scenario validation. |
-| Running one round of testing close to go-live | No time left to fix issues. Go-live risks stay hidden. | Schedule early performance test cycles. Include at least one round after tuning efforts. |
-| Skipping integration-heavy interfaces | CPI, PI/PO, Event Mesh or 3rd-party APIs behave differently under load, causing failures. | Include end-to-end interface testing. Validate async behavior and retry mechanisms. |
-
-## My Tips for Successful SAP Performance Testing
-
-Most teams underestimate how much their performance test results hinge on environment design. If your test landscape doesn’t behave like production, your results won’t mean much. You’ll get false positives or worse, you’ll miss actual issues entirely.
-
-In my opinion, this is where most performance strategies fall short not in tooling or effort, but in how closely they simulate real-world usage. Testing against sanitized data or in shared environments only gives you part of the picture.
-
-A few principles that matter more than the tools:
-
--   Mirror production infrastructure. Same integration paths. Same network hops. Same backend load balancers. If the production system runs through a web dispatcher and reverse proxy, your test setup should too.
-    
--   Never combine performance testing with UAT. Functional testers and business users introduce noise and variability you can’t control. You’ll lose the ability to repeat and compare test cycles with any accuracy.
-    
--   Choose tools based on your integration mix. If you’re running OData-heavy Fiori apps, include SAP’s LoadRunner integrations or JMeter plugins tailored to HTTP headers. CPI-heavy landscapes will need payload introspection.
-    
--   Run each test multiple times. One test cycle isn’t a signal, it’s noise. You’re looking for consistency across runs before you call a performance level acceptable.
-    
--   Lock your environment during test cycles. No hotfixes, no system parameter tweaks between runs. If someone changes a kernel parameter mid-test, your results become worthless.
-    
-
-You don’t get a second shot at go-live load. The closest thing to a rehearsal is performance testing done right under pressure, under load, and with no shortcuts.
-
-## What IT Leaders Should Expect from Their Teams on Performance Testing
-
-![Performance Testing](/images/wp/elementor/thumbs/9-1-r8t71blqrqse1im5xpgajmdm72boi6m9se6jx17sao.webp "Performance Testing")
-
-Performance issues in SAP projects are often symptoms of poor planning, not technical failure. For IT leaders, besides reviewing test logs, please ask the right questions early enough to avoid problems later.
-
--   Start by requiring a **performance testing plan** for every major deployment. It doesn’t need to be lengthy. What matters is clarity in terms of what’s being tested, who owns it, how the environment is prepared, and when it’s scheduled. Too many projects skip this and rely on functional tests alone. Coverage matters. You should expect:
-    -   UI-level response testing (Fiori, SAP GUI),
-    -   API and middleware tests, especially when using [SAP CPI](https://noeldcosta.com/sap-cpi/) or external integrations,
-    -   Backend job execution, including any Z programs.
-        
-
-One missing layer usually leads to blind spots.
-
--   Also, ask for clear **performance KPIs**. These should include target response times, job runtimes, acceptable failure rates, and thresholds for degradation. If these don’t exist, your team doesn’t know what “good enough” looks like. This aligns with setting strong [SAP quality gates](https://noeldcosta.com/sap-quality-gates-implementation/) across the delivery cycle.
--   Your teams must also have **realistic environments**. If QA has a fraction of the production size or no representative data, test outcomes won’t reflect reality. These gaps usually surface during critical periods, like cutover or quarter-end.
--   Equally important, confirm that performance tests are integrated with **monitoring tools**. Whether that’s Solution Manager, Dynatrace, or others, monitoring bridges the gap between testing and production readiness.
--   You don’t need to be involved in test design. But you do need to know if testing is wide, deep, and grounded in real business usage. That’s what sets successful programs apart. The pressure will come either during planning or after go-live. One of those is a choice.
-
-      
-
-### What IT Leaders Should Expect from Their Teams on Performance Testing
-
-| Expectation Area | What Should Be Delivered | Why It Matters |
-|---|---|---|
-| Performance SLA Definition | SLAs per transaction, interface, job, and workflow with clear thresholds for response time and throughput. | Sets baseline expectations and reduces ambiguity during testing sign-off or escalation. |
-| Risk-Based Test Scope | Documented prioritization of scenarios based on user volume, integration points, and data dependency. | Ensures test cycles target critical workloads, not just convenience scripts. |
-| Cross-Functional Alignment | Confirmed participation from Basis, Infrastructure, Functional, Security, and Integration teams during test execution. | Prevents blame-shifting. Makes performance a shared responsibility, not just QA’s burden. |
-| Tooling and Environment Readiness | Load generators (e.g., JMeter, LoadRunner), monitoring tools (e.g., SAP Solution Manager, Dynatrace), and data refreshes set up before test cycles. | Enables realistic simulations. Reduces false positives caused by test rig limitations. |
-| Realistic Test Data Preparation | Test cases run with actual business volumes, master data variants, and real interface callouts. | Ensures test output mirrors go-live behavior. Avoids missed corner cases. |
-| Ownership for Interface and Batch Jobs | Named owners for CPI flows, RFCs, middleware hops, IDocs, batch jobs, and schedules. | Accountability for fixing what fails under load. Reduces “no owner” silos. |
-| Performance Bottleneck Resolution | Action plan for each test defect with trace logs, tuning notes, and updated config recommendations. | Bridges the gap between test results and system improvements. |
-| Re-test After Fixes | Follow-up test runs with same data and script to confirm performance gains. | Ensures the fix works, not just applied and doesn’t introduce new problems. |
-| Reporting and KPIs | Dashboard or report that includes load mix, response times, system CPU/memory, job runtimes, and error rates. | Supports review with leadership and enables data-driven cutover approval. |
-| Post-Go-Live Monitoring Plan | Defined KPIs to watch during first 30–60 days (response time, DB growth, background job queue length). | Ensures the live system behaves within tested tolerances and issues are caught early. |
-
-## Conclusion
-
-![Performance Issues](/images/wp/elementor/thumbs/2-1-r8t7127cvefiteztgle0uor097m0d7kyf3np49lq0w.webp "Performance Issues")
-
-Most SAP performance issues don’t show up out of nowhere. They were there. Just buried under assumptions no one challenged until it was too late. Usually when the system is already live, and users are stuck refreshing the same screen.
-
-By then, there’s not much room to course-correct.
-
-If there’s one shift that makes a difference, it’s starting earlier. Reviewing performance during design, not after build, is where most issues can actually be avoided. The shape of a report, the structure of a job chain, the way an interface is triggered, all of that gets decided before testing even begins.
-
-Performance needs to be part of the plan. Not squeezed in later. That means:
-
--   Planning for performance test cycles just like you would for functional ones
-    
--   Making sure the test environment reflects real usage, not just dummy data
-    
--   Assigning responsibility to someone who owns it beyond just a checklist
-    
--   Requiring sign-off at the release level, with KPIs tied to actual risk
-    
-
-In larger programs, especially during [S/4HANA transitions](https://noeldcosta.com/ecc-to-s4hana-migration/) or middleware integrations, this matters even more. You don’t want to be scrambling after go-live because something felt “fast enough” in QA.
-
-If you’ve been through this kind of challenge or you’re preparing for one, feel free to reach out. I’m always open to trading stories, comparing lessons, or just hearing where others are seeing gaps.
-
-You can also leave a comment below. I read every one. Sometimes the real insights come from what others quietly share after the fact.
-
-<div style="background:#0e1020;border-radius:12px;overflow:hidden;margin:2.5rem 0;padding:1.75rem 2rem 2rem 2rem;">
-  <p style="font-family:monospace;font-size:0.6rem;letter-spacing:3px;text-transform:uppercase;color:#fc985a;margin:0 0 0.4rem 0;line-height:1;">[ Related reading ]</p>
-  <p style="font-weight:900;color:#f4ede4;font-size:1.1rem;line-height:1.2;margin:0 0 1.25rem 0;letter-spacing:-0.02em;">ERP modernisation planning & execution</p>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.625rem;">
-    <a href="https://noeldcosta.com/project-planning-and-control-get-sap-projects-back-on-track/" style="display:block;background:#1c1e2e;border-radius:8px;padding:1.1rem 1.25rem;text-decoration:none;color:inherit;border:1px solid rgba(255,255,255,0.06);transition:background 0.2s,border-color 0.2s;" onmouseover="this.style.background='#252838';this.style.borderColor='rgba(252,152,90,0.35)'" onmouseout="this.style.background='#1c1e2e';this.style.borderColor='rgba(255,255,255,0.06)'">
-      <p style="font-family:monospace;font-size:0.55rem;letter-spacing:2.5px;text-transform:uppercase;color:#fc985a;margin:0 0 0.45rem 0;line-height:1;">Execution</p>
-      <p style="font-weight:700;color:#f4ede4;font-size:0.9rem;line-height:1.3;margin:0 0 0.4rem 0;">Project Planning & Control</p>
-      <p style="color:#7e7e87;font-size:0.8rem;line-height:1.5;margin:0 0 0.7rem 0;">Strategies to keep SAP projects on track, avoid scope drift, and maintain delivery discipline.</p>
-      <span style="color:#fc985a;font-size:0.78rem;font-weight:600;">Read more &#8594;</span>
-    </a>
-    <a href="https://noeldcosta.com/creating-an-effective-sap-project-steering-committee/" style="display:block;background:#1c1e2e;border-radius:8px;padding:1.1rem 1.25rem;text-decoration:none;color:inherit;border:1px solid rgba(255,255,255,0.06);transition:background 0.2s,border-color 0.2s;" onmouseover="this.style.background='#252838';this.style.borderColor='rgba(252,152,90,0.35)'" onmouseout="this.style.background='#1c1e2e';this.style.borderColor='rgba(255,255,255,0.06)'">
-      <p style="font-family:monospace;font-size:0.55rem;letter-spacing:2.5px;text-transform:uppercase;color:#fc985a;margin:0 0 0.45rem 0;line-height:1;">Governance</p>
-      <p style="font-weight:700;color:#f4ede4;font-size:0.9rem;line-height:1.3;margin:0 0 0.4rem 0;">Effective Steering Committees</p>
-      <p style="color:#7e7e87;font-size:0.8rem;line-height:1.5;margin:0 0 0.7rem 0;">Set up the right decision-making structure to drive ERP modernization with business accountability.</p>
-      <span style="color:#fc985a;font-size:0.78rem;font-weight:600;">Read more &#8594;</span>
-    </a>
-    <a href="https://noeldcosta.com/2024-sap-timeline-planning-implementation-guide-essentials/" style="display:block;background:#1c1e2e;border-radius:8px;padding:1.1rem 1.25rem;text-decoration:none;color:inherit;border:1px solid rgba(255,255,255,0.06);transition:background 0.2s,border-color 0.2s;" onmouseover="this.style.background='#252838';this.style.borderColor='rgba(252,152,90,0.35)'" onmouseout="this.style.background='#1c1e2e';this.style.borderColor='rgba(255,255,255,0.06)'">
-      <p style="font-family:monospace;font-size:0.55rem;letter-spacing:2.5px;text-transform:uppercase;color:#fc985a;margin:0 0 0.45rem 0;line-height:1;">Timeline</p>
-      <p style="font-weight:700;color:#f4ede4;font-size:0.9rem;line-height:1.3;margin:0 0 0.4rem 0;">2025 SAP Timeline Planning Guide</p>
-      <p style="color:#7e7e87;font-size:0.8rem;line-height:1.5;margin:0 0 0.7rem 0;">Plan your ERP modernization timeline with realistic milestones, dependencies, and risk buffers.</p>
-      <span style="color:#fc985a;font-size:0.78rem;font-weight:600;">Read more &#8594;</span>
-    </a>
-    <a href="https://noeldcosta.com/sap-implementation-cost-and-budget-breakdown/" style="display:block;background:#1c1e2e;border-radius:8px;padding:1.1rem 1.25rem;text-decoration:none;color:inherit;border:1px solid rgba(255,255,255,0.06);transition:background 0.2s,border-color 0.2s;" onmouseover="this.style.background='#252838';this.style.borderColor='rgba(252,152,90,0.35)'" onmouseout="this.style.background='#1c1e2e';this.style.borderColor='rgba(255,255,255,0.06)'">
-      <p style="font-family:monospace;font-size:0.55rem;letter-spacing:2.5px;text-transform:uppercase;color:#fc985a;margin:0 0 0.45rem 0;line-height:1;">Budget</p>
-      <p style="font-weight:700;color:#f4ede4;font-size:0.9rem;line-height:1.3;margin:0 0 0.4rem 0;">Cost & Budget Breakdown</p>
-      <p style="color:#7e7e87;font-size:0.8rem;line-height:1.5;margin:0 0 0.7rem 0;">A closer look at where ERP budgets fail and how to prepare for hidden post-go-live costs.</p>
-      <span style="color:#fc985a;font-size:0.78rem;font-weight:600;">Read more &#8594;</span>
-    </a>
-  </div>
-</div>
-
-If you have any questions or want to discuss your concerns on SAP Performance Testing, please don't hesitate to reach out!
-
-## FAQs on SAP Performance Testing
+---
 
 <details>
-<summary>1. What is SAP performance testing, and why is it critical in large programs?</summary>
+<summary>What is SAP performance testing and why does it matter?</summary>
 
-<p>Performance testing checks how SAP systems behave under real-world pressure. Not just whether a screen loads, but whether it stays stable when hundreds of users interact at once. You test response times, job runtimes, interface behavior, and system resource usage.</p>
-<p>Why is this important? Production failures rarely happen due to logic errors. They usually come from overload — systems designed for 50 users getting 500, or a Z-report looping over millions of records with no index. These risks are preventable, if tested early enough.</p>
+SAP performance testing evaluates how the system behaves under realistic load conditions: response times for user-facing transactions, runtime for background jobs, throughput for integration flows, and resource consumption (CPU, memory, database) under concurrent usage.
+
+It matters because functional correctness and operational performance are different properties. A transaction that produces the correct output under single-user testing may time out under 200 concurrent users. A background job that runs in 10 minutes with test data may run for 6 hours with production data volumes.
+
+The cost of discovering performance problems after go-live is substantially higher than discovering them in testing. Post-go-live performance issues affect live business operations, often require emergency infrastructure changes under pressure, and damage user trust in the system at the moment when adoption is being established.
 
 </details>
 
 <details>
-<summary>2. What kinds of performance tests actually matter in SAP?</summary>
+<summary>When should performance testing start in an SAP programme?</summary>
 
-<p>A few types consistently give the most value:</p>
-<ul>
-<li>Load testing, to simulate steady user traffic</li>
-<li>Stress testing, to see how far the system can stretch</li>
-<li>Soak testing, for issues that creep up over time (memory leaks, CPU spikes)</li>
-<li>Spike testing, to simulate sudden surges like login storms</li>
-<li>End-to-end testing, to validate user journeys</li>
-<li>Backend-only, for custom jobs and long-running processes</li>
-</ul>
-<p>Not every project needs every type. But ignoring the ones that apply is where problems begin.</p>
+Performance risks are created during design. Architecture choices (how reports are structured, how OData services are designed, how integration flows handle message volumes) determine performance outcomes before configuration begins. Identifying those risks during the Explore phase is far cheaper than discovering them in volume testing.
+
+The practical start point for active performance testing is during the Realize phase, once the configuration is stable enough to support load test execution. Running volume tests against partial or unstable configuration produces misleading results because the performance profile changes as configuration is completed.
+
+The final performance testing cycle should be completed before UAT, not as part of it. UAT with performance issues generates defects that compress the remaining pre-go-live schedule and create pressure to accept performance problems as known issues rather than resolved ones.
 
 </details>
 
 <details>
-<summary>3. When should performance testing begin in an SAP program?</summary>
+<summary>Who should own SAP performance testing?</summary>
 
-<p>Honestly, earlier than most teams think. Performance risks are seeded during design — through architecture choices, how reports are structured, how much logic is pushed into ABAP.</p>
-<p>If you wait until the system is fully built, you're often just testing consequences. By then, rework is costly.</p>
+Performance testing ownership should sit at the programme level, not at the QA team level.
 
-</details>
+QA teams execute the test runs and report results. But the decisions that determine performance outcomes are made across the functional, technical, and Basis teams during design. A central architect or programme-level testing lead needs the authority and visibility to challenge design decisions that introduce performance risk before the system is built.
 
-<details>
-<summary>4. How do you make testing realistic, not just theoretical?</summary>
+When performance ownership sits only with QA, the pattern is predictable: QA runs the tests, finds problems, and reports them. The teams who made the design decisions that caused the problems are surprised. The ownership of fixing them is disputed. The timeline pressure results in the problems being accepted rather than resolved.
 
-<p>You mirror reality. Pull historical usage data. Simulate real user behavior, like 120 users accessing VA01 during peak hours. Use actual job chains, not isolated scripts. In one project, we forgot to simulate post-close job chains. Everything looked fine, until five jobs clashed in production. Avoid that.</p>
+Performance accountability should be explicit in the RACI: who approves performance acceptance criteria, who owns remediation when criteria are not met, and who has the authority to block go-live sign-off on performance grounds.
 
 </details>
 
 <details>
-<summary>5. Who owns SAP performance testing? The QA team?</summary>
+<summary>What are the most common SAP Fiori performance issues?</summary>
 
-<p>It should sit higher. QA executes the runs, sure, but program-level governance needs to track performance as part of overall risk. In practice, this means either a central architect or a testing lead with enough authority to challenge designs. When ownership gets diluted, no one steps up to block poor decisions.</p>
+Four patterns account for most Fiori performance problems.
 
-</details>
+Shift-change login storms. When large numbers of users open the launchpad simultaneously, the authentication load and launchpad rendering requests peak sharply. Systems that perform well at steady-state usage can become unresponsive for several minutes during this window. Testing needs to simulate this concurrent launch pattern specifically.
 
-<details>
-<summary>6. What should be included in a good performance test plan?</summary>
+OData services not designed for volume. Fiori applications use OData services to retrieve and update data. Services that return large result sets without efficient filtering, or that make multiple backend calls per user interaction, can perform poorly under load even when the backend ABAP logic is efficient.
 
-<p>At minimum:</p>
-<ul>
-<li>Which processes will be tested</li>
-<li>What load and volume will be applied</li>
-<li>Tooling to be used (JMeter, LoadRunner, etc.)</li>
-<li>KPIs for pass/fail (e.g., 95% of transactions under 2.5s)</li>
-<li>Environment prep and refresh cycles</li>
-<li>Roles and responsibilities</li>
-</ul>
-<p>It sounds formal, but most good plans are just a few pages. The key is clarity, not length.</p>
+Gateway layer bottlenecks. The SAP Gateway layer that processes OData requests can become a bottleneck independent of backend performance. This layer needs to be included in monitoring during performance testing, not treated as transparent infrastructure.
+
+Custom tile and application logic. Where organisations have developed custom Fiori applications or heavily modified standard tiles, the performance characteristics depend on the custom development. Standard performance assumptions do not apply.
 
 </details>
 
 <details>
-<summary>7. Why do teams often neglect performance testing?</summary>
+<summary>How do you define performance acceptance criteria for SAP?</summary>
 
-<p>Sometimes they assume functional success means performance will follow. Other times, the timelines just get too tight. And there is still this view that performance is a technical layer, so business sponsors deprioritize it. That's where issues pile up. I've seen releases approved with zero load testing, simply because "UAT users said it was fast enough." That kind of decision tends to cost more later.</p>
+Performance acceptance criteria should specify response time thresholds for defined transaction types under defined concurrent user loads, with explicit pass/fail conditions.
 
-</details>
+A working example: "Order creation (VA01) should complete in under 3 seconds for 95% of transactions with 150 concurrent users in the order entry role." That is a testable, unambiguous criterion.
 
-<details>
-<summary>8. What about custom Z programs? Are they more prone to performance issues?</summary>
+Criteria that do not work: "The system should be fast enough for business operations." This cannot be tested or accepted objectively.
 
-<p>Often, yes. Many Z programs evolve over years with changing logic and data volumes. They might run fine with 1,000 records, then collapse at 100,000. You need to trace database calls, check for full table scans, and simulate real load. Not all issues come from bad code. Sometimes it is just the wrong assumptions about scale.</p>
-
-</details>
-
-<details>
-<summary>9. What are the real consequences of skipping performance tests?</summary>
-
-<p>Delays in finance closing. Errors in payroll processing. Fiori apps freezing when 500 users log in post-training. API timeouts that block sales orders from syncing. These are not edge cases — they happen more often than teams admit. And most of them were predictable.</p>
+The criteria should be agreed between the project team and the business before testing begins. Changing criteria after test results are known is common and undermines the purpose of having criteria. Define them during the Prepare phase, based on the business's actual operational requirements for each critical transaction type.
 
 </details>
 
 <details>
-<summary>10. What should leadership be asking their teams about performance testing?</summary>
+<summary>What happens if performance testing is skipped or compressed?</summary>
 
-<p>Simple questions make a difference:</p>
-<ul>
-<li>What are we testing, and why?</li>
-<li>Who owns performance KPIs?</li>
-<li>Is the test environment close enough to production?</li>
-<li>What happens if volume doubles? Can we still meet SLAs?</li>
-</ul>
-<p>These questions are not overly technical. But they show whether the team is thinking ahead or just reacting. That distinction usually decides how smooth the go-live will be.</p>
+The most immediate consequence is that performance problems surface post-go-live, under production load, during live business operations.
+
+The specific failure modes: background jobs running past their scheduled completion windows and blocking dependent processes; Fiori applications timing out during peak usage periods; month-end close processes taking twice as long as planned and causing the finance team to miss reporting deadlines; CPI integration queues building up under volume and causing data synchronisation delays.
+
+The secondary consequence is the perception damage. Users who encounter performance problems in the first weeks of using a new system develop a persistent negative view of it that is hard to reverse. Performance problems during hypercare, when the organisation's patience for issues is already strained, erode trust in the system faster than almost any other issue type.
+
+The economic consequence is that emergency performance remediation after go-live costs more than planned performance testing during the project. Infrastructure changes under live operation require change controls, testing in production, and often require partial system downtime. What would have been a configuration decision during Realize becomes an emergency architectural intervention.
 
 </details>
