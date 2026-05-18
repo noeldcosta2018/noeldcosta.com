@@ -208,6 +208,7 @@ Articles do NOT benefit from graphics when the topic is:
 - Already supported by a table that covers the same comparison
 
 ### Implementation
+- Diagram tags MUST be written on a single line in the MDX source. Multi-line `<stepper>\n  title="..."\n  steps="..."\n></stepper>` is treated as text by the markdown parser and the tag renders as escaped HTML in the page. Keep the entire opening tag on one line, even if it gets long.
 - Inline SVG diagrams in MDX, styled with the Command Center tokens. Reuse components from `src/components/article/` where possible.
 - Subtle scroll-reveal via the existing `FadeUp` wrapper. Diagrams reveal as the reader arrives at them.
 - Animation is incidental. The diagram should make sense on first paint, not require the animation to read.

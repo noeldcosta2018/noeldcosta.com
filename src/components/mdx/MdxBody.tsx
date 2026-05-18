@@ -127,7 +127,7 @@ export default function MdxBody({ source }: { source: string }) {
         ),
         ol: (p: ComponentProps<"ol">) => (
           <ol
-            className="list-decimal marker:text-papaya marker:font-bold pl-6 text-night my-5 space-y-2 leading-[1.7] text-[0.94rem] md:text-[1rem]"
+            className="list-decimal marker:text-corbeau marker:font-display marker:font-black pl-8 text-night my-5 space-y-2.5 leading-[1.7] text-[0.94rem] md:text-[1rem] [&>li]:pl-2"
             {...p}
           />
         ),
