@@ -166,10 +166,27 @@ export default function ToolForm({
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        onError(
-          (err as { error?: string }).error ||
-            `Request failed (${res.status})`
-        );
+        // Surface zod field-level errors when the API reports them.
+        // Without this the user sees "validation failed" with no hint
+        // about which field is wrong, which makes the tool feel broken.
+        const e = err as {
+          error?: string;
+          details?: {
+            fieldErrors?: Record<string, string[]>;
+            formErrors?: string[];
+          };
+        };
+        let message = e.error || `Request failed (${res.status})`;
+        const fieldErrs = e.details?.fieldErrors ?? {};
+        const fieldList = Object.entries(fieldErrs)
+          .map(([field, errs]) => `${field}: ${errs.join(", ")}`)
+          .filter(Boolean);
+        if (fieldList.length > 0) {
+          message = `${message} — ${fieldList.join("; ")}`;
+        } else if (e.details?.formErrors?.length) {
+          message = `${message} — ${e.details.formErrors.join("; ")}`;
+        }
+        onError(message);
         return;
       }
 
