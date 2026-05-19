@@ -4,6 +4,7 @@
 // Vendor-agnostic. CFO + CIO views. Multi-country. Fully client-side.
 
 import { useState, useCallback, useId, useMemo, useRef } from "react";
+import FadeUp from "@/components/article/FadeUp";
 import { calculate, formatCurrency, formatBand } from "@/lib/erp-calculator/calc-engine";
 import { COUNTRIES, REGIONS, getCountriesByRegion } from "@/lib/erp-calculator/countries";
 import { PRESET_SCENARIOS } from "@/lib/erp-calculator/scenarios";
@@ -614,26 +615,41 @@ function CostBreakdownChart({
   const sorted = [...items].sort((a, b) => b[1].expected - a[1].expected);
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-4">
       {sorted.map(([key, b], i) => {
         const pct = total > 0 ? (b.expected / total) * 100 : 0;
         const color = CHART_COLORS[i % CHART_COLORS.length];
+        // Place the percentage label INSIDE the bar when there's room,
+        // OUTSIDE on a separate token when the bar is too narrow.
+        // Threshold around 12% — below that the label clips and
+        // becomes unreadable.
+        const labelInside = pct >= 12;
         return (
           <div key={key}>
-            <div className="flex justify-between items-baseline mb-1">
-              <span className="text-xs font-medium text-night">{CHART_LABELS[key] ?? key}</span>
-              <span className="text-xs font-mono text-corbeau">
+            <div className="flex justify-between items-baseline mb-1.5">
+              <span className="text-sm font-semibold text-night">{CHART_LABELS[key] ?? key}</span>
+              <span className="font-mono font-bold text-corbeau text-sm">
                 {formatCurrency(b.expected, currency, true)}
               </span>
             </div>
-            <div className="h-6 bg-bone rounded overflow-hidden relative">
-              <div
-                style={{ width: `${pct}%`, backgroundColor: color }}
-                className="h-full rounded transition-all duration-500"
-              />
-              <span className="absolute inset-y-0 right-2 flex items-center text-[10px] font-mono text-night/60">
-                {pct.toFixed(1)}%
-              </span>
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-8 bg-bone rounded-md overflow-hidden relative">
+                <div
+                  style={{ width: `${pct}%`, backgroundColor: color }}
+                  className="h-full rounded-md transition-[width] duration-700 ease-out flex items-center justify-end pr-2.5"
+                >
+                  {labelInside && (
+                    <span className="font-mono font-bold text-corbeau text-xs tabular-nums">
+                      {pct.toFixed(1)}%
+                    </span>
+                  )}
+                </div>
+              </div>
+              {!labelInside && (
+                <span className="font-mono font-bold text-corbeau text-xs tabular-nums w-12 text-right shrink-0">
+                  {pct.toFixed(1)}%
+                </span>
+              )}
             </div>
           </div>
         );
@@ -743,79 +759,120 @@ function CFOView({ result }: { result: CalculationResult }) {
   const maxSpend = Math.max(...yearlySpend);
 
   return (
-    <div className="space-y-6">
-      {/* TCO tiles */}
-      <div className="grid grid-cols-3 gap-3">
+    <div className="space-y-8">
+      {/* TCO tiles — papaya gradient cards with display-weight numbers */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { label: "Year 1 total",  band: result.totalY1 },
-          { label: "3-year TCO",    band: tco3yr },
-          { label: "5-year TCO",    band: tco5yr },
-        ].map((item) => (
-          <div key={item.label} className="rounded-xl border border-corbeau/10 bg-paper px-4 py-4 text-center">
-            <p className="text-xs font-semibold text-silver mb-1">{item.label}</p>
-            <p className="font-mono font-black text-corbeau text-lg">
-              {formatCurrency(item.band.expected, currency, true)}
-            </p>
-            <p className="text-[10px] text-moon mt-0.5">
-              {formatCurrency(item.band.low, currency, true)} – {formatCurrency(item.band.high, currency, true)}
-            </p>
-          </div>
+          { label: "Year 1 total",  band: result.totalY1, accent: true },
+          { label: "3-year TCO",    band: tco3yr,         accent: false },
+          { label: "5-year TCO",    band: tco5yr,         accent: false },
+        ].map((item, i) => (
+          <FadeUp key={item.label} delay={i * 80} className="">
+            <div
+              className={`relative rounded-2xl px-6 py-6 overflow-hidden transition-all duration-300 hover:-translate-y-px ${
+                item.accent
+                  ? "bg-gradient-to-br from-papaya to-[#fda66e] text-corbeau shadow-[0_8px_32px_rgba(252,152,90,0.25)]"
+                  : "bg-paper border border-corbeau/10 shadow-[0_2px_14px_rgba(14,16,32,0.04)]"
+              }`}
+            >
+              <p
+                className={`font-mono font-semibold uppercase tracking-[2px] mb-3 ${
+                  item.accent ? "text-corbeau/70 text-[0.65rem]" : "text-papaya text-[0.65rem]"
+                }`}
+              >
+                {item.label}
+              </p>
+              <p
+                className={`font-display font-black tabular-nums tracking-tight leading-none ${
+                  item.accent ? "text-corbeau" : "text-corbeau"
+                }`}
+                style={{ fontSize: "clamp(2.2rem, 5vw, 3.4rem)" }}
+              >
+                {formatCurrency(item.band.expected, currency, true)}
+              </p>
+              <p
+                className={`mt-3 text-[0.78rem] font-mono tabular-nums ${
+                  item.accent ? "text-corbeau/80" : "text-night/70"
+                }`}
+              >
+                Range {formatCurrency(item.band.low, currency, true)} – {formatCurrency(item.band.high, currency, true)}
+              </p>
+            </div>
+          </FadeUp>
         ))}
       </div>
 
-      {/* Annual cash-flow bar chart */}
-      <div>
-        <p className="text-sm font-semibold text-corbeau mb-3">Annual spend profile ({currency})</p>
-        <div className="flex items-end gap-2 h-32">
-          {yearlySpend.map((v, i) => {
-            const h = maxSpend > 0 ? (v / maxSpend) * 100 : 0;
-            const isImpl = i === 0;
-            return (
-              <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                <span className="text-[10px] font-mono text-night">
-                  {formatCurrency(v, currency, true)}
-                </span>
-                <div
-                  style={{ height: `${Math.max(4, h)}%` }}
-                  className={`w-full rounded-t transition-all duration-500 ${isImpl ? "bg-papaya" : "bg-papaya/35"}`}
-                />
-                <span className="text-[10px] text-silver">Y{i + 1}</span>
-              </div>
-            );
-          })}
+      {/* Annual cash-flow bar chart — gradient bars with prominent labels */}
+      <FadeUp>
+        <div className="rounded-2xl bg-paper border border-corbeau/[0.08] p-6 shadow-[0_2px_14px_rgba(14,16,32,0.04)]">
+          <div className="flex items-baseline justify-between mb-5">
+            <p className="font-display font-bold text-corbeau text-[1.05rem] tracking-[-0.015em]">
+              Annual spend profile
+            </p>
+            <p className="font-mono text-[0.62rem] uppercase tracking-[1.6px] text-corbeau/50">
+              {currency}
+            </p>
+          </div>
+          <div className="flex items-end gap-3 h-44">
+            {yearlySpend.map((v, i) => {
+              const h = maxSpend > 0 ? (v / maxSpend) * 100 : 0;
+              const isImpl = i === 0;
+              return (
+                <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                  <span className="font-mono font-bold text-corbeau text-[0.78rem] tabular-nums">
+                    {formatCurrency(v, currency, true)}
+                  </span>
+                  <div
+                    style={{ height: `${Math.max(4, h)}%` }}
+                    className={`w-full rounded-t-lg transition-[height] duration-700 ease-out shadow-[inset_0_-2px_8px_rgba(14,16,32,0.05)] ${
+                      isImpl
+                        ? "bg-gradient-to-b from-papaya to-[#fda66e]"
+                        : "bg-gradient-to-b from-papaya/55 to-papaya/30"
+                    }`}
+                  />
+                  <span className="font-mono text-[0.7rem] font-semibold uppercase tracking-[1.4px] text-corbeau/60">
+                    Y{i + 1}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <p className="mt-5 text-[0.75rem] text-night/65 leading-[1.55]">
+            Y1 covers implementation plus software. Y2 onward is AMS support plus software subscription. Figures are directional, not contractual.
+          </p>
         </div>
-        <p className="text-[10px] text-silver mt-2">
-          Y1 = implementation + software. Y2+ = AMS support + software subscription.
-          Figures are directional, not contractual.
-        </p>
-      </div>
+      </FadeUp>
 
-      {/* Budget category summary */}
-      <div>
-        <p className="text-sm font-semibold text-corbeau mb-3">Budget allocation (year 1)</p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-corbeau/10">
-                <th className="text-left text-xs font-semibold text-silver pb-2 pr-4">Category</th>
-                <th className="text-right text-xs font-semibold text-silver pb-2 px-3">Low</th>
-                <th className="text-right text-xs font-semibold text-silver pb-2 px-3">Expected</th>
-                <th className="text-right text-xs font-semibold text-silver pb-2 pl-3">High</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(Object.entries(breakdown) as [string, { low: number; expected: number; high: number }][]).map(([key, b]) => (
-                <tr key={key} className="border-b border-corbeau/6 hover:bg-cream transition-colors">
-                  <td className="py-2 pr-4 text-night text-xs">{CHART_LABELS[key] ?? key}</td>
-                  <td className="py-2 px-3 text-right font-mono text-xs text-silver">{formatCurrency(b.low, currency, true)}</td>
-                  <td className="py-2 px-3 text-right font-mono text-xs font-semibold text-corbeau">{formatCurrency(b.expected, currency, true)}</td>
-                  <td className="py-2 pl-3 text-right font-mono text-xs text-silver">{formatCurrency(b.high, currency, true)}</td>
+      {/* Budget category summary — papaya-thead table that matches site article style */}
+      <FadeUp>
+        <div>
+          <p className="font-display font-bold text-corbeau text-[1.05rem] tracking-[-0.015em] mb-4">
+            Budget allocation, year 1
+          </p>
+          <div className="not-prose overflow-x-auto rounded-xl border border-corbeau/[0.08] bg-paper shadow-[0_2px_14px_rgba(14,16,32,0.04)]">
+            <table className="min-w-full text-[0.92rem] border-collapse">
+              <thead className="bg-papaya">
+                <tr>
+                  <th className="text-left font-display font-black tracking-[-0.01em] text-corbeau text-[0.95rem] py-4 px-5">Category</th>
+                  <th className="text-right font-display font-black tracking-[-0.01em] text-corbeau text-[0.95rem] py-4 px-5">Low</th>
+                  <th className="text-right font-display font-black tracking-[-0.01em] text-corbeau text-[0.95rem] py-4 px-5">Expected</th>
+                  <th className="text-right font-display font-black tracking-[-0.01em] text-corbeau text-[0.95rem] py-4 px-5">High</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="[&>tr:nth-child(even)]:bg-bone/30 [&>tr]:transition-colors [&>tr:hover]:bg-papaya/[0.06]">
+                {(Object.entries(breakdown) as [string, { low: number; expected: number; high: number }][]).map(([key, b]) => (
+                  <tr key={key}>
+                    <td className="py-3.5 px-5 text-corbeau font-semibold text-[0.92rem]">{CHART_LABELS[key] ?? key}</td>
+                    <td className="py-3.5 px-5 text-right font-mono tabular-nums text-night/70">{formatCurrency(b.low, currency, true)}</td>
+                    <td className="py-3.5 px-5 text-right font-mono tabular-nums font-bold text-corbeau">{formatCurrency(b.expected, currency, true)}</td>
+                    <td className="py-3.5 px-5 text-right font-mono tabular-nums text-night/70">{formatCurrency(b.high, currency, true)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      </FadeUp>
     </div>
   );
 }
@@ -1821,6 +1878,19 @@ export default function ErpCostClient() {
   const [result, setResult] = useState<CalculationResult | null>(null);
   const [saved, setSaved] = useState<SavedScenario[]>([]);
   const [showLive, setShowLive] = useState(false);
+  // Container ref. Step navigation scrolls TO this ref (the calculator's
+  // top) rather than to the page top, so the reader is anchored on the
+  // wizard not bounced into the hero on every Continue click.
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToCalculator = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    // Anchor with a small offset so the sticky nav doesn't obscure the
+    // step indicator at the top of the wizard.
+    const top = el.getBoundingClientRect().top + window.scrollY - 80;
+    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+  }, []);
 
   const set = useCallback((patch: Partial<CalculatorInputs>) => {
     setInputsRaw((prev) => ({ ...prev, ...patch }));
@@ -1833,7 +1903,7 @@ export default function ErpCostClient() {
       return next;
     });
     setStep(n);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollToCalculator();
   };
 
   const goNext = () => {
@@ -1844,14 +1914,14 @@ export default function ErpCostClient() {
     });
     if (step < 5) {
       setStep(step + 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      scrollToCalculator();
     } else {
       // Run calculation
       try {
         const res = calculate(inputs);
         setResult(res);
         setCompleted(new Set([1, 2, 3, 4, 5]));
-        setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 50);
+        setTimeout(() => scrollToCalculator(), 50);
       } catch (err) {
         console.error(err);
       }
@@ -1859,7 +1929,10 @@ export default function ErpCostClient() {
   };
 
   const goPrev = () => {
-    if (step > 1) setStep(step - 1);
+    if (step > 1) {
+      setStep(step - 1);
+      scrollToCalculator();
+    }
   };
 
   const reset = () => {
@@ -1868,7 +1941,7 @@ export default function ErpCostClient() {
     setCompleted(new Set());
     setInputsRaw(DEFAULT_INPUTS);
     setShowLive(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollToCalculator();
   };
 
   const saveScenario = () => {
@@ -1898,19 +1971,21 @@ export default function ErpCostClient() {
   // Show results
   if (result) {
     return (
-      <ResultsPanel
-        result={result}
-        saved={saved}
-        onSave={saveScenario}
-        onClearScenario={clearScenario}
-        onReset={reset}
-      />
+      <div ref={containerRef}>
+        <ResultsPanel
+          result={result}
+          saved={saved}
+          onSave={saveScenario}
+          onClearScenario={clearScenario}
+          onReset={reset}
+        />
+      </div>
     );
   }
 
   // Show wizard
   return (
-    <div>
+    <div ref={containerRef}>
       {/* Preset picker — only on step 1 */}
       {step === 1 && <PresetPicker onLoad={loadPreset} />}
 
