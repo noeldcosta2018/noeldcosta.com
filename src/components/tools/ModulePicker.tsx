@@ -5,6 +5,7 @@ import {
   SAP_MODULES,
   SAP_MODULE_CATEGORIES,
   getCoreModules,
+  getModulesByCategory,
   type SapModule,
   type SapModuleCategory,
 } from "@/lib/sap-modules";
@@ -67,6 +68,25 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
     if (next.has(cat)) next.delete(cat);
     else next.add(cat);
     setExpanded(next);
+  };
+
+  /**
+   * Bulk toggle every module in a category. If ALL modules in the
+   * category are currently selected, deselect them. Otherwise select
+   * any that aren't selected (preserving anything already there).
+   * Operates on the full category catalogue, not the filtered view,
+   * so search state doesn't change the bulk action's behaviour.
+   */
+  const toggleCategoryAll = (cat: SapModuleCategory) => {
+    const catModuleIds = getModulesByCategory(cat).map((m) => m.id);
+    const allSelected = catModuleIds.every((id) => selected.has(id));
+    const next = new Set(value);
+    if (allSelected) {
+      for (const id of catModuleIds) next.delete(id);
+    } else {
+      for (const id of catModuleIds) next.add(id);
+    }
+    onChange(Array.from(next));
   };
 
   const addCoreFinance = () => {
@@ -155,6 +175,19 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
           if (query.trim() && modules.length === 0) return null;
 
           const selectedInCat = modules.filter((m) => selected.has(m.id)).length;
+          // Compute the bulk-select state against the FULL category catalogue,
+          // not the filtered view. That way the "Select all" button picks up
+          // everything in the category even when the search has hidden some
+          // rows. Three states: none, some (indeterminate), all.
+          const catTotal = getModulesByCategory(cat.id).length;
+          const catSelectedTotal = getModulesByCategory(cat.id)
+            .filter((m) => selected.has(m.id)).length;
+          const bulkState: "none" | "some" | "all" =
+            catSelectedTotal === 0
+              ? "none"
+              : catSelectedTotal === catTotal
+                ? "all"
+                : "some";
           const open = isOpen(cat.id);
 
           return (
@@ -162,29 +195,74 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
               key={cat.id}
               className="rounded-lg border border-corbeau/10 bg-paper overflow-hidden"
             >
-              <button
-                type="button"
-                onClick={() => toggleCategory(cat.id)}
-                className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-cream transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="font-display font-bold text-corbeau text-[0.95rem] tracking-[-0.01em]">
-                    {cat.label}
-                    {selectedInCat > 0 && (
-                      <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-papaya text-corbeau font-mono text-[0.68rem] font-bold align-middle">
-                        {selectedInCat}
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-[0.78rem] text-night/60 mt-0.5">{cat.blurb}</p>
-                </div>
-                <span
-                  aria-hidden
-                  className={`shrink-0 text-corbeau/40 text-sm transition-transform ${open ? "rotate-180" : ""}`}
+              <div className="flex items-stretch">
+                {/* Select-all-in-category control. Separate from the expand
+                    button so clicking it doesn't toggle the section open/closed. */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleCategoryAll(cat.id);
+                  }}
+                  aria-label={
+                    bulkState === "all"
+                      ? `Deselect all ${cat.label} modules`
+                      : `Select all ${cat.label} modules`
+                  }
+                  title={
+                    bulkState === "all"
+                      ? `All ${catTotal} ${cat.label.toLowerCase()} modules selected · click to clear`
+                      : `Select all ${catTotal} ${cat.label.toLowerCase()} modules`
+                  }
+                  className="shrink-0 flex items-center justify-center px-3 hover:bg-papaya/8 transition-colors group"
                 >
-                  ▾
-                </span>
-              </button>
+                  <span
+                    aria-hidden
+                    className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                      bulkState === "all"
+                        ? "bg-papaya border-papaya"
+                        : bulkState === "some"
+                          ? "bg-papaya/15 border-papaya"
+                          : "border-corbeau/25 group-hover:border-papaya/60"
+                    }`}
+                  >
+                    {bulkState === "all" && (
+                      <svg viewBox="0 0 12 12" className="w-3 h-3 text-corbeau" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M2 6.5L4.5 9L10 3.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                    {bulkState === "some" && (
+                      <span className="w-2.5 h-0.5 rounded-full bg-papaya" />
+                    )}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleCategory(cat.id)}
+                  className="flex-1 flex items-center justify-between gap-3 px-2 py-3 text-left hover:bg-cream transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="font-display font-bold text-corbeau text-[0.95rem] tracking-[-0.01em]">
+                      {cat.label}
+                      {selectedInCat > 0 && (
+                        <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-papaya text-corbeau font-mono text-[0.68rem] font-bold align-middle">
+                          {selectedInCat}
+                        </span>
+                      )}
+                      <span className="ml-2 font-mono text-[0.62rem] font-normal tracking-[1.4px] uppercase text-corbeau/40 align-middle">
+                        of {catTotal}
+                      </span>
+                    </p>
+                    <p className="text-[0.78rem] text-night/60 mt-0.5">{cat.blurb}</p>
+                  </div>
+                  <span
+                    aria-hidden
+                    className={`shrink-0 text-corbeau/40 text-sm transition-transform pr-3 ${open ? "rotate-180" : ""}`}
+                  >
+                    ▾
+                  </span>
+                </button>
+              </div>
 
               {open && (
                 <div className="border-t border-corbeau/8 divide-y divide-corbeau/6">
