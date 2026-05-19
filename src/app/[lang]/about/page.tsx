@@ -6,7 +6,6 @@ import Footer from "@/components/Footer";
 import MdxBody from "@/components/mdx/MdxBody";
 import { getPage, LOCALES, type Locale } from "@/lib/content";
 import {
-  AUTHOR,
   SITE_URL,
   aboutPageJsonLd,
   breadcrumbJsonLd,
@@ -66,10 +65,7 @@ export default async function AboutPage(props: { params: Promise<{ lang: string 
             </ol>
           </nav>
 
-          <p className="font-mono text-[0.68rem] tracking-[2px] uppercase text-papaya mb-3">
-            Author · {AUTHOR.jobTitle}
-          </p>
-          <h1 className="font-display font-black text-corbeau tracking-[-0.03em] leading-[1.08] text-4xl md:text-6xl mb-4">
+          <h1 className="font-display font-black text-corbeau tracking-[-0.03em] leading-[1.08] text-3xl md:text-5xl mb-4">
             {fm.h1 || fm.title}
           </h1>
           {fm.excerpt && (
@@ -78,30 +74,9 @@ export default async function AboutPage(props: { params: Promise<{ lang: string 
             </p>
           )}
 
-          <div className="flex flex-wrap gap-3 mb-10">
-            <a
-              href="https://www.linkedin.com/in/noeldcosta/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-corbeau text-bone px-4 py-2 rounded-lg no-underline text-[0.85rem] font-semibold hover:bg-night transition-colors"
-            >
-              LinkedIn
-            </a>
-            <a
-              href="https://www.youtube.com/@NoelDCostaERPAI"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="border border-corbeau/20 text-corbeau px-4 py-2 rounded-lg no-underline text-[0.85rem] font-semibold hover:border-corbeau/50 transition-colors"
-            >
-              YouTube
-            </a>
-            <Link
-              href="/contact"
-              className="bg-papaya text-corbeau px-4 py-2 rounded-lg no-underline text-[0.85rem] font-semibold hover:bg-[#fdaa78] transition-colors"
-            >
-              Work with me
-            </Link>
-          </div>
+          {/* No social buttons here — the MDX body's <about-hero> provides
+              the Calendly + email CTAs and headshot. Keeping them above
+              the body too would duplicate the call-to-action chrome. */}
 
           <div className="prose-noel">
             <MdxBody source={page.body} />

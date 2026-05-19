@@ -15,6 +15,10 @@ import ContactBlock from "@/components/article/contact/ContactBlock";
 import FeaturedOn from "@/components/article/featured/FeaturedOn";
 import AboutHero from "@/components/article/hero/AboutHero";
 import CredibilityBand from "@/components/article/credibility/CredibilityBand";
+import BeliefsGrid from "@/components/article/beliefs/BeliefsGrid";
+import ProgrammesList from "@/components/article/programmes/ProgrammesList";
+import CapabilitiesRow from "@/components/article/capabilities/CapabilitiesRow";
+import SafeguardBand from "@/components/article/safeguard/SafeguardBand";
 
 /**
  * Renders post/page markdown. Uses react-markdown so we never go through the
@@ -118,12 +122,45 @@ export default function MdxBody({ source }: { source: string }) {
         // marketing-page comfort (17px). Editorial sites converge on 15-16px
         // for long-form because it allows more text per fold without losing
         // legibility.
-        p: (p: ComponentProps<"p">) => (
-          <p
-            className="text-night leading-[1.75] text-[0.94rem] md:text-[1rem] my-4 [&>strong]:text-corbeau [&>strong]:font-semibold"
-            {...p}
-          />
-        ),
+        //
+        // When a paragraph node wraps only a custom block-level tag
+        // (testimonials-grid, beliefs-grid, etc.), react-markdown still
+        // emits a <p>. That causes hydration errors because our custom
+        // components render <section>/<h3>/<blockquote> inside the <p>.
+        // Detect that case via the rehype node and skip the <p> wrapper.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        p: ({ node, children, ...rest }: any) => {
+          const CUSTOM_BLOCKS = new Set([
+            "compare-split",
+            "stepper",
+            "decision-tree",
+            "stat-block",
+            "testimonials-grid",
+            "contact-block",
+            "featured-on",
+            "about-hero",
+            "credibility-band",
+            "beliefs-grid",
+            "programmes-list",
+            "capabilities-row",
+            "safeguard-band",
+          ]);
+          if (
+            node?.children?.length === 1 &&
+            node.children[0]?.type === "element" &&
+            CUSTOM_BLOCKS.has(node.children[0].tagName)
+          ) {
+            return <>{children}</>;
+          }
+          return (
+            <p
+              className="text-night leading-[1.75] text-[0.94rem] md:text-[1rem] my-4 [&>strong]:text-corbeau [&>strong]:font-semibold"
+              {...rest}
+            >
+              {children}
+            </p>
+          );
+        },
         ul: (p: ComponentProps<"ul">) => (
           <ul
             className="text-night my-5 space-y-2 leading-[1.7] text-[0.94rem] md:text-[1rem] [&>li]:relative [&>li]:pl-6 [&>li]:before:content-[''] [&>li]:before:absolute [&>li]:before:left-0 [&>li]:before:top-[0.65em] [&>li]:before:w-[6px] [&>li]:before:h-[6px] [&>li]:before:rounded-full [&>li]:before:bg-papaya"
@@ -220,6 +257,22 @@ export default function MdxBody({ source }: { source: string }) {
         // Credibility stat strip — figures sourced from BRAND.md only.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         "credibility-band": ((_props: any) => <CredibilityBand />) as never,
+        // 5 "What I believe" opinions as cards (reuses Credentials
+        // shell + AICapabilities icon-tile pattern, no new tokens).
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "beliefs-grid": ((_props: any) => <BeliefsGrid />) as never,
+        // 6 lived-programme stories as a TrackRecord-style vertical list
+        // (sector/region tag + badge + title + body, papaya hairline rows).
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "programmes-list": ((_props: any) => <ProgrammesList />) as never,
+        // 3-column "What I do" capability cards (reuses ServiceCard hover
+        // + Credentials shell, light theme).
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "capabilities-row": ((_props: any) => <CapabilitiesRow />) as never,
+        // Full-width "I safeguard your investment" divider band, reuses
+        // CTABanner.tsx papaya→canyon gradient as a chapter break.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "safeguard-band": ((_props: any) => <SafeguardBand />) as never,
         // FAQ accordion. Articles use <details><summary>Q</summary>A</details>
         // inline HTML (passed through by rehype-raw) for their FAQ sections.
         // Styled here so they read as a single coherent accordion module.
