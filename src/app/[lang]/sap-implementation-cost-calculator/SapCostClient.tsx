@@ -58,10 +58,16 @@ const FIELDS: FieldDef[] = [
     required: true,
   },
   {
-    kind: "tags",
+    // SAP-expert module picker: search + categorised groups across
+    // Finance, Procurement, Supply Chain, Sales/CX, HCM, Projects,
+    // Analytics, Platform, Industry. Replaces the older free-text
+    // tags input so the cost estimate is grounded in specific named
+    // modules (Group Reporting separate from FI-GL, Treasury separate
+    // from FSCM, etc.). The downstream LLM-driven cost estimator
+    // receives human-readable module labels with codes.
+    kind: "modulePicker",
     name: "modules",
     label: "SAP modules in scope",
-    placeholder: "FI, CO, MM, SD, PP, HCM, EWM, BTP…",
   },
   {
     kind: "select",

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import ModulePicker from "@/components/tools/ModulePicker";
+import { getModuleById } from "@/lib/sap-modules";
 
 export type FieldDef =
   | {
@@ -50,6 +52,16 @@ export type FieldDef =
       kind: "boolean";
       name: string;
       label: string;
+    }
+  | {
+      // SAP-specific module picker: search + categorised groups
+      // (Finance, Procurement, Supply Chain, Sales/CX, HCM, Projects,
+      // Analytics, Platform, Industry). Value is string[] of module
+      // IDs. On submit, IDs are converted to human-readable labels
+      // (with code where present) for the downstream tool API.
+      kind: "modulePicker";
+      name: string;
+      label: string;
     };
 
 export interface ToolFormProps {
@@ -65,6 +77,7 @@ export interface ToolFormProps {
 function initialValue(field: FieldDef): unknown {
   switch (field.kind) {
     case "multiselect":
+    case "modulePicker":
       return [];
     case "boolean":
       return false;
@@ -118,6 +131,19 @@ export default function ToolForm({
         inputs[field.name] = str
           .split(",")
           .map((s) => s.trim())
+          .filter(Boolean);
+      } else if (field.kind === "modulePicker") {
+        // Convert module IDs into human-readable labels (with SAP code
+        // where present) so the downstream tool API receives a usable
+        // module list. Example: ["fi-gl", "treasury"] →
+        // ["Financial Accounting (FI-GL)", "Treasury & Risk Management (TRM)"]
+        const ids = (raw as string[]) ?? [];
+        inputs[field.name] = ids
+          .map((id) => {
+            const m = getModuleById(id);
+            if (!m) return null;
+            return m.code ? `${m.label} (${m.code})` : m.label;
+          })
           .filter(Boolean);
       } else {
         inputs[field.name] = raw;
@@ -206,9 +232,13 @@ export default function ToolForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       {fields.map((field) => (
         <div key={field.name}>
-          <label className="block font-mono text-[0.72rem] font-semibold uppercase tracking-[1.5px] text-night mb-1.5">
-            {field.label}
-          </label>
+          {/* ModulePicker renders its own header (label + selected count),
+              so suppress the standard uppercase mono label for that kind. */}
+          {field.kind !== "modulePicker" && (
+            <label className="block font-mono text-[0.72rem] font-semibold uppercase tracking-[1.5px] text-night mb-1.5">
+              {field.label}
+            </label>
+          )}
 
           {field.kind === "text" && (
             <input
@@ -312,6 +342,15 @@ export default function ToolForm({
               />
               <span className="text-sm text-night">Yes</span>
             </label>
+          )}
+
+          {field.kind === "modulePicker" && (
+            <ModulePicker
+              name={field.name}
+              label={field.label}
+              value={(values[field.name] as string[]) ?? []}
+              onChange={(next) => set(field.name, next)}
+            />
           )}
         </div>
       ))}
