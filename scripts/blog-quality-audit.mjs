@@ -98,8 +98,13 @@ function stripCode(s) {
 }
 
 function stripMdxTags(s) {
-  // remove <details>...</details>, custom diagram tags, raw HTML
-  return s.replace(/<[^>]+>/g, '');
+  // Strip <details>...</details> blocks entirely first — they hold FAQ
+  // content which is editorial-deferred (Q/A reformulation risk is
+  // higher than body-prose splitting). Then strip remaining raw tags
+  // and inline custom-element diagram tags.
+  return s
+    .replace(/<details\b[\s\S]*?<\/details>/gi, '')
+    .replace(/<[^>]+>/g, '');
 }
 
 function countSentences(text, longWordThreshold = 30) {
