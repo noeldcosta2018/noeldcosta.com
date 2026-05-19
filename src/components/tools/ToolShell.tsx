@@ -102,26 +102,39 @@ export default function ToolShell({
           sections on the `<!-- @calculator -->` marker. This keeps the
           calculator close to the top (where users want it) while still
           letting the page carry full reference content for SEO and depth.
-          Pages that don't use the marker render entirely above. */}
+          Pages that don't use the marker render entirely above.
+
+          Layout note: every section below uses the SAME `max-w-[1200px]
+          mx-auto` outer container as the hero, with a narrower reading
+          column inside that is LEFT-aligned (no `mx-auto`). This makes
+          the text's left edge line up across the hero, the intro, the
+          calculator, and the deep reference. Centered reading columns
+          look unmoored against a left-aligned hero. */}
       {aboveMdx && (
         <section className="bg-bone border-b border-corbeau/10" style={{ padding: "clamp(2.5rem,5vw,4rem) clamp(1.5rem,5vw,4rem)" }}>
-          <div className="max-w-[760px] mx-auto prose-noel">
-            <MdxBody source={aboveMdx} />
+          <div className="max-w-[1200px] mx-auto">
+            <div className="max-w-[760px] prose-noel">
+              <MdxBody source={aboveMdx} />
+            </div>
           </div>
         </section>
       )}
 
       {/* Interactive tool */}
       <section className="bg-paper" style={{ padding: "clamp(2.5rem,5vw,4rem) clamp(1.5rem,5vw,4rem)" }}>
-        <div className="max-w-[860px] mx-auto">
-          {children}
+        <div className="max-w-[1200px] mx-auto">
+          <div className="max-w-[860px]">
+            {children}
+          </div>
         </div>
       </section>
 
       {belowMdx && (
         <section className="bg-bone border-t border-corbeau/10" style={{ padding: "clamp(2.5rem,5vw,4rem) clamp(1.5rem,5vw,4rem)" }}>
-          <div className="max-w-[760px] mx-auto prose-noel">
-            <MdxBody source={belowMdx} />
+          <div className="max-w-[1200px] mx-auto">
+            <div className="max-w-[760px] prose-noel">
+              <MdxBody source={belowMdx} />
+            </div>
           </div>
         </section>
       )}
