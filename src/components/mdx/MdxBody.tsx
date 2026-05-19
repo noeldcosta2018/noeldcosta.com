@@ -10,6 +10,9 @@ import CompareSplit from "@/components/article/diagrams/CompareSplit";
 import Stepper from "@/components/article/diagrams/Stepper";
 import DecisionTree from "@/components/article/diagrams/DecisionTree";
 import StatBlock from "@/components/article/diagrams/StatBlock";
+import TestimonialsGrid from "@/components/article/testimonials/TestimonialsGrid";
+import ContactBlock from "@/components/article/contact/ContactBlock";
+import FeaturedOn from "@/components/article/featured/FeaturedOn";
 
 /**
  * Renders post/page markdown. Uses react-markdown so we never go through the
@@ -196,6 +199,19 @@ export default function MdxBody({ source }: { source: string }) {
         "decision-tree": ((props: any) => <DecisionTree {...props} />) as never,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         "stat-block": ((props: any) => <StatBlock {...props} />) as never,
+        // Structured testimonials card grid for the About / story page.
+        // Data lives in src/components/article/testimonials/data.ts so
+        // the MDX side is a single self-closing tag.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "testimonials-grid": ((_props: any) => <TestimonialsGrid />) as never,
+        // Structured contact card — fixes WP-import bugs (broken email,
+        // mismatched tel href, mailto used for "Website" link).
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "contact-block": ((_props: any) => <ContactBlock />) as never,
+        // Publication logos for "Featured on" — replaces WP gallery
+        // with empty <img src=""> tags and descriptive alt text.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "featured-on": ((_props: any) => <FeaturedOn />) as never,
         // FAQ accordion. Articles use <details><summary>Q</summary>A</details>
         // inline HTML (passed through by rehype-raw) for their FAQ sections.
         // Styled here so they read as a single coherent accordion module.
