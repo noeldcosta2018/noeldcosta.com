@@ -25,6 +25,15 @@ export default function ToolShell({
   const resolvedMdxSlug = mdxSlug ?? slug;
   const page = getPage(resolvedMdxSlug, "en");
 
+  // Authors split tool content with `<!-- @calculator -->` to place
+  // reference depth (cost breakdowns, FAQ, etc.) BELOW the interactive
+  // tool. Without the marker the whole body renders above, preserving
+  // older pages' behaviour.
+  const splitMarker = /<!--\s*@calculator\s*-->/;
+  const [aboveMdx = "", belowMdx = ""] = page
+    ? page.body.split(splitMarker)
+    : [];
+
   const breadcrumbs = [
     { name: "Home", url: `${SITE_URL}/` },
     { name: "Tools", url: `${SITE_URL}/#tools` },
@@ -89,11 +98,15 @@ export default function ToolShell({
         </div>
       </section>
 
-      {/* MDX intro (SEO copy from content/pages/<slug>/en.mdx) */}
-      {page && (
+      {/* MDX content is split into above-calculator and below-calculator
+          sections on the `<!-- @calculator -->` marker. This keeps the
+          calculator close to the top (where users want it) while still
+          letting the page carry full reference content for SEO and depth.
+          Pages that don't use the marker render entirely above. */}
+      {aboveMdx && (
         <section className="bg-bone border-b border-corbeau/10" style={{ padding: "clamp(2.5rem,5vw,4rem) clamp(1.5rem,5vw,4rem)" }}>
           <div className="max-w-[760px] mx-auto prose-noel">
-            <MdxBody source={page.body} />
+            <MdxBody source={aboveMdx} />
           </div>
         </section>
       )}
@@ -104,6 +117,14 @@ export default function ToolShell({
           {children}
         </div>
       </section>
+
+      {belowMdx && (
+        <section className="bg-bone border-t border-corbeau/10" style={{ padding: "clamp(2.5rem,5vw,4rem) clamp(1.5rem,5vw,4rem)" }}>
+          <div className="max-w-[760px] mx-auto prose-noel">
+            <MdxBody source={belowMdx} />
+          </div>
+        </section>
+      )}
 
       <Footer />
 
