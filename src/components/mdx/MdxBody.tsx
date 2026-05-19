@@ -13,6 +13,8 @@ import StatBlock from "@/components/article/diagrams/StatBlock";
 import TestimonialsGrid from "@/components/article/testimonials/TestimonialsGrid";
 import ContactBlock from "@/components/article/contact/ContactBlock";
 import FeaturedOn from "@/components/article/featured/FeaturedOn";
+import AboutHero from "@/components/article/hero/AboutHero";
+import CredibilityBand from "@/components/article/credibility/CredibilityBand";
 
 /**
  * Renders post/page markdown. Uses react-markdown so we never go through the
@@ -212,6 +214,12 @@ export default function MdxBody({ source }: { source: string }) {
         // with empty <img src=""> tags and descriptive alt text.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         "featured-on": ((_props: any) => <FeaturedOn />) as never,
+        // Hero CTAs + headshot for the About / story page.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "about-hero": ((_props: any) => <AboutHero />) as never,
+        // Credibility stat strip — figures sourced from BRAND.md only.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "credibility-band": ((_props: any) => <CredibilityBand />) as never,
         // FAQ accordion. Articles use <details><summary>Q</summary>A</details>
         // inline HTML (passed through by rehype-raw) for their FAQ sections.
         // Styled here so they read as a single coherent accordion module.
