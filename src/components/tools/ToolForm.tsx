@@ -35,12 +35,16 @@ export type FieldDef =
       name: string;
       label: string;
       options: { value: string; label: string }[];
+      /** Defaults to true. Set false for optional dropdowns. */
+      required?: boolean;
     }
   | {
       kind: "multiselect";
       name: string;
       label: string;
       options: { value: string; label: string }[];
+      /** Defaults to true (matches typical Zod min(1) cap). */
+      required?: boolean;
     }
   | {
       kind: "tags";
@@ -178,8 +182,18 @@ export default function ToolForm({
         };
         let message = e.error || `Request failed (${res.status})`;
         const fieldErrs = e.details?.fieldErrors ?? {};
+        // Zod "Invalid option" messages dump the entire enum list which
+        // is unreadable in a small error banner. Shorten to a clean
+        // "Please select an option" so the user just knows the field
+        // needs a value.
+        const cleanMsg = (msg: string) =>
+          msg.startsWith("Invalid option")
+            ? "Please select an option"
+            : msg.startsWith("Invalid input: expected")
+              ? "This field is required"
+              : msg;
         const fieldList = Object.entries(fieldErrs)
-          .map(([field, errs]) => `${field}: ${errs.join(", ")}`)
+          .map(([field, errs]) => `${field}: ${errs.map(cleanMsg).join(", ")}`)
           .filter(Boolean);
         if (fieldList.length > 0) {
           message = `${message} — ${fieldList.join("; ")}`;
@@ -247,13 +261,32 @@ export default function ToolForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {fields.map((field) => (
+      {fields.map((field) => {
+        // A field is "required" by default for selects, multiselects,
+        // and texts/numbers explicitly marked required. Required-ness
+        // is shown in the label and (for selects) enforced via the
+        // browser's native form validation so the user can't reach the
+        // server with an empty dropdown.
+        const isRequired =
+          field.kind === "select"
+            ? field.required ?? true
+            : field.kind === "multiselect"
+              ? field.required ?? true
+              : field.kind === "modulePicker"
+                ? true
+                : field.kind === "text"
+                  ? Boolean(field.required)
+                  : false;
+        return (
         <div key={field.name}>
           {/* ModulePicker renders its own header (label + selected count),
               so suppress the standard uppercase mono label for that kind. */}
           {field.kind !== "modulePicker" && (
             <label className="block font-mono text-[0.72rem] font-semibold uppercase tracking-[1.5px] text-night mb-1.5">
               {field.label}
+              {isRequired && (
+                <span className="text-papaya ml-1" aria-hidden>*</span>
+              )}
             </label>
           )}
 
@@ -298,6 +331,7 @@ export default function ToolForm({
               className={inputBase}
               value={(values[field.name] as string) || ""}
               onChange={(e) => set(field.name, e.target.value)}
+              required={isRequired}
             >
               <option value="" disabled>
                 Select…
@@ -370,7 +404,8 @@ export default function ToolForm({
             />
           )}
         </div>
-      ))}
+        );
+      })}
 
       <button
         type="submit"
