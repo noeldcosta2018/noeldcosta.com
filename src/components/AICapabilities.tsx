@@ -75,12 +75,15 @@ export default function AICapabilities() {
           [ 02 · AI capabilities ]
         </p>
         <h2
+          aria-label="AI on top of your ERP. Not buzzwords. Real systems."
           className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
-          AI on top of your ERP.{" "}
-          <span className="cc-emphasis-italic">
-            Not buzzwords. Real systems.
+          <span aria-hidden>
+            {"AI on top of your ERP. "}
+            <span className="cc-emphasis-italic">
+              Not buzzwords. Real systems.
+            </span>
           </span>
         </h2>
         <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-12">

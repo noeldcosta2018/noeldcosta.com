@@ -59,6 +59,7 @@ export default function Hero({ lang }: { lang: string }) {
 
             {/* H1 — word-by-word reveal via per-span animation-delay */}
             <h1
+              aria-label={`${HEADLINE_WORDS.join(' ')} ${EMPHASIS}`}
               className="cc-display"
               style={{
                 fontWeight: 900,
@@ -75,6 +76,7 @@ export default function Hero({ lang }: { lang: string }) {
               {HEADLINE_WORDS.map((w, i) => (
                 <span
                   key={w}
+                  aria-hidden
                   className="cc-enter-up-word"
                   style={{ animationDelay: `${100 + i * 60}ms` }}
                 >
@@ -82,6 +84,7 @@ export default function Hero({ lang }: { lang: string }) {
                 </span>
               ))}
               <span
+                aria-hidden
                 className="cc-enter-up-word"
                 style={{
                   animationDelay: `${100 + HEADLINE_WORDS.length * 60}ms`,

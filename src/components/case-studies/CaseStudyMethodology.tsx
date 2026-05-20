@@ -42,11 +42,14 @@ export default function CaseStudyMethodology() {
           [ How I write these ]
         </p>
         <h2
+          aria-label="Full numbers. Anonymous where it matters."
           className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
           style={{ fontSize: "clamp(2rem,4vw,2.75rem)" }}
         >
-          Full numbers.{" "}
-          <span className="cc-emphasis-italic">Anonymous where it matters.</span>
+          <span aria-hidden>
+            {"Full numbers. "}
+            <span className="cc-emphasis-italic">Anonymous where it matters.</span>
+          </span>
         </h2>
         <p className="text-night text-[1rem] max-w-[560px] leading-[1.7] mb-12">
           Most case studies on the internet either name everyone (and get sued)

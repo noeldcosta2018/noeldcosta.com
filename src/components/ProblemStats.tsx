@@ -33,12 +33,15 @@ export default function ProblemStats() {
           [ The problem ]
         </p>
         <h2
+          aria-label="Most ERP projects fail. Yours doesn't have to."
           className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
-          Most ERP projects fail.{" "}
-          <span className="cc-emphasis-italic">
-            Yours doesn&apos;t have to.
+          <span aria-hidden>
+            {"Most ERP projects fail. "}
+            <span className="cc-emphasis-italic">
+              Yours doesn&apos;t have to.
+            </span>
           </span>
         </h2>
         <p className="text-night text-[1rem] max-w-[520px] leading-[1.7]">

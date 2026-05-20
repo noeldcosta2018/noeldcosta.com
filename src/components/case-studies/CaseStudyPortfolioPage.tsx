@@ -78,11 +78,14 @@ export default function CaseStudyPortfolioPage() {
                   [ Hand-picked ]
                 </p>
                 <h2
+                  aria-label="Programmes that show the range. Different industries, same playbook."
                   className="font-display font-black tracking-[-0.04em] leading-[1.08] text-corbeau"
                   style={{ fontSize: "clamp(1.65rem,3vw,2.25rem)" }}
                 >
-                  Programmes that show the range.{" "}
-                  <span className="cc-emphasis-italic">Different industries, same playbook.</span>
+                  <span aria-hidden>
+                    {"Programmes that show the range. "}
+                    <span className="cc-emphasis-italic">Different industries, same playbook.</span>
+                  </span>
                 </h2>
               </div>
             </div>
@@ -104,11 +107,14 @@ export default function CaseStudyPortfolioPage() {
                   [ The archive ]
                 </p>
                 <h2
+                  aria-label="Everything else. Filter to your situation."
                   className="font-display font-black tracking-[-0.04em] leading-[1.08] text-corbeau"
                   style={{ fontSize: "clamp(1.5rem,2.6vw,2rem)" }}
                 >
-                  Everything else.{" "}
-                  <span className="cc-emphasis-italic">Filter to your situation.</span>
+                  <span aria-hidden>
+                    {"Everything else. "}
+                    <span className="cc-emphasis-italic">Filter to your situation.</span>
+                  </span>
                 </h2>
               </div>
             </div>

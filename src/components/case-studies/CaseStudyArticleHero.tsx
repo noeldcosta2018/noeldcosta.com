@@ -74,11 +74,14 @@ export default function CaseStudyArticleHero({ c }: { c: CaseStudy }) {
                     {tag}
                   </p>
                   <h1
+                    aria-label={`${c.headline.primary} ${c.headline.italic}`}
                     className="font-display font-black tracking-[-0.025em] leading-[1.05] text-bone"
                     style={{ fontSize: "clamp(1.85rem,4.5vw,3.2rem)" }}
                   >
-                    {c.headline.primary}{" "}
-                    <span className="cc-emphasis-italic">{c.headline.italic}</span>
+                    <span aria-hidden>
+                      {c.headline.primary}{" "}
+                      <span className="cc-emphasis-italic">{c.headline.italic}</span>
+                    </span>
                   </h1>
                 </div>
 

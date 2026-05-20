@@ -173,11 +173,14 @@ export default function TrackRecord() {
           [ 03 · Track record ]
         </p>
         <h2
+          aria-label="Programmes I've led. Not advised on. Led."
           className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
-          Programmes I&apos;ve led.{" "}
-          <span className="cc-emphasis-italic">Not advised on. Led.</span>
+          <span aria-hidden>
+            {"Programmes I've led. "}
+            <span className="cc-emphasis-italic">Not advised on. Led.</span>
+          </span>
         </h2>
         <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-12">
           Real companies. Real numbers. I was in the room running these.

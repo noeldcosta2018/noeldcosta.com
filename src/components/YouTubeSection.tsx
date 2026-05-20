@@ -16,11 +16,14 @@ export default async function YouTubeSection() {
           [ 05 · Watch &amp; learn ]
         </p>
         <h2
+          aria-label="Videos from the field. Not theory. Real projects."
           className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
-          Videos from the field.{" "}
-          <span className="cc-emphasis-italic">Not theory. Real projects.</span>
+          <span aria-hidden>
+            {"Videos from the field. "}
+            <span className="cc-emphasis-italic">Not theory. Real projects.</span>
+          </span>
         </h2>
         <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-12">
           I share what I&apos;ve learned from 25 years of ERP and AI implementations.

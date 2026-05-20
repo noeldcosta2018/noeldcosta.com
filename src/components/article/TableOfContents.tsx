@@ -137,7 +137,7 @@ export default function TableOfContents({
                   href={`#${h2.id}`}
                   onClick={() => onClickEntry(h2.id)}
                   className={[
-                    "group flex items-start gap-3 py-1.5 px-2 -mx-2 rounded-md leading-[1.35] transition-colors",
+                    "group flex items-start gap-3 min-h-[44px] py-2.5 px-2 -mx-2 rounded-md leading-[1.35] transition-colors",
                     h2IsActive
                       ? "bg-papaya"
                       : isActive
@@ -192,7 +192,7 @@ export default function TableOfContents({
                               href={`#${c.id}`}
                               onClick={() => onClickEntry(c.id)}
                               className={[
-                                "group flex items-start gap-3 py-1 pl-4 pr-2 -mr-2 rounded-md relative transition-colors",
+                                "group flex items-start gap-3 min-h-[40px] py-2 pl-4 pr-2 -mr-2 rounded-md relative transition-colors",
                                 cActive ? "bg-papaya/80" : "hover:bg-papaya/70",
                               ].join(" ")}
                             >

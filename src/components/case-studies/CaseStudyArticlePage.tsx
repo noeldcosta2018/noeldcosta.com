@@ -133,8 +133,8 @@ export default function CaseStudyArticlePage({
                               <a
                                 href={`#${h.id}`}
                                 className={[
-                                  "flex items-start gap-3 py-1.5 leading-[1.4]",
-                                  isH3 ? "pl-8" : "",
+                                  "flex items-start gap-3 py-3 leading-[1.4]",
+                                  isH3 ? "pl-8 min-h-[40px]" : "min-h-[44px]",
                                 ].join(" ")}
                               >
                                 {!isH3 && (

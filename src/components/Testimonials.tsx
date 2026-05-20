@@ -30,11 +30,14 @@ export default function Testimonials() {
           [ 07 · From people I&apos;ve worked with ]
         </p>
         <h2
+          aria-label="Don't take my word for it. Read theirs."
           className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-10 text-corbeau"
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
-          Don&apos;t take my word for it.{" "}
-          <span className="cc-emphasis-italic">Read theirs.</span>
+          <span aria-hidden>
+            {"Don't take my word for it. "}
+            <span className="cc-emphasis-italic">Read theirs.</span>
+          </span>
         </h2>
 
         <div className="grid grid-cols-3 gap-3.5 max-md:grid-cols-2 max-sm:grid-cols-1">

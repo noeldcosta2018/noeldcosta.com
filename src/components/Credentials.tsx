@@ -50,11 +50,14 @@ export default function Credentials() {
           [ 06 · Why this works ]
         </p>
         <h2
+          aria-label="Not just a tech guy. I understand the numbers."
           className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
-          Not just a tech guy.{" "}
-          <span className="cc-emphasis-italic">I understand the numbers.</span>
+          <span aria-hidden>
+            {"Not just a tech guy. "}
+            <span className="cc-emphasis-italic">I understand the numbers.</span>
+          </span>
         </h2>
         <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-10">
           Most SAP consultants understand the system. Few understand the

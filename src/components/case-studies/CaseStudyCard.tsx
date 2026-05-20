@@ -131,16 +131,23 @@ export default function CaseStudyCard({ c, variant, priority }: Props) {
             ))}
           </div>
 
-          {/* Headline (italic-split signature pattern) */}
+          {/* Headline (italic-split signature pattern). aria-label carries
+              the full sentence because the React text-node split between
+              primary and the italic <span> collapses the inter-sentence
+              space in some screen-reader trees ("close.Five." instead of
+              "close. Five."). */}
           <h3
+            aria-label={`${c.headline.primary} ${c.headline.italic}`}
             className={[
               "font-display font-bold text-corbeau tracking-[-0.02em] leading-tight",
               isAnchor ? "text-[1.15rem] md:text-[1.3rem]" : "text-[1.02rem]",
               "transition-colors duration-300 group-hover:text-corbeau",
             ].join(" ")}
           >
-            {c.headline.primary}{" "}
-            <span className="cc-emphasis-italic">{c.headline.italic}</span>
+            <span aria-hidden>
+              {c.headline.primary}{" "}
+              <span className="cc-emphasis-italic">{c.headline.italic}</span>
+            </span>
           </h3>
 
           {/* Outcome (single sentence, anchor only — keeps compact cards tight) */}

@@ -327,11 +327,14 @@ export default function CategoryPage({
                   Category
                 </p>
                 <h1
+                  aria-label={`${meta.label}. ${heroTagline}`}
                   className="font-display font-black text-corbeau tracking-[-0.03em] leading-[1.04] mb-4"
                   style={{ fontSize: "clamp(2rem,5.5vw,3.5rem)" }}
                 >
-                  {meta.label}.{" "}
-                  <span className="cc-emphasis-italic">{heroTagline}</span>
+                  <span aria-hidden>
+                    {`${meta.label}. `}
+                    <span className="cc-emphasis-italic">{heroTagline}</span>
+                  </span>
                 </h1>
                 <p
                   className="text-night leading-[1.65] mb-6"
@@ -420,11 +423,14 @@ export default function CategoryPage({
                 [ Browse by topic ]
               </p>
               <h2
+                aria-label="Find what matters to you. Pick your topic."
                 className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-bone"
                 style={{ fontSize: "clamp(1.6rem,3vw,2.2rem)" }}
               >
-                Find what matters to you.{" "}
-                <span className="cc-emphasis-italic">Pick your topic.</span>
+                <span aria-hidden>
+                  {"Find what matters to you. "}
+                  <span className="cc-emphasis-italic">Pick your topic.</span>
+                </span>
               </h2>
               <p className="text-moon text-[1rem] max-w-[480px] leading-[1.7] mb-10">
                 Every article is tagged by subject. Start where your problem is.
@@ -494,11 +500,14 @@ export default function CategoryPage({
                 [ Featured insights ]
               </p>
               <h2
+                aria-label="Reads worth your time. Start with these."
                 className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
                 style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
               >
-                Reads worth your time.{" "}
-                <span className="cc-emphasis-italic">Start with these.</span>
+                <span aria-hidden>
+                  {"Reads worth your time. "}
+                  <span className="cc-emphasis-italic">Start with these.</span>
+                </span>
               </h2>
               <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-10">
                 The guides I wish existed when I started. Drawn from 25 years of ERP delivery.
@@ -538,11 +547,14 @@ export default function CategoryPage({
                 [ Latest articles ]
               </p>
               <h2
+                aria-label="The full archive. Field notes, not theory."
                 className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
                 style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
               >
-                The full archive.{" "}
-                <span className="cc-emphasis-italic">Field notes, not theory.</span>
+                <span aria-hidden>
+                  {"The full archive. "}
+                  <span className="cc-emphasis-italic">Field notes, not theory.</span>
+                </span>
               </h2>
               <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-10">
                 Every article in this category. Written from delivery experience, not vendor decks.

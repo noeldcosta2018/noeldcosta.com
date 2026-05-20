@@ -25,11 +25,14 @@ export default function ContactHero() {
         Get in touch
       </p>
       <p
+        aria-label="30 minutes. No sales pitch."
         className="font-display font-black text-corbeau tracking-[-0.025em] leading-[1.1] max-w-[640px]"
         style={{ fontSize: "clamp(1.85rem,3.6vw,2.6rem)" }}
       >
-        30 minutes.{" "}
-        <span className="cc-emphasis-italic">No sales pitch.</span>
+        <span aria-hidden>
+          {"30 minutes. "}
+          <span className="cc-emphasis-italic">No sales pitch.</span>
+        </span>
       </p>
       <p className="mt-5 text-night text-[1rem] leading-[1.65] max-w-[560px]">
         Pick a slot on my calendar. Tell me what&apos;s going on with your ERP

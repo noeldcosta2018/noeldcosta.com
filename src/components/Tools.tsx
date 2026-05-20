@@ -53,11 +53,14 @@ export default function Tools() {
           [ 04 · Built by me ]
         </p>
         <h2
+          aria-label="Tools I build for the ERP world."
           className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-bone"
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
-          Tools I build{" "}
-          <span className="cc-emphasis-italic">for the ERP world.</span>
+          <span aria-hidden>
+            {"Tools I build "}
+            <span className="cc-emphasis-italic">for the ERP world.</span>
+          </span>
         </h2>
         <p className="text-moon text-[1rem] max-w-[520px] leading-[1.7] mb-12">
           I don&apos;t just advise. I build products. Used by consultants and companies

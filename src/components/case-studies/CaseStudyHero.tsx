@@ -96,8 +96,12 @@ export default function CaseStudyHero({ c, stats }: Props) {
               {tag}
             </p>
 
-            {/* Headline — word-by-word reveal, italic emphasis lands last */}
+            {/* Headline — word-by-word reveal, italic emphasis lands last.
+                The flex+gap layout strips whitespace from the accessibility
+                tree, so the visible spans are exposed as decoration and
+                aria-label carries the full sentence for screen readers. */}
             <h1
+              aria-label={`${c.headline.primary} ${c.headline.italic}`}
               className="font-display font-black text-corbeau tracking-[-0.02em] leading-[1.05] mb-5"
               style={{
                 fontSize: "clamp(2rem,4.5vw,3.4rem)",
@@ -109,6 +113,7 @@ export default function CaseStudyHero({ c, stats }: Props) {
               {words.map((w, i) => (
                 <span
                   key={`${w}-${i}`}
+                  aria-hidden
                   className="cc-enter-up-word"
                   style={{
                     animationDelay: `${headlineDelayBase + i * wordStaggerMs}ms`,
@@ -118,6 +123,7 @@ export default function CaseStudyHero({ c, stats }: Props) {
                 </span>
               ))}
               <span
+                aria-hidden
                 className="cc-enter-up-word cc-emphasis-italic"
                 style={{
                   animationDelay: `${headlineDelayBase + words.length * wordStaggerMs}ms`,

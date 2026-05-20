@@ -46,11 +46,14 @@ export default function RelatedCaseStudies({ current }: { current: CaseStudy }) 
           [ Other programmes ]
         </p>
         <h2
+          aria-label="Different industries. Same playbook."
           className="font-display font-black tracking-[-0.04em] leading-[1.08] text-corbeau mb-10"
           style={{ fontSize: "clamp(1.65rem,3vw,2.25rem)" }}
         >
-          Different industries.{" "}
-          <span className="cc-emphasis-italic">Same playbook.</span>
+          <span aria-hidden>
+            {"Different industries. "}
+            <span className="cc-emphasis-italic">Same playbook.</span>
+          </span>
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
