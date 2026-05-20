@@ -24,8 +24,19 @@ export default function LogoScroll() {
       <p className="text-center font-mono text-[0.72rem] text-eyebrow tracking-[2.5px] uppercase mb-5">
         Delivered for companies including
       </p>
-      <div className="overflow-hidden">
-        <div className="flex w-max gap-14 animate-logo-scroll items-center">
+      {/* Edge mask fades the logo strip in/out at the sides instead of
+          clipping abruptly. group + group-hover pauses the marquee when
+          the user reads it. */}
+      <div
+        className="overflow-hidden group"
+        style={{
+          maskImage:
+            "linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%)",
+          WebkitMaskImage:
+            "linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%)",
+        }}
+      >
+        <div className="flex w-max gap-14 animate-logo-scroll items-center group-hover:[animation-play-state:paused]">
           {doubled.map((name, i) => (
             <span
               key={i}

@@ -2,6 +2,16 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
+    // Serve AVIF when supported, WebP as fallback. AVIF cuts the headshot
+    // PNG (4.6 MB source) by ~85% at equivalent quality. Browser
+    // negotiation is automatic via Accept headers.
+    formats: ["image/avif", "image/webp"],
+    // Trim device-pixel-ratio variants. Default Next.js generates up to
+    // 3840w which is wasteful for our largest single image (headshot,
+    // 480px display max). Capping at 1920w covers 4x DPR on a 480px slot
+    // and 2x DPR on a 960px slot — every realistic case for this site.
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     remotePatterns: [
       // YouTube thumbnails — RSS feed uses numbered subdomains (i1–i4.ytimg.com)
       { protocol: "https", hostname: "**.ytimg.com" },

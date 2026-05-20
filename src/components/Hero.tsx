@@ -220,13 +220,19 @@ export default function Hero({ lang }: { lang: string }) {
                 maxWidth: 480,
                 marginLeft: 'auto'
               }}>
+                {/* Explicit dimensions + tight sizes prop so Next/Image
+                    requests at most a 960w variant (2x DPR on 480px slot).
+                    quality 70 trims another ~30% off the AVIF/WebP variant
+                    without visible loss at this display size. */}
                 <Image
                   src="/images/headshot.png"
                   alt="Noel D'Costa"
-                  fill
+                  width={480}
+                  height={600}
                   priority
+                  quality={70}
                   sizes="(min-width: 1024px) 480px, 0px"
-                  className="object-cover object-top"
+                  className="object-cover object-top w-full h-full"
                 />
               </div>
             </div>

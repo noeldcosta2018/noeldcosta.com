@@ -16,8 +16,12 @@ const epilogue = Epilogue({
 const sora = Sora({
   variable: "--font-sora",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
+  weight: ["400", "600", "700"],
   display: "swap",
+  // Epilogue is the primary display face; Sora is a CSS fallback only.
+  // Skip the auto-preload so the 4 .woff2 preloads above the fold drop
+  // to those genuinely used in the LCP frame (Epilogue + JetBrains Mono).
+  preload: false,
 });
 
 const jetbrainsMono = JetBrains_Mono({
