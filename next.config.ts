@@ -19,6 +19,9 @@ const nextConfig: NextConfig = {
     // and 2x DPR on a 960px slot — every realistic case for this site.
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // Cards lean on `quality={70}` to shave bytes — list it alongside the
+    // Next.js default of 75 so the runtime stops warning on every render.
+    qualities: [70, 75],
     remotePatterns: [
       // YouTube thumbnails — RSS feed uses numbered subdomains (i1–i4.ytimg.com)
       { protocol: "https", hostname: "**.ytimg.com" },

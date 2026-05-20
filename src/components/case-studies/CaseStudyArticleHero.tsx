@@ -120,12 +120,12 @@ export default function CaseStudyArticleHero({ c }: { c: CaseStudy }) {
       {/* Breadcrumb-as-back-link, sits inside the article container in the
           parent component; left here so consumers don't have to wire it. */}
       <nav aria-label="Breadcrumb" className="bg-bone">
-        <div className="max-w-[1200px] mx-auto px-[clamp(1.5rem,5vw,4rem)] pt-6">
+        <div className="max-w-[1200px] mx-auto px-[clamp(1.5rem,5vw,4rem)] pt-4">
           <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[0.7rem] tracking-[2px] uppercase">
             <li>
               <Link
                 href="/category/case-studies"
-                className="text-eyebrow hover:text-papaya transition-colors"
+                className="inline-flex items-center min-h-[44px] -ml-2 px-2 text-eyebrow hover:text-papaya transition-colors"
               >
                 ← All case studies
               </Link>
