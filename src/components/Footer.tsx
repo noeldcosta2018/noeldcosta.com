@@ -146,7 +146,7 @@ export default function Footer() {
         {/* Bottom */}
         <div className="flex justify-between items-center pt-8 flex-wrap gap-4">
           <span className="font-mono text-[0.72rem] text-silver">
-            © 2026 Quantinoid LLC. All rights reserved.
+            © 2026 Noel D&apos;Costa · Quantinoid LLC
           </span>
           <div className="flex gap-6">
             <Link href="/privacy-policy-noeldcosta" className="text-[0.8rem] text-silver no-underline transition-colors hover:text-moon">
