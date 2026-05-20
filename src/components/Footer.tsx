@@ -21,7 +21,7 @@ export default function Footer() {
     { label: "About", href: "/about" },
     { label: "Case Studies", href: "/category/case-studies" },
     { label: "YouTube", href: "https://www.youtube.com/@NoelDCostaERPAI", external: true },
-    { label: "Contact", href: "/contact" },
+    { label: "Contact", href: "/contact-noel-erp-support" },
   ];
   return (
     <footer
@@ -149,13 +149,13 @@ export default function Footer() {
             © 2026 Quantinoid LLC. All rights reserved.
           </span>
           <div className="flex gap-6">
-            <Link href="/privacy" className="text-[0.8rem] text-silver no-underline transition-colors hover:text-moon">
+            <Link href="/privacy-policy-noeldcosta" className="text-[0.8rem] text-silver no-underline transition-colors hover:text-moon">
               Privacy
             </Link>
-            <Link href="/terms" className="text-[0.8rem] text-silver no-underline transition-colors hover:text-moon">
-              Terms
-            </Link>
-            <Link href="/contact" className="text-[0.8rem] text-silver no-underline transition-colors hover:text-moon">
+            {/* Terms-of-service page does not yet exist as MDX content
+                (no WordPress equivalent in PRD). Removed the link rather
+                than ship a 404. Re-add when content lands. */}
+            <Link href="/contact-noel-erp-support" className="text-[0.8rem] text-silver no-underline transition-colors hover:text-moon">
               Support
             </Link>
           </div>

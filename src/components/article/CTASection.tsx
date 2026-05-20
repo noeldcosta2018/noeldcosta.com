@@ -23,7 +23,7 @@ export default function CTASection({
   secondaryHref?: string;
   localePrefix: string;
 }) {
-  const primary = primaryHref ?? `${localePrefix}/contact`;
+  const primary = primaryHref ?? `${localePrefix}/contact-noel-erp-support`;
   const secondary = secondaryHref ?? `${localePrefix}/about`;
 
   return (

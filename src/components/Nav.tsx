@@ -274,7 +274,7 @@ export default function Nav() {
 
           <li>
             <Link
-              href="/contact"
+              href="/contact-noel-erp-support"
               style={{
                 background: 'var(--cc-papaya)',
                 color: 'var(--cc-corbeau)',
@@ -332,7 +332,7 @@ export default function Nav() {
               About
             </Link>
             <Link
-              href="/contact"
+              href="/contact-noel-erp-support"
               className="text-corbeau no-underline text-[0.9rem] font-medium py-2"
             >
               Contact
