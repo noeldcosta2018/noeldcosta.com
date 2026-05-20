@@ -1,3 +1,5 @@
+"use client";
+
 function ServiceCard({
   num,
   title,
@@ -18,7 +20,14 @@ function ServiceCard({
   gradient: string;
 }) {
   return (
-    <div className="relative bg-haiti border border-white/[0.06] rounded-2xl p-10 overflow-hidden transition-all duration-300 hover:border-papaya/20 hover:-translate-y-1 hover:shadow-[0_16px_48px_rgba(0,0,0,0.3)]">
+    <div
+      onMouseMove={(e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        e.currentTarget.style.setProperty("--spotlight-x", `${e.clientX - r.left}px`);
+        e.currentTarget.style.setProperty("--spotlight-y", `${e.clientY - r.top}px`);
+      }}
+      className="cc-spotlight relative bg-haiti border border-white/[0.06] rounded-2xl p-10 overflow-hidden transition-all duration-300 hover:border-papaya/20 hover:-translate-y-1 hover:shadow-[0_16px_48px_rgba(0,0,0,0.3)]"
+    >
       {/* top accent line */}
       <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${gradient}`} />
 

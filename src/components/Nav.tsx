@@ -4,6 +4,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+/**
+ * Body scroll lock side-effect. Mounted only when the mobile drawer is
+ * open so background content doesn't drift under the panel. Self-cleans
+ * on unmount via the useEffect return.
+ */
+function MobileDrawerScrollLock() {
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+  return null;
+}
+
 // 6 content pillars. "Consulting Career" is deliberately footer-only per CLAUDE.md.
 const PILLARS: { label: string; slug: string; blurb: string }[] = [
   {
@@ -130,10 +146,11 @@ export default function Nav() {
         <button
           className="md:hidden bg-transparent border-none text-[1.3rem] cursor-pointer text-corbeau inline-flex items-center justify-center min-w-[44px] min-h-[44px] -mr-2"
           onClick={() => setMobileOpen((o) => !o)}
-          aria-label="Toggle menu"
+          aria-label={mobileOpen ? "Close menu" : "Open menu"}
           aria-expanded={mobileOpen}
+          aria-controls="mobile-menu"
         >
-          ☰
+          {mobileOpen ? "×" : "☰"}
         </button>
 
         {/* Desktop menu */}
@@ -294,52 +311,76 @@ export default function Nav() {
         </ul>
       </div>
 
-      {/* Mobile panel */}
-      {mobileOpen && (
-        <div className="md:hidden border-t border-corbeau/[0.08] bg-bone">
-          <div className="px-[clamp(1.5rem,5vw,4rem)] py-4 flex flex-col gap-1">
-            <div className="text-[0.72rem] font-semibold tracking-[2px] uppercase text-eyebrow pt-2 pb-1">
-              Solutions
-            </div>
-            {PILLARS.map((p) => (
-              <Link
-                key={p.slug}
-                href={`/category/${p.slug}`}
-                className="text-corbeau no-underline text-[0.9rem] font-medium py-2"
-              >
-                {p.label}
-              </Link>
-            ))}
-            <div className="text-[0.72rem] font-semibold tracking-[2px] uppercase text-eyebrow pt-4 pb-1">
-              Tools
-            </div>
-            {TOOLS.map((t) => (
-              <Link
-                key={t.slug}
-                href={`/${t.slug}`}
-                className="text-corbeau no-underline text-[0.9rem] font-medium py-2"
-              >
-                {t.label}
-              </Link>
-            ))}
-            <div className="text-[0.72rem] font-semibold tracking-[2px] uppercase text-eyebrow pt-4 pb-1">
-              Company
-            </div>
-            <Link
-              href="/about"
-              className="text-corbeau no-underline text-[0.9rem] font-medium py-2"
-            >
-              About
-            </Link>
-            <Link
-              href="/contact-noel-erp-support"
-              className="text-corbeau no-underline text-[0.9rem] font-medium py-2"
-            >
-              Contact
-            </Link>
-          </div>
+      {/* Mobile drawer — full-screen overlay with staggered link reveal.
+          Backdrop blur reuses the existing nav glass token. Links reveal
+          one at a time, 60 ms stagger, so the open feels like a curtain
+          drawing back instead of a popup flash. Body scroll is locked
+          while open to prevent the background drifting under the panel. */}
+      {mobileOpen && <MobileDrawerScrollLock />}
+      <div
+        id="mobile-menu"
+        className={`md:hidden fixed inset-0 z-40 transition-opacity duration-300 ${
+          mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        style={{
+          background: "rgba(244, 237, 228, 0.96)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          top: 64,
+        }}
+        aria-hidden={!mobileOpen}
+      >
+        <div className="h-full overflow-y-auto px-[clamp(1.5rem,5vw,4rem)] pt-6 pb-12 flex flex-col gap-1">
+          {(() => {
+            // Flat list so the stagger index is across all items, not
+            // restarted per section. 60 ms between each.
+            type Item =
+              | { type: "heading"; label: string }
+              | { type: "link"; label: string; href: string };
+            const items: Item[] = [
+              { type: "heading", label: "Solutions" },
+              ...PILLARS.map((p) => ({ type: "link" as const, label: p.label, href: `/category/${p.slug}` })),
+              { type: "heading", label: "Tools" },
+              ...TOOLS.map((t) => ({ type: "link" as const, label: t.label, href: `/${t.slug}` })),
+              { type: "heading", label: "Company" },
+              { type: "link", label: "About", href: "/about" },
+              { type: "link", label: "Contact", href: "/contact-noel-erp-support" },
+            ];
+            return items.map((item, i) => {
+              const baseDelay = mobileOpen ? i * 60 : 0;
+              const style = {
+                transitionDelay: `${baseDelay}ms`,
+                opacity: mobileOpen ? 1 : 0,
+                transform: mobileOpen ? "translateY(0)" : "translateY(-8px)",
+                transitionProperty: "opacity, transform" as const,
+                transitionDuration: "320ms",
+                transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)" as const,
+              };
+              if (item.type === "heading") {
+                return (
+                  <div
+                    key={`h-${item.label}-${i}`}
+                    style={style}
+                    className="text-[0.72rem] font-semibold tracking-[2px] uppercase text-eyebrow pt-4 pb-1 first:pt-0"
+                  >
+                    {item.label}
+                  </div>
+                );
+              }
+              return (
+                <Link
+                  key={`l-${item.href}`}
+                  href={item.href}
+                  style={style}
+                  className="text-corbeau no-underline text-[1.05rem] font-medium py-3 min-h-[44px] flex items-center"
+                >
+                  {item.label}
+                </Link>
+              );
+            });
+          })()}
         </div>
-      )}
+      </div>
     </nav>
   );
 }

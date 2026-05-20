@@ -1,3 +1,5 @@
+"use client";
+
 // TODO: update Tools.tsx hrefs — this component currently showcases commercial products (Command Central, ERPCV),
 // not the 5 LLM tool slugs. When this section is repurposed to list the free tools, replace with:
 //   { name: "ERP Cost Calculator", href: "/erp-implementation-cost-calculator", ... }
@@ -66,7 +68,12 @@ export default function Tools() {
           {TOOLS.map((t) => (
             <div
               key={t.name}
-              className="bg-haiti border border-white/[0.06] rounded-[14px] overflow-hidden transition-all duration-300 hover:border-papaya/20 hover:-translate-y-[3px] hover:shadow-[0_12px_40px_rgba(0,0,0,0.3)]"
+              onMouseMove={(e) => {
+                const r = e.currentTarget.getBoundingClientRect();
+                e.currentTarget.style.setProperty("--spotlight-x", `${e.clientX - r.left}px`);
+                e.currentTarget.style.setProperty("--spotlight-y", `${e.clientY - r.top}px`);
+              }}
+              className="cc-spotlight bg-haiti border border-white/[0.06] rounded-[14px] overflow-hidden transition-all duration-300 hover:border-papaya/20 hover:-translate-y-[3px] hover:shadow-[0_12px_40px_rgba(0,0,0,0.3)]"
             >
               <div className="px-[18px] py-3 bg-white/[0.03] border-b border-white/[0.06] flex items-center justify-between">
                 <div className="flex items-center gap-2">

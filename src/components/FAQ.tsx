@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 
 const FAQS = [
   {
@@ -58,31 +58,48 @@ export default function FAQ() {
         </div>
 
         <div className="flex flex-col">
-          {FAQS.map((faq, i) => (
-            <div key={i} className="border-b border-corbeau/[0.08]">
-              <button
-                type="button"
-                onClick={() => setOpen(open === i ? null : i)}
-                className="w-full py-5 bg-transparent border-none cursor-pointer flex items-center justify-between gap-4 text-left"
-              >
-                <span
-                  className="font-display font-bold text-[0.95rem] text-corbeau leading-snug"
+          {FAQS.map((faq, i) => {
+            const isOpen = open === i;
+            return (
+              <div key={i} className="border-b border-corbeau/[0.08]">
+                <button
+                  type="button"
+                  onClick={() => setOpen(isOpen ? null : i)}
+                  aria-expanded={isOpen}
+                  aria-controls={`faq-panel-${i}`}
+                  className="w-full py-5 bg-transparent border-none cursor-pointer flex items-center justify-between gap-4 text-left"
                 >
-                  {faq.q}
-                </span>
-                {open === i
-                  ? <ChevronUp size={18} className="text-silver shrink-0" />
-                  : <ChevronDown size={18} className="text-silver shrink-0" />}
-              </button>
-              {open === i && (
-                <div className="pb-5">
-                  <p className="text-[0.88rem] text-night leading-[1.65] m-0">
-                    {faq.a}
-                  </p>
+                  <span className="font-display font-bold text-[0.95rem] text-corbeau leading-snug">
+                    {faq.q}
+                  </span>
+                  {/* Single chevron, rotated 180° when open — no remount. */}
+                  <ChevronDown
+                    size={18}
+                    aria-hidden
+                    className={`text-eyebrow shrink-0 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                      isOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                {/* Grid-template-rows 0fr → 1fr is the only way to animate
+                    auto-height without measuring children. min-height: 0
+                    on the inner div lets the grid track collapse cleanly. */}
+                <div
+                  id={`faq-panel-${i}`}
+                  role="region"
+                  aria-hidden={!isOpen}
+                  className="grid transition-[grid-template-rows] duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                  style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
+                >
+                  <div className="overflow-hidden min-h-0">
+                    <p className="text-[0.88rem] text-night leading-[1.65] m-0 pb-5">
+                      {faq.a}
+                    </p>
+                  </div>
                 </div>
-              )}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

@@ -1,3 +1,5 @@
+import TerminalFeed from "./TerminalFeed";
+
 const FEATURES = [
   {
     title: "Agentic AI on SAP BTP",
@@ -124,12 +126,7 @@ export default function AICapabilities() {
               </span>
             </div>
             <div className="p-5 font-mono text-[0.78rem] leading-[1.7]">
-              {TERMINAL_LINES.map((line, i) => (
-                <div key={i} className="flex gap-2 mb-2">
-                  <span className="text-papaya font-semibold shrink-0">▶</span>
-                  <span className="text-night">{line.content}</span>
-                </div>
-              ))}
+              <TerminalFeed lines={TERMINAL_LINES.map((l) => l.content)} />
               <hr className="border-t border-corbeau/[0.06] my-3" />
               <p className="font-mono text-[0.6rem] text-silver uppercase tracking-[1.5px] mb-2 cc-cursor">AI Stack</p>
               <div className="flex flex-wrap gap-1.5">
