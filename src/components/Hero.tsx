@@ -94,20 +94,18 @@ export default function Hero({ lang }: { lang: string }) {
               </span>
             </h1>
 
-            {/* Sub-headline */}
+            {/* Sub-headline — value-led, no named clients. Specific
+                programmes show up further down the page (TrackRecord
+                section + LogoScroll trust bar). */}
             <p
               className="cc-enter-up"
               style={{ marginTop: 24, fontSize: 16, color: 'var(--cc-text-body)', maxWidth: 500, lineHeight: 1.65, animationDelay: '900ms' }}
             >
-              ECC to S/4HANA. AI on SAP. 25 years delivering for{' '}
-              <strong className="font-semibold" style={{ color: 'var(--cc-text-primary)' }}>EDGE Group</strong>{' '}
-              ($60M saved),{' '}
-              <strong className="font-semibold" style={{ color: 'var(--cc-text-primary)' }}>Etihad Airways</strong>{' '}
-              ($400M+ impact),{' '}
-              <strong className="font-semibold" style={{ color: 'var(--cc-text-primary)' }}>ADNOC</strong>,{' '}
-              <strong className="font-semibold" style={{ color: 'var(--cc-text-primary)' }}>PIF entities</strong>, and the{' '}
-              <strong className="font-semibold" style={{ color: 'var(--cc-text-primary)' }}>UAE Government</strong>.
-              {' '}CIMA-qualified. I lead the engagement. I don&apos;t subcontract.
+              ECC to S/4HANA. AI on SAP. 25 years delivering enterprise
+              transformations across{' '}
+              <strong className="font-semibold" style={{ color: 'var(--cc-text-primary)' }}>defence, aviation, energy, financial services, and the public sector</strong>.{' '}
+              <strong className="font-semibold" style={{ color: 'var(--cc-text-primary)' }}>$700M+ in total impact</strong>.{' '}
+              CIMA-qualified. I lead the engagement. I don&apos;t subcontract.
             </p>
 
             {/* CTAs */}
