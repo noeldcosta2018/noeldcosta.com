@@ -83,7 +83,7 @@ export default function TrackRecord() {
                 className={`py-5 border-b border-corbeau/[0.06] ${i === 0 ? "pt-0" : ""}`}
               >
                 <div className="flex justify-between items-center mb-1">
-                  <span className="font-mono text-[0.65rem] uppercase tracking-[2px] text-silver">{p.company}</span>
+                  <span className="font-mono text-[0.65rem] uppercase tracking-[2px] text-eyebrow">{p.company}</span>
                   <span className="font-mono text-[0.62rem] px-2 py-0.5 rounded font-semibold" style={badgeStyle(p.badgeType)}>
                     {p.badge}
                   </span>

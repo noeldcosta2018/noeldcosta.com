@@ -50,7 +50,7 @@ function ServiceCard({
       </ul>
       <a
         href={ctaHref}
-        className="font-mono text-papaya no-underline text-[0.82rem] font-semibold transition-colors hover:text-[#fdaa78]"
+        className="inline-flex items-center font-mono text-papaya no-underline text-[0.82rem] font-semibold transition-colors hover:text-[#fdaa78] min-h-[44px] py-2.5 -my-2.5"
       >
         {cta}
       </a>

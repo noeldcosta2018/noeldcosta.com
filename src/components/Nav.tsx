@@ -126,9 +126,9 @@ export default function Nav() {
           noel<span className="text-papaya">dcosta</span>
         </Link>
 
-        {/* Mobile toggle */}
+        {/* Mobile toggle — min-w/h 44 to meet Apple HIG / WCAG touch target. */}
         <button
-          className="md:hidden bg-transparent border-none text-[1.3rem] cursor-pointer text-corbeau"
+          className="md:hidden bg-transparent border-none text-[1.3rem] cursor-pointer text-corbeau inline-flex items-center justify-center min-w-[44px] min-h-[44px] -mr-2"
           onClick={() => setMobileOpen((o) => !o)}
           aria-label="Toggle menu"
           aria-expanded={mobileOpen}
@@ -285,7 +285,7 @@ export default function Nav() {
       {mobileOpen && (
         <div className="md:hidden border-t border-corbeau/[0.08] bg-bone">
           <div className="px-[clamp(1.5rem,5vw,4rem)] py-4 flex flex-col gap-1">
-            <div className="text-[0.68rem] font-semibold tracking-[2px] uppercase text-silver pt-2 pb-1">
+            <div className="text-[0.68rem] font-semibold tracking-[2px] uppercase text-eyebrow pt-2 pb-1">
               Solutions
             </div>
             {PILLARS.map((p) => (
@@ -297,7 +297,7 @@ export default function Nav() {
                 {p.label}
               </Link>
             ))}
-            <div className="text-[0.68rem] font-semibold tracking-[2px] uppercase text-silver pt-4 pb-1">
+            <div className="text-[0.68rem] font-semibold tracking-[2px] uppercase text-eyebrow pt-4 pb-1">
               Tools
             </div>
             {TOOLS.map((t) => (
@@ -309,7 +309,7 @@ export default function Nav() {
                 {t.label}
               </Link>
             ))}
-            <div className="text-[0.68rem] font-semibold tracking-[2px] uppercase text-silver pt-4 pb-1">
+            <div className="text-[0.68rem] font-semibold tracking-[2px] uppercase text-eyebrow pt-4 pb-1">
               Company
             </div>
             <Link

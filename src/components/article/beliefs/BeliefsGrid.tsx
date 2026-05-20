@@ -26,7 +26,7 @@ function Card({ b }: { b: Belief }) {
         >
           {b.num}
         </div>
-        <p className="font-mono text-[0.65rem] font-medium tracking-[2px] uppercase text-silver">
+        <p className="font-mono text-[0.65rem] font-medium tracking-[2px] uppercase text-eyebrow">
           I believe
         </p>
       </div>

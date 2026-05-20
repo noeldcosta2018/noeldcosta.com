@@ -65,7 +65,7 @@ export default function ProblemStats() {
               <p className="text-night text-[0.92rem] mt-2.5 max-w-[280px] leading-[1.55]">
                 {s.text}
               </p>
-              <p className="font-mono text-[0.65rem] text-silver mt-2">{s.src}</p>
+              <p className="font-mono text-[0.65rem] text-eyebrow mt-2">{s.src}</p>
             </div>
           ))}
         </div>

@@ -45,7 +45,7 @@ function Row({ p, first }: { p: Programme; first: boolean }) {
       />
 
       <div className="flex justify-between items-center gap-3 mb-1.5">
-        <span className="font-mono text-[0.65rem] uppercase tracking-[2px] text-silver transition-colors duration-200 group-hover:text-papaya">
+        <span className="font-mono text-[0.65rem] uppercase tracking-[2px] text-eyebrow transition-colors duration-200 group-hover:text-papaya">
           {p.sectorRegion}
         </span>
         <span

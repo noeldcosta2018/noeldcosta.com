@@ -18,7 +18,7 @@ const TOOLS = [
     title: "Track your ERP implementation in one place.",
     body: "Progress, risks, milestones, team performance. Built because every project I walked into had tracking spread across 15 different spreadsheets. Real-time dashboards. Not another status deck.",
     cta: "Explore Command Central →",
-    href: "#",
+    href: "https://commandcc.io",
   },
   {
     icon: (
@@ -85,7 +85,7 @@ export default function Tools() {
                 <p className="text-moon text-[0.92rem] leading-[1.65] mb-3">{t.body}</p>
                 <a
                   href={t.href}
-                  className="font-mono text-papaya no-underline text-[0.82rem] font-semibold transition-colors hover:text-[#fdaa78]"
+                  className="inline-flex items-center font-mono text-papaya no-underline text-[0.82rem] font-semibold transition-colors hover:text-[#fdaa78] min-h-[44px] py-2.5 -my-2.5"
                   target={t.href.startsWith("http") ? "_blank" : undefined}
                   rel={t.href.startsWith("http") ? "noopener noreferrer" : undefined}
                 >

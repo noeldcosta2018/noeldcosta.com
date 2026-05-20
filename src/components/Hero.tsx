@@ -60,7 +60,11 @@ export default function Hero({ lang }: { lang: string }) {
             <h1 className="cc-display" style={{
               fontWeight: 900,
               fontSize: 'clamp(36px, 5.5vw, 64px)',
-              lineHeight: 0.95,
+              // Was 0.95 which made 36px font with 34.2px line-height — descenders
+              // clashed into ascenders on the 3-line mobile hero. 1.05 keeps the
+              // display feel on desktop (64px×1.05=67px is still tight) while
+              // giving mobile breathing room.
+              lineHeight: 1.05,
               color: 'var(--cc-text-primary)',
               margin: 0,
               letterSpacing: '-0.02em'
@@ -159,7 +163,7 @@ export default function Hero({ lang }: { lang: string }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Noel D'Costa on LinkedIn"
-                className="cc-linkedin-icon flex-shrink-0 rounded"
+                className="cc-linkedin-icon flex-shrink-0 rounded inline-flex items-center justify-center min-w-[44px] min-h-[44px] -my-2 -mx-2"
               >
                 {/* LinkedIn logo SVG — lucide-react 1.x removed this icon */}
                 <svg
@@ -194,7 +198,7 @@ export default function Hero({ lang }: { lang: string }) {
                   >
                     {s.num}
                   </div>
-                  <div className="font-mono text-[0.65rem] uppercase tracking-[1.5px] text-silver mt-1">
+                  <div className="font-mono text-[0.65rem] uppercase tracking-[1.5px] text-eyebrow mt-1">
                     {s.label}
                   </div>
                 </div>

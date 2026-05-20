@@ -74,7 +74,7 @@ export default function Credentials() {
                 {c.icon}
               </div>
               <h4 className="font-display text-[0.92rem] font-bold mb-0.5">{c.title}</h4>
-              <p className="font-mono text-[0.68rem] text-silver">{c.sub}</p>
+              <p className="font-mono text-[0.68rem] text-eyebrow">{c.sub}</p>
             </div>
           ))}
         </div>
