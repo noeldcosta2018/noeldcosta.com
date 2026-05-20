@@ -224,7 +224,7 @@ export default function TrackRecord() {
                   <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
                   <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
                 </div>
-                <AnimatePresence mode="wait">
+                <AnimatePresence mode="wait" initial={false}>
                   <motion.span
                     key={active.dashboardLabel}
                     initial={{ opacity: 0 }}
@@ -244,8 +244,11 @@ export default function TrackRecord() {
             </div>
 
             <div className="p-5">
-              {/* Metrics — crossfade as a single block keyed by project */}
-              <AnimatePresence mode="wait">
+              {/* Metrics — crossfade as a single block keyed by project.
+                  initial={false} on AnimatePresence so first paint matches
+                  SSR (no hydration mismatch); subsequent key changes still
+                  use the initial/exit values for the crossfade. */}
+              <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={active.company}
                   initial={{ opacity: 0, y: reduced ? 0 : 6 }}
@@ -290,7 +293,7 @@ export default function TrackRecord() {
               </div>
 
               {/* Tag row — crossfade as a single block */}
-              <AnimatePresence mode="wait">
+              <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={`tags-${active.company}`}
                   initial={{ opacity: 0 }}

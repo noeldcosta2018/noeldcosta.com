@@ -1,25 +1,26 @@
-"use client";
-
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowUpRight, ArrowRight } from 'lucide-react';
-import { motion, useReducedMotion } from 'framer-motion';
 
 /**
- * Hero entrance choreography per the precision-sharpening brief.
+ * Hero entrance choreography (CSS keyframes).
  *
  * Sequence (~1600 ms total):
  *   1. Eyebrow + pulse dot fade in       — 0 ms,    400 ms duration
  *   2. Headline reveals word-by-word     — 100 ms,  60 ms stagger
  *   3. Italic emphasis fades in last     — chained from word reveal
- *   4. Body paragraph fades in           — 200 ms after headline ends
- *   5. CTA row fades up                  — 100 ms after body
- *   6. Stat row reveals stat-by-stat     — 80 ms stagger
- *   7. Headshot fades in with scale      — 400 ms after eyebrow
+ *   4. Body paragraph fades in           — 900 ms after eyebrow
+ *   5. CTA row fades up                  — 1000 ms
+ *   6. Stat row reveals stat-by-stat     — 1100 ms, 80 ms stagger
+ *   7. Headshot fades in with scale      — 400 ms (parallel)
  *
- * Respects prefers-reduced-motion: framer-motion's useReducedMotion
- * hook + the global @media guard in globals.css both kick in. With
- * reduced motion, every element renders at its final state instantly.
+ * Uses CSS keyframes rather than framer-motion variants so the
+ * server-rendered initial state matches the client hydration exactly
+ * (no flash, no hydration warning). The global @media (prefers-
+ * reduced-motion: reduce) guard in globals.css collapses every
+ * animation-duration to 0.01 ms automatically.
+ *
+ * No "use client" needed — pure CSS animation runs on the compositor.
  */
 
 const HEADLINE_WORDS = ['I', 'run', 'ERP', 'transformations'];
@@ -33,32 +34,6 @@ const STATS = [
 ] as const;
 
 export default function Hero({ lang }: { lang: string }) {
-  const reduced = useReducedMotion();
-
-  // When motion is reduced, all variants collapse to the visible state
-  // with zero duration — content is correct, motion just disappears.
-  const dur = reduced ? 0 : 0.4;
-
-  const fadeUp = {
-    hidden: { opacity: 0, y: reduced ? 0 : 14 },
-    show: { opacity: 1, y: 0 },
-  };
-
-  const headlineContainer = {
-    hidden: {},
-    show: { transition: { staggerChildren: reduced ? 0 : 0.06, delayChildren: 0.1 } },
-  };
-
-  const word = {
-    hidden: { opacity: 0, y: reduced ? 0 : 24 },
-    show: { opacity: 1, y: 0 },
-  };
-
-  const statsContainer = {
-    hidden: {},
-    show: { transition: { staggerChildren: reduced ? 0 : 0.08, delayChildren: 1.1 } },
-  };
-
   return (
     <section style={{ position: 'relative', overflow: 'hidden' }}>
       {/* Warm glow */}
@@ -72,26 +47,19 @@ export default function Hero({ lang }: { lang: string }) {
           <div className="lg:col-span-6">
 
             {/* Eyebrow — fade in first, 0 ms delay */}
-            <motion.div
-              initial="hidden"
-              animate="show"
-              variants={fadeUp}
-              transition={{ duration: dur, ease: [0.22, 1, 0.36, 1] }}
-              style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}
+            <div
+              className="cc-enter-up"
+              style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, animationDelay: '0ms' }}
             >
               <span className="cc-pulse-dot" style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--cc-papaya)' }} />
               <span className="cc-mono" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'var(--cc-night)', textTransform: 'uppercase' }}>
                 ERP · AI · 25 years
               </span>
-            </motion.div>
+            </div>
 
-            {/* H1 — word-by-word reveal. Italic emphasis is the last "word"
-                in the stagger so it appears at the end of the line. */}
-            <motion.h1
+            {/* H1 — word-by-word reveal via per-span animation-delay */}
+            <h1
               className="cc-display"
-              initial="hidden"
-              animate="show"
-              variants={headlineContainer}
               style={{
                 fontWeight: 900,
                 fontSize: 'clamp(36px, 5.5vw, 64px)',
@@ -104,37 +72,32 @@ export default function Hero({ lang }: { lang: string }) {
                 gap: '0.22em',
               }}
             >
-              {HEADLINE_WORDS.map((w) => (
-                <motion.span
+              {HEADLINE_WORDS.map((w, i) => (
+                <span
                   key={w}
-                  variants={word}
-                  transition={{ duration: 0.56, ease: [0.22, 1, 0.36, 1] }}
-                  style={{ display: 'inline-block' }}
+                  className="cc-enter-up-word"
+                  style={{ animationDelay: `${100 + i * 60}ms` }}
                 >
                   {w}
-                </motion.span>
+                </span>
               ))}
-              <motion.span
-                variants={word}
-                transition={{ duration: 0.56, ease: [0.22, 1, 0.36, 1] }}
+              <span
+                className="cc-enter-up-word"
                 style={{
-                  display: 'inline-block',
+                  animationDelay: `${100 + HEADLINE_WORDS.length * 60}ms`,
                   fontStyle: 'italic',
                   fontWeight: 300,
                   color: 'var(--cc-canyon)',
                 }}
               >
                 {EMPHASIS}
-              </motion.span>
-            </motion.h1>
+              </span>
+            </h1>
 
-            {/* Sub-headline — starts after headline completes (~100 + 4 words × 60 + 560 ≈ 900 ms). */}
-            <motion.p
-              initial="hidden"
-              animate="show"
-              variants={fadeUp}
-              transition={{ duration: 0.56, ease: [0.22, 1, 0.36, 1], delay: reduced ? 0 : 0.9 }}
-              style={{ marginTop: 24, fontSize: 16, color: 'var(--cc-text-body)', maxWidth: 500, lineHeight: 1.65 }}
+            {/* Sub-headline */}
+            <p
+              className="cc-enter-up"
+              style={{ marginTop: 24, fontSize: 16, color: 'var(--cc-text-body)', maxWidth: 500, lineHeight: 1.65, animationDelay: '900ms' }}
             >
               ECC to S/4HANA. AI on SAP. 25 years delivering for{' '}
               <strong className="font-semibold" style={{ color: 'var(--cc-text-primary)' }}>EDGE Group</strong>{' '}
@@ -145,15 +108,12 @@ export default function Hero({ lang }: { lang: string }) {
               <strong className="font-semibold" style={{ color: 'var(--cc-text-primary)' }}>PIF entities</strong>, and the{' '}
               <strong className="font-semibold" style={{ color: 'var(--cc-text-primary)' }}>UAE Government</strong>.
               {' '}CIMA-qualified. I lead the engagement. I don&apos;t subcontract.
-            </motion.p>
+            </p>
 
-            {/* CTAs — 100 ms after body */}
-            <motion.div
-              initial="hidden"
-              animate="show"
-              variants={fadeUp}
-              transition={{ duration: 0.56, ease: [0.22, 1, 0.36, 1], delay: reduced ? 0 : 1.0 }}
-              style={{ marginTop: 28, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}
+            {/* CTAs */}
+            <div
+              className="cc-enter-up"
+              style={{ marginTop: 28, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, animationDelay: '1000ms' }}
             >
               <a
                 href="https://calendly.com/noeldcosta/30min"
@@ -191,16 +151,12 @@ export default function Hero({ lang }: { lang: string }) {
               >
                 See case studies <ArrowRight size={16} />
               </Link>
-            </motion.div>
+            </div>
 
-            {/* Credibility line — same delay as CTAs (reads as a single block) */}
-            <motion.div
-              initial="hidden"
-              animate="show"
-              variants={fadeUp}
-              transition={{ duration: 0.56, ease: [0.22, 1, 0.36, 1], delay: reduced ? 0 : 1.05 }}
-              className="flex flex-wrap items-center gap-x-2 gap-y-1"
-              style={{ marginTop: 20 }}
+            {/* Credibility line */}
+            <div
+              className="cc-enter-up flex flex-wrap items-center gap-x-2 gap-y-1"
+              style={{ marginTop: 20, animationDelay: '1050ms' }}
             >
               <p className="text-sm leading-relaxed" style={{ color: 'var(--cc-text-muted)' }}>
                 CIMA{' '}
@@ -224,21 +180,15 @@ export default function Hero({ lang }: { lang: string }) {
                   <circle cx="4" cy="4" r="2" />
                 </svg>
               </a>
-            </motion.div>
+            </div>
 
-            {/* Four-stat strip — stat-by-stat stagger */}
-            <motion.div
-              initial="hidden"
-              animate="show"
-              variants={statsContainer}
-              className="flex flex-wrap gap-x-0 mt-8 border-t border-corbeau/[0.08] pt-6 max-md:flex-col max-md:divide-y max-md:divide-corbeau/[0.08]"
-            >
+            {/* Four-stat strip — stat-by-stat stagger via per-tile delay */}
+            <div className="flex flex-wrap gap-x-0 mt-8 border-t border-corbeau/[0.08] pt-6 max-md:flex-col max-md:divide-y max-md:divide-corbeau/[0.08]">
               {STATS.map((s, i) => (
-                <motion.div
+                <div
                   key={s.label}
-                  variants={fadeUp}
-                  transition={{ duration: 0.48, ease: [0.22, 1, 0.36, 1] }}
-                  className={`pr-6 mr-6 max-md:pr-0 max-md:mr-0 max-md:py-3 max-md:first:pt-0 ${i < 3 ? 'border-r border-corbeau/[0.10] max-md:border-r-0' : ''}`}
+                  className={`cc-enter-up pr-6 mr-6 max-md:pr-0 max-md:mr-0 max-md:py-3 max-md:first:pt-0 ${i < 3 ? 'border-r border-corbeau/[0.10] max-md:border-r-0' : ''}`}
+                  style={{ animationDelay: `${1100 + i * 80}ms` }}
                 >
                   <div
                     className="font-display font-black tracking-[-0.03em] leading-none text-corbeau tabular-nums"
@@ -249,20 +199,15 @@ export default function Hero({ lang }: { lang: string }) {
                   <div className="font-mono text-[0.72rem] uppercase tracking-[1.5px] text-eyebrow mt-1">
                     {s.label}
                   </div>
-                </motion.div>
+                </div>
               ))}
-            </motion.div>
+            </div>
 
           </div>
 
-          {/* Headshot — desktop only. Fade + slight scale, 400 ms after eyebrow. */}
+          {/* Headshot — desktop only. Fade + slight scale, 400 ms delay. */}
           <div className="hidden lg:block lg:col-span-6">
-            <motion.div
-              initial={{ opacity: 0, scale: reduced ? 1 : 1.02 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.84, ease: [0.22, 1, 0.36, 1], delay: reduced ? 0 : 0.4 }}
-              style={{ position: 'relative' }}
-            >
+            <div className="cc-enter-scale" style={{ position: 'relative', animationDelay: '400ms' }}>
               <div
                 style={{
                   position: 'relative',
@@ -287,7 +232,7 @@ export default function Hero({ lang }: { lang: string }) {
                   className="object-cover object-top w-full h-full"
                 />
               </div>
-            </motion.div>
+            </div>
           </div>
 
         </div>
