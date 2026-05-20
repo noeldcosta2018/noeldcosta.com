@@ -22,11 +22,11 @@ function ServiceCard({
       {/* top accent line */}
       <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${gradient}`} />
 
-      <p className="font-mono text-[0.65rem] text-silver tracking-[2px] uppercase mb-3.5">{num}</p>
+      <p className="font-mono text-[0.72rem] text-silver tracking-[2px] uppercase mb-3.5">{num}</p>
       <h3 className="font-display text-[1.4rem] font-extrabold text-bone tracking-[-0.03em] mb-1">
         {title}
       </h3>
-      <p className="font-mono text-canyon text-[0.7rem] font-medium uppercase tracking-[1.5px] mb-4">
+      <p className="font-mono text-canyon text-[0.72rem] font-medium uppercase tracking-[1.5px] mb-4">
         {who}
       </p>
       {paras.map((p, i) => (
@@ -66,7 +66,7 @@ export default function Services() {
       style={{ padding: "clamp(5rem,10vw,8rem) clamp(1.5rem,5vw,4rem)" }}
     >
       <div className="max-w-[1200px] mx-auto">
-        <p className="font-mono text-[0.68rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
+        <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
           [ 01 · Who I help ]
         </p>
         <h2

@@ -198,7 +198,7 @@ export default function Hero({ lang }: { lang: string }) {
                   >
                     {s.num}
                   </div>
-                  <div className="font-mono text-[0.65rem] uppercase tracking-[1.5px] text-eyebrow mt-1">
+                  <div className="font-mono text-[0.72rem] uppercase tracking-[1.5px] text-eyebrow mt-1">
                     {s.label}
                   </div>
                 </div>

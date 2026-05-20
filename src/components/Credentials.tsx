@@ -46,7 +46,7 @@ export default function Credentials() {
       style={{ padding: "clamp(5rem,10vw,8rem) clamp(1.5rem,5vw,4rem)" }}
     >
       <div className="max-w-[1200px] mx-auto">
-        <p className="font-mono text-[0.68rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
+        <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
           [ 06 · Why this works ]
         </p>
         <h2
@@ -74,7 +74,7 @@ export default function Credentials() {
                 {c.icon}
               </div>
               <h4 className="font-display text-[0.92rem] font-bold mb-0.5">{c.title}</h4>
-              <p className="font-mono text-[0.68rem] text-eyebrow">{c.sub}</p>
+              <p className="font-mono text-[0.72rem] text-eyebrow">{c.sub}</p>
             </div>
           ))}
         </div>

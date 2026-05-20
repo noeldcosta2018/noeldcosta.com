@@ -29,7 +29,7 @@ export default function ProblemStats() {
       style={{ padding: "clamp(5rem,10vw,8rem) clamp(1.5rem,5vw,4rem)" }}
     >
       <div className="max-w-[1200px] mx-auto">
-        <p className="font-mono text-[0.68rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
+        <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
           [ The problem ]
         </p>
         <h2
@@ -65,7 +65,7 @@ export default function ProblemStats() {
               <p className="text-night text-[0.92rem] mt-2.5 max-w-[280px] leading-[1.55]">
                 {s.text}
               </p>
-              <p className="font-mono text-[0.65rem] text-eyebrow mt-2">{s.src}</p>
+              <p className="font-mono text-[0.72rem] text-eyebrow mt-2">{s.src}</p>
             </div>
           ))}
         </div>

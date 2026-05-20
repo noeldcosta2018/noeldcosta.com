@@ -154,7 +154,8 @@ export default function Nav() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 4,
-                padding: '8px 0'
+                padding: '12px 0',
+                minHeight: 44
               }}
               onClick={(e) => {
                 e.stopPropagation();
@@ -201,7 +202,8 @@ export default function Nav() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 4,
-                padding: '8px 0'
+                padding: '12px 0',
+                minHeight: 44
               }}
               onClick={(e) => {
                 e.stopPropagation();
@@ -240,7 +242,11 @@ export default function Nav() {
                 fontWeight: 700,
                 color: 'var(--cc-text-primary)',
                 textDecoration: 'none',
-                fontFamily: 'var(--font-display)'
+                fontFamily: 'var(--font-display)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                minHeight: 44,
+                padding: '12px 0'
               }}
             >
               Case Studies
@@ -255,7 +261,11 @@ export default function Nav() {
                 fontWeight: 700,
                 color: 'var(--cc-text-primary)',
                 textDecoration: 'none',
-                fontFamily: 'var(--font-display)'
+                fontFamily: 'var(--font-display)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                minHeight: 44,
+                padding: '12px 0'
               }}
             >
               About
@@ -270,9 +280,12 @@ export default function Nav() {
                 color: 'var(--cc-corbeau)',
                 fontSize: 13,
                 fontWeight: 700,
-                padding: '10px 20px',
+                padding: '12px 20px',
                 borderRadius: 8,
-                textDecoration: 'none'
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                minHeight: 44
               }}
             >
               Contact
@@ -285,7 +298,7 @@ export default function Nav() {
       {mobileOpen && (
         <div className="md:hidden border-t border-corbeau/[0.08] bg-bone">
           <div className="px-[clamp(1.5rem,5vw,4rem)] py-4 flex flex-col gap-1">
-            <div className="text-[0.68rem] font-semibold tracking-[2px] uppercase text-eyebrow pt-2 pb-1">
+            <div className="text-[0.72rem] font-semibold tracking-[2px] uppercase text-eyebrow pt-2 pb-1">
               Solutions
             </div>
             {PILLARS.map((p) => (
@@ -297,7 +310,7 @@ export default function Nav() {
                 {p.label}
               </Link>
             ))}
-            <div className="text-[0.68rem] font-semibold tracking-[2px] uppercase text-eyebrow pt-4 pb-1">
+            <div className="text-[0.72rem] font-semibold tracking-[2px] uppercase text-eyebrow pt-4 pb-1">
               Tools
             </div>
             {TOOLS.map((t) => (
@@ -309,7 +322,7 @@ export default function Nav() {
                 {t.label}
               </Link>
             ))}
-            <div className="text-[0.68rem] font-semibold tracking-[2px] uppercase text-eyebrow pt-4 pb-1">
+            <div className="text-[0.72rem] font-semibold tracking-[2px] uppercase text-eyebrow pt-4 pb-1">
               Company
             </div>
             <Link

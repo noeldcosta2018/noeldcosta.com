@@ -53,7 +53,7 @@ export default function FAQ() {
             className="font-display font-black tracking-[-0.04em] leading-[1.08] text-corbeau mt-4"
             style={{ fontSize: 'clamp(1.75rem,3.5vw,2.25rem)' }}
           >
-            Common questions.
+            What CFOs ask me first.
           </h2>
         </div>
 

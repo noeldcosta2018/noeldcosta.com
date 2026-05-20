@@ -26,15 +26,15 @@ export default function Testimonials() {
       style={{ padding: "clamp(5rem,10vw,8rem) clamp(1.5rem,5vw,4rem)" }}
     >
       <div className="max-w-[1200px] mx-auto">
-        <p className="font-mono text-[0.68rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
+        <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
           [ 07 · From people I&apos;ve worked with ]
         </p>
         <h2
           className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-10 text-corbeau"
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
-          They&apos;ll tell you{" "}
-          <span className="cc-emphasis-italic">what it&apos;s like.</span>
+          Don&apos;t take my word for it.{" "}
+          <span className="cc-emphasis-italic">Read theirs.</span>
         </h2>
 
         <div className="grid grid-cols-3 gap-3.5 max-md:grid-cols-2 max-sm:grid-cols-1">

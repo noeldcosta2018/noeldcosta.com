@@ -21,7 +21,7 @@ export default function LogoScroll() {
       className="bg-cream border-t border-b border-corbeau/[0.04]"
       style={{ padding: "2.5rem clamp(1.5rem,5vw,4rem)" }}
     >
-      <p className="text-center font-mono text-[0.68rem] text-eyebrow tracking-[2.5px] uppercase mb-5">
+      <p className="text-center font-mono text-[0.72rem] text-eyebrow tracking-[2.5px] uppercase mb-5">
         Delivered for companies including
       </p>
       <div className="overflow-hidden">

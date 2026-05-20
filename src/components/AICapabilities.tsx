@@ -69,7 +69,7 @@ export default function AICapabilities() {
       style={{ padding: "clamp(5rem,10vw,8rem) clamp(1.5rem,5vw,4rem)" }}
     >
       <div className="max-w-[1200px] mx-auto">
-        <p className="font-mono text-[0.68rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
+        <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
           [ 02 · AI capabilities ]
         </p>
         <h2

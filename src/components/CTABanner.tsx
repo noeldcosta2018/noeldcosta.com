@@ -24,7 +24,7 @@ export default function CTABanner() {
         />
 
         <div className="relative">
-          <p className="font-mono text-[0.68rem] font-semibold tracking-[2.5px] uppercase text-corbeau mb-3.5 flex items-center gap-2">
+          <p className="font-mono text-[0.72rem] font-semibold tracking-[2.5px] uppercase text-corbeau mb-3.5 flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-corbeau" />
             READY WHEN YOU ARE
           </p>
