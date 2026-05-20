@@ -35,14 +35,19 @@ export default function AboutHero() {
           </a>
         </div>
 
-        {/* Headshot */}
+        {/* Headshot — Ken-Burns scale 1.0 → 1.05 over 12s, once on load.
+            overflow-hidden on the frame keeps the scale visually contained;
+            the global reduced-motion guard collapses the keyframe to instant
+            when the user prefers reduced motion. */}
         <div className="shrink-0 order-1 md:order-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/headshot.png"
-            alt="Portrait of Noel D'Costa"
-            className="w-[120px] h-[120px] md:w-[140px] md:h-[140px] rounded-2xl object-cover border-2 border-papaya/60 shadow-[0_8px_28px_rgba(14,16,32,0.12)]"
-          />
+          <div className="w-[120px] h-[120px] md:w-[140px] md:h-[140px] rounded-2xl border-2 border-papaya/60 shadow-[0_8px_28px_rgba(14,16,32,0.12)] overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/headshot.png"
+              alt="Portrait of Noel D'Costa"
+              className="w-full h-full object-cover cc-ken-burns"
+            />
+          </div>
         </div>
       </div>
     </FadeUp>

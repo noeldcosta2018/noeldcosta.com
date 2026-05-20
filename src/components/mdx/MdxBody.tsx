@@ -12,6 +12,8 @@ import DecisionTree from "@/components/article/diagrams/DecisionTree";
 import StatBlock from "@/components/article/diagrams/StatBlock";
 import TestimonialsGrid from "@/components/article/testimonials/TestimonialsGrid";
 import ContactBlock from "@/components/article/contact/ContactBlock";
+import CalendlyEmbed from "@/components/article/contact/CalendlyEmbed";
+import ContactHero from "@/components/article/contact/ContactHero";
 import FeaturedOn from "@/components/article/featured/FeaturedOn";
 import AboutHero from "@/components/article/hero/AboutHero";
 import CredibilityBand from "@/components/article/credibility/CredibilityBand";
@@ -144,6 +146,8 @@ export default function MdxBody({ source }: { source: string }) {
             "programmes-list",
             "capabilities-row",
             "safeguard-band",
+            "calendly-embed",
+            "contact-hero",
           ]);
           if (
             node?.children?.length === 1 &&
@@ -273,6 +277,13 @@ export default function MdxBody({ source }: { source: string }) {
         // CTABanner.tsx papaya→canyon gradient as a chapter break.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         "safeguard-band": ((_props: any) => <SafeguardBand />) as never,
+        // Lazy-loaded Calendly inline widget for the Contact page.
+        // Loads on first user interaction or after a 2s delay.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "calendly-embed": ((_props: any) => <CalendlyEmbed />) as never,
+        // Contact-page hero (one-sentence headline + ambient warm gradient).
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "contact-hero": ((_props: any) => <ContactHero />) as never,
         // FAQ accordion. Articles use <details><summary>Q</summary>A</details>
         // inline HTML (passed through by rehype-raw) for their FAQ sections.
         // Styled here so they read as a single coherent accordion module.
