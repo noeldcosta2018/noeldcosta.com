@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import CategoryPage from "@/components/CategoryPage";
+import CaseStudyPortfolioPage from "@/components/case-studies/CaseStudyPortfolioPage";
 import { CATEGORIES, LOCALES, type Locale } from "@/lib/content";
 import { SITE_URL } from "@/lib/seo";
 
@@ -33,5 +34,8 @@ export default async function Route(
 ) {
   const { lang, category } = await props.params;
   if (!LOCALES.includes(lang as Locale)) notFound();
+  // Case studies get the bespoke portfolio layout (hero + filters +
+  // anchor/archive grids). Other categories use the generic listing.
+  if (category === "case-studies") return <CaseStudyPortfolioPage />;
   return <CategoryPage category={category} locale={lang as Locale} />;
 }

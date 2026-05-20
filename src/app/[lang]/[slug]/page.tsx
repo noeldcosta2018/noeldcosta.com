@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import PostPage from "@/components/PostPage";
 import MdxPageLayout from "@/components/MdxPageLayout";
 import CategoryPage from "@/components/CategoryPage";
+import CaseStudyPortfolioPage from "@/components/case-studies/CaseStudyPortfolioPage";
 import {
   CATEGORIES,
   getAllPostSlugs,
@@ -96,7 +97,11 @@ export default async function LocalizedRoute(
   // Category slug shortcut: /en/<category-slug> renders the same
   // CategoryPage component as /en/category/<category-slug>. Canonical
   // URL points at the /category/ form (set in generateMetadata).
+  // Special case: "case-studies" gets the bespoke portfolio layout
+  // (hero + filters + anchor/archive grids) instead of the generic
+  // category listing.
   if (isCategorySlug(slug)) {
+    if (slug === "case-studies") return <CaseStudyPortfolioPage />;
     return <CategoryPage category={slug} locale={locale} />;
   }
 
