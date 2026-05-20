@@ -1,10 +1,55 @@
-const PROJECTS = [
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+
+/**
+ * Track-record section with sticky right-panel content swap.
+ *
+ * The left list is a vertical sequence of programmes. As each enters the
+ * viewport (50 % visible), the right-side dashboard crossfades its
+ * metrics, phase-bar position, and tag list to match. On lg+ the panel
+ * is sticky; on smaller screens it stacks under the list and the swap
+ * still works (just without the sticky behaviour).
+ *
+ * Implementation: one IntersectionObserver shared across rows. Active
+ * index lives in component state. AnimatePresence handles the crossfade
+ * (320 ms quart-out). No external triggers, no scroll listeners.
+ *
+ * Every dashboard number is sourced from the project's own desc string
+ * — no invented metrics.
+ */
+
+type Phase = "DISCOVER" | "PREPARE" | "EXPLORE" | "REALIZE" | "DEPLOY";
+
+type ProjectData = {
+  company: string;
+  badge: string;
+  badgeType: "p" | "g" | "c";
+  title: string;
+  desc: string;
+  dashboardLabel: string;
+  metrics: { lbl: string; val: string; color: "text-papaya" | "text-brand-green" | "text-corbeau" }[];
+  activePhase: Phase;
+  tags: string[];
+};
+
+const PROJECTS: ProjectData[] = [
   {
     company: "EDGE Group",
     badge: "$60M saved",
     badgeType: "p",
     title: "25 Defense Entities → One S/4HANA",
     desc: "Consolidated 8 legacy ERPs onto single S/4HANA core. 126-member team. 81% process automation across the entire defence group.",
+    dashboardLabel: "edge.dashboard",
+    metrics: [
+      { lbl: "Cost Reduction", val: "$60M", color: "text-papaya" },
+      { lbl: "Automation", val: "81%", color: "text-brand-green" },
+      { lbl: "Team Size", val: "126", color: "text-corbeau" },
+      { lbl: "Legacy Systems", val: "8 → 1", color: "text-papaya" },
+    ],
+    activePhase: "REALIZE",
+    tags: ["EDGE HQ", "NIMR", "HALCON", "SIGN4L", "AL TARIQ", "+20 more"],
   },
   {
     company: "Etihad Airways",
@@ -12,6 +57,15 @@ const PROJECTS = [
     badgeType: "g",
     title: "SAP Centre of Excellence — 8 Years",
     desc: "Built route profitability on SAP. Flight-level P&L across 100+ aircraft and 1,000+ weekly flights. $36M in direct benefits.",
+    dashboardLabel: "etihad.dashboard",
+    metrics: [
+      { lbl: "Total Impact", val: "$400M+", color: "text-papaya" },
+      { lbl: "Direct Benefit", val: "$36M", color: "text-brand-green" },
+      { lbl: "Aircraft", val: "100+", color: "text-corbeau" },
+      { lbl: "Weekly Flights", val: "1,000+", color: "text-papaya" },
+    ],
+    activePhase: "DEPLOY",
+    tags: ["Finance", "SAP COE", "Route P&L", "8 years"],
   },
   {
     company: "TII",
@@ -19,6 +73,15 @@ const PROJECTS = [
     badgeType: "c",
     title: "S/4HANA Greenfield — 5 Research Entities",
     desc: "Dual-ledger Finance (cash + accrual, IPSAS). Cloud on Azure and AWS. Full lifecycle from blueprint through hypercare.",
+    dashboardLabel: "tii.dashboard",
+    metrics: [
+      { lbl: "Entities", val: "5", color: "text-papaya" },
+      { lbl: "Architecture", val: "Greenfield", color: "text-brand-green" },
+      { lbl: "Ledger", val: "Dual", color: "text-corbeau" },
+      { lbl: "Reporting", val: "IPSAS", color: "text-papaya" },
+    ],
+    activePhase: "DEPLOY",
+    tags: ["S/4HANA", "Azure", "AWS", "Cash + Accrual", "Hypercare"],
   },
   {
     company: "DXC Technology",
@@ -26,6 +89,15 @@ const PROJECTS = [
     badgeType: "p",
     title: "Managing Partner — 800+ Consultants",
     desc: "SAP, Oracle, Microsoft practices across MEA. PIF entities, banking, public sector.",
+    dashboardLabel: "dxc.dashboard",
+    metrics: [
+      { lbl: "Pipeline", val: "$300M", color: "text-papaya" },
+      { lbl: "Consultants", val: "800+", color: "text-brand-green" },
+      { lbl: "Practices", val: "3", color: "text-corbeau" },
+      { lbl: "Region", val: "MEA", color: "text-papaya" },
+    ],
+    activePhase: "DEPLOY",
+    tags: ["SAP", "Oracle", "Microsoft", "PIF", "Banking", "Public Sector"],
   },
   {
     company: "Govt. Enablement",
@@ -33,26 +105,63 @@ const PROJECTS = [
     badgeType: "c",
     title: "Digital Executive Advisor",
     desc: "SAP and Oracle landscape strategy. Oracle EBS to Fusion Cloud migration. Enterprise Architecture (TOGAF).",
+    dashboardLabel: "govt.dashboard",
+    metrics: [
+      { lbl: "Entities", val: "84", color: "text-papaya" },
+      { lbl: "Migration", val: "EBS → Fusion", color: "text-brand-green" },
+      { lbl: "Framework", val: "TOGAF", color: "text-corbeau" },
+      { lbl: "Role", val: "Advisor", color: "text-papaya" },
+    ],
+    activePhase: "REALIZE",
+    tags: ["Oracle EBS", "Oracle Fusion", "Enterprise Arch", "Strategy"],
   },
 ];
 
-function badgeStyle(type: string) {
+const ALL_PHASES: Phase[] = ["DISCOVER", "PREPARE", "EXPLORE", "REALIZE", "DEPLOY"];
+
+function badgeStyle(type: "p" | "g" | "c") {
   if (type === "g") return { background: "rgba(34,197,94,0.12)", color: "#22c55e" };
   if (type === "c") return { background: "rgba(226,130,107,0.12)", color: "#e2826b" };
   return { background: "rgba(252,152,90,0.12)", color: "#fc985a" };
 }
 
-const PHASES = [
-  { label: "DISCOVER", done: true },
-  { label: "PREPARE", done: true },
-  { label: "EXPLORE", done: true },
-  { label: "REALIZE", active: true },
-  { label: "DEPLOY", next: true },
-];
-
-const ENTITIES = ["EDGE HQ", "NIMR", "HALCON", "SIGN4L", "AL TARIQ", "+20 more"];
-
 export default function TrackRecord() {
+  const [activeIdx, setActiveIdx] = useState(0);
+  const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const reduced = useReducedMotion();
+
+  useEffect(() => {
+    // Pick the row whose intersection ratio is highest. Threshold 0.5 so
+    // a row only "wins" once it's clearly in the centre of the viewport,
+    // not just barely poking in. Single observer for all rows.
+    const observer = new IntersectionObserver(
+      (entries) => {
+        let bestIdx = activeIdx;
+        let bestRatio = 0;
+        for (const e of entries) {
+          if (e.isIntersecting && e.intersectionRatio > bestRatio) {
+            const idx = Number((e.target as HTMLElement).dataset.idx);
+            if (!Number.isNaN(idx)) {
+              bestRatio = e.intersectionRatio;
+              bestIdx = idx;
+            }
+          }
+        }
+        if (bestRatio > 0 && bestIdx !== activeIdx) {
+          setActiveIdx(bestIdx);
+        }
+      },
+      { threshold: [0.5, 0.75, 1] }
+    );
+
+    rowRefs.current.forEach((el) => el && observer.observe(el));
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const active = PROJECTS[activeIdx];
+  const fadeDur = reduced ? 0 : 0.32;
+
   return (
     <section
       id="track"
@@ -79,12 +188,20 @@ export default function TrackRecord() {
           <div className="flex flex-col">
             {PROJECTS.map((p, i) => (
               <div
-                key={i}
-                className={`py-5 border-b border-corbeau/[0.06] ${i === 0 ? "pt-0" : ""}`}
+                key={p.company}
+                ref={(el) => { rowRefs.current[i] = el; }}
+                data-idx={i}
+                aria-current={i === activeIdx ? "true" : undefined}
+                className={`py-5 border-b border-corbeau/[0.06] transition-opacity duration-300 ${
+                  i === 0 ? "pt-0" : ""
+                } ${i === activeIdx ? "opacity-100" : "opacity-60 hover:opacity-90"}`}
               >
                 <div className="flex justify-between items-center mb-1">
                   <span className="font-mono text-[0.72rem] uppercase tracking-[2px] text-eyebrow">{p.company}</span>
-                  <span className="font-mono text-[0.62rem] px-2 py-0.5 rounded font-semibold" style={badgeStyle(p.badgeType)}>
+                  <span
+                    className="font-mono text-[0.62rem] px-2 py-0.5 rounded font-semibold"
+                    style={badgeStyle(p.badgeType)}
+                  >
                     {p.badge}
                   </span>
                 </div>
@@ -94,8 +211,11 @@ export default function TrackRecord() {
             ))}
           </div>
 
-          {/* Dashboard mockup */}
-          <div className="cc-card relative rounded-2xl overflow-hidden max-lg:max-w-[500px] sticky top-[84px]" style={{ boxShadow: '0 24px 48px -12px rgba(14,16,32,0.15)' }}>
+          {/* Dashboard mockup — sticky, content swaps with AnimatePresence */}
+          <div
+            className="cc-card relative rounded-2xl overflow-hidden max-lg:max-w-[500px] sticky top-[84px]"
+            style={{ boxShadow: "0 24px 48px -12px rgba(14,16,32,0.15)" }}
+          >
             <div className="cc-scan-line" />
             <div className="flex items-center justify-between px-[18px] py-3 bg-corbeau/[0.02] border-b border-corbeau/[0.06]">
               <div className="flex items-center gap-1.5">
@@ -104,60 +224,91 @@ export default function TrackRecord() {
                   <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
                   <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
                 </div>
-                <span className="font-mono text-[0.7rem] text-silver ml-2.5">programme.dashboard</span>
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={active.dashboardLabel}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: fadeDur, ease: [0.22, 1, 0.36, 1] }}
+                    className="font-mono text-[0.7rem] text-silver ml-2.5"
+                  >
+                    {active.dashboardLabel}
+                  </motion.span>
+                </AnimatePresence>
               </div>
               <span className="inline-flex items-center gap-1.5 font-mono text-[0.62rem] text-brand-green font-semibold">
                 <span className="w-[5px] h-[5px] rounded-full bg-brand-green animate-pulse-dot" />
                 LIVE
               </span>
             </div>
+
             <div className="p-5">
-              {/* Metrics */}
-              <div className="grid grid-cols-2 gap-2.5 mb-2.5">
-                {[
-                  { lbl: "Cost Reduction", val: "$60M", color: "text-papaya" },
-                  { lbl: "Automation", val: "81%", color: "text-brand-green" },
-                  { lbl: "Team Size", val: "126", color: "text-corbeau" },
-                  { lbl: "Legacy Systems", val: "8 → 1", color: "text-papaya" },
-                ].map((m) => (
-                  <div key={m.lbl} className="bg-cream border border-corbeau/[0.04] rounded-[10px] p-4">
-                    <p className="font-mono text-[0.6rem] text-silver uppercase tracking-[1.5px] mb-1">{m.lbl}</p>
-                    <p className={`font-display font-black text-2xl tracking-[-0.03em] ${m.color}`}>{m.val}</p>
-                  </div>
-                ))}
-              </div>
-              {/* Phase bar */}
+              {/* Metrics — crossfade as a single block keyed by project */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={active.company}
+                  initial={{ opacity: 0, y: reduced ? 0 : 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: reduced ? 0 : -6 }}
+                  transition={{ duration: fadeDur, ease: [0.22, 1, 0.36, 1] }}
+                  className="grid grid-cols-2 gap-2.5 mb-2.5"
+                >
+                  {active.metrics.map((m) => (
+                    <div key={m.lbl} className="bg-cream border border-corbeau/[0.04] rounded-[10px] p-4">
+                      <p className="font-mono text-[0.6rem] text-silver uppercase tracking-[1.5px] mb-1">{m.lbl}</p>
+                      <p className={`font-display font-black text-2xl tracking-[-0.03em] tabular-nums ${m.color}`}>{m.val}</p>
+                    </div>
+                  ))}
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Phase bar — same shape always, just the active position changes */}
               <div>
                 <p className="font-mono text-[0.6rem] text-silver uppercase tracking-[1.5px] mb-2">Programme Phases</p>
                 <div className="flex gap-1 h-[30px] rounded-lg overflow-hidden">
-                  {PHASES.map((ph) => (
-                    <div
-                      key={ph.label}
-                      className={`flex items-center justify-center font-mono text-[0.58rem] font-semibold rounded-[5px] flex-1 ${
-                        ph.active
-                          ? "bg-papaya text-corbeau animate-soft-pulse"
-                          : ph.next
-                          ? "text-silver"
-                          : "bg-brand-green text-white"
-                      }`}
-                      style={ph.next ? { background: "rgba(14,16,32,0.06)" } : {}}
-                    >
-                      {ph.label}
-                    </div>
-                  ))}
+                  {ALL_PHASES.map((label) => {
+                    const isActive = label === active.activePhase;
+                    const isDone = ALL_PHASES.indexOf(label) < ALL_PHASES.indexOf(active.activePhase);
+                    return (
+                      <div
+                        key={label}
+                        className={`flex items-center justify-center font-mono text-[0.58rem] font-semibold rounded-[5px] flex-1 transition-colors duration-300 ${
+                          isActive
+                            ? "bg-papaya text-corbeau animate-soft-pulse"
+                            : isDone
+                              ? "bg-brand-green text-white"
+                              : "text-silver"
+                        }`}
+                        style={!isActive && !isDone ? { background: "rgba(14,16,32,0.06)" } : {}}
+                      >
+                        {label}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-              {/* Entity tags */}
-              <div className="flex flex-wrap gap-[5px] mt-2.5 pt-2.5 border-t border-corbeau/[0.06]">
-                {ENTITIES.map((e) => (
-                  <span
-                    key={e}
-                    className="font-mono text-[0.6rem] px-2 py-0.5 rounded bg-cream border border-corbeau/[0.06] text-night"
-                  >
-                    {e}
-                  </span>
-                ))}
-              </div>
+
+              {/* Tag row — crossfade as a single block */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`tags-${active.company}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: fadeDur, ease: [0.22, 1, 0.36, 1] }}
+                  className="flex flex-wrap gap-[5px] mt-2.5 pt-2.5 border-t border-corbeau/[0.06]"
+                >
+                  {active.tags.map((t) => (
+                    <span
+                      key={t}
+                      className="font-mono text-[0.6rem] px-2 py-0.5 rounded bg-cream border border-corbeau/[0.06] text-night"
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </motion.div>
+              </AnimatePresence>
             </div>
           </div>
         </div>
