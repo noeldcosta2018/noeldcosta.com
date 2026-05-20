@@ -102,29 +102,29 @@ export default function PostPage({
         <div className="max-w-[1200px] mx-auto px-[clamp(1.5rem,5vw,4rem)]">
           {/* Breadcrumb — single-line mono eyebrow, matches Hero pattern */}
           <nav aria-label="Breadcrumb" className="mb-10">
-            <ol className="flex flex-wrap gap-x-2 gap-y-1 items-center font-mono text-[0.68rem] font-medium tracking-[2px] uppercase">
+            <ol className="flex flex-wrap gap-x-2 gap-y-1 items-center font-mono text-[0.72rem] font-medium tracking-[2px] uppercase">
               <li>
                 <Link
                   href={`${localePrefix}/`}
-                  className="text-silver hover:text-papaya transition-colors"
+                  className="text-eyebrow hover:text-papaya transition-colors"
                 >
                   Home
                 </Link>
               </li>
               {catMeta && (
                 <>
-                  <li aria-hidden className="text-silver/40">/</li>
+                  <li aria-hidden className="text-eyebrow/40">/</li>
                   <li>
                     <Link
                       href={`${localePrefix}/category/${catMeta.slug}`}
-                      className="text-silver hover:text-papaya transition-colors"
+                      className="text-eyebrow hover:text-papaya transition-colors"
                     >
                       {catMeta.label}
                     </Link>
                   </li>
                 </>
               )}
-              <li aria-hidden className="text-silver/40">/</li>
+              <li aria-hidden className="text-eyebrow/40">/</li>
               <li
                 aria-current="page"
                 className="text-corbeau/60 truncate max-w-[200px] md:max-w-[360px] normal-case tracking-normal text-[0.68rem]"

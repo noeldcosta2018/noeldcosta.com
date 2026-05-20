@@ -69,7 +69,7 @@ function VideoCard({ video }: { video: YouTubeVideo }) {
         <h4 className="font-display text-[0.95rem] font-bold tracking-[-0.02em] leading-[1.3] mb-1.5">
           {video.title}
         </h4>
-        <p className="font-mono text-[0.68rem] text-silver tracking-[0.3px]">
+        <p className="font-mono text-[0.72rem] text-eyebrow tracking-[0.3px]">
           {video.description}
         </p>
       </div>

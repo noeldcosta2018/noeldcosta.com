@@ -47,7 +47,7 @@ export default function CTASection({
           </div>
         </div>
         <div className="flex-1">
-          <p className="font-mono text-[0.68rem] font-medium tracking-[2px] uppercase text-papaya mb-3">
+          <p className="font-mono text-[0.72rem] font-medium tracking-[2px] uppercase text-papaya mb-3">
             Next step
           </p>
           <h3 className="font-display font-black text-corbeau text-[1.6rem] md:text-[1.9rem] tracking-[-0.03em] leading-[1.15] mb-4 max-w-[30rem]">

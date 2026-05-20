@@ -51,7 +51,7 @@ export default function Testimonials() {
               </p>
               <div>
                 <span className="font-display font-bold text-[0.9rem] block">{t.name}</span>
-                <span className="text-[0.75rem] text-silver">{t.role}</span>
+                <span className="text-[0.75rem] text-eyebrow">{t.role}</span>
               </div>
             </div>
           ))}

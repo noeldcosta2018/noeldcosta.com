@@ -93,7 +93,7 @@ export default function RelatedArticles({
     <section className="mt-16 mb-4 rounded-[20px] bg-gradient-to-br from-cream to-paper border border-corbeau/[0.08] p-8 md:p-10 shadow-[0_2px_20px_rgba(14,16,32,0.04)]">
       <header className="flex items-baseline justify-between mb-7 pb-5 border-b border-corbeau/[0.08]">
         <div>
-          <p className="font-mono text-[0.68rem] font-medium tracking-[2px] uppercase text-papaya mb-1.5">
+          <p className="font-mono text-[0.72rem] font-medium tracking-[2px] uppercase text-papaya mb-1.5">
             {label}
           </p>
           <h2 className="font-display font-black text-corbeau text-[1.35rem] md:text-[1.5rem] tracking-[-0.025em] leading-[1.1]">
@@ -102,7 +102,7 @@ export default function RelatedArticles({
         </div>
         <Link
           href={`${localePrefix}/`}
-          className="hidden md:inline-flex items-center gap-1.5 font-mono text-[0.68rem] font-medium tracking-[2px] uppercase text-corbeau/60 hover:text-papaya transition-colors"
+          className="hidden md:inline-flex items-center gap-1.5 font-mono text-[0.72rem] font-medium tracking-[2px] uppercase text-corbeau/60 hover:text-papaya transition-colors"
         >
           Browse all
           <span aria-hidden>→</span>

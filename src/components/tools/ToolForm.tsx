@@ -377,7 +377,7 @@ export default function ToolForm({
                 value={(values[field.name] as string) || ""}
                 onChange={(e) => set(field.name, e.target.value)}
               />
-              <p className="text-[0.7rem] text-silver mt-1">
+              <p className="text-[0.75rem] text-eyebrow mt-1">
                 Separate multiple values with commas.
               </p>
             </>

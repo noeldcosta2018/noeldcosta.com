@@ -98,7 +98,7 @@ function Label({
 
 function Hint({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-xs text-silver mt-1 leading-relaxed">{children}</p>
+    <p className="text-xs text-eyebrow mt-1 leading-relaxed">{children}</p>
   );
 }
 
@@ -218,7 +218,7 @@ function RadioCard<T extends string | number>({
         {label}
       </p>
       {detail && (
-        <p className="text-xs text-silver mt-0.5 leading-relaxed">{detail}</p>
+        <p className="text-xs text-eyebrow mt-0.5 leading-relaxed">{detail}</p>
       )}
     </button>
   );
@@ -394,14 +394,14 @@ function StepIndicator({
                       ? "border-papaya bg-papaya text-white"
                       : done
                       ? "border-papaya bg-papaya/15 text-papaya"
-                      : "border-corbeau/20 bg-bone text-silver"
+                      : "border-corbeau/20 bg-bone text-eyebrow"
                   }`}
                 >
                   {done && !active ? "✓" : step.id}
                 </span>
                 <span
                   className={`text-[10px] font-semibold hidden sm:block ${
-                    active ? "text-papaya" : done ? "text-night" : "text-silver"
+                    active ? "text-papaya" : done ? "text-night" : "text-eyebrow"
                   }`}
                 >
                   {step.label}
@@ -457,7 +457,7 @@ function ModuleGrid({
     <div className="space-y-4">
       {categories.map((cat) => (
         <div key={cat}>
-          <p className="text-xs font-semibold text-silver uppercase tracking-wide mb-2">{cat}</p>
+          <p className="text-xs font-semibold text-eyebrow uppercase tracking-wide mb-2">{cat}</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {MODULE_OPTIONS.filter((m) => m.category === cat).map((m) => {
               const on = selected.includes(m.value);
@@ -516,7 +516,7 @@ function CountryRow({
         <button
           type="button"
           onClick={onRemove}
-          className="text-silver hover:text-canyon text-sm px-2 py-1 shrink-0"
+          className="text-eyebrow hover:text-canyon text-sm px-2 py-1 shrink-0"
           aria-label="Remove country"
         >
           ✕
@@ -524,7 +524,7 @@ function CountryRow({
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <div>
-          <p className="text-[10px] text-silver mb-1 font-semibold uppercase tracking-wide">Users</p>
+          <p className="text-[10px] text-eyebrow mb-1 font-semibold uppercase tracking-wide">Users</p>
           <input
             type="number"
             value={entry.users}
@@ -534,7 +534,7 @@ function CountryRow({
           />
         </div>
         <div>
-          <p className="text-[10px] text-silver mb-1 font-semibold uppercase tracking-wide">Entities</p>
+          <p className="text-[10px] text-eyebrow mb-1 font-semibold uppercase tracking-wide">Entities</p>
           <input
             type="number"
             value={entry.legalEntities}
@@ -544,7 +544,7 @@ function CountryRow({
           />
         </div>
         <div>
-          <p className="text-[10px] text-silver mb-1 font-semibold uppercase tracking-wide">Local complexity</p>
+          <p className="text-[10px] text-eyebrow mb-1 font-semibold uppercase tracking-wide">Local complexity</p>
           <select
             value={entry.localizationComplexity}
             onChange={(e) => onChange({ ...entry, localizationComplexity: e.target.value as ComplexityLevel })}
@@ -556,7 +556,7 @@ function CountryRow({
           </select>
         </div>
         <div>
-          <p className="text-[10px] text-silver mb-1 font-semibold uppercase tracking-wide">Wave</p>
+          <p className="text-[10px] text-eyebrow mb-1 font-semibold uppercase tracking-wide">Wave</p>
           <input
             type="number"
             value={entry.wave}
@@ -714,16 +714,16 @@ function ExecSummary({ result }: { result: CalculationResult }) {
           <p className="font-display font-black text-corbeau leading-none tracking-tight"
             style={{ fontSize: "clamp(1.8rem, 4vw, 2.6rem)" }}>
             {formatCurrency(totalY1.low, currency, true)}
-            <span className="text-silver mx-2 font-normal">–</span>
+            <span className="text-eyebrow mx-2 font-normal">–</span>
             {formatCurrency(totalY1.high, currency, true)}
           </p>
-          <p className="text-sm text-silver mt-1">
+          <p className="text-sm text-eyebrow mt-1">
             Expected: <span className="font-semibold text-night">{formatCurrency(totalY1.expected, currency, true)}</span>
             {" "}· Year 1 total
           </p>
         </div>
         <div className="shrink-0 text-right">
-          <p className="text-xs font-mono text-silver uppercase tracking-wide mb-1">Complexity</p>
+          <p className="text-xs font-mono text-eyebrow uppercase tracking-wide mb-1">Complexity</p>
           <div className="flex items-center gap-1.5 justify-end">
             <div className="w-8 h-8 rounded-full bg-papaya/15 flex items-center justify-center">
               <span className="font-mono font-black text-papaya text-xs">{result.complexityScore}</span>
@@ -741,9 +741,9 @@ function ExecSummary({ result }: { result: CalculationResult }) {
           { label: "Country scope",       value: multiLabel, sub: `${result.countryResults.length} ${result.countryResults.length === 1 ? "country" : "countries"}` },
         ].map((stat) => (
           <div key={stat.label} className="rounded-lg bg-paper/80 border border-corbeau/8 px-3 py-3">
-            <p className="text-[10px] font-semibold text-silver uppercase tracking-wide mb-1">{stat.label}</p>
+            <p className="text-[10px] font-semibold text-eyebrow uppercase tracking-wide mb-1">{stat.label}</p>
             <p className="font-mono font-bold text-corbeau text-base leading-tight">{stat.value}</p>
-            <p className="text-[10px] text-silver mt-0.5">{stat.sub}</p>
+            <p className="text-[10px] text-eyebrow mt-0.5">{stat.sub}</p>
           </div>
         ))}
       </div>
@@ -933,7 +933,7 @@ function CIOView({ result }: { result: CalculationResult }) {
                 ? "Moderate. Requires experienced SI and clear programme governance."
                 : "High. Needs dedicated programme management and phased delivery."}
             </p>
-            <p className="text-xs text-silver mt-1">
+            <p className="text-xs text-eyebrow mt-1">
               Timeline: <span className="font-semibold text-night">{timeline.minimumMonths}–{timeline.maximumMonths} months</span>
               {" "}(expected {timeline.expectedMonths} months)
             </p>
@@ -957,7 +957,7 @@ function CIOView({ result }: { result: CalculationResult }) {
         <div className="space-y-2">
           {timeline.phases.map((phase, i) => (
             <div key={phase.name} className="flex items-center gap-3">
-              <span className="text-xs font-mono text-silver w-4 shrink-0">{i + 1}</span>
+              <span className="text-xs font-mono text-eyebrow w-4 shrink-0">{i + 1}</span>
               <div className="flex-1 h-6 bg-bone rounded overflow-hidden">
                 <div
                   style={{
@@ -1007,7 +1007,7 @@ function CountryTable({ result }: { result: CalculationResult }) {
         <thead>
           <tr className="border-b border-corbeau/10">
             {["Country", "Users", "Entities", "Wave", "Local complexity", "Cost share", "Expected cost"].map((h) => (
-              <th key={h} className="text-left text-xs font-semibold text-silver pb-2 pr-3 whitespace-nowrap">
+              <th key={h} className="text-left text-xs font-semibold text-eyebrow pb-2 pr-3 whitespace-nowrap">
                 {h}
               </th>
             ))}
@@ -1122,7 +1122,7 @@ function ScenarioCompare({
   if (saved.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-corbeau/20 py-12 text-center">
-        <p className="text-silver text-sm">No saved scenarios yet.</p>
+        <p className="text-eyebrow text-sm">No saved scenarios yet.</p>
         <p className="text-xs text-moon mt-1">Run a calculation and click "Save scenario" to compare.</p>
       </div>
     );
@@ -1135,12 +1135,12 @@ function ScenarioCompare({
           <div className="flex items-start justify-between gap-3 mb-4">
             <div>
               <p className="font-display font-bold text-corbeau text-sm">{s.label}</p>
-              <p className="text-xs text-silver">{new Date(s.savedAt).toLocaleString()}</p>
+              <p className="text-xs text-eyebrow">{new Date(s.savedAt).toLocaleString()}</p>
             </div>
             <button
               type="button"
               onClick={() => onClear(s.id)}
-              className="text-xs text-silver hover:text-canyon"
+              className="text-xs text-eyebrow hover:text-canyon"
             >
               Remove
             </button>
@@ -1152,7 +1152,7 @@ function ScenarioCompare({
               { label: "Timeline", value: `${s.result.timeline.expectedMonths}m` },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
-                <p className="text-[10px] text-silver uppercase tracking-wide">{stat.label}</p>
+                <p className="text-[10px] text-eyebrow uppercase tracking-wide">{stat.label}</p>
                 <p className="font-mono font-bold text-corbeau text-sm">{stat.value}</p>
               </div>
             ))}
@@ -1247,7 +1247,7 @@ Not a vendor quote. Generated: ${new Date(result.generatedAt).toLocaleString()}`
         <button
           type="button"
           onClick={onReset}
-          className="ml-auto text-xs text-silver hover:text-canyon px-3 py-2"
+          className="ml-auto text-xs text-eyebrow hover:text-canyon px-3 py-2"
         >
           ← Start over
         </button>
@@ -1264,7 +1264,7 @@ Not a vendor quote. Generated: ${new Date(result.generatedAt).toLocaleString()}`
               className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${
                 tab === t.id
                   ? "border-papaya text-papaya"
-                  : "border-transparent text-silver hover:text-night"
+                  : "border-transparent text-eyebrow hover:text-night"
               }`}
             >
               {t.label}
@@ -1469,7 +1469,7 @@ function Step2({
       </FieldWrap>
 
       <SectionTitle>Complexity levels</SectionTitle>
-      <p className="text-sm text-silver -mt-3 mb-4">
+      <p className="text-sm text-eyebrow -mt-3 mb-4">
         These four axes are the biggest cost drivers after module count. Be honest — under-scoping complexity is the most common cause of overruns.
       </p>
 
@@ -1606,7 +1606,7 @@ function Step3({
 
         {inputs.countries.length === 0 ? (
           <div className="rounded-lg border border-dashed border-corbeau/20 py-8 text-center">
-            <p className="text-sm text-silver">Single-country rollout</p>
+            <p className="text-sm text-eyebrow">Single-country rollout</p>
             <p className="text-xs text-moon mt-1">Add countries for a multi-country estimate.</p>
           </div>
         ) : (
@@ -1809,7 +1809,7 @@ function Step5({
 function PresetPicker({ onLoad }: { onLoad: (inputs: CalculatorInputs) => void }) {
   return (
     <div className="mb-8 p-5 rounded-xl bg-cream border border-corbeau/10">
-      <p className="text-xs font-semibold text-silver uppercase tracking-widest mb-3">Load a preset scenario</p>
+      <p className="text-xs font-semibold text-eyebrow uppercase tracking-widest mb-3">Load a preset scenario</p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {PRESET_SCENARIOS.map((s) => (
           <button
@@ -1822,7 +1822,7 @@ function PresetPicker({ onLoad }: { onLoad: (inputs: CalculatorInputs) => void }
               {s.badge}
             </span>
             <p className="font-semibold text-corbeau text-xs group-hover:text-papaya transition-colors">{s.name}</p>
-            <p className="text-[10px] text-silver mt-1 leading-relaxed">{s.description}</p>
+            <p className="text-[10px] text-eyebrow mt-1 leading-relaxed">{s.description}</p>
           </button>
         ))}
       </div>
@@ -1858,10 +1858,10 @@ function LiveEstimateBadge({
         </p>
         <p className="font-mono font-bold text-papaya text-sm">
           {formatCurrency(estimate.totalY1.low, inputs.reportingCurrency, true)}
-          <span className="text-silver mx-1 font-normal">–</span>
+          <span className="text-eyebrow mx-1 font-normal">–</span>
           {formatCurrency(estimate.totalY1.high, inputs.reportingCurrency, true)}
         </p>
-        <p className="text-[10px] text-silver hidden sm:block">
+        <p className="text-[10px] text-eyebrow hidden sm:block">
           {estimate.timeline.expectedMonths}m · {estimate.complexityScore}/100 complexity
         </p>
       </div>
@@ -1992,7 +1992,7 @@ export default function ErpCostClient() {
       {/* Live estimate toggle */}
       {step > 1 && (
         <div className="flex items-center justify-end gap-2 mb-4">
-          <span className="text-xs text-silver">Live estimate</span>
+          <span className="text-xs text-eyebrow">Live estimate</span>
           <button
             type="button"
             onClick={() => setShowLive(!showLive)}
@@ -2029,7 +2029,7 @@ export default function ErpCostClient() {
             ← Back
           </button>
 
-          <p className="text-xs text-silver">
+          <p className="text-xs text-eyebrow">
             Step {step} of {STEPS.length}
           </p>
 

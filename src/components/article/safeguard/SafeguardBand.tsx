@@ -35,7 +35,7 @@ export default function SafeguardBand() {
         />
 
         <div className="relative">
-          <p className="font-mono text-[0.68rem] font-semibold tracking-[2.5px] uppercase text-corbeau mb-4 flex items-center gap-2">
+          <p className="font-mono text-[0.72rem] font-semibold tracking-[2.5px] uppercase text-corbeau mb-4 flex items-center gap-2">
             <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-corbeau" />
             My commitment
           </p>

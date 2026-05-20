@@ -304,11 +304,11 @@ export default function CategoryPage({
             <nav className="flex items-center gap-2 mb-6">
               <Link
                 href="/"
-                className="font-mono text-[0.6rem] tracking-widest uppercase text-silver hover:text-papaya transition-colors"
+                className="font-mono text-[0.72rem] tracking-widest uppercase text-eyebrow hover:text-papaya transition-colors"
               >
                 Home
               </Link>
-              <span className="font-mono text-[0.58rem] text-silver/40">/</span>
+              <span className="font-mono text-[0.72rem] text-eyebrow/40">/</span>
               <span
                 className="font-mono text-[0.6rem] tracking-widest uppercase font-semibold"
                 style={{ color: "var(--cc-papaya)" }}
@@ -321,7 +321,7 @@ export default function CategoryPage({
               {/* Left — headline */}
               <div className="lg:col-span-7">
                 <p
-                  className="font-mono text-[0.65rem] tracking-[3px] uppercase font-semibold mb-4"
+                  className="font-mono text-[0.72rem] tracking-[3px] uppercase font-semibold mb-4"
                   style={{ color: "var(--cc-papaya)" }}
                 >
                   Category
@@ -416,7 +416,7 @@ export default function CategoryPage({
                 padding: "clamp(3rem,6vw,5rem) clamp(1.5rem,5vw,3rem)",
               }}
             >
-              <p className="font-mono text-[0.68rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
+              <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
                 [ Browse by topic ]
               </p>
               <h2
@@ -490,7 +490,7 @@ export default function CategoryPage({
               }}
             >
               {/* Header — TrackRecord style */}
-              <p className="font-mono text-[0.68rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
+              <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
                 [ Featured insights ]
               </p>
               <h2
@@ -534,7 +534,7 @@ export default function CategoryPage({
               }}
             >
               {/* Header — TrackRecord style */}
-              <p className="font-mono text-[0.68rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
+              <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
                 [ Latest articles ]
               </p>
               <h2

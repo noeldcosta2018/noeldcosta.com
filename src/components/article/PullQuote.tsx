@@ -22,7 +22,7 @@ export default function PullQuote({
         {children}
       </blockquote>
       {attribution && (
-        <figcaption className="mt-4 font-mono text-[0.68rem] uppercase tracking-[1.6px] text-silver">
+        <figcaption className="mt-4 font-mono text-[0.72rem] uppercase tracking-[1.6px] text-eyebrow">
           — {attribution}
         </figcaption>
       )}

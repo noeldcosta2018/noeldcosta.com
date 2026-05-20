@@ -68,7 +68,7 @@ export default function ArticleHero({
         <Link
           href={`${localePrefix}/category/${category.slug}`}
           style={anim("100ms")}
-          className="inline-flex items-center gap-2 font-mono text-[0.68rem] font-medium tracking-[2px] uppercase text-papaya mb-5 hover:text-canyon transition-colors"
+          className="inline-flex items-center gap-2 font-mono text-[0.72rem] font-medium tracking-[2px] uppercase text-papaya mb-5 hover:text-canyon transition-colors"
         >
           <span className="w-[7px] h-[7px] rounded-full bg-papaya" />
           {category.label}
@@ -109,19 +109,19 @@ export default function ArticleHero({
             <span className="text-corbeau font-display font-bold text-[0.94rem] tracking-[-0.01em]">
               {author}
             </span>
-            <span className="font-mono text-[0.63rem] uppercase tracking-[1.5px] text-silver">
+            <span className="font-mono text-[0.72rem] uppercase tracking-[1.5px] text-eyebrow">
               {updated ? "Updated " : ""}{dateLabel}
             </span>
           </span>
         </span>
         <span className="h-4 w-px bg-corbeau/[0.12] hidden sm:block" aria-hidden />
-        <span className="font-mono text-[0.63rem] uppercase tracking-[1.5px] text-silver">
+        <span className="font-mono text-[0.72rem] uppercase tracking-[1.5px] text-eyebrow">
           {readingMinutes} min read
         </span>
         {reviewedLabel && (
           <>
             <span className="h-4 w-px bg-corbeau/[0.12] hidden sm:block" aria-hidden />
-            <span className="font-mono text-[0.63rem] uppercase tracking-[1.5px] text-silver">
+            <span className="font-mono text-[0.72rem] uppercase tracking-[1.5px] text-eyebrow">
               Reviewed {reviewedLabel}
             </span>
           </>

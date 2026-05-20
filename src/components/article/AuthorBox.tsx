@@ -42,7 +42,7 @@ export default function AuthorBox({
               />
             </div>
             <div>
-              <p className="font-mono text-[0.65rem] font-medium tracking-[2.2px] uppercase text-papaya mb-1">
+              <p className="font-mono text-[0.72rem] font-medium tracking-[2.2px] uppercase text-papaya mb-1">
                 Written by
               </p>
               <h3 className="font-display font-black text-corbeau text-[1.25rem] tracking-[-0.03em] leading-[1.1]">
@@ -60,7 +60,7 @@ export default function AuthorBox({
           </p>
 
           {/* Secondary mono links */}
-          <div className="flex flex-wrap items-center gap-x-1 gap-y-1 font-mono text-[0.68rem] uppercase tracking-[1.6px]">
+          <div className="flex flex-wrap items-center gap-x-1 gap-y-1 font-mono text-[0.72rem] uppercase tracking-[1.6px]">
             <Link
               href={`${localePrefix}/about`}
               className="px-2 py-1 text-corbeau/60 hover:text-papaya transition-colors rounded-md"

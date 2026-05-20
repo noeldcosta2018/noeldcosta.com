@@ -23,7 +23,7 @@ export default function ToolOutput({
     <div className="mt-8 border border-corbeau/10 rounded-xl overflow-hidden bg-paper">
       {/* Header bar */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-corbeau/10 bg-bone">
-        <span className="font-mono text-[0.68rem] uppercase tracking-[1.5px] text-silver">
+        <span className="font-mono text-[0.72rem] uppercase tracking-[1.5px] text-eyebrow">
           {isStreaming ? (
             <span className="flex items-center gap-2">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-papaya animate-pulse-dot" />

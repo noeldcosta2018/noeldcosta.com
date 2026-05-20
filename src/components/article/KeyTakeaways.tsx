@@ -21,7 +21,7 @@ export default function KeyTakeaways({
         className="my-10 p-6 md:p-8 rounded-xl bg-cream border border-corbeau/[0.06]"
         aria-label={title}
       >
-        <p className="font-mono text-[0.68rem] font-medium tracking-[2px] uppercase text-papaya mb-4">
+        <p className="font-mono text-[0.72rem] font-medium tracking-[2px] uppercase text-papaya mb-4">
           {title}
         </p>
         <ul className="space-y-3">
