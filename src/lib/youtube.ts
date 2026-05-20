@@ -115,9 +115,14 @@ async function fetchViaAPI(
   }));
 }
 
+// Noel D'Costa | ERP & AI Strategy — resolved from the channel handle
+// @NoelDCostaERPAI. Used as a fallback when YOUTUBE_CHANNEL_ID env
+// var isn't set so thumbnails still render from the live RSS feed.
+const DEFAULT_CHANNEL_ID = "UCwNnEJws2t3IAEwO0Cupc-Q";
+
 export async function getYouTubeVideos(count = 3): Promise<YouTubeVideo[]> {
   const apiKey = process.env.YOUTUBE_API_KEY;
-  const channelId = process.env.YOUTUBE_CHANNEL_ID;
+  const channelId = process.env.YOUTUBE_CHANNEL_ID ?? DEFAULT_CHANNEL_ID;
 
   // 1. Full API (best quality + descriptions)
   if (apiKey && channelId) {

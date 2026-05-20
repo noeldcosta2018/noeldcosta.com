@@ -57,33 +57,36 @@ export default function FAQ() {
           </h2>
         </div>
 
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-1.5">
           {FAQS.map((faq, i) => {
             const isOpen = open === i;
             return (
-              <div key={i} className="border-b border-corbeau/[0.08]">
+              <div
+                key={i}
+                className={`rounded-lg overflow-hidden transition-colors duration-300 ${
+                  isOpen ? "bg-papaya" : "bg-transparent border-b border-corbeau/[0.08] rounded-none"
+                }`}
+              >
                 <button
                   type="button"
                   onClick={() => setOpen(isOpen ? null : i)}
                   aria-expanded={isOpen}
                   aria-controls={`faq-panel-${i}`}
-                  className="w-full py-5 bg-transparent border-none cursor-pointer flex items-center justify-between gap-4 text-left"
+                  className={`w-full py-5 bg-transparent border-none cursor-pointer flex items-center justify-between gap-4 text-left transition-colors duration-300 ${
+                    isOpen ? "px-5 text-corbeau" : "px-0 text-corbeau"
+                  }`}
                 >
-                  <span className="font-display font-bold text-[0.95rem] text-corbeau leading-snug">
+                  <span className="font-display font-bold text-[0.95rem] leading-snug">
                     {faq.q}
                   </span>
-                  {/* Single chevron, rotated 180° when open — no remount. */}
                   <ChevronDown
                     size={18}
                     aria-hidden
-                    className={`text-eyebrow shrink-0 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                      isOpen ? "rotate-180" : ""
+                    className={`shrink-0 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                      isOpen ? "rotate-180 text-corbeau" : "text-eyebrow"
                     }`}
                   />
                 </button>
-                {/* Grid-template-rows 0fr → 1fr is the only way to animate
-                    auto-height without measuring children. min-height: 0
-                    on the inner div lets the grid track collapse cleanly. */}
                 <div
                   id={`faq-panel-${i}`}
                   role="region"
@@ -92,7 +95,11 @@ export default function FAQ() {
                   style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
                 >
                   <div className="overflow-hidden min-h-0">
-                    <p className="text-[0.88rem] text-night leading-[1.65] m-0 pb-5">
+                    <p
+                      className={`text-[0.88rem] leading-[1.65] m-0 pb-5 ${
+                        isOpen ? "px-5 text-corbeau/90" : "text-night"
+                      }`}
+                    >
                       {faq.a}
                     </p>
                   </div>

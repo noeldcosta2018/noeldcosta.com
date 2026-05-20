@@ -1,40 +1,31 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 /**
  * Calendly inline-widget loader, deliberately lazy.
  *
  * Triggers whichever fires first:
  *   - The user moves their mouse / taps / scrolls inside the page
- *     (signal of intent — they're engaging with content)
- *   - 2 seconds elapse (gives them a moment of quiet first)
+ *   - 2 seconds elapse
  *
- * Before then, renders a static skeleton with a button fallback that
- * deep-links to Calendly directly. That covers the user who's on a
- * slow connection or who blocks third-party scripts.
+ * Implementation note: Calendly's widget.js auto-discovers any DOM
+ * element with class "calendly-inline-widget" and a data-url
+ * attribute when the script first runs. This is more reliable than
+ * the manual initInlineWidget API (which we tried first — it had
+ * timing issues where the script loaded before our container was
+ * mounted, or React re-rendered after init and wiped the iframe).
  *
- * The widget itself is heavy (~80 KB script + iframe). Lazy-loading
- * keeps it out of the initial JS budget so the Contact page can hold
- * an LCP under 1.5 s.
+ * Sequence:
+ *   1. Mount with the skeleton + fallback CTA (shouldLoad = false)
+ *   2. After 2s or first interaction, set shouldLoad = true
+ *   3. React renders the .calendly-inline-widget div
+ *   4. Inject Calendly's stylesheet (once per session)
+ *   5. Inject Calendly's script (once per session) — its onload
+ *      auto-discovers our widget div and mounts the iframe
  *
- * Respects prefers-reduced-motion via the global CSS guard — but the
- * Calendly iframe itself is not animated by us; reduced-motion is
- * Calendly's responsibility once it loads.
+ * Respects prefers-reduced-motion via global CSS guard.
  */
-
-declare global {
-  interface Window {
-    Calendly?: {
-      initInlineWidget(opts: {
-        url: string;
-        parentElement: HTMLElement;
-        prefill?: Record<string, unknown>;
-        utm?: Record<string, unknown>;
-      }): void;
-    };
-  }
-}
 
 const CALENDLY_URL = "https://calendly.com/noeldcosta/30min";
 const SCRIPT_SRC = "https://assets.calendly.com/assets/external/widget.js";
@@ -42,12 +33,10 @@ const STYLE_HREF = "https://assets.calendly.com/assets/external/widget.css";
 
 export default function CalendlyEmbed() {
   const [shouldLoad, setShouldLoad] = useState(false);
-  const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // Step 1: decide when to start the load.
+  // Decide when to load.
   useEffect(() => {
     if (shouldLoad) return;
-
     const triggers: Array<keyof WindowEventMap> = [
       "mousemove",
       "scroll",
@@ -59,36 +48,17 @@ export default function CalendlyEmbed() {
       window.addEventListener(t, onActivity, { passive: true, once: true })
     );
     const timer = window.setTimeout(() => setShouldLoad(true), 2000);
-
     return () => {
       triggers.forEach((t) => window.removeEventListener(t, onActivity));
       window.clearTimeout(timer);
     };
   }, [shouldLoad]);
 
-  // Step 2: once shouldLoad flips true, inject Calendly's script + stylesheet
-  // and call initInlineWidget on our container. Idempotent — re-uses an
-  // existing <script> tag if one is already on the page (e.g. soft nav).
+  // Inject script + stylesheet once shouldLoad flips true. The script
+  // auto-discovers any .calendly-inline-widget[data-url] in the DOM.
   useEffect(() => {
-    if (!shouldLoad || !containerRef.current) return;
+    if (!shouldLoad) return;
 
-    const tryInit = () => {
-      if (window.Calendly && containerRef.current) {
-        // Calendly mutates the container; clear any prior children first
-        // so a re-init doesn't stack widgets.
-        containerRef.current.innerHTML = "";
-        window.Calendly.initInlineWidget({
-          url: CALENDLY_URL,
-          parentElement: containerRef.current,
-        });
-        return true;
-      }
-      return false;
-    };
-
-    if (tryInit()) return;
-
-    // Append style once
     if (!document.querySelector(`link[href="${STYLE_HREF}"]`)) {
       const link = document.createElement("link");
       link.rel = "stylesheet";
@@ -96,32 +66,32 @@ export default function CalendlyEmbed() {
       document.head.appendChild(link);
     }
 
-    // Append script once, init on load
-    const existing = document.querySelector<HTMLScriptElement>(
-      `script[src="${SCRIPT_SRC}"]`
-    );
-    if (existing) {
-      existing.addEventListener("load", tryInit, { once: true });
-      // If it already loaded, poll once
-      window.setTimeout(tryInit, 50);
-      return;
+    if (!document.querySelector(`script[src="${SCRIPT_SRC}"]`)) {
+      const script = document.createElement("script");
+      script.src = SCRIPT_SRC;
+      script.async = true;
+      document.body.appendChild(script);
+    } else {
+      // Script already loaded (e.g. on soft nav back to this page).
+      // Manually re-trigger auto-discovery by dispatching a no-op event,
+      // or just rely on Calendly's own observation. The simplest path:
+      // remove and re-add the script so its IIFE re-runs and finds our
+      // freshly mounted .calendly-inline-widget.
+      const old = document.querySelector(`script[src="${SCRIPT_SRC}"]`);
+      old?.remove();
+      const script = document.createElement("script");
+      script.src = SCRIPT_SRC;
+      script.async = true;
+      document.body.appendChild(script);
     }
-    const script = document.createElement("script");
-    script.src = SCRIPT_SRC;
-    script.async = true;
-    script.addEventListener("load", tryInit, { once: true });
-    document.body.appendChild(script);
   }, [shouldLoad]);
 
   return (
     <div className="not-prose my-8">
-      {/* Skeleton sits behind the widget. Once Calendly mounts, its iframe
-          covers everything. If JS fails / user blocks the script, the
-          fallback CTA stays visible. */}
-      <div className="relative rounded-2xl border border-corbeau/10 bg-paper overflow-hidden min-h-[640px]">
-        {!shouldLoad && (
+      <div className="relative rounded-2xl border border-corbeau/10 bg-paper overflow-hidden min-h-[680px]">
+        {!shouldLoad ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-8 text-center">
-            <p className="font-mono text-[0.7rem] tracking-[2px] uppercase text-eyebrow">
+            <p className="font-mono text-[0.72rem] tracking-[2px] uppercase text-eyebrow">
               Loading scheduler…
             </p>
             <a
@@ -133,12 +103,15 @@ export default function CalendlyEmbed() {
               Book on Calendly →
             </a>
           </div>
+        ) : (
+          // Calendly's auto-discovery picks up this element via the
+          // data-url attribute when the script first runs.
+          <div
+            className="calendly-inline-widget"
+            data-url={CALENDLY_URL}
+            style={{ minWidth: "320px", height: "680px" }}
+          />
         )}
-        <div
-          ref={containerRef}
-          className="calendly-inline-widget"
-          style={{ minWidth: "320px", height: "640px" }}
-        />
       </div>
     </div>
   );

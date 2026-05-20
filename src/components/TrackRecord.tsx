@@ -192,9 +192,9 @@ export default function TrackRecord() {
                 ref={(el) => { rowRefs.current[i] = el; }}
                 data-idx={i}
                 aria-current={i === activeIdx ? "true" : undefined}
-                className={`py-5 border-b border-corbeau/[0.06] transition-opacity duration-300 ${
+                className={`py-5 border-b border-corbeau/[0.06] transition-opacity duration-300 opacity-100 hover:opacity-60 ${
                   i === 0 ? "pt-0" : ""
-                } ${i === activeIdx ? "opacity-100" : "opacity-60 hover:opacity-90"}`}
+                }`}
               >
                 <div className="flex justify-between items-center mb-1">
                   <span className="font-mono text-[0.72rem] uppercase tracking-[2px] text-eyebrow">{p.company}</span>
