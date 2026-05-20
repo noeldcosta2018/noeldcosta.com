@@ -4,6 +4,8 @@ import PostPage from "@/components/PostPage";
 import MdxPageLayout from "@/components/MdxPageLayout";
 import CategoryPage from "@/components/CategoryPage";
 import CaseStudyPortfolioPage from "@/components/case-studies/CaseStudyPortfolioPage";
+import CaseStudyArticlePage from "@/components/case-studies/CaseStudyArticlePage";
+import { CASE_STUDIES } from "@/lib/case-studies";
 import {
   CATEGORIES,
   getAllPostSlugs,
@@ -106,7 +108,14 @@ export default async function LocalizedRoute(
   }
 
   const post = getPost(slug, locale);
-  if (post) return <PostPage slug={slug} locale={locale} />;
+  if (post) {
+    // Case-study posts get the bespoke article template (full-width
+    // hero, meta strip, related-case-studies grid). Other posts use
+    // the generic PostPage layout.
+    const isCaseStudy = CASE_STUDIES.some((c) => c.slug === slug);
+    if (isCaseStudy) return <CaseStudyArticlePage slug={slug} locale={locale} />;
+    return <PostPage slug={slug} locale={locale} />;
+  }
 
   const page = getPage(slug, locale);
   if (page) return <MdxPageLayout slug={slug} locale={locale} />;

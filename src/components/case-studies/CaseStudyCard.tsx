@@ -75,11 +75,14 @@ export default function CaseStudyCard({ c, variant, priority }: Props) {
           "h-full flex flex-col",
         ].join(" ")}
       >
-        {/* Cover image */}
+        {/* Cover image — view-transition-name matches the article hero
+            so navigating into the case study morphs the card image into
+            the full-width hero (Chrome 126+; no-op elsewhere). */}
         <div
           className={`relative w-full overflow-hidden bg-cream ${
             isAnchor ? "aspect-[5/4]" : "aspect-[4/3]"
           }`}
+          style={{ viewTransitionName: `case-${c.slug}` } as React.CSSProperties}
         >
           <Image
             src={c.cover.src}
