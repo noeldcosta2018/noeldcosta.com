@@ -1,84 +1,10 @@
-import Image from "next/image";
-import { getYouTubeVideos, type YouTubeVideo } from "@/lib/youtube";
-
-function VideoCard({ video }: { video: YouTubeVideo }) {
-  const badgeClass =
-    video.badgeType === "hot"
-      ? "bg-canyon/90 text-white"
-      : video.badgeType === "new"
-      ? "text-corbeau"
-      : "";
-
-  return (
-    <a
-      href={video.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="bg-paper border border-corbeau/[0.06] rounded-[14px] overflow-hidden transition-all duration-[250ms] no-underline text-corbeau hover:-translate-y-1 hover:shadow-[0_8px_32px_rgba(14,16,32,0.08)] hover:border-corbeau/[0.12] block"
-    >
-      {/* Thumbnail */}
-      <div className="w-full aspect-video bg-cream flex items-center justify-center relative overflow-hidden">
-        {video.thumbnail ? (
-          <Image
-            src={video.thumbnail}
-            alt={video.title}
-            fill
-            className="object-cover"
-          />
-        ) : (
-          <div
-            className="absolute inset-0 flex flex-col items-center justify-center gap-3"
-            style={{ background: "var(--cc-corbeau)" }}
-          >
-            {/* YouTube play button */}
-            <div
-              className="flex items-center justify-center rounded-xl"
-              style={{
-                width: 52,
-                height: 36,
-                background: "#FF0000",
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                <polygon points="5,3 19,12 5,21" />
-              </svg>
-            </div>
-            <p
-              className="font-mono text-[0.58rem] tracking-[1.5px] uppercase"
-              style={{ color: "rgba(255,255,255,0.3)" }}
-            >
-              NoelDCostaERPAI
-            </p>
-          </div>
-        )}
-        {video.badge && (
-          <span
-            className={`absolute top-2.5 right-2.5 font-mono text-[0.6rem] px-2 py-0.5 rounded font-semibold tracking-[0.5px] ${badgeClass}`}
-            style={
-              video.badgeType === "new"
-                ? { background: "rgba(252,152,90,0.9)" }
-                : {}
-            }
-          >
-            {video.badge}
-          </span>
-        )}
-      </div>
-      {/* Info */}
-      <div className="px-[18px] py-4">
-        <h4 className="font-display text-[0.95rem] font-bold tracking-[-0.02em] leading-[1.3] mb-1.5">
-          {video.title}
-        </h4>
-        <p className="font-mono text-[0.72rem] text-eyebrow tracking-[0.3px]">
-          {video.description}
-        </p>
-      </div>
-    </a>
-  );
-}
+import { getYouTubeVideos } from "@/lib/youtube";
+import VideoCarousel from "./VideoCarousel";
 
 export default async function YouTubeSection() {
-  const videos = await getYouTubeVideos(3);
+  // RSS returns up to 15 videos by default; the carousel scrolls
+  // horizontally so all of them can fit without crowding the page.
+  const videos = await getYouTubeVideos(15);
 
   return (
     <section
@@ -86,7 +12,7 @@ export default async function YouTubeSection() {
       style={{ padding: "clamp(5rem,10vw,8rem) clamp(1.5rem,5vw,4rem)" }}
     >
       <div className="max-w-[1200px] mx-auto">
-        <p className="font-mono text-[0.68rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
+        <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
           [ 05 · Watch &amp; learn ]
         </p>
         <h2
@@ -101,11 +27,7 @@ export default async function YouTubeSection() {
           The stuff nobody tells you.
         </p>
 
-        <div className="grid grid-cols-3 gap-4 max-md:grid-cols-1 max-sm:grid-cols-1">
-          {videos.map((v) => (
-            <VideoCard key={v.id} video={v} />
-          ))}
-        </div>
+        <VideoCarousel videos={videos} />
 
         <div className="mt-8 flex items-center gap-3">
           <a

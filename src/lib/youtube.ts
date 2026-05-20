@@ -1,3 +1,21 @@
+/**
+ * Decode the common HTML entities YouTube wraps into titles and
+ * descriptions. The YouTube Data API specifically returns text with
+ * &amp; &quot; &#39; &lt; &gt; pre-encoded (a documented quirk for
+ * historical XML compatibility). The RSS feed also encodes &amp;
+ * but leaves apostrophes raw. Either way, we always decode before
+ * handing the string to React so it renders as proper text.
+ */
+function decodeHtmlEntities(s: string): string {
+  return s
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
 export interface YouTubeVideo {
   id: string;
   title: string;
@@ -59,13 +77,7 @@ async function fetchViaRSS(
 
     const videoId = idMatch?.[1] ?? "";
     const rawTitle = titleMatch?.[1] ?? "Untitled";
-    // Unescape common HTML entities
-    const title = rawTitle
-      .replace(/&amp;/g, "&")
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">");
+    const title = decodeHtmlEntities(rawTitle);
 
     const thumbnail =
       thumbMatch?.[1] ??
@@ -103,8 +115,10 @@ async function fetchViaAPI(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return data.items.map((item: any, i: number) => ({
     id: item.id.videoId,
-    title: item.snippet.title,
-    description: (item.snippet.description as string).slice(0, 100),
+    title: decodeHtmlEntities(item.snippet.title as string),
+    description: decodeHtmlEntities(
+      (item.snippet.description as string).slice(0, 100)
+    ),
     thumbnail:
       item.snippet.thumbnails.high?.url ||
       item.snippet.thumbnails.default?.url ||
