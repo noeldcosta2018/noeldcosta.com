@@ -43,9 +43,11 @@ People who search for SAP FICO help are usually in one of a few situations. They
 
 What they often say under that: we have been through this before, and we need someone who has too.
 
-I have been working on SAP FICO projects for over 20 years: blueprint through go-live, and plenty of post-live recovery work. The module rarely causes the problems. The problems come from decisions made in a hurry or left too late. This article is a collection of those patterns: what breaks, what the fix looked like, and how to avoid the same mistakes.
+I have been working on SAP FICO projects for over 20 years across 21 SAP S/4HANA programmes: blueprint through go-live, and plenty of post-live recovery work. The module rarely causes the problems. The problems come from decisions made in a hurry or left too late. This article is a collection of those patterns: what breaks, what the fix looked like, and how to avoid the same mistakes.
 
-## What SAP FICO is
+The 2026 timing matters. SAP ECC mainstream support ends December 2027, one year from now. The Universal Journal (ACDOCA) on S/4HANA eliminates the FI-to-CO reconciliation that historically consumed weeks of consultant time. Clean-core compliance under RISE with SAP and GROW with SAP is now contractual rather than a design preference, which changes what "configurable" actually means for FI and CO. The seven mistakes below all surface earlier and cost more on a 2026 programme than they did on an ECC programme in 2018.
+
+## What SAP FICO is in 2026
 
 SAP FICO combines two modules that work together constantly.
 
@@ -54,6 +56,20 @@ SAP FICO combines two modules that work together constantly.
 **Controlling (CO)** is internal. It tracks costs, budgeting, and profitability across the business, not for legal reporting, but for management decisions. Cost centers show where money is being spent. CO-PA shows margin by customer, region, or product.
 
 They are not really separable in practice. A vendor invoice in Accounts Payable posts to the General Ledger and may flow into Cost Center reports. Asset Accounting updates financial records and affects cost planning in CO. Understanding where FI ends and CO begins, and where they interact, is what separates functional FICO knowledge from system-button knowledge.
+
+On S/4HANA the boundary blurs further. The Universal Journal (table ACDOCA) holds FI and CO line items together in one record, which removes the reconciliation overhead that ECC implementations spent weeks on. The legacy debate about "FI numbers versus CO numbers" largely disappears once a programme is on S/4HANA. What remains is the design discipline: deciding what the cost centre hierarchy should look like, how CO-PA characteristics map to business decisions, and how the management reporting layer reads the underlying journal entries.
+
+## How S/4HANA, RISE, and Joule change FICO in 2026
+
+Three shifts from the ECC-era playbook matter for any FICO programme starting in 2026.
+
+**The Universal Journal eliminates a class of reconciliation work.** ACDOCA stores FI and CO data together with no separate aggregate tables. Period-end reconciliation between FI and CO, which used to be a recurring close-cycle task, is largely gone. This frees consultant capacity but also changes the design conversation: cost centre design and CO-PA characteristics need to be right at design time because there is no aggregate layer to absorb mistakes later.
+
+**SAP S/4HANA Group Reporting replaces BPC for new consolidation work.** For multi-entity groups, Group Reporting on S/4HANA reads directly from ACDOCA and produces consolidated financial statements without a separate consolidation database. SAP BPC stays in maintenance mode; SAP Analytics Cloud handles planning. New programmes in 2026 typically standardise on Group Reporting for consolidation, SAC for planning, and Universal Journal as the single source for both.
+
+**Joule on SAP Analytics Cloud and S/4HANA Cloud accelerates finance work.** Natural-language enquiry on financial data, anomaly detection on accruals and intercompany postings, Copilot-style narrative drafting for board commentary. The acceleration is real on programmes where the underlying data is clean. The 2026 Joule for SAP Activate also drafts FICO fit-gap analysis and test scripts 30 to 50 percent faster on standard scope, which compresses the configuration phase meaningfully.
+
+**Clean-core changes what "customise" means in FI and CO.** Under RISE and GROW, custom ABAP in the digital core blocks upgrades and creates regression risk every quarterly release. The customisation patterns that worked in ECC (Z-tables for posting rules, custom enhancements for tax logic, ABAP for derivation rules in CO-PA) now have to move to SAP BTP side-by-side extensions or be retired. This changes Mistake 4 below in particular: the cost of choosing custom over standard is higher, and visible sooner.
 
 ## FI sub-modules
 
@@ -81,14 +97,17 @@ They are not really separable in practice. A vendor invoice in Accounts Payable 
 
 FICO connects to nearly every other SAP module. The handoffs are where most integration issues occur, each team tests their own area, and the connections go unchecked.
 
-| Module | Integration point | How it works |
+| Module | Integration point | How it works in 2026 |
 |---|---|---|
-| MM (Materials Management) | GR/IR clearing, vendor invoice posting, inventory valuation | When goods are received, FI posts a GR/IR entry; vendor invoices post to AP |
-| SD (Sales and Distribution) | Revenue recognition, customer billing, credit management | After billing, revenue and receivables automatically update GL and AR |
-| PP (Production Planning) | Cost of production, WIP settlement, variance calculation | Production order costs accumulate; CO settles WIP or variances to cost centres |
-| HCM (Human Capital Management) | Payroll posting, cost centre assignment, travel expenses | Payroll results post to FI as expenses and liabilities; costs flow into CO |
-| PS (Project Systems) | Budget tracking, project cost settlement, revenue recognition | Project costs and revenues post to FI/CO for monitoring and reporting |
+| MM (Materials Management) | GR/IR clearing, vendor invoice posting, inventory valuation | When goods are received, FI posts a GR/IR entry to ACDOCA; vendor invoices post to AP with line items visible in the Universal Journal |
+| SD (Sales and Distribution) | Revenue recognition, customer billing, credit management | After billing, revenue and receivables update the Universal Journal in real time; IFRS 15 revenue recognition handled via Revenue Accounting and Reporting (RAR) |
+| PP (Production Planning) | Cost of production, WIP settlement, variance calculation | Production order costs accumulate in ACDOCA; CO settles WIP or variances inside the same journal rather than via separate CO tables |
+| HCM (Human Capital Management) | Payroll posting, cost centre assignment, travel expenses | Payroll results post to FI as expenses and liabilities; costs flow into CO through standard derivation |
+| PS (Project Systems) | Budget tracking, project cost settlement, revenue recognition | Project costs and revenues post to FI/CO with real-time visibility |
 | PM (Plant Maintenance) | Maintenance order cost tracking and settlement | Maintenance labour and material costs flow into CO internal orders |
+| Group Reporting | Multi-entity consolidation | Consolidation reads ACDOCA directly; no separate consolidation database in the 2026 default architecture |
+
+The Universal Journal changes the failure profile of these integrations. In ECC, FI-CO reconciliation was a recurring period-end issue. On S/4HANA, the reconciliation gap disappears, but account determination still needs to be right at posting time; an MM posting that hits the wrong account creates a real journal entry that has to be corrected through a journal entry, not absorbed through a reconciliation. Get this wrong and audit findings appear faster.
 
 ## Seven things I have seen break SAP FICO projects
 
@@ -137,20 +156,20 @@ Even showing incomplete screens to users early is better than showing finished s
 
 ### 4. Custom development where configuration would have worked
 
-Custom code feels faster in the moment. More controlled. You get exactly what was requested, but over time, the same code becomes difficult to test, harder to maintain, and fragile when the business environment changes.
+Custom code feels faster in the moment. More controlled. You get exactly what was requested, but over time, the same code becomes difficult to test, harder to maintain, and fragile when the business environment changes. Under the 2026 clean-core posture on RISE and GROW, the cost of getting this wrong is also higher than ever: custom ABAP in the digital core blocks Joule integration and creates regression risk on every quarterly release.
 
-On a global implementation across six countries, tax logic was built entirely in ABAP. It handled country rules, exceptions, and product-based rates. It worked, but SAP already had standard tools for this: condition types, tax procedures, regional configuration.
+On a global implementation across six countries in 2023, tax logic was built entirely in ABAP. It handled country rules, exceptions, and product-based rates. It worked, but SAP already had standard tools for this: condition types, tax procedures, regional configuration.
 
-When one country updated a tax rate, the business had to raise a development request, wait, then retest everything. What felt efficient at the start became a bottleneck for every tax change across the programme.
+When one country updated a tax rate, the business had to raise a development request, wait, then retest everything. What felt efficient at the start became a bottleneck for every tax change across the programme. The recovery on a similar GCC manufacturing programme in 2024 ran into a six-figure overspend to retire the Z-tables and move the logic to standard configuration plus a small BTP extension for the genuinely unique rules.
 
 Four patterns I see repeat.
 
 1. Custom validations built for posting rules that standard table configuration handles
-2. Reports recreated when standard transactions already existed
+2. Reports recreated when standard Fiori apps or CDS views already exist
 3. Special GL logic in ABAP instead of configuration settings
 4. Approval steps hard-coded without flexibility for future changes
 
-The question worth asking every time: who is going to support this in two years? If the answer requires a developer for routine business changes, the solution needs a second look.
+The 2026 question to ask every time: where does this logic live, and does it survive the next quarterly S/4HANA Cloud update? If the answer is "in the digital core" or "we have not checked," the design needs to move to BTP side-by-side or to standard configuration. The clean-core constraint is not negotiable on cloud editions.
 
 ### 5. Integration points left unchecked
 
@@ -175,21 +194,21 @@ For a module that exists to generate financial data, SAP projects consistently p
 
 Then someone asks for a segment P&L at go-live, and the numbers look wrong.
 
-At a consumer goods client in Europe, CO-PA reporting had been built. Fields were mapped. Derivations were configured. The first segment P&L showed correctly formatted headers, and scattered costs that made no sense. Revenue was fine. Costs were fragmented. Some value fields were not populated at all.
+At a consumer goods client in Europe in 2023, CO-PA reporting had been built. Fields were mapped. Derivations were configured. The first segment P&L showed correctly formatted headers, and scattered costs that made no sense. Revenue was fine. Costs were fragmented. Some value fields were not populated at all.
 
-The finance team fell back to Excel. That kind of regression is hard to reverse once it starts. Trust in the system reporting takes a long time to rebuild.
+The finance team fell back to Excel. That kind of regression is hard to reverse once it starts. Trust in the system reporting takes a long time to rebuild. On the same programme, six months of additional spend on SAC dashboard configuration and CO-PA rework was what it took to get the finance team back onto the system as their primary tool.
 
 What goes wrong: CO-PA layouts built on technical models rather than business views. Controlling and financial data designed independently. BI integration added too late. Users trained on how to post, not how to read reports.
 
-If profitability by channel or cost by project matters to the business, that requirement needs to shape how data is captured: during design, not after go-live.
+If profitability by channel or cost by project matters to the business, that requirement needs to shape how data is captured: during design, not after go-live. In 2026 the analytical destination is usually SAP Analytics Cloud (now bundled with RISE and GROW) reading from the Universal Journal directly. SAC plus a clean CO-PA characteristic design is the combination that works; SAC bolted onto a half-configured CO-PA model is the combination that does not.
 
 ### 7. Edge cases that fall between teams
 
 Most SAP projects focus on the core: common transactions, standard reports, the high-volume processes. That is correct prioritisation. It also means edge cases get pushed aside until they surface.
 
-In one rollout, the client had three company codes, each used a different fiscal year variant: one calendar-based, one April to March, one a 4-4-5 model. Nobody flagged the inconsistency during design.
+On a European retail rollout in 2023, the client had three company codes, each used a different fiscal year variant: one calendar-based, one April to March, one a 4-4-5 model. Nobody flagged the inconsistency during design.
 
-It surfaced during intercompany reconciliation. Periods did not match. Postings looked incorrect. Finance could not close on time because each code showed different period cutoffs. Consolidation was delayed by two weeks.
+It surfaced during intercompany reconciliation. Periods did not match. Postings looked incorrect. Finance could not close on time because each code showed different period cutoffs. Consolidation was delayed by two weeks. The recovery cost the programme a six-figure overspend on consultant extension through close cycle stabilisation.
 
 Four edge cases I see fall through consistently.
 
@@ -263,15 +282,32 @@ Think of HANA as the engine and FICO as what the engine powers. An HANA performa
 </details>
 
 <details>
-<summary>Is SAP FICO still relevant with S/4HANA?</summary>
+<summary>Is SAP FICO still relevant with S/4HANA in 2026?</summary>
 
-Yes, but the profile of what matters has shifted.
+Yes, but the profile of what matters has shifted considerably.
 
 Core FICO skills are still required for S/4HANA implementations and migrations. The FI and CO configuration knowledge transfers (account determination, cost center design, CO-PA setup, period-end closing); these have not changed fundamentally. Companies running S/4HANA still need consultants who understand finance processes, not just system buttons.
 
-What has changed: the Universal Journal in S/4HANA eliminates some of the reconciliation overhead between FI and CO, which used to consume significant consultant time. Real-time reporting through Fiori reduces the dependency on CO-PA for management reporting in some scenarios.
+What has changed: the Universal Journal (ACDOCA) in S/4HANA eliminates the reconciliation overhead between FI and CO, which used to consume significant consultant time. Real-time reporting through Fiori reduces the dependency on CO-PA for management reporting in some scenarios. SAP S/4HANA Group Reporting replaces SAP BPC for new consolidation work, and SAP Analytics Cloud is the planning and reporting layer that bundles with RISE and GROW subscriptions.
 
-Where the demand is now: S/4HANA migration projects need FICO consultants who understand the simplifications in the new data model, can advise on what customisations can be retired, and can work across both finance and controlling without needing two separate specialists. Pure ECC-only FICO profiles are losing relevance; FICO consultants who understand the migration path and the S/4HANA model are in demand.
+Where the demand is in 2026: S/4HANA migration projects need FICO consultants who understand the simplifications in the new data model, can advise on what customisations can be retired under clean-core, and can work across both finance and controlling without needing two separate specialists. Pure ECC-only FICO profiles are losing relevance; FICO consultants who understand the migration path, the Universal Journal, Group Reporting, and the clean-core posture are in demand. With ECC mainstream support ending December 2027 (one year from now) the talent market is tight and getting tighter.
+
+</details>
+
+<details>
+<summary>How does Joule change SAP FICO implementations in 2026?</summary>
+
+Joule shipped across the SAP product family through 2024-2025 and is now generally available on S/4HANA, SAP Analytics Cloud, and inside SAP Activate.
+
+For FICO implementations specifically, three Joule applications have meaningful impact:
+
+**Joule for SAP Activate** drafts FICO fit-gap analyses, configuration documents, and test scripts directly inside the Activate methodology. On standard scope (chart of accounts setup, cost centre hierarchy, basic CO-PA), Joule cuts authoring time 30 to 50 percent. Complex scope (multi-country tax logic, group reporting structures, IFRS 15 revenue recognition) still needs senior FICO architects.
+
+**Joule on SAP Analytics Cloud** lets finance users ask natural-language questions of consolidated financial data and draft narrative commentary for board packs. The acceleration is real on programmes where the Universal Journal data is clean. It does not fix the underlying data quality problem if there is one.
+
+**Joule on S/4HANA Cloud** surfaces anomaly detection on financial postings, intercompany variances, and accrual patterns. Useful as a control overlay during close; not a substitute for the discipline of correct configuration at posting time.
+
+The practical implication for 2026 vendor proposals: ask explicitly how Joule adoption is reflected in the rate card. A partner that does not factor Joule into the methodology is either premium-priced or planning to bank the saving as margin.
 
 </details>
 
