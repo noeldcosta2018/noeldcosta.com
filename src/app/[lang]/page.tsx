@@ -8,6 +8,8 @@ import ProblemStats from "@/components/ProblemStats";
 import Services from "@/components/Services";
 import AICapabilities from "@/components/AICapabilities";
 import TrackRecord from "@/components/TrackRecord";
+import HowIWork from "@/components/HowIWork";
+import WhatIBelieve from "@/components/WhatIBelieve";
 import Tools from "@/components/Tools";
 import YouTubeSection from "@/components/YouTubeSection";
 import Credentials from "@/components/Credentials";
@@ -103,6 +105,8 @@ export default async function Home(props: { params: Promise<{ lang: string }> })
         <Services />
         <AICapabilities />
         <TrackRecord />
+        <HowIWork />
+        <WhatIBelieve />
         <Tools />
         <Suspense
           fallback={
