@@ -43,6 +43,8 @@ That gap cost more than late deliveries. It cost trust, and trust is harder to r
 
 SAP SD is the module that manages your entire sales process from the first customer inquiry to the final payment received. Configured correctly, it connects what sales promises to customers with what operations can actually deliver. Configured badly, it passes the gap directly to your customers.
 
+The 2026 picture has shifted from the ECC playbook. On S/4HANA the module is now formally called "Sales" rather than SD, but the FICO and logistics community still calls it SD. Advanced ATP (aATP) replaces classic ATP for new programmes. The Universal Journal eliminates the SD-to-FI reconciliation overhead that ECC implementations carried. Revenue Accounting and Reporting (RAR) handles IFRS 15 revenue recognition natively. Under RISE with SAP and GROW with SAP, clean-core compliance is contractual; the customisation patterns that worked in ECC (Z-tables for pricing routines, custom user exits, ABAP for output determination) now have to move to SAP BTP or be retired.
+
 ## What SAP SD actually manages
 
 SD sits at the front of the logistics chain. It handles the sequence of documents and processes that turn a customer's interest into an invoice.
@@ -115,6 +117,20 @@ That is not credit management. That is a workaround.
 
 The sales area is the operative unit. Every customer master must be maintained at the sales area level. Every sales document is created within a sales area. This is where many migrations fail: customer master records from legacy systems that do not map cleanly to the sales area structure require significant data preparation before loading.
 
+## How S/4HANA, Advanced ATP, and Joule change SD in 2026
+
+Four changes from the ECC SD playbook matter for any 2026 programme.
+
+**Advanced ATP (aATP) replaces classic ATP for new implementations.** Advanced ATP adds product allocation, backorder processing, multi-level ATP for complex BOMs, and real-time confirmation refresh. On a European manufacturing programme in 2024 the move from classic ATP to aATP reduced order confirmation latency from minutes to seconds during peak ordering windows. Classic ATP still works on existing S/4HANA installations but new design conversations default to aATP, and it is the model SAP is investing in.
+
+**The Universal Journal eliminates SD-to-FI reconciliation.** In ECC, billing documents posted to FI through aggregate tables that required period-end reconciliation. On S/4HANA, billing documents post line items directly to ACDOCA. The reconciliation work disappears. The trade-off: account determination errors create real journal entries that have to be reversed through journal entries, not absorbed in reconciliation.
+
+**Revenue Accounting and Reporting (RAR) handles IFRS 15 natively.** For organisations with multi-element arrangements, subscription billing, or long-term contracts, RAR replaces the custom revenue deferral logic that ECC SD programmes typically built. New 2026 programmes use RAR by default; ECC migrations that had custom revenue logic in user exits typically rebuild on RAR during the conversion.
+
+**Joule on SAP Activate accelerates SD fit-gap and configuration.** On standard scope (order types, item categories, basic pricing, output determination) Joule cuts fit-gap and test script authoring 30 to 50 percent. Complex scope (variant configuration, deep RAR, multi-level pricing for distribution networks) still needs senior consultants. Joule on S/4HANA Cloud also surfaces anomalies in order patterns and pricing exceptions, which is useful as a control overlay during go-live stabilisation.
+
+Clean-core under RISE and GROW changes how SD customisation is approached. The Z-tables, custom routines in pricing procedures, and ABAP enhancements that historically lived in the SD configuration now need to move. Most pricing customisations can be replaced by configuration (custom condition types, formula routines that ship as standard, and BAdIs). The few genuine customisations that remain belong on SAP BTP as side-by-side services, not inside the digital core.
+
 ## Integration points
 
 ### SD with MM
@@ -133,9 +149,9 @@ The strategy group in the material master controls how sales orders and producti
 
 ### SD with FI
 
-The billing document is the interface between SD and FI. Every invoice creates an accounting document. The accounting document hits revenue accounts, tax accounts, and the customer's open items ledger.
+The billing document is the interface between SD and FI. Every invoice creates an accounting document. In S/4HANA the accounting document posts directly to the Universal Journal (ACDOCA) without an intermediate aggregate table; revenue, tax, and customer open items appear as line items in one record.
 
-Revenue recognition rules (in S/4HANA) determine when revenue is posted relative to the billing event. For long-term projects or service contracts, this adds complexity that must be configured before go-live, not identified during year-end audit.
+Revenue Accounting and Reporting (RAR) handles IFRS 15 revenue recognition. For long-term projects, subscriptions, or service contracts, revenue may be deferred and recognised over time rather than at the billing event. RAR must be configured before go-live, not identified during year-end audit. On a US software client in 2023 the original SD design treated all revenue as recognised at billing; the IFRS 15 retrofit added six months to the programme and a seven-figure consultant spend.
 
 Payment terms on the customer master control the due date calculation in FI. Sales negotiating payment terms without coordinating with finance creates terms in the customer master that finance did not agree to.
 
@@ -159,11 +175,13 @@ ATP checks reading stale or incorrect data do not protect delivery commitments. 
 
 ### Account determination gaps found after go-live
 
-Account determination must be tested with the actual chart of accounts, the actual tax codes, and the actual material groups in scope. Test cases written with simplified data miss determination gaps that appear in production.
+Account determination must be tested with the actual chart of accounts, the actual tax codes, and the actual material groups in scope. Test cases written with simplified data miss determination gaps that appear in production. On a European manufacturing programme in 2024 a gap in the tax classification combination for a single product line created six weeks of post-go-live invoice reissuing and a six-figure recovery against the original SoW.
+
+The S/4HANA Universal Journal changes the failure profile here. In ECC, an account determination gap could be absorbed in period-end reconciliation. In S/4HANA, the gap creates an immediate posting to the wrong GL account, visible to auditors at the line-item level. Test account determination with the real chart of accounts before UAT sign-off.
 
 ### Credit management becoming a manual workaround
 
-If the sales team routinely releases credit blocks rather than triggering a credit review, the credit management process has broken down. Address this in the first ninety days post-go-live, before the habit is established.
+If the sales team routinely releases credit blocks rather than triggering a credit review, the credit management process has broken down. Address this in the first ninety days post-go-live, before the habit is established. SAP Credit Management (FSCM-CR) on S/4HANA adds more sophisticated scoring and integration with external credit bureaus than the classic SD credit management; programmes migrating from ECC should evaluate whether to move to FSCM-CR during the migration rather than carrying classic SD credit logic forward.
 
 ## Implementation risk summary
 
@@ -266,5 +284,31 @@ ATP not validated against real operational scenarios. ATP configured correctly i
 Account determination gaps discovered at month-end. Testing account determination with simplified test data misses gaps that appear when actual material groups, actual tax codes, and actual customer combinations are in play. Use the real chart of accounts in testing.
 
 Output determination not tested end-to-end. Invoice output, delivery note output, and order confirmation output all require printer and email routing to be configured. Gaps in output determination mean documents are not sent automatically. Manual printing becomes a workaround. The workaround becomes permanent.
+
+</details>
+
+<details>
+<summary>How does Advanced ATP differ from classic ATP in S/4HANA?</summary>
+
+Advanced ATP (aATP) is the S/4HANA replacement for classic ATP. It is the model SAP is investing in and the default for new 2026 programmes.
+
+The capability gap is significant on complex scenarios. Classic ATP performs the basic availability check (stock, planned receipts, sales commitments) and produces a confirmed quantity and date. Advanced ATP adds product allocation (the ability to reserve a portion of constrained supply for priority customers or channels), backorder processing (the ability to reprioritise and rerun commitments when supply changes), multi-level ATP (visibility into component availability for BOM-based products), and release for delivery (a separate step that can be controlled by exception rules).
+
+For mid-market manufacturers with stable supply chains, classic ATP configured well is often sufficient. For organisations with constrained supply, allocation requirements, or complex BOM-based commitments, aATP is the right answer.
+
+On migration: classic ATP still works on S/4HANA, but SAP's investment direction is clear. New design conversations should default to aATP unless the business case for staying on classic is explicit and quantified.
+
+</details>
+
+<details>
+<summary>How does clean-core under RISE and GROW change SD customisation?</summary>
+
+Under RISE with SAP and GROW with SAP, custom ABAP in the digital core blocks upgrades and creates regression risk on every quarterly release. The SD customisation patterns that worked in ECC need to move.
+
+Most pricing customisations can be replaced by standard configuration. Custom condition types, formula routines from the standard library, and Business Add-Ins (BAdIs) cover most scenarios that previously required Z-tables or user exits. On a European manufacturing programme in 2024 the SD customisation review eliminated 40 percent of inherited Z-objects through configuration replacement; the remaining 20 percent moved to SAP BTP as side-by-side services.
+
+The customisations that genuinely belong on BTP: complex pricing logic that depends on external data sources, output determination that requires custom integration with third-party document services, partner-specific business rules that vary by region. These extensions interact with S/4HANA through standard APIs and survive every release.
+
+The customisations that do not survive clean-core: Z-tables for pricing routines, custom ABAP in user exits inside the SD configuration, modifications to standard SAP objects. These need to be retired during the migration or rebuilt on BTP. Doing this late in the programme is expensive; doing it during the fit-gap analysis is the difference between a clean migration and a six-figure recovery.
 
 </details>
