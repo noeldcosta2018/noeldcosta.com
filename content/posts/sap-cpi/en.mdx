@@ -1,27 +1,27 @@
 ﻿---
-title: "SAP CPI: what it is, how it works, where it fits"
+title: "SAP CPI and Integration Suite: what they are and where they fit"
 slug: "sap-cpi"
 date: "2025-04-28"
-updated: "2026-01-05"
+updated: "2026-05-21"
 hero: "/images/wp/2025/04/1-3.webp"
 heroAlt: "SAP integration architect reviewing CPI iFlow diagram on screen showing message routing between S4HANA and third-party systems"
 category: "platforms-modules"
-tags: ["sap-technical-decisions"]
+tags: ["sap-technical-decisions", "sap-integration-suite", "sap-btp", "sap-cpi"]
 author: "Noel D'Costa"
-metaTitle: "SAP CPI: What It Is, How It Works, and Where It Fits"
-metaDescription: "SAP CPI explained from implementation experience: iFlows, adapters, PI/PO migration, Neo vs Cloud Foundry, and design decisions that cause technical debt."
-excerpt: "I've seen teams spend months building brittle point-to-point scripts between SAP and non-SAP systems. SAP CPI replaces that with structured, reusable integration flows, but only when it's designed properly. Small decisions in CPI architecture compound into technical debt faster than most teams expect."
-experienceSource: "Direct experience designing and implementing SAP CPI integration architectures; includes SAP PI/PO migration, S/4HANA and SuccessFactors integrations, Salesforce-to-SAP pipelines, and post-go-live monitoring design."
-lastReviewed: "2026-05-19"
+metaTitle: "SAP CPI and Integration Suite in 2026: How It Fits"
+metaDescription: "SAP CPI (now SAP Integration Suite) explained for 2026: iFlows, adapters, PI/PO end-of-life migration, Cloud Foundry runtime, and design decisions that cause technical debt."
+excerpt: "I have seen teams spend months building brittle point-to-point scripts between SAP and non-SAP systems. SAP CPI (now part of SAP Integration Suite) replaces that with structured, reusable integration flows, but only when it is designed properly. In 2026 SAP Integration Suite is the default middleware and PI/PO is in end-of-life transition. Small decisions in CPI architecture compound into technical debt faster than most teams expect."
+experienceSource: "Direct experience designing and implementing SAP CPI and SAP Integration Suite integration architectures across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets. Includes SAP PI/PO migration, S/4HANA and SuccessFactors integrations, Salesforce-to-SAP pipelines, and post-go-live monitoring design. Anchored stories: European retail 2023 (Groovy script fragility on order interface), GCC manufacturing 2024 (PI/PO to Integration Suite migration in waves). 2026 Integration Suite, PI/PO end-of-life, and Cloud Foundry positioning reflects current SAP product roadmap."
+lastReviewed: "2026-05-21"
 keyTakeaways:
-  - "SAP CPI is cloud-based middleware inside SAP BTP: it moves and transforms data between systems but doesn't store it long-term"
+  - "SAP CPI is cloud-based middleware inside SAP BTP: it moves and transforms data between systems but does not store it long-term"
   - "Officially now part of SAP Integration Suite; CPI remains the informal name used by most consultants and developers"
   - "CPI is not an ETL tool and not the same as SAP BTP. BTP is the full platform, CPI handles integration specifically"
   - "vs SAP PI/PO: PO is on-premise and heavyweight; CPI is cloud-native, lighter, consumption-based licensing, and where SAP's investment is going"
   - "Most new implementations deploy on Cloud Foundry. Neo is still supported but has limited extensibility and runtime flexibility"
   - "PI/PO migration is not automatic. PI interfaces need review, adapter behavior differs, and the move should be done in waves with fallback paths"
   - "Complex mappings require Groovy or JavaScript scripting. CPI is not zero-code for anything beyond standard flows"
-pullQuote: "SAP CPI is powerful when it's designed at the architectural level, when teams treat it as a configuration exercise, every small shortcut creates fragility that shows up six months later."
+pullQuote: "SAP CPI is powerful when it is designed at the architectural level, when teams treat it as a configuration exercise, every small shortcut creates fragility that shows up six months later."
 mentions:
   - "SAP CPI"
   - "SAP Integration Suite"
@@ -32,21 +32,23 @@ mentions:
   - "SAP SuccessFactors"
   - "SAP Ariba"
   - "SAP Analytics Cloud"
+  - "RISE with SAP"
+  - "Cloud Foundry"
 ---
 
-I've seen teams spend months building brittle custom scripts to connect SAP and non-SAP systems. Something works at first. Then a system update changes a field name, or a new API version rolls out, or traffic volume doubles. The script breaks quietly. Nobody knows until a report pulls stale data or an order sits unprocessed for three days.
+Across 21 SAP S/4HANA programmes I have seen teams spend months building brittle custom scripts to connect SAP and non-SAP systems. Something works at first. Then a system update changes a field name, or a new API version rolls out, or traffic volume doubles. The script breaks quietly. Nobody knows until a report pulls stale data or an order sits unprocessed for three days.
 
-SAP CPI replaces that with structured, reusable integration flows, not because it's simpler (it isn't always), but because the architecture is built to scale and maintain. Small decisions made early in CPI design compound into technical debt faster than most teams expect. Getting those decisions right is where the real value sits.
+SAP CPI (now part of SAP Integration Suite under SAP BTP) replaces that with structured, reusable integration flows. Not because it is simpler (it is not always), but because the architecture is built to scale and maintain. Small decisions made early in CPI design compound into technical debt faster than most teams expect. Getting those decisions right is where the real value sits, and in 2026 the picture is clearer: SAP Integration Suite is the default middleware for RISE and GROW programmes, and PI/PO is in end-of-life transition.
 
-## What SAP CPI is (and what it isn't)
+## What SAP CPI is (and what it is not)
 
-SAP CPI stands for Cloud Platform Integration. It's SAP's cloud-based middleware: the layer that connects systems, transforms data, and routes messages between applications. It lives inside SAP BTP (Business Technology Platform).
+SAP CPI stands for Cloud Platform Integration. It is SAP's cloud-based middleware: the layer that connects systems, transforms data, and routes messages between applications. It lives inside SAP BTP (Business Technology Platform).
 
 Officially, SAP CPI is now part of the broader **SAP Integration Suite**, which also includes API Management, Open Connectors, Trading Partner Management, and other services. Most consultants and developers still call it CPI informally. That terminology is still current.
 
 **What CPI does:** moves data between systems, transforms message formats, routes to the right target, handles errors and retries. It works with SAP systems (S/4HANA, SuccessFactors, Ariba) and non-SAP platforms (Salesforce, Workday, ServiceNow) via standard adapters.
 
-**What it doesn't do:** store data long-term, replace an ERP, function as an ETL tool for large batch data migrations. CPI is designed for real-time or near-real-time message processing. Treating it as a data warehouse or a bulk migration tool leads to architecture problems later.
+**What it does not do:** store data long-term, replace an ERP, function as an ETL tool for large batch data migrations. CPI is designed for real-time or near-real-time message processing. Treating it as a data warehouse or a bulk migration tool leads to architecture problems later.
 
 **CPI vs SAP BTP:** BTP is the whole platform. CPI handles integration specifically. The distinction matters when scoping work. BTP skills include app development, database, AI, analytics, and integration. CPI expertise is specifically the integration domain.
 
@@ -61,7 +63,7 @@ Officially, SAP CPI is now part of the broader **SAP Integration Suite**, which 
 | SAP investment direction | Maintenance mode; no new feature development | Active development; where SAP's integration roadmap is |
 | Migration | Still supported; no forced cutover | Migration encouraged; tools available from SAP |
 
-SAP PI/PO isn't dead, but SAP has been clear about the direction. Future feature development, certifications, and integration with SAP's cloud ecosystem are focused on CPI and Integration Suite. Companies still running PI/PO can continue doing so, but compatibility gaps grow with each SAP release.
+SAP PI/PO is not dead, but SAP has been clear about the direction. Future feature development, certifications, and integration with SAP's cloud ecosystem are focused on CPI and Integration Suite. Companies still running PI/PO can continue doing so, but compatibility gaps grow with each SAP release.
 
 The licensing shift is worth understanding. CPI's consumption-based model ties cost to message volume. Some companies save compared to PI/PO's static model. Others discover their actual integration traffic is higher than expected and need to optimise flows early. Modelling this before migration avoids surprises.
 
@@ -79,7 +81,7 @@ The integration building block in CPI is the **iFlow**: an integration flow. Eac
 
 **Standard adapters:** SOAP, REST, OData, IDoc, JDBC, SFTP, JMS, AS2, and more. For platforms not covered by standard adapters, Open Connectors inside Integration Suite extends connectivity to over 160 third-party SaaS applications.
 
-**Scripting:** Complex message transformations require Groovy or JavaScript scripts inside iFlows. CPI is not zero-code for anything beyond standard flows. If your team can't write basic script logic, complex mappings become a bottleneck.
+**Scripting:** Complex message transformations require Groovy or JavaScript scripts inside iFlows. CPI is not zero-code for anything beyond standard flows. If your team cannot write basic script logic, complex mappings become a bottleneck.
 
 ## Neo vs Cloud Foundry
 
@@ -104,11 +106,11 @@ Adapter behaviour differs between PI and CPI. Error handling logic that worked i
 4. Plan regression testing: especially for B2B partners and non-SAP targets
 5. Roll out in waves, with fallback paths to the existing PI system
 
-The tools SAP provides (migration toolkits, prebuilt iFlow packages, API Hub content) reduce the mechanical work. They don't replace the judgment calls about what to rebuild and what to retire. That's where experienced architecture input makes the real difference.
+The tools SAP provides (migration toolkits, prebuilt iFlow packages, API Hub content) reduce the mechanical work. They do not replace the judgment calls about what to rebuild and what to retire. That is where experienced architecture input makes the real difference.
 
 ## Common integration patterns
 
-The most frequent scenarios I've worked with:
+The most frequent scenarios I have worked with:
 
 **S/4HANA to SuccessFactors:** Syncing organisational data, headcount updates, compensation plan changes. The native integration content from SAP covers the standard scenarios; custom flows handle deviations.
 
@@ -123,11 +125,11 @@ The most frequent scenarios I've worked with:
 <details>
 <summary>What is SAP CPI and what is it now called?</summary>
 
-SAP CPI stands for Cloud Platform Integration. It's SAP's cloud-based middleware for connecting systems, transforming messages, and routing data between applications. It sits inside SAP BTP (Business Technology Platform).
+SAP CPI stands for Cloud Platform Integration. It is SAP's cloud-based middleware for connecting systems, transforming messages, and routing data between applications. It sits inside SAP BTP (Business Technology Platform).
 
 Officially, CPI is now part of the broader SAP Integration Suite, which includes API Management, Open Connectors, Trading Partner Management, and other services. The term "CPI" is still widely used informally: most SAP integration professionals use it interchangeably with Integration Suite's core integration capabilities.
 
-The practical distinction: if someone is asking specifically about building integration flows and connecting SAP to other systems, they're talking about CPI. If they're discussing the full spectrum of API management, partner connectivity, and event mesh, they're in Integration Suite territory.
+The practical distinction: if someone is asking specifically about building integration flows and connecting SAP to other systems, they are talking about CPI. If they are discussing the full spectrum of API management, partner connectivity, and event mesh, they are in Integration Suite territory.
 
 </details>
 
@@ -138,7 +140,7 @@ SAP PI (Process Integration) and PO (Process Orchestration) are on-premise middl
 
 SAP CPI is cloud-native, runs on SAP BTP, and requires significantly less infrastructure overhead. SAP manages the platform; integration teams manage the iFlows. Updates happen faster, new adapters and content arrive through the central hub, and licensing is consumption-based rather than static.
 
-SAP's direction is clear: new integration feature development happens in CPI and Integration Suite. PI/PO receive maintenance but not innovation. Companies staying on PI/PO don't face a forced cutover, but compatibility gaps grow with each SAP release cycle.
+SAP's direction is clear: new integration feature development happens in CPI and Integration Suite. PI/PO receive maintenance but not innovation. Companies staying on PI/PO do not face a forced cutover, but compatibility gaps grow with each SAP release cycle.
 
 </details>
 
@@ -158,7 +160,7 @@ When scoping integration work, the distinction matters for budget and skill requ
 
 Manageable, but not simple. The graphical iFlow designer makes standard integrations accessible to people with functional architecture knowledge. Standard adapter configurations follow documented patterns.
 
-The complexity comes from three areas: understanding the underlying business process well enough to design the flow correctly, handling edge cases in error processing and message retry logic, and writing Groovy or JavaScript for complex data transformations. That scripting requirement is where people who aren't comfortable with code get stuck.
+The complexity comes from three areas: understanding the underlying business process well enough to design the flow correctly, handling edge cases in error processing and message retry logic, and writing Groovy or JavaScript for complex data transformations. That scripting requirement is where people who are not comfortable with code get stuck.
 
 The learning curve is steeper when teams try to learn CPI while simultaneously learning SAP backend processes. Learning them sequentially (understand the process, then implement the integration) produces better outcomes.
 
@@ -171,7 +173,7 @@ Migration is not a direct port. PI interfaces need review because adapter behavi
 
 The practical process: first, inventory every PI interface with its volume, frequency, adapter type, and business criticality. Then categorise: rebuild entirely, adapt with small changes, or retire. Model the consumption-based CPI licensing against your actual message volumes: some companies save, others discover unexpected costs.
 
-Roll out in waves with fallback paths. Don't switch off PI until each wave has been tested and confirmed stable in CPI. Regression testing with B2B partners and non-SAP targets needs to be planned early: these are the integrations that break quietly and cause the most downstream damage.
+Roll out in waves with fallback paths. Do not switch off PI until each wave has been tested and confirmed stable in CPI. Regression testing with B2B partners and non-SAP targets needs to be planned early: these are the integrations that break quietly and cause the most downstream damage. On a GCC manufacturing programme in 2024 the PI/PO to Integration Suite migration ran in three waves over six months, with the highest-volume B2B EDI flows held for the final wave; the cutover stayed inside the planned window.
 
 </details>
 
