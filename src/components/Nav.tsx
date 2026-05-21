@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import BrandWordmark from "./BrandWordmark";
 
 /**
  * Body scroll lock side-effect. Mounted only when the mobile drawer is
@@ -137,9 +138,10 @@ export default function Nav() {
         {/* Brand */}
         <Link
           href="/"
-          className="font-display font-black text-[1.2rem] text-corbeau no-underline tracking-[-0.04em]"
+          aria-label="noeldcosta — home"
+          className="no-underline inline-flex items-center"
         >
-          noel<span className="text-papaya">dcosta</span>
+          <BrandWordmark variant="on-light" height={28} />
         </Link>
 
         {/* Mobile toggle — min-w/h 44 to meet Apple HIG / WCAG touch target. */}

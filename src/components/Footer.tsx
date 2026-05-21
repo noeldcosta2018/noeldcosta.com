@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BrandWordmark from "./BrandWordmark";
 
 export default function Footer() {
   const solutions: { label: string; href: string }[] = [
@@ -35,9 +36,10 @@ export default function Footer() {
           <div>
             <Link
               href="/"
-              className="font-display font-black text-[1.2rem] text-bone no-underline tracking-[-0.04em] block mb-3"
+              aria-label="noeldcosta — home"
+              className="no-underline inline-flex items-center mb-3"
             >
-              noel<span className="text-papaya">dcosta</span>
+              <BrandWordmark variant="on-dark" height={32} />
             </Link>
             <p className="text-[0.85rem] text-silver leading-[1.6] max-w-[280px]">
               ERP, Data & AI consulting. 25+ years helping companies get real
