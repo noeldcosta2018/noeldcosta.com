@@ -32,7 +32,7 @@ export default function CTABanner() {
             className="font-display font-black tracking-[-0.04em] leading-[1.06] text-corbeau mb-3.5 max-w-[600px]"
             style={{ fontSize: "clamp(2.2rem,4.5vw,3.5rem)" }}
           >
-            Your next transformation starts with a conversation.
+            Your next programme starts with a conversation.
           </h2>
           <p
             className="max-w-[480px] leading-[1.65] mb-8"
