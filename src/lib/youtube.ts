@@ -60,7 +60,17 @@ async function fetchViaRSS(
   count: number
 ): Promise<YouTubeVideo[]> {
   const url = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
-  const res = await fetch(url, { next: { revalidate: 3600 } });
+  // ISR with 1-hour revalidate. Headers help against the occasional
+  // YouTube edge-case where bare RSS fetches from server runtimes return
+  // an empty <feed/> body.
+  const res = await fetch(url, {
+    next: { revalidate: 3600 },
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (compatible; noeldcosta.com/1.0; +https://noeldcosta.com)",
+      Accept: "application/atom+xml,text/xml;q=0.9,*/*;q=0.5",
+    },
+  });
   if (!res.ok) throw new Error(`RSS ${res.status}`);
 
   const xml = await res.text();
@@ -135,8 +145,12 @@ async function fetchViaAPI(
 const DEFAULT_CHANNEL_ID = "UCwNnEJws2t3IAEwO0Cupc-Q";
 
 export async function getYouTubeVideos(count = 3): Promise<YouTubeVideo[]> {
-  const apiKey = process.env.YOUTUBE_API_KEY;
-  const channelId = process.env.YOUTUBE_CHANNEL_ID ?? DEFAULT_CHANNEL_ID;
+  // Use || not ?? — .env.local often defines YOUTUBE_API_KEY= /
+  // YOUTUBE_CHANNEL_ID= with empty values (so the keys exist but are ""),
+  // and ?? only short-circuits on null/undefined. Empty strings would
+  // skip both API and RSS and silently fall through to FALLBACK_VIDEOS.
+  const apiKey = process.env.YOUTUBE_API_KEY || undefined;
+  const channelId = process.env.YOUTUBE_CHANNEL_ID || DEFAULT_CHANNEL_ID;
 
   // 1. Full API (best quality + descriptions)
   if (apiKey && channelId) {
@@ -150,12 +164,16 @@ export async function getYouTubeVideos(count = 3): Promise<YouTubeVideo[]> {
   // 2. RSS feed (no API key needed — free, public, has thumbnails)
   if (channelId) {
     try {
-      return await fetchViaRSS(channelId, count);
+      const videos = await fetchViaRSS(channelId, count);
+      if (videos.length > 0) return videos;
+      console.warn(
+        `[youtube] RSS returned 0 entries for channel ${channelId}, using fallback`
+      );
     } catch (err) {
-      console.error("YouTube RSS failed, using fallback:", err);
+      console.error("[youtube] RSS failed, using fallback:", err);
     }
   }
 
-  // 3. Static fallback
+  // 3. Static fallback (only hit when both API + RSS fail)
   return FALLBACK_VIDEOS.slice(0, count);
 }

@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 const CREDS = [
   {
     title: "CIMA & AICPA",
@@ -83,28 +85,37 @@ export default function Credentials() {
         </div>
 
         {/* Featured-on press strip. Sources listed in BRAND.md "Who I am".
-            Text-only fallback until publisher logos land (same pattern as
-            LogoScroll under F-09). */}
+            Five publisher logos plus a text-only fallback for the sixth
+            (The Next Disruption logo not yet supplied). */}
         <div className="mt-14 pt-10 border-t border-corbeau/[0.08]">
-          <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-eyebrow mb-4">
+          <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-eyebrow mb-6">
             Featured on
           </p>
-          <ul className="flex flex-wrap items-center gap-x-7 gap-y-3 list-none p-0 m-0">
+          <ul className="flex flex-wrap items-center gap-x-10 gap-y-6 list-none p-0 m-0">
             {[
-              "SAP Press",
-              "MSN",
-              "LinkedIn",
-              "IPS",
-              "Techbullion",
-              "The Next Disruption",
-            ].map((name) => (
+              { name: "SAP Press", src: "/press/sap-press.webp" },
+              { name: "MSN", src: "/press/msn.webp" },
+              { name: "LinkedIn", src: "/press/linkedin.webp" },
+              { name: "IPS", src: "/press/ips.webp" },
+              { name: "Techbullion", src: "/press/techbullion.webp" },
+            ].map((p) => (
               <li
-                key={name}
-                className="font-mono text-[0.82rem] text-corbeau/70 tracking-[0.5px] font-medium"
+                key={p.name}
+                className="relative h-9 w-auto flex items-center"
+                style={{ aspectRatio: "auto" }}
               >
-                {name}
+                <Image
+                  src={p.src}
+                  alt={p.name}
+                  width={140}
+                  height={36}
+                  className="h-9 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity grayscale hover:grayscale-0"
+                />
               </li>
             ))}
+            <li className="font-mono text-[0.82rem] text-corbeau/60 tracking-[0.5px] font-medium">
+              The Next Disruption
+            </li>
           </ul>
         </div>
       </div>
