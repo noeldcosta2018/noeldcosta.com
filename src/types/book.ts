@@ -28,14 +28,14 @@ export interface BookFrontmatter {
   /** Short sub-title shown under the title on the featured book card. */
   subtitle?: string;
 
-  /** 1-2 sentence summary shown on cards and at the top of the book detail card. */
-  summary: string;
+  /** 1-2 sentence summary. Kept for SEO and backwards compat — the new card uses subtitle + bullets. */
+  summary?: string;
 
-  /** Who the book is for. One sentence. */
-  audience: string;
+  /** Who the book is for. One sentence. Kept for SEO and backwards compat. */
+  audience?: string;
 
-  /** Bullet list of what is inside. Empty array is fine for coming-soon. */
-  whatsInside: string[];
+  /** Bullet list of what is inside. Kept for SEO and backwards compat — the new card uses bullets/details. */
+  whatsInside?: string[];
 
   /** One-line teaser of the topics covered. Used on coming-soon cards
    *  where `whatsInside` is empty so the card still tells the reader
@@ -53,6 +53,19 @@ export interface BookFrontmatter {
 
   /** Sort order on the /books index. Lowest first. */
   order: number;
+
+  /** Three short bullets shown on the carousel card. Always exactly 3 items. */
+  bullets?: string[];
+
+  /** Per-book accordion content. Six fixed sections. Used by BookAccordion. */
+  details?: {
+    whoFor: string;
+    whatYouGet: string;
+    problemSolved: string;
+    whatIsInside: string;
+    freeOrPaid: string;
+    howReceived: string;
+  };
 
   /** Path to cover image under /public. If absent (or file missing), placeholder renders. */
   coverImage?: string;
