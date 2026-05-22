@@ -274,6 +274,25 @@ export default function Nav() {
 
           <li>
             <Link
+              href="/books"
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: 'var(--cc-text-primary)',
+                textDecoration: 'none',
+                fontFamily: 'var(--font-display)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                minHeight: 44,
+                padding: '12px 0'
+              }}
+            >
+              Books
+            </Link>
+          </li>
+
+          <li>
+            <Link
               href="/about"
               style={{
                 fontSize: 14,
@@ -345,6 +364,7 @@ export default function Nav() {
               { type: "heading", label: "Tools" },
               ...TOOLS.map((t) => ({ type: "link" as const, label: t.label, href: `/${t.slug}` })),
               { type: "heading", label: "Company" },
+              { type: "link", label: "Books", href: "/books" },
               { type: "link", label: "About", href: "/about" },
               { type: "link", label: "Contact", href: "/contact-noel-erp-support" },
             ];

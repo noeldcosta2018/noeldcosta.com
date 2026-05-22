@@ -20,6 +20,7 @@ export default function Footer() {
   ];
   const company: { label: string; href: string; external?: boolean }[] = [
     { label: "About", href: "/about" },
+    { label: "Books", href: "/books" },
     { label: "Case Studies", href: "/category/case-studies" },
     { label: "YouTube", href: "https://www.youtube.com/@NoelDCostaERPAI", external: true },
     { label: "Contact", href: "/contact-noel-erp-support" },

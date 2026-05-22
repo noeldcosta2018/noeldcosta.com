@@ -24,6 +24,7 @@ function lastModDate(input?: string): Date | undefined {
 
 const RESERVED_SLUGS = new Set<string>([
   "about",
+  "books",
   "contact",
   "privacy",
   "category",
@@ -56,6 +57,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: l === "en" ? SITE_URL : `${SITE_URL}/${l}`,
       changeFrequency: "weekly",
       priority: 1,
+    });
+  }
+
+  // /books per locale — static catalogue page, content drawn from
+  // content/books/*.mdx but the URL itself is not slug-driven.
+  for (const l of LOCALES) {
+    items.push({
+      url: urlFor(l, "books"),
+      changeFrequency: "weekly",
+      priority: 0.7,
     });
   }
 
