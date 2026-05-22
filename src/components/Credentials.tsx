@@ -29,7 +29,7 @@ const CREDS = [
   },
   {
     title: "Solution Architect",
-    sub: "End-to-end system design",
+    sub: "Architecture across the stack",
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <rect x="2" y="6" width="20" height="12" rx="2"/>
@@ -47,7 +47,7 @@ export default function Credentials() {
     >
       <div className="max-w-[1200px] mx-auto">
         <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
-          [ 06 · Why this works ]
+          [ 08 · Why this works ]
         </p>
         <h2
           aria-label="Not just a tech guy. I understand the numbers."
@@ -80,6 +80,32 @@ export default function Credentials() {
               <p className="font-mono text-[0.72rem] text-eyebrow">{c.sub}</p>
             </div>
           ))}
+        </div>
+
+        {/* Featured-on press strip. Sources listed in BRAND.md "Who I am".
+            Text-only fallback until publisher logos land (same pattern as
+            LogoScroll under F-09). */}
+        <div className="mt-14 pt-10 border-t border-corbeau/[0.08]">
+          <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-eyebrow mb-4">
+            Featured on
+          </p>
+          <ul className="flex flex-wrap items-center gap-x-7 gap-y-3 list-none p-0 m-0">
+            {[
+              "SAP Press",
+              "MSN",
+              "LinkedIn",
+              "IPS",
+              "Techbullion",
+              "The Next Disruption",
+            ].map((name) => (
+              <li
+                key={name}
+                className="font-mono text-[0.82rem] text-corbeau/70 tracking-[0.5px] font-medium"
+              >
+                {name}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>

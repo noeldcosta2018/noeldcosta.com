@@ -50,7 +50,7 @@ export default function Tools() {
     >
       <div className="max-w-[1200px] mx-auto">
         <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
-          [ 04 · Built by me ]
+          [ 06 · Built by me ]
         </p>
         <h2
           aria-label="Tools I build for the ERP world."
@@ -63,8 +63,8 @@ export default function Tools() {
           </span>
         </h2>
         <p className="text-moon text-[1rem] max-w-[520px] leading-[1.7] mb-12">
-          I don&apos;t just advise. I build products. Used by consultants and companies
-          across 130+ regions.
+          Advice is half the job. The other half is building the tools the work
+          actually needs. Used by consultants and companies across 130+ regions.
         </p>
 
         <div className="grid grid-cols-2 gap-6 max-lg:grid-cols-1">

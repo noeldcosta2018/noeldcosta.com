@@ -39,12 +39,18 @@ the WordPress version. Better copy, same paths.
 |Homepage problem section|src/components/ProblemStats.tsx|\_docs/homepage/03-problem.md|
 |Homepage services / what I do|src/components/Services.tsx|\_docs/homepage/04-services.md|
 |Homepage case studies|src/components/TrackRecord.tsx|\_docs/homepage/05-case-studies.md|
-|Homepage AI capabilities|src/components/AICapabilities.tsx|\_docs/homepage/06-ai.md|
-|Homepage tools / products|src/components/Tools.tsx|\_docs/homepage/07-tools.md|
-|Homepage testimonials|src/components/Testimonials.tsx|\_docs/homepage/08-testimonials.md|
-|Homepage about / credentials|src/components/Credentials.tsx|\_docs/homepage/09-about.md|
-|Homepage final CTA|src/components/CTABanner.tsx|\_docs/homepage/10-cta.md|
-|Nav, footer (global)|src/components/Nav.tsx, Footer.tsx|BRAND.md|
+|Homepage how I work|src/components/HowIWork.tsx|\_docs/homepage/06-how-i-work.md|
+|Homepage what I believe|src/components/WhatIBelieve.tsx|\_docs/homepage/07-what-i-believe.md, BRAND.md|
+|Homepage AI capabilities|src/components/AICapabilities.tsx|\_docs/homepage/08-ai-capabilities.md|
+|Homepage tools / products|src/components/Tools.tsx|\_docs/homepage/09-tools.md|
+|Homepage testimonials|src/components/Testimonials.tsx|\_docs/homepage/10-testimonials.md|
+|Homepage about / credentials|src/components/Credentials.tsx|\_docs/homepage/11-credentials.md|
+|Homepage YouTube section|src/components/YouTubeSection.tsx|\_docs/homepage/12-youtube.md|
+|Homepage final CTA|src/components/CTABanner.tsx|\_docs/homepage/13-cta.md|
+|Nav (global)|src/components/Nav.tsx|\_docs/homepage/14-nav.md, BRAND.md|
+|Footer (global)|src/components/Footer.tsx|\_docs/homepage/15-footer.md, BRAND.md|
+|Brand wordmark (Nav + Footer)|src/components/BrandWordmark.tsx|public/brand/noeldcosta-on-{light,dark}.svg|
+|Homepage assembly|src/app/\[lang]/page.tsx|PRD.md (H-16)|
 |For-consultants page|src/app/\[lang]/for-consultants/|\_docs/for-consultants/CONTEXT.md|
 |About page|src/app/\[lang]/about/|\_docs/about/CONTEXT.md|
 |Case study page|src/app/\[lang]/case-studies/\[slug]/|\_docs/case-studies/CONTEXT.md|

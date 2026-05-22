@@ -27,7 +27,7 @@ export default function Testimonials() {
     >
       <div className="max-w-[1200px] mx-auto">
         <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
-          [ 07 · From people I&apos;ve worked with ]
+          [ 09 · From people I&apos;ve worked with ]
         </p>
         <h2
           aria-label="Don't take my word for it. Read theirs."

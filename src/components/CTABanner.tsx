@@ -34,19 +34,16 @@ export default function CTABanner() {
           >
             Your next programme starts with a conversation.
           </h2>
-          <p
-            className="max-w-[480px] leading-[1.65] mb-8"
-            style={{ color: "rgba(14,16,32,0.7)", fontSize: "1rem" }}
-          >
+          <p className="text-corbeau/70 text-[1rem] max-w-[480px] leading-[1.65] mb-8">
             30 minutes. No sales pitch. Tell me what&apos;s going on with your ERP or
-            AI project. I&apos;ll tell you straight if I can help.
+            AI programme. I&apos;ll tell you straight if I can help.
           </p>
           <div className="flex gap-3 flex-wrap max-sm:flex-col">
             <a
               href="https://calendly.com/noeldcosta/30min"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 bg-corbeau text-bone px-7 py-3.5 rounded-[10px] no-underline font-bold text-[0.92rem] transition-all hover:bg-[#1a1c30] hover:-translate-y-px"
+              className="inline-flex items-center gap-1.5 bg-corbeau text-bone px-7 py-3.5 rounded-[10px] no-underline font-bold text-[0.92rem] transition-all hover:bg-haiti hover:-translate-y-px"
             >
               Book a 30-min call ↗
             </a>

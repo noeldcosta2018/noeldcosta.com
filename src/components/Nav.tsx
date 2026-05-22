@@ -31,7 +31,7 @@ const PILLARS: { label: string; slug: string; blurb: string }[] = [
   {
     label: "Platforms & Modules",
     slug: "platforms-modules",
-    blurb: "SAP S/4HANA, Oracle, Dynamics — module-level deep dives.",
+    blurb: "SAP S/4HANA, Oracle, Dynamics. Module-level deep dives.",
   },
   {
     label: "ERP Strategy",
@@ -46,12 +46,12 @@ const PILLARS: { label: string; slug: string; blurb: string }[] = [
   {
     label: "Agentic AI",
     slug: "agentic-ai",
-    blurb: "Autonomous agents in the ERP stack — what actually works.",
+    blurb: "Autonomous agents in the ERP stack. What actually works.",
   },
   {
     label: "Case Studies",
     slug: "case-studies",
-    blurb: "Real programme outcomes — aviation, government, retail.",
+    blurb: "Real programme outcomes from aviation, government, and retail.",
   },
 ];
 
@@ -69,7 +69,7 @@ const TOOLS: { label: string; slug: string; blurb: string }[] = [
   {
     label: "Migration Estimator",
     slug: "free-data-migration-estimator-sap-oracle-microsoft",
-    blurb: "Data migration effort — SAP, Oracle, Microsoft.",
+    blurb: "Data migration effort across SAP, Oracle, and Microsoft.",
   },
   {
     label: "JD Generator",

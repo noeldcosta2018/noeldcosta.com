@@ -13,7 +13,7 @@ export default async function YouTubeSection() {
     >
       <div className="max-w-[1200px] mx-auto">
         <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
-          [ 05 · Watch &amp; learn ]
+          [ 07 · Watch &amp; learn ]
         </p>
         <h2
           aria-label="Videos from the field. Not theory. Real projects."
