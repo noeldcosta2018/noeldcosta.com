@@ -18,6 +18,7 @@ export default function CheckoutButton({
   amount,
   label,
   variant = "primary",
+  onDark = false,
 }: {
   bookSlug: string;
   tier: string;
@@ -25,6 +26,8 @@ export default function CheckoutButton({
   amount: number;
   label: string;
   variant?: "primary" | "secondary";
+  /** When true the secondary variant inverts colours so it is visible on a corbeau surface (PaidBook). */
+  onDark?: boolean;
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
@@ -58,12 +61,20 @@ export default function CheckoutButton({
     minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
   }).format(amount);
 
+  // Mobile: label · price on one row (flex-row items-baseline gap-2).
+  // Desktop (md+): two-line stack (flex-col items-start gap-0.5) for the
+  // existing pricing-tile rhythm.
   const baseBtn =
-    "inline-flex flex-col items-start text-left gap-0.5 px-5 py-3 rounded-[10px] no-underline transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0";
+    "inline-flex flex-row items-baseline gap-2 md:flex-col md:items-start md:gap-0.5 text-left px-5 py-3 rounded-[10px] no-underline transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0";
   const primaryBtn =
     "bg-papaya text-corbeau hover:bg-[#fb8843] hover:-translate-y-px";
-  const secondaryBtn =
+  // Secondary on a light surface: corbeau text on transparent.
+  const secondaryBtnLight =
     "bg-transparent text-corbeau border border-corbeau/[0.2] hover:bg-corbeau/[0.04] hover:-translate-y-px";
+  // Secondary on a dark surface (PaidBook corbeau panel): bone text on transparent.
+  const secondaryBtnDark =
+    "bg-transparent text-bone border border-bone/30 hover:bg-bone/10 hover:border-bone/60 hover:-translate-y-px";
+  const secondaryBtn = onDark ? secondaryBtnDark : secondaryBtnLight;
 
   return (
     <div className="flex flex-col">

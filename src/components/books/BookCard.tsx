@@ -10,6 +10,7 @@
 
 import EmailCaptureForm from "./EmailCaptureForm";
 import BookCover from "./BookCover";
+import StatusBadge from "./StatusBadge";
 import type { BookRecord } from "@/types/book";
 import { coverExists } from "@/lib/books";
 
@@ -29,15 +30,7 @@ export default function BookCard({ book }: { book: BookRecord }) {
 
       <div className="flex flex-col">
         <div className="flex items-center gap-3 mb-2 flex-wrap">
-          <span
-            className={`font-mono text-[0.66rem] tracking-[1.5px] uppercase px-2 py-0.5 rounded ${
-              isAvailable
-                ? "bg-[rgba(45,138,78,0.12)] text-[#2D8A4E]"
-                : "bg-corbeau/[0.06] text-eyebrow"
-            }`}
-          >
-            {isAvailable ? "Available now" : "Coming soon"}
-          </span>
+          <StatusBadge available={isAvailable} surface="light" />
           <span className="font-mono text-[0.66rem] tracking-[1.5px] uppercase text-eyebrow">
             Free
           </span>
@@ -58,7 +51,7 @@ export default function BookCard({ book }: { book: BookRecord }) {
           For: <span className="text-night normal-case tracking-normal font-sans">{fm.audience}</span>
         </p>
 
-        {fm.whatsInside.length > 0 && (
+        {fm.whatsInside.length > 0 ? (
           <ol className="list-decimal pl-5 mb-5 marker:text-papaya marker:font-mono marker:text-[0.78rem]">
             {fm.whatsInside.slice(0, 4).map((item, i) => (
               <li
@@ -69,13 +62,31 @@ export default function BookCard({ book }: { book: BookRecord }) {
               </li>
             ))}
           </ol>
-        )}
+        ) : fm.topics ? (
+          <p className="text-night text-[0.9rem] leading-[1.6] mb-5">
+            <span className="font-mono text-[0.68rem] tracking-[1.5px] uppercase text-eyebrow mr-1">
+              Topics in this book:
+            </span>
+            {fm.topics}
+          </p>
+        ) : null}
+
+        {/* TODO(waitlist-count): when a real waitlist backend is wired,
+            render the live signup count here for coming-soon books, e.g.
+            <p className="font-mono text-[0.7rem] tracking-[1.5px] uppercase
+            text-eyebrow mb-3">187 on the waitlist</p>. Do not invent counts. */}
 
         <div className="mt-auto">
           <p className="font-mono text-[0.68rem] tracking-[1.5px] uppercase text-eyebrow mb-2.5">
             {isAvailable ? "Get the PDF + EPUB" : "Join the waitlist"}
           </p>
-          <EmailCaptureForm bookSlug={fm.slug} bookTitle={fm.title} />
+          <EmailCaptureForm
+            bookSlug={fm.slug}
+            bookTitle={fm.title}
+            submitLabel={
+              isAvailable ? "Send me the PDF" : "Notify me when it ships"
+            }
+          />
         </div>
       </div>
     </article>

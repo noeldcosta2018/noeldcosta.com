@@ -37,6 +37,11 @@ export interface BookFrontmatter {
   /** Bullet list of what is inside. Empty array is fine for coming-soon. */
   whatsInside: string[];
 
+  /** One-line teaser of the topics covered. Used on coming-soon cards
+   *  where `whatsInside` is empty so the card still tells the reader
+   *  what the book is about. Optional. */
+  topics?: string;
+
   /** "available" → render download/email-capture. "coming-soon" → render waitlist. */
   status: BookStatus;
 
