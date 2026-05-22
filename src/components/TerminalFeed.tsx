@@ -70,17 +70,25 @@ export default function TerminalFeed({ lines }: { lines: ReactNode[] }) {
 
   return (
     <div ref={ref}>
-      {lines.map((node, i) => (
-        <div
-          key={i}
-          className="flex gap-2 mb-2 transition-opacity duration-500 ease-out"
-          style={{ opacity: i < visibleCount ? 1 : 0 }}
-          aria-hidden={!reduced && i >= visibleCount}
-        >
-          <span className="text-papaya font-semibold shrink-0">▶</span>
-          <span className="text-night">{node}</span>
-        </div>
-      ))}
+      {lines.map((node, i) => {
+        const isShown = i < visibleCount;
+        // Slide-up + opacity for each line. The translate-y collapses to 0
+        // under reduced-motion via the global guard in globals.css.
+        return (
+          <div
+            key={i}
+            className="flex gap-2 mb-2 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+            style={{
+              opacity: isShown ? 1 : 0,
+              transform: isShown ? "translateY(0)" : "translateY(6px)",
+            }}
+            aria-hidden={!reduced && !isShown}
+          >
+            <span className="text-papaya font-semibold shrink-0">▶</span>
+            <span className="text-night">{node}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -75,13 +75,13 @@ export default function Credentials() {
           [ 08 · Why this works ]
         </p>
         <h2
-          aria-label="Not just a tech guy. I understand the numbers."
+          aria-label="Senior on the system. Senior on the close."
           className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
           <span aria-hidden>
-            {"Not just a tech guy. "}
-            <span className="cc-emphasis-italic">I understand the numbers.</span>
+            {"Senior on the system. "}
+            <span className="cc-emphasis-italic">Senior on the close.</span>
           </span>
         </h2>
         <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-14">

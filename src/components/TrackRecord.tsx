@@ -89,7 +89,7 @@ const PROJECTS: ProjectData[] = [
     badgeType: "p",
     title: "Managing Partner — 800+ Consultants",
     desc: "SAP, Oracle, Microsoft practices across MEA. PIF entities, banking, public sector.",
-    dashboardLabel: "dxc.dashboard",
+    dashboardLabel: "mea.practice",
     metrics: [
       { lbl: "Pipeline", val: "$300M", color: "text-papaya" },
       { lbl: "Consultants", val: "800+", color: "text-brand-green" },

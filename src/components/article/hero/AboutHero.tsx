@@ -43,7 +43,7 @@ export default function AboutHero() {
           <div className="w-[120px] h-[120px] md:w-[140px] md:h-[140px] rounded-2xl border-2 border-papaya/60 shadow-[0_8px_28px_rgba(14,16,32,0.12)] overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/headshot.png"
+              src="/images/headshot.png"
               alt="Portrait of Noel D'Costa"
               className="w-full h-full object-cover cc-ken-burns"
             />
