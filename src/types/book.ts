@@ -32,8 +32,12 @@ export interface BookFrontmatter {
   /** Short sub-title shown under the title. */
   subtitle?: string;
 
-  /** 1-2 sentence short summary. Plain English. */
+  /** Synopsis paragraph 1 — what the book covers. Keep to 1-2 lines. */
   summary?: string;
+
+  /** Synopsis paragraph 2 — who it's for or what problem it solves.
+   * Renders as a second short paragraph under `summary`. */
+  summaryAudience?: string;
 
   /** Always "available" in the new model. Coming-soon is banned. */
   status: BookStatus;

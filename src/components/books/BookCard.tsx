@@ -9,14 +9,18 @@ import type { BookFrontmatter } from "@/types/book";
 /**
  * BookCard — single book card for the Free / Paid grid.
  *
- * Client component because it owns the trigger ref for the modal and the
- * BookAccordion (which is itself a client island for the single-open state).
+ * Two stacked zones inside the card:
  *
- * Layout:
- *   - Desktop two-column: thumbnail on the left, content on the right.
- *   - The FAQ accordion now lives INSIDE the right content column so it
- *     flows immediately under the CTA, killing the dead space that
- *     appeared when the thumbnail was taller than the content stack.
+ *   1. Top zone  — image left, text right (badge, title, synopsis x 2, CTA).
+ *                  Stacks to single column on mobile.
+ *
+ *   2. FAQ zone  — full card width, sitting BELOW the top zone. The first
+ *                  accordion line aligns with the left edge of the
+ *                  thumbnail because both share the card's outer padding.
+ *
+ * The FAQ does not nest inside the text column. That earlier layout caused
+ * the accordion to start beside the thumbnail and left visible dead space
+ * under the CTA when the thumbnail was the taller of the two columns.
  *
  * Motion: subtle whileHover lift (y: -2). Disabled under
  * prefers-reduced-motion.
@@ -57,15 +61,16 @@ export default function BookCard({ book, hasCoverImage, onRequest }: Props) {
       }
       transition={{ duration: 0.18, ease: "easeOut" }}
     >
-      <div className="flex flex-col md:flex-row gap-5 md:gap-6 items-start">
-        {/* Thumbnail column. Mobile: top. Desktop: left. */}
-        <div className="flex-shrink-0 self-center md:self-start md:pt-1 pl-3 md:pl-4">
+      {/* TOP ZONE — image + text. Stacks single-column on mobile. */}
+      <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-5 md:gap-6 items-start">
+        {/* Thumbnail. No extra left padding — aligns to the card edge so
+            the FAQ below sits on the same left axis. */}
+        <div className="self-center md:self-start md:pt-1">
           <BookThumbnail book={book} hasImage={hasCoverImage} />
         </div>
 
-        {/* Content column — also owns the accordion so the card has no
-            dead space between CTA and FAQ on desktop. */}
-        <div className="flex-1 min-w-0 w-full">
+        {/* Text column */}
+        <div className="min-w-0 w-full">
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <span
               className={`font-mono text-[0.65rem] tracking-[1.5px] uppercase px-2 py-1 rounded font-semibold ${
@@ -97,6 +102,12 @@ export default function BookCard({ book, hasCoverImage, onRequest }: Props) {
             </p>
           )}
 
+          {book.summaryAudience && (
+            <p className="text-night text-[0.92rem] leading-[1.55] mt-2">
+              {book.summaryAudience}
+            </p>
+          )}
+
           <button
             ref={triggerRef}
             type="button"
@@ -105,14 +116,19 @@ export default function BookCard({ book, hasCoverImage, onRequest }: Props) {
           >
             Get the book
           </button>
-
-          {items.length > 0 && (
-            <div className="mt-5">
-              <BookAccordion idPrefix={`book-${book.slug}`} items={items} />
-            </div>
-          )}
         </div>
       </div>
+
+      {/* FAQ ZONE — full card width below the top zone. Left edge aligns
+          with the thumbnail because both share the card's outer padding.
+          mt-auto pushes the FAQ to the bottom of the card so neighbouring
+          cards in the 2-up grid keep their FAQs vertically aligned even
+          when one has more synopsis text than the other. */}
+      {items.length > 0 && (
+        <div className="mt-auto pt-6">
+          <BookAccordion idPrefix={`book-${book.slug}`} items={items} />
+        </div>
+      )}
     </motion.article>
   );
 }
