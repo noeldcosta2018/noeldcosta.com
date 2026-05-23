@@ -1,49 +1,45 @@
 # content/books/
 
 One MDX file per book. The /books page reads from this directory through
-`src/lib/books.ts` and renders the catalogue.
+`src/lib/books.ts` and renders the two-section catalogue (Free, Paid).
 
 ## Adding a book
 
-1. Pick a slug. Use kebab-case. The slug is the filename minus `.mdx`,
-   and is also what shows up in the in-page anchor (`#book-{slug}`).
-   Do not prefix with `book-N-` — the order field handles sorting.
+1. Pick a slug. Use kebab-case. The slug is the filename minus `.mdx`
+   and is also the storage object name (`<slug>.pdf` inside the
+   `book-files` bucket on Supabase).
 
-2. Copy an existing file as a template. For a free book, start from
-   `enterprise-ai-what-works.mdx`. For a paid book, start from
-   `sap-career-playbook-ai-era.mdx`.
+2. Copy an existing file as a template.
+   - Free book: start from `enterprise-ai-what-works.mdx`.
+   - Paid book: start from `sap-career-playbook-ai-era.mdx`.
 
 3. Fill in the frontmatter. The exact shape is enforced by
-   `src/types/book.ts`. Required fields: `slug`, `title`, `summary`,
-   `audience`, `whatsInside`, `status`, `kind`, `order`, `coverColor`,
-   `accentColor`.
+   `src/types/book.ts`. Required: `slug`, `title`, `status`, `kind`,
+   `order`, `coverColor`, `accentColor`, `details` (three keys).
 
-4. If a cover image exists, drop it under `/public/books/` and set
-   `coverImage: /books/your-cover.jpg`. The components check the file
-   on disk and fall through to the typographic placeholder if it
-   is missing, so a frontmatter path with no file on disk is safe.
+4. If a cover image exists, drop it under `/public/books/covers/` and
+   set `coverImage: /books/covers/<slug>.jpg`. The page checks the file
+   on disk and falls back to the typographic placeholder if it is missing.
 
-5. Only one book should have `featured: true`. That one gets the
-   larger FeaturedBook treatment at the top of the page.
+5. Upload the PDF to the private Supabase Storage bucket `book-files`
+   with the object name `<slug>.pdf`. The API route signs a short URL
+   to that object when a free-book lead is captured.
 
-6. Books with `kind: paid` must include a `pricing` block. Each tier
-   (`ebook`, `paperback`, `hardcoverBundle`) needs `stripeId`, `amount`,
-   `label`. Set `stripeId: null` until the real Stripe price IDs exist;
-   the checkout endpoint is stubbed and accepts null.
-
-## Notes for the writer
-
-- Title and subtitle are sentence case. No Title Case.
-- The summary appears on the card and at the top of the book panel.
-  Keep it to two sentences.
-- `whatsInside` is a numbered list in the UI (bullets are reserved for
-  two-item juxtapositions per blog-editor.md). Aim for 4 to 6 items.
-- For coming-soon books, an empty `whatsInside: []` is fine. The card
-  hides the list when empty.
-- Voice rules from VOICE.md apply: first person, no em-dash drama,
-  no buzzword stack.
+6. Paid books require a `price` (USD number). `stripeId` stays `null`
+   until Stripe is wired.
 
 ## Frontmatter reference
 
-See `src/types/book.ts` for the full TypeScript shape. Every field is
-documented inline.
+See `src/types/book.ts` for the TypeScript shape. The three accordion
+detail fields are:
+
+- `whoFor` — Who is this for?
+- `whatYouGet` — What will you get from this book?
+- `howToAccess` — How do I access this?
+
+Each is one short sentence. No paragraphs.
+
+## Voice
+
+Voice rules from VOICE.md apply: first person, no em-dash drama, no
+banned buzzwords, no "coming soon" / "early access" / "available soon".
