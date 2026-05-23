@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import BookCarousel from "@/components/books/BookCarousel";
-import HeroBookCTAs from "@/components/books/HeroBookCTAs";
 import { getAllBooks } from "@/lib/books";
 import { LOCALES, type Locale } from "@/lib/content";
 import { SITE_URL, SITE_NAME, AUTHOR } from "@/lib/seo";
@@ -104,10 +103,6 @@ export default async function BooksPage(props: {
 
   const books = getAllBooks();
   const frontmatters = books.map((b) => b.frontmatter);
-  const heroFreeBook =
-    frontmatters.find((b) => b.featured && b.kind === "free") ||
-    frontmatters.find((b) => b.kind === "free") ||
-    frontmatters[0];
 
   // ItemList of Books — kept for backwards compatibility with the previous
   // schema graph on this page.
@@ -202,15 +197,31 @@ export default async function BooksPage(props: {
               className="font-display font-black tracking-[-0.04em] leading-[1.05] text-corbeau mb-5 max-w-[640px]"
               style={{ fontSize: "clamp(2.2rem,4.5vw,3.4rem)" }}
             >
-              Books for people building, fixing, or surviving ERP and AI programmes.
+              Books for teams building, fixing, or surviving ERP and AI programmes.
             </h1>
             <p className="text-night text-[1.02rem] leading-[1.65] max-w-[560px] mb-6">
-              I write practical books for SAP consultants, CIOs, CFOs, and
-              programme leaders who need clear answers. No theory dump. No
-              vendor noise. Just the lessons I wish more teams had before
-              spending millions.
+              I write for SAP consultants, CIOs, CFOs, and programme leaders
+              who need clear answers. The stuff I wish more teams knew before
+              they spent millions getting it wrong.
             </p>
-            {heroFreeBook && <HeroBookCTAs freeBook={heroFreeBook} />}
+            {/* Two CTAs: jump into the carousel at the first free book and at
+                the paid book. Anchor links resolve to id="book-{slug}" on the
+                cards inside BookCarousel, which uses native scrollIntoView so
+                the horizontal carousel snaps to the right card on click. */}
+            <div className="flex flex-wrap items-center gap-3 mt-2">
+              <a
+                href="#book-card-title-sap-careers-200k-ai-era"
+                className="inline-flex items-center justify-center bg-papaya text-corbeau font-bold text-[0.95rem] px-6 py-3 min-h-[44px] rounded-[10px] no-underline transition-all hover:bg-[#fb8843] hover:-translate-y-px"
+              >
+                Browse free books
+              </a>
+              <a
+                href="#book-card-title-erp-programme-playbook"
+                className="inline-flex items-center justify-center bg-transparent text-corbeau font-bold text-[0.95rem] px-6 py-3 min-h-[44px] rounded-[10px] border border-corbeau transition-all hover:bg-corbeau hover:text-bone"
+              >
+                Browse paid books
+              </a>
+            </div>
             <p className="font-mono text-[0.72rem] tracking-[2px] uppercase text-eyebrow mt-6">
               25 years in ERP · CIMA &amp; AICPA · $700M+ delivered
             </p>
