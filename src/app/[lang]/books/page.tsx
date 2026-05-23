@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import BookCarousel from "@/components/books/BookCarousel";
-import BookStack3D from "@/components/books/BookStack3D";
 import HeroBookCTAs from "@/components/books/HeroBookCTAs";
 import { getAllBooks } from "@/lib/books";
 import { LOCALES, type Locale } from "@/lib/content";
@@ -194,7 +193,7 @@ export default async function BooksPage(props: {
         className="bg-bone pt-28 pb-12"
         style={{ padding: "7rem clamp(1.5rem,5vw,4rem) 4rem" }}
       >
-        <div className="max-w-[1200px] mx-auto grid grid-cols-[1.1fr_1fr] gap-12 items-center max-md:grid-cols-1 max-md:gap-8">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-[1.1fr_1fr] gap-12 items-center max-md:grid-cols-1 max-md:gap-10">
           <div>
             <p className="font-mono text-[0.72rem] tracking-[2px] uppercase text-eyebrow mb-4">
               [ 01 · Books ]
@@ -216,8 +215,32 @@ export default async function BooksPage(props: {
               25 years in ERP · CIMA &amp; AICPA · $700M+ delivered
             </p>
           </div>
-          <div className="max-md:hidden flex justify-center">
-            <BookStack3D books={frontmatters} />
+          {/* Hero photo — Noel holding the first book at a speaking event.
+              Framed treatment: cream matte inside a corbeau outer ring with a
+              soft warm shadow. 4:5 portrait matches the source aspect ratio.
+              Visible on mobile (smaller) because the photo is the strongest
+              proof signal for the page. */}
+          <div className="flex justify-center md:justify-end">
+            <div
+              className="relative w-full max-w-[360px] md:max-w-[420px] aspect-[4/5] rounded-[14px] bg-paper p-3 md:p-4"
+              style={{
+                boxShadow:
+                  "0 1px 2px rgba(14,16,32,0.06), 0 12px 36px rgba(252,152,90,0.12), 0 36px 64px rgba(14,16,32,0.18)",
+                outline: "1px solid rgba(14,16,32,0.12)",
+                outlineOffset: "-1px",
+              }}
+            >
+              <div className="relative w-full h-full overflow-hidden rounded-[8px]">
+                <Image
+                  src="/books/noel-with-book.webp"
+                  alt="Noel D'Costa speaking, holding the SAP Careers in the $200K AI Era book"
+                  fill
+                  sizes="(min-width: 768px) 420px, 360px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>
