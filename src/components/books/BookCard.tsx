@@ -1,18 +1,25 @@
 "use client";
 
 import { useRef } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import BookThumbnail from "./BookThumbnail";
 import BookAccordion, { type AccordionItem } from "./BookAccordion";
 import type { BookFrontmatter } from "@/types/book";
 
 /**
- * BookCard — single book card for the Free / Paid scrollers.
+ * BookCard — single book card for the Free / Paid grid.
  *
  * Client component because it owns the trigger ref for the modal and the
  * BookAccordion (which is itself a client island for the single-open state).
  *
- * The card has no modal state of its own. The parent BookSection owns one
- * shared modal and is told which book to open via onRequest().
+ * Layout:
+ *   - Desktop two-column: thumbnail on the left, content on the right.
+ *   - The FAQ accordion now lives INSIDE the right content column so it
+ *     flows immediately under the CTA, killing the dead space that
+ *     appeared when the thumbnail was taller than the content stack.
+ *
+ * Motion: subtle whileHover lift (y: -2). Disabled under
+ * prefers-reduced-motion.
  */
 
 interface Props {
@@ -23,6 +30,7 @@ interface Props {
 
 export default function BookCard({ book, hasCoverImage, onRequest }: Props) {
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const reduceMotion = useReducedMotion();
   const isPaid = book.kind === "paid";
   const price = book.price;
 
@@ -35,10 +43,19 @@ export default function BookCard({ book, hasCoverImage, onRequest }: Props) {
     : [];
 
   return (
-    <article
+    <motion.article
       id={`book-card-${book.slug}`}
-      className="bg-paper border border-corbeau/[0.08] rounded-2xl p-5 md:p-6 w-full transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(14,16,32,0.08)] flex flex-col"
+      className="bg-paper border border-corbeau/[0.08] rounded-2xl p-5 md:p-6 w-full flex flex-col h-full"
       aria-labelledby={`book-title-${book.slug}`}
+      whileHover={
+        reduceMotion
+          ? undefined
+          : {
+              y: -2,
+              boxShadow: "0 8px 24px rgba(14,16,32,0.08)",
+            }
+      }
+      transition={{ duration: 0.18, ease: "easeOut" }}
     >
       <div className="flex flex-col md:flex-row gap-5 md:gap-6 items-start">
         {/* Thumbnail column. Mobile: top. Desktop: left. */}
@@ -46,7 +63,8 @@ export default function BookCard({ book, hasCoverImage, onRequest }: Props) {
           <BookThumbnail book={book} hasImage={hasCoverImage} />
         </div>
 
-        {/* Content column */}
+        {/* Content column — also owns the accordion so the card has no
+            dead space between CTA and FAQ on desktop. */}
         <div className="flex-1 min-w-0 w-full">
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <span
@@ -87,14 +105,14 @@ export default function BookCard({ book, hasCoverImage, onRequest }: Props) {
           >
             Get the book
           </button>
+
+          {items.length > 0 && (
+            <div className="mt-5">
+              <BookAccordion idPrefix={`book-${book.slug}`} items={items} />
+            </div>
+          )}
         </div>
       </div>
-
-      {items.length > 0 && (
-        <div className="mt-5">
-          <BookAccordion idPrefix={`book-${book.slug}`} items={items} />
-        </div>
-      )}
-    </article>
+    </motion.article>
   );
 }

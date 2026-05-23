@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 /**
  * LeadCaptureModal — focused lead capture for both free and paid books.
@@ -8,19 +9,19 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
  * Fields:
  *   - Name (required)
  *   - Email (required, regex validated)
- *   - Consent checkbox (required)
+ *   - Data-processing consent (required, GDPR Art. 6(1)(b)/(a))
+ *   - Terms acceptance (required)
+ *   - Marketing opt-in (optional, GDPR Art. 6(1)(a))
  *
- * UX:
- *   - Backdrop click and Escape close
- *   - Body scroll locked while open
- *   - First input focused on open, focus restored to trigger on close
- *   - role="dialog" aria-modal="true" aria-labelledby
+ * Consent text is versioned via CONSENT_TEXT_VERSION. When the text
+ * changes, bump the version and old rows remain auditable against the
+ * prior wording.
  *
- * Submission:
- *   - POST /api/books/leads
- *   - Free → success message + optional Download now button if signed URL returned
- *   - Paid → if Stripe wired and URL returned, redirect; else graceful fallback
+ * Motion: backdrop fades 150ms; dialog scales from 0.95 + fade 180ms.
+ * Reverses on close. Disabled under prefers-reduced-motion.
  */
+
+export const CONSENT_TEXT_VERSION = "2026-05-v1";
 
 export interface LeadModalContext {
   bookSlug: string;
@@ -48,10 +49,13 @@ export default function LeadCaptureModal({
 }: Props) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const firstInputRef = useRef<HTMLInputElement | null>(null);
+  const reduceMotion = useReducedMotion();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [consent, setConsent] = useState(false);
+  const [dataConsent, setDataConsent] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
@@ -74,7 +78,9 @@ export default function LeadCaptureModal({
       setDownloadUrl(null);
       setName("");
       setEmail("");
-      setConsent(false);
+      setDataConsent(false);
+      setTermsAccepted(false);
+      setMarketingOptIn(false);
       const id = window.setTimeout(() => firstInputRef.current?.focus(), 20);
       return () => window.clearTimeout(id);
     } else {
@@ -92,9 +98,7 @@ export default function LeadCaptureModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  if (!open || !context) return null;
-
-  const isPaid = context.bookType === "paid";
+  const isPaid = context?.bookType === "paid";
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -111,9 +115,14 @@ export default function LeadCaptureModal({
       setMessage("Please enter a valid email address.");
       return;
     }
-    if (!consent) {
+    if (!dataConsent) {
       setStatus("error");
-      setMessage("Please accept the consent checkbox to continue.");
+      setMessage("Please tick the data-processing consent to continue.");
+      return;
+    }
+    if (!termsAccepted) {
+      setStatus("error");
+      setMessage("Please accept the Terms of Use to continue.");
       return;
     }
 
@@ -125,7 +134,11 @@ export default function LeadCaptureModal({
       email: email.trim(),
       bookSlug: context.bookSlug,
       bookType: context.bookType,
-      consentAccepted: true,
+      // consentAccepted preserved for backwards compat = both required boxes
+      consentAccepted: dataConsent && termsAccepted,
+      termsAccepted,
+      marketingOptIn,
+      consentTextVersion: CONSENT_TEXT_VERSION,
     };
 
     try {
@@ -170,146 +183,196 @@ export default function LeadCaptureModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
-      style={{ background: "rgba(14,16,32,0.5)" }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="lead-modal-title"
-        className="bg-paper rounded-2xl max-w-md w-full p-7 shadow-[0_24px_60px_rgba(14,16,32,0.25)] relative"
-      >
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className="absolute top-2 right-2 w-11 h-11 rounded-full flex items-center justify-center text-corbeau hover:bg-cream transition-colors"
+    <AnimatePresence>
+      {open && context && (
+        <motion.div
+          key="backdrop"
+          className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+          style={{ background: "rgba(14,16,32,0.5)" }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) onClose();
+          }}
         >
-          <span aria-hidden className="text-[1.6rem] leading-none">×</span>
-        </button>
-
-        {status === "success-free" ? (
-          <div>
-            <h2
-              id="lead-modal-title"
-              className="font-display font-black tracking-[-0.02em] text-corbeau text-[1.4rem] mb-2"
-            >
-              Sent. Check your inbox.
-            </h2>
-            <p className="text-night text-[0.95rem] leading-[1.6] mb-4">
-              The download link for {context.bookTitle} is on its way.
-            </p>
-            {downloadUrl && (
-              <a
-                href={downloadUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center bg-papaya text-corbeau font-bold text-[0.95rem] px-5 py-3 min-h-[44px] rounded-[10px] no-underline transition-all hover:bg-[#fb8843]"
-              >
-                Download now
-              </a>
-            )}
-          </div>
-        ) : status === "success-paid" ? (
-          <div>
-            <h2
-              id="lead-modal-title"
-              className="font-display font-black tracking-[-0.02em] text-corbeau text-[1.4rem] mb-2"
-            >
-              We have your details.
-            </h2>
-            <p className="text-night text-[0.95rem] leading-[1.6]">
-              {message}
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
-            <div>
-              <p className="font-mono text-[0.7rem] tracking-[2px] uppercase text-eyebrow mb-1.5">
-                Requesting
-              </p>
-              <h2
-                id="lead-modal-title"
-                className="font-display font-black tracking-[-0.02em] text-corbeau text-[1.25rem] leading-[1.2]"
-              >
-                {context.bookTitle}
-              </h2>
-              {isPaid && typeof context.price === "number" && (
-                <p className="font-mono text-[0.8rem] text-night mt-1">
-                  ${context.price.toFixed(2)} ebook
-                </p>
-              )}
-            </div>
-
-            <label className="flex flex-col gap-1.5">
-              <span className="font-mono text-[0.7rem] tracking-[1.5px] uppercase text-eyebrow">
-                Name
-              </span>
-              <input
-                ref={firstInputRef}
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
-                autoComplete="name"
-                className="bg-paper border border-corbeau/[0.15] rounded-md px-3 py-3 text-[0.95rem] text-corbeau placeholder:text-silver focus:outline-none focus:border-papaya focus:shadow-[0_0_0_3px_rgba(252,152,90,0.10)] transition-all"
-              />
-            </label>
-
-            <label className="flex flex-col gap-1.5">
-              <span className="font-mono text-[0.7rem] tracking-[1.5px] uppercase text-eyebrow">
-                Email
-              </span>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
-                autoComplete="email"
-                className="bg-paper border border-corbeau/[0.15] rounded-md px-3 py-3 text-[0.95rem] text-corbeau placeholder:text-silver focus:outline-none focus:border-papaya focus:shadow-[0_0_0_3px_rgba(252,152,90,0.10)] transition-all"
-              />
-            </label>
-
-            <label className="flex items-start gap-2.5 cursor-pointer">
-              <input
-                type="checkbox"
-                required
-                checked={consent}
-                onChange={(e) => setConsent(e.target.checked)}
-                className="mt-1 w-4 h-4 accent-[#fc985a] cursor-pointer"
-              />
-              <span className="text-night text-[0.82rem] leading-[1.5]">
-                I agree to receive emails from Noel D&apos;Costa related to SAP, ERP, AI, and career resources.
-              </span>
-            </label>
-
+          <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="lead-modal-title"
+            className="bg-paper rounded-2xl max-w-md w-full p-7 shadow-[0_24px_60px_rgba(14,16,32,0.25)] relative max-h-[90vh] overflow-y-auto"
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95 }}
+            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+          >
             <button
-              type="submit"
-              disabled={status === "loading"}
-              className="inline-flex items-center justify-center bg-papaya text-corbeau font-bold text-[0.95rem] px-6 py-3 min-h-[44px] rounded-[10px] transition-all hover:bg-[#fb8843] hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0"
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className="absolute top-2 right-2 w-11 h-11 rounded-full flex items-center justify-center text-corbeau hover:bg-cream transition-colors"
             >
-              {status === "loading"
-                ? "Sending…"
-                : isPaid
-                  ? "Continue to checkout"
-                  : "Send me the book"}
+              <span aria-hidden className="text-[1.6rem] leading-none">×</span>
             </button>
 
-            {status === "error" && message && (
-              <p role="alert" className="text-canyon text-[0.85rem] leading-[1.5]">
-                {message}
-              </p>
+            {status === "success-free" ? (
+              <div>
+                <h2
+                  id="lead-modal-title"
+                  className="font-display font-black tracking-[-0.02em] text-corbeau text-[1.4rem] mb-2"
+                >
+                  Sent. Check your inbox.
+                </h2>
+                <p className="text-night text-[0.95rem] leading-[1.6] mb-4">
+                  The download link for {context.bookTitle} is on its way.
+                </p>
+                {downloadUrl && (
+                  <a
+                    href={downloadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center bg-papaya text-corbeau font-bold text-[0.95rem] px-5 py-3 min-h-[44px] rounded-[10px] no-underline transition-all hover:bg-[#fb8843]"
+                  >
+                    Download now
+                  </a>
+                )}
+              </div>
+            ) : status === "success-paid" ? (
+              <div>
+                <h2
+                  id="lead-modal-title"
+                  className="font-display font-black tracking-[-0.02em] text-corbeau text-[1.4rem] mb-2"
+                >
+                  We have your details.
+                </h2>
+                <p className="text-night text-[0.95rem] leading-[1.6]">
+                  {message}
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+                <div>
+                  <p className="font-mono text-[0.7rem] tracking-[2px] uppercase text-eyebrow mb-1.5">
+                    Requesting
+                  </p>
+                  <h2
+                    id="lead-modal-title"
+                    className="font-display font-black tracking-[-0.02em] text-corbeau text-[1.25rem] leading-[1.2]"
+                  >
+                    {context.bookTitle}
+                  </h2>
+                  {isPaid && typeof context.price === "number" && (
+                    <p className="font-mono text-[0.8rem] text-night mt-1">
+                      ${context.price.toFixed(2)} ebook
+                    </p>
+                  )}
+                </div>
+
+                <label className="flex flex-col gap-1.5">
+                  <span className="font-mono text-[0.7rem] tracking-[1.5px] uppercase text-eyebrow">
+                    Name
+                  </span>
+                  <input
+                    ref={firstInputRef}
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your name"
+                    autoComplete="name"
+                    className="bg-paper border border-corbeau/[0.15] rounded-md px-3 py-3 text-[0.95rem] text-corbeau placeholder:text-silver focus:outline-none focus:border-papaya focus:shadow-[0_0_0_3px_rgba(252,152,90,0.10)] transition-all"
+                  />
+                </label>
+
+                <label className="flex flex-col gap-1.5">
+                  <span className="font-mono text-[0.7rem] tracking-[1.5px] uppercase text-eyebrow">
+                    Email
+                  </span>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@company.com"
+                    autoComplete="email"
+                    className="bg-paper border border-corbeau/[0.15] rounded-md px-3 py-3 text-[0.95rem] text-corbeau placeholder:text-silver focus:outline-none focus:border-papaya focus:shadow-[0_0_0_3px_rgba(252,152,90,0.10)] transition-all"
+                  />
+                </label>
+
+                <div className="flex flex-col gap-2.5">
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={dataConsent}
+                      onChange={(e) => setDataConsent(e.target.checked)}
+                      className="mt-1 w-4 h-4 accent-[#fc985a] cursor-pointer flex-shrink-0"
+                    />
+                    <span className="text-night text-[0.82rem] leading-[1.5]">
+                      I agree to Noel D&apos;Costa storing my name and email to
+                      deliver this book and respond to my request, in line with the{" "}
+                      <a href="/privacy" className="text-papaya underline hover:no-underline">
+                        Privacy Policy
+                      </a>
+                      .
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={termsAccepted}
+                      onChange={(e) => setTermsAccepted(e.target.checked)}
+                      className="mt-1 w-4 h-4 accent-[#fc985a] cursor-pointer flex-shrink-0"
+                    />
+                    <span className="text-night text-[0.82rem] leading-[1.5]">
+                      I have read and accept the{" "}
+                      <a href="/terms" className="text-papaya underline hover:no-underline">
+                        Terms of Use
+                      </a>
+                      .
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={marketingOptIn}
+                      onChange={(e) => setMarketingOptIn(e.target.checked)}
+                      className="mt-1 w-4 h-4 accent-[#fc985a] cursor-pointer flex-shrink-0"
+                    />
+                    <span className="text-night text-[0.82rem] leading-[1.5]">
+                      Send me occasional emails with new SAP, ERP, and AI
+                      resources. I can unsubscribe at any time.
+                    </span>
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={status === "loading"}
+                  className="inline-flex items-center justify-center bg-papaya text-corbeau font-bold text-[0.95rem] px-6 py-3 min-h-[44px] rounded-[10px] transition-all hover:bg-[#fb8843] hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0"
+                >
+                  {status === "loading"
+                    ? "Sending…"
+                    : isPaid
+                      ? "Continue to checkout"
+                      : "Send me the book"}
+                </button>
+
+                {status === "error" && message && (
+                  <p role="alert" className="text-canyon text-[0.85rem] leading-[1.5]">
+                    {message}
+                  </p>
+                )}
+              </form>
             )}
-          </form>
-        )}
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

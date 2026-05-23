@@ -23,6 +23,9 @@ interface Lead {
   source_page: string;
   created_at: string;
   consent_accepted: boolean;
+  terms_accepted?: boolean;
+  marketing_opt_in?: boolean;
+  consent_text_version?: string | null;
 }
 
 interface Props {
@@ -207,6 +210,9 @@ export default function BookLeadsTable({
                 Submitted
               </th>
               <th className="px-3 py-2.5 font-mono text-[0.7rem] tracking-[1.5px] uppercase text-eyebrow">
+                Consent
+              </th>
+              <th className="px-3 py-2.5 font-mono text-[0.7rem] tracking-[1.5px] uppercase text-eyebrow">
                 Source
               </th>
             </tr>
@@ -215,7 +221,7 @@ export default function BookLeadsTable({
             {leads.length === 0 && (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="px-3 py-6 text-night text-center text-[0.9rem]"
                 >
                   No leads match the current filter.
@@ -243,6 +249,18 @@ export default function BookLeadsTable({
                 <td className="px-3 py-2.5 text-night font-mono text-[0.78rem]">
                   {new Date(lead.created_at).toLocaleString()}
                 </td>
+                <td className="px-3 py-2.5">
+                  <div className="flex flex-wrap gap-1">
+                    <ConsentBadge label="Data" on={!!lead.consent_accepted} />
+                    <ConsentBadge label="Terms" on={!!lead.terms_accepted} />
+                    <ConsentBadge label="Marketing" on={!!lead.marketing_opt_in} />
+                  </div>
+                  {lead.consent_text_version && (
+                    <div className="font-mono text-[0.65rem] text-night/60 mt-1">
+                      v{lead.consent_text_version}
+                    </div>
+                  )}
+                </td>
                 <td className="px-3 py-2.5 text-night font-mono text-[0.78rem]">
                   {lead.source_page}
                 </td>
@@ -252,6 +270,8 @@ export default function BookLeadsTable({
         </table>
       </div>
 
+      {/* Pagination is rendered after the table. Helper component defined
+          below the main export. */}
       {/* Pagination */}
       {total > limit && (
         <div className="flex items-center justify-between gap-3">
@@ -279,5 +299,20 @@ export default function BookLeadsTable({
         </div>
       )}
     </div>
+  );
+}
+
+function ConsentBadge({ label, on }: { label: string; on: boolean }) {
+  return (
+    <span
+      title={`${label}: ${on ? "yes" : "no"}`}
+      className={`font-mono text-[0.62rem] tracking-[0.5px] px-1.5 py-0.5 rounded font-semibold inline-flex items-center gap-1 ${
+        on
+          ? "bg-[#daf0db] text-[#1a5a24]"
+          : "bg-corbeau/[0.06] text-night/60"
+      }`}
+    >
+      {label} {on ? "✓" : "✕"}
+    </span>
   );
 }

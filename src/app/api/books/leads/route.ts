@@ -34,6 +34,9 @@ interface LeadBody {
   bookSlug?: string;
   bookType?: "free" | "paid";
   consentAccepted?: boolean;
+  termsAccepted?: boolean;
+  marketingOptIn?: boolean;
+  consentTextVersion?: string;
 }
 
 // ─── in-memory rate limiter (per IP, sliding window) ─────────────────────
@@ -82,6 +85,13 @@ export async function POST(request: NextRequest) {
   const bookType: "free" | "paid" =
     body.bookType === "paid" ? "paid" : "free";
   const consentAccepted = body.consentAccepted === true;
+  const termsAccepted = body.termsAccepted === true;
+  const marketingOptIn =
+    typeof body.marketingOptIn === "boolean" ? body.marketingOptIn : false;
+  const consentTextVersion =
+    typeof body.consentTextVersion === "string" && body.consentTextVersion.trim()
+      ? body.consentTextVersion.trim().slice(0, 64)
+      : null;
 
   // Validation
   if (!name) {
@@ -99,6 +109,12 @@ export async function POST(request: NextRequest) {
   if (!consentAccepted) {
     return Response.json(
       { success: false, error: "Consent is required." },
+      { status: 400 },
+    );
+  }
+  if (!termsAccepted) {
+    return Response.json(
+      { success: false, error: "Terms must be accepted." },
       { status: 400 },
     );
   }
@@ -168,6 +184,9 @@ export async function POST(request: NextRequest) {
     book_type: fm.kind,
     source_page: "/books",
     consent_accepted: true,
+    terms_accepted: termsAccepted,
+    marketing_opt_in: marketingOptIn,
+    consent_text_version: consentTextVersion,
     user_agent: userAgent,
     ip_address: ip,
   });

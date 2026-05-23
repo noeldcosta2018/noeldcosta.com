@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 /**
  * BookAccordion — single-open accordion for one book card.
@@ -14,7 +15,8 @@ import { useState } from "react";
  * background, plus-to-x rotation). Compact spacing because this lives
  * inside a card.
  *
- * State is per-card-instance (single open at a time WITHIN one card).
+ * Motion: panel slides open via height auto + fade. AnimatePresence
+ * handles exit. Collapsed instantly when prefers-reduced-motion is on.
  */
 
 export interface AccordionItem {
@@ -30,6 +32,7 @@ export default function BookAccordion({
   idPrefix?: string;
 }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const reduceMotion = useReducedMotion();
 
   return (
     <div className="not-prose">
@@ -63,16 +66,32 @@ export default function BookAccordion({
                 +
               </span>
             </button>
-            {isOpen && (
-              <p
-                id={`${id}-panel`}
-                role="region"
-                aria-labelledby={`${id}-trigger`}
-                className="text-night text-[0.88rem] leading-[1.6] mt-1 mb-3 px-2"
-              >
-                {item.a}
-              </p>
-            )}
+            <AnimatePresence initial={false}>
+              {isOpen && (
+                <motion.div
+                  id={`${id}-panel`}
+                  role="region"
+                  aria-labelledby={`${id}-trigger`}
+                  initial={
+                    reduceMotion ? { opacity: 1 } : { height: 0, opacity: 0 }
+                  }
+                  animate={
+                    reduceMotion
+                      ? { opacity: 1 }
+                      : { height: "auto", opacity: 1 }
+                  }
+                  exit={
+                    reduceMotion ? { opacity: 1 } : { height: 0, opacity: 0 }
+                  }
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  style={{ overflow: "hidden" }}
+                >
+                  <p className="text-night text-[0.88rem] leading-[1.6] mt-1 mb-3 px-2">
+                    {item.a}
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         );
       })}
