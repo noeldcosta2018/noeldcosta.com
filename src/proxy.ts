@@ -30,6 +30,9 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|images|fonts|favicon.ico|robots.txt|sitemap.xml).*)",
+    // Skip: API routes, Next.js internals, static asset folders, the admin
+    // tree (lives outside /[lang]), and well-known root files. Anything
+    // that matches still goes through the locale-rewrite below.
+    "/((?!api|admin|_next/static|_next/image|images|fonts|favicon.ico|robots.txt|sitemap.xml).*)",
   ],
 };
