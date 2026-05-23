@@ -37,8 +37,7 @@ export default function BookCard({ book, hasCoverImage, onRequest }: Props) {
   return (
     <article
       id={`book-card-${book.slug}`}
-      className="bg-paper border border-corbeau/[0.08] rounded-2xl p-5 md:p-6 shrink-0 snap-start transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(14,16,32,0.08)] flex flex-col"
-      style={{ width: "min(440px, 100%)" }}
+      className="bg-paper border border-corbeau/[0.08] rounded-2xl p-5 md:p-6 w-full transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(14,16,32,0.08)] flex flex-col"
       aria-labelledby={`book-title-${book.slug}`}
     >
       <div className="flex flex-col md:flex-row gap-5 md:gap-6 items-start">

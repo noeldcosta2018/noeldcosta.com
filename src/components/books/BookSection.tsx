@@ -70,22 +70,22 @@ export default function BookSection({
           {intro}
         </p>
 
-        {/* Horizontal scroll-snap row. Padding-right buffer signals scroll on
-            desktop when more than 2 cards exist. */}
-        <div
-          className="flex overflow-x-auto snap-x snap-mandatory pb-4 pr-6 -mr-6 items-start [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-          style={{ gap: 20 }}
+        {/* Two-up grid on desktop, single column on mobile. Books wrap to
+            the next row as the section grows beyond two titles. */}
+        <ul
+          className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 list-none p-0 m-0"
           aria-label={`${heading} list`}
         >
           {books.map(({ fm, hasCoverImage }) => (
-            <BookCard
-              key={fm.slug}
-              book={fm}
-              hasCoverImage={hasCoverImage}
-              onRequest={onRequest}
-            />
+            <li key={fm.slug} className="flex">
+              <BookCard
+                book={fm}
+                hasCoverImage={hasCoverImage}
+                onRequest={onRequest}
+              />
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
 
       <LeadCaptureModal
