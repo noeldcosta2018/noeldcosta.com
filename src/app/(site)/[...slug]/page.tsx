@@ -12,9 +12,7 @@ import {
   getAllPageSlugs,
   getPost,
   getPage,
-  LOCALES,
   type Category,
-  type Locale,
 } from "@/lib/content";
 import {
   SITE_URL,
@@ -23,9 +21,9 @@ import {
 } from "@/lib/seo";
 
 // Reserved single-segment slugs handled by dedicated routes
-// (e.g. /[lang]/about/page.tsx). The catch-all skips these at depth 1
-// so the dedicated handler renders. Nested URLs whose LAST segment
-// matches a reserved slug (e.g. WordPress's
+// (e.g. /about/page.tsx). The catch-all skips these at depth 1 so the
+// dedicated handler renders. Nested URLs whose LAST segment matches a
+// reserved slug (e.g. WordPress's
 // /ai-insights-shiftgearx-noeldcosta/erp-implementation-cost-calculator/)
 // are still served — the dedicated route only owns the flat URL.
 const RESERVED_SLUGS = new Set<string>([
@@ -41,8 +39,8 @@ const RESERVED_SLUGS = new Set<string>([
 ]);
 
 // Slugs that match a known category id (e.g. "sap-case-studies"). Hitting
-// /en/sap-case-studies should render the same listing as
-// /en/category/sap-case-studies, not a separate MDX content page. Keeps
+// /sap-case-studies should render the same listing as
+// /category/sap-case-studies, not a separate MDX content page. Keeps
 // both URLs alive (zero-redirect SEO contract from CLAUDE.md) while
 // surfacing the same article grid.
 const CATEGORY_SLUGS = new Set<string>(Object.keys(CATEGORIES));
@@ -114,11 +112,9 @@ export function generateStaticParams() {
   // even though "case-studies" is no longer a CATEGORIES key.
   pathSet.add(JSON.stringify([CASE_STUDIES_INDEX_SLUG]));
 
-  const params: { lang: string; slug: string[] }[] = [];
-  for (const lang of LOCALES) {
-    for (const pathJson of pathSet) {
-      params.push({ lang, slug: JSON.parse(pathJson) as string[] });
-    }
+  const params: { slug: string[] }[] = [];
+  for (const pathJson of pathSet) {
+    params.push({ slug: JSON.parse(pathJson) as string[] });
   }
   return params;
 }
@@ -126,11 +122,9 @@ export function generateStaticParams() {
 export const dynamicParams = false;
 
 export async function generateMetadata(
-  props: { params: Promise<{ lang: string; slug: string[] }> }
+  props: { params: Promise<{ slug: string[] }> }
 ): Promise<Metadata> {
-  const { lang, slug } = await props.params;
-  if (!LOCALES.includes(lang as Locale)) return {};
-  const locale = lang as Locale;
+  const { slug } = await props.params;
   const lastSlug = slug[slug.length - 1];
 
   // Category metadata wins for slugs that match a known category id.
@@ -139,7 +133,7 @@ export async function generateMetadata(
     return {
       title: `${meta.label} | Noel D'Costa`,
       description: meta.description,
-      alternates: { canonical: `${SITE_URL}/${locale}/category/${meta.slug}` },
+      alternates: { canonical: `${SITE_URL}/category/${meta.slug}` },
     };
   }
 
@@ -150,23 +144,21 @@ export async function generateMetadata(
     return {
       title: `${meta.label} | Noel D'Costa`,
       description: meta.description,
-      alternates: { canonical: `${SITE_URL}/${locale}/${CASE_STUDIES_INDEX_SLUG}` },
+      alternates: { canonical: `${SITE_URL}/${CASE_STUDIES_INDEX_SLUG}` },
     };
   }
 
-  const post = getPost(lastSlug, locale);
+  const post = getPost(lastSlug, "en");
   if (post) return buildPostMetadata(post);
-  const page = getPage(lastSlug, locale);
+  const page = getPage(lastSlug, "en");
   if (page) return buildPageMetadata(page);
   return {};
 }
 
 export default async function LocalizedRoute(
-  props: { params: Promise<{ lang: string; slug: string[] }> }
+  props: { params: Promise<{ slug: string[] }> }
 ) {
-  const { lang, slug } = await props.params;
-  if (!LOCALES.includes(lang as Locale)) notFound();
-  const locale = lang as Locale;
+  const { slug } = await props.params;
   const lastSlug = slug[slug.length - 1];
 
   // Flat URLs whose slug has a dedicated route handler get a 404 from
@@ -183,28 +175,28 @@ export default async function LocalizedRoute(
     return <CaseStudyPortfolioPage />;
   }
 
-  // Category slug shortcut: /en/<category-slug> renders the same
-  // CategoryPage component as /en/category/<category-slug>. Canonical
+  // Category slug shortcut: /<category-slug> renders the same
+  // CategoryPage component as /category/<category-slug>. Canonical
   // URL points at the /category/ form (set in generateMetadata).
   // Special case: "sap-case-studies" gets the bespoke portfolio layout
   // instead of the generic category listing.
   if (slug.length === 1 && isCategorySlug(lastSlug)) {
     if (lastSlug === "sap-case-studies") return <CaseStudyPortfolioPage />;
-    return <CategoryPage category={lastSlug} locale={locale} />;
+    return <CategoryPage category={lastSlug} />;
   }
 
-  const post = getPost(lastSlug, locale);
+  const post = getPost(lastSlug, "en");
   if (post) {
     // Case-study posts get the bespoke article template (full-width
     // hero, meta strip, related-case-studies grid). Other posts use
     // the generic PostPage layout.
     const isCaseStudy = CASE_STUDIES.some((c) => c.slug === lastSlug);
-    if (isCaseStudy) return <CaseStudyArticlePage slug={lastSlug} locale={locale} />;
-    return <PostPage slug={lastSlug} locale={locale} />;
+    if (isCaseStudy) return <CaseStudyArticlePage slug={lastSlug} />;
+    return <PostPage slug={lastSlug} />;
   }
 
-  const page = getPage(lastSlug, locale);
-  if (page) return <MdxPageLayout slug={lastSlug} locale={locale} />;
+  const page = getPage(lastSlug, "en");
+  if (page) return <MdxPageLayout slug={lastSlug} />;
 
   notFound();
 }

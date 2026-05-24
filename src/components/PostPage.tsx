@@ -19,7 +19,6 @@ import {
   getAllPosts,
   getPost,
   readingTime,
-  type Locale,
 } from "@/lib/content";
 import {
   articleJsonLd,
@@ -58,37 +57,34 @@ function extractFaqItems(body: string): { question: string; answer: string }[] {
  */
 export default function PostPage({
   slug,
-  locale,
 }: {
   slug: string;
-  locale: Locale;
 }) {
-  const post = getPost(slug, locale);
+  const post = getPost(slug, "en");
   if (!post) notFound();
 
   const fm = post.frontmatter;
   const catMeta = CATEGORIES[fm.category as keyof typeof CATEGORIES];
   const rt = readingTime(post.body);
-  const localePrefix = locale === "en" ? "" : `/${locale}`;
 
   const headings = extractHeadings(post.body);
   const [bodyTop, bodyBottom] = splitAtMidH2(post.body);
   const hasSplit = bodyBottom.length > 0;
   const hasToc = headings.length >= 3;
 
-  const pool = getAllPosts(locale);
+  const pool = getAllPosts("en");
   const endRelated = pickRelated(post, pool, 4);
   const faqItems = extractFaqItems(post.body);
 
   const breadcrumbs = [
-    { name: "Home", url: `${SITE_URL}${localePrefix}/` },
+    { name: "Home", url: `${SITE_URL}/` },
     catMeta
       ? {
           name: catMeta.label,
-          url: `${SITE_URL}${localePrefix}/category/${catMeta.slug}`,
+          url: `${SITE_URL}/category/${catMeta.slug}`,
         }
       : null,
-    { name: fm.title, url: `${SITE_URL}${localePrefix}/${fm.slug}` },
+    { name: fm.title, url: `${SITE_URL}/${fm.slug}` },
   ].filter(Boolean) as { name: string; url: string }[];
 
   const deck = fm.deck || fm.excerpt;
@@ -105,7 +101,7 @@ export default function PostPage({
             <ol className="flex flex-wrap gap-x-2 gap-y-1 items-center font-mono text-[0.72rem] font-medium tracking-[2px] uppercase">
               <li>
                 <Link
-                  href={`${localePrefix}/`}
+                  href="/"
                   className="text-eyebrow hover:text-papaya transition-colors"
                 >
                   Home
@@ -116,7 +112,7 @@ export default function PostPage({
                   <li aria-hidden className="text-eyebrow/40">/</li>
                   <li>
                     <Link
-                      href={`${localePrefix}/category/${catMeta.slug}`}
+                      href={`/category/${catMeta.slug}`}
                       className="text-eyebrow hover:text-papaya transition-colors"
                     >
                       {catMeta.label}
@@ -165,7 +161,6 @@ export default function PostPage({
                 readingMinutes={rt}
                 heroImage={fm.hero}
                 heroAlt={fm.heroAlt}
-                localePrefix={localePrefix}
               />
 
               {fm.keyTakeaways && fm.keyTakeaways.length > 0 && (
@@ -282,13 +277,12 @@ export default function PostPage({
 
               {/* Combined author + advisory CTA card */}
               <FadeUp>
-                <AuthorBox localePrefix={localePrefix} />
+                <AuthorBox />
               </FadeUp>
 
               <RelatedArticles
                 label="Continue reading"
                 items={endRelated}
-                localePrefix={localePrefix}
                 columns={2}
               />
             </div>

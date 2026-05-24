@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
-import { LOCALES, type Locale } from "@/lib/content";
 import { SITE_URL, SITE_NAME } from "@/lib/seo";
 
 /**
@@ -11,20 +9,8 @@ import { SITE_URL, SITE_NAME } from "@/lib/seo";
  * book downloads. Linked from the LeadCaptureModal consent checkboxes.
  */
 
-export function generateStaticParams() {
-  return LOCALES.map((lang) => ({ lang }));
-}
-
-export const dynamicParams = false;
-
-export async function generateMetadata(props: {
-  params: Promise<{ lang: string }>;
-}): Promise<Metadata> {
-  const { lang } = await props.params;
-  if (!LOCALES.includes(lang as Locale)) return {};
-  const locale = lang as Locale;
-  const localePrefix = locale === "en" ? "" : `/${locale}`;
-  const url = `${SITE_URL}${localePrefix}/terms`;
+export async function generateMetadata(): Promise<Metadata> {
+  const url = `${SITE_URL}/terms`;
   const title = "Terms of use | Noel D'Costa";
   const description =
     "Plain-English terms covering use of noeldcosta.com, the books, and the site's content.";
@@ -39,21 +25,14 @@ export async function generateMetadata(props: {
       url,
       siteName: SITE_NAME,
       type: "website",
-      locale,
+      locale: "en",
     },
   };
 }
 
 const UPDATED = "2026-05-23";
 
-export default async function TermsPage(props: {
-  params: Promise<{ lang: string }>;
-}) {
-  const { lang } = await props.params;
-  if (!LOCALES.includes(lang as Locale)) notFound();
-  const locale = lang as Locale;
-  const localePrefix = locale === "en" ? "" : `/${locale}`;
-
+export default async function TermsPage() {
   return (
     <>
       <Nav />
@@ -145,7 +124,7 @@ export default async function TermsPage(props: {
             <p className="font-mono text-[0.78rem] text-night/70 mt-6 border-t border-corbeau/[0.08] pt-4">
               See also:{" "}
               <Link
-                href={`${localePrefix}/privacy`}
+                href="/privacy"
                 className="text-papaya underline hover:no-underline"
               >
                 Privacy

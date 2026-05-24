@@ -3,18 +3,17 @@ import { notFound } from "next/navigation";
 import MdxBody from "@/components/mdx/MdxBody";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
-import { getPage, type Locale } from "@/lib/content";
+import { getPage } from "@/lib/content";
 import { breadcrumbJsonLd, contactPageJsonLd, SITE_URL } from "@/lib/seo";
 
-export default function MdxPageLayout({ slug, locale }: { slug: string; locale: Locale }) {
-  const page = getPage(slug, locale);
+export default function MdxPageLayout({ slug }: { slug: string }) {
+  const page = getPage(slug, "en");
   if (!page) notFound();
   const fm = page.frontmatter;
-  const localePrefix = locale === "en" ? "" : `/${locale}`;
 
-  const pageUrl = `${SITE_URL}${localePrefix}/${fm.slug}`;
+  const pageUrl = `${SITE_URL}/${fm.slug}`;
   const breadcrumbs = [
-    { name: "Home", url: `${SITE_URL}${localePrefix}/` },
+    { name: "Home", url: `${SITE_URL}/` },
     { name: fm.title, url: pageUrl },
   ];
 
@@ -31,7 +30,7 @@ export default function MdxPageLayout({ slug, locale }: { slug: string; locale: 
           <nav aria-label="Breadcrumb" className="mb-6">
             <ol className="flex flex-wrap gap-1.5 items-center font-mono text-[0.68rem] tracking-[1.5px] uppercase text-night/70">
               <li>
-                <Link href={`${localePrefix}/`} className="hover:text-papaya">Home</Link>
+                <Link href="/" className="hover:text-papaya">Home</Link>
               </li>
             </ol>
           </nav>

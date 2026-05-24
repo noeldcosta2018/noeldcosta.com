@@ -5,10 +5,11 @@ import "../globals.css";
 /**
  * Admin layout. English-only — admin is not localised.
  *
- * Provides its own <html>/<body> because the project's root layout lives at
- * src/app/[lang]/layout.tsx (the i18n tree). The admin tree sits outside the
- * [lang] segment so it needs to define the document shell itself, otherwise
- * /admin/* routes 404 in production even though they build cleanly.
+ * Provides its own <html>/<body> because the public site's root layout
+ * lives in the (site) route group at src/app/(site)/layout.tsx. The admin
+ * tree sits in its own top-level segment, so it needs to define the
+ * document shell itself; without this, /admin/* routes 404 in production
+ * even though they build cleanly.
  *
  * Per-route guards live in each page (so /admin/login can render publicly
  * while /admin/book-leads requires requireAdmin()).

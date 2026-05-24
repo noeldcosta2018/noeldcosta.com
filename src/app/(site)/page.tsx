@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import Nav from "@/components/Nav";
 import Hero from "@/components/Hero";
@@ -17,47 +16,26 @@ import Testimonials from "@/components/Testimonials";
 import FAQ from "@/components/FAQ";
 import CTABanner from "@/components/CTABanner";
 import Footer from "@/components/Footer";
-import { LOCALES, type Locale } from "@/lib/content";
 import { SITE_URL, blogJsonLd, professionalServiceJsonLd } from "@/lib/seo";
 
 const TITLE = "Noel D'Costa | ERP, AI & S/4HANA Advisor";
 const DESCRIPTION =
   "Senior ERP and AI advisor. ECC to S/4HANA migrations and Joule on SAP for enterprise clients across the GCC. 25 years. CIMA-qualified. Direct involvement, not subcontracted.";
 
-export function generateStaticParams() {
-  return LOCALES.map((lang) => ({ lang }));
-}
-
-export const dynamicParams = false;
-
-export async function generateMetadata(
-  props: { params: Promise<{ lang: string }> }
-): Promise<Metadata> {
-  const { lang } = await props.params;
-  const locale = lang as Locale;
-
-  const canonical = locale === "en" ? SITE_URL : `${SITE_URL}/${locale}`;
-
-  const languages: Record<string, string> = {};
-  for (const loc of LOCALES) {
-    languages[loc] = loc === "en" ? SITE_URL : `${SITE_URL}/${loc}`;
-  }
-  languages["x-default"] = SITE_URL;
-
+export async function generateMetadata(): Promise<Metadata> {
   return {
     title: TITLE,
     description: DESCRIPTION,
     robots: "index, follow",
     alternates: {
-      canonical,
-      languages,
+      canonical: SITE_URL,
     },
     openGraph: {
       title: TITLE,
       description: DESCRIPTION,
       type: "profile",
-      url: canonical,
-      locale,
+      url: SITE_URL,
+      locale: "en",
       siteName: "Noel D'Costa",
       images: [{ url: "/og-image.png", width: 1200, height: 630, alt: TITLE }],
     },
@@ -71,10 +49,7 @@ export async function generateMetadata(
   };
 }
 
-export default async function Home(props: { params: Promise<{ lang: string }> }) {
-  const { lang } = await props.params;
-  if (!LOCALES.includes(lang as Locale)) notFound();
-
+export default async function Home() {
   // Person + WebSite are emitted sitewide from the root layout; here we add
   // ProfessionalService (homepage doubles as the service offering hub) and
   // Blog (declares the corpus of posts so they're linked back to a parent).

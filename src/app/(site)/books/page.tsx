@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { notFound } from "next/navigation";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import CTABanner from "@/components/CTABanner";
 import BookSection from "@/components/books/BookSection";
 import BooksHeroIntro from "@/components/books/BooksHeroIntro";
 import { getAllBooks, coverExists } from "@/lib/books";
-import { LOCALES, type Locale } from "@/lib/content";
 import { SITE_URL, SITE_NAME, AUTHOR } from "@/lib/seo";
 
 /**
@@ -32,20 +30,8 @@ import { SITE_URL, SITE_NAME, AUTHOR } from "@/lib/seo";
  *   - FAQPage combining all card accordion Q&A pairs (3 per book)
  */
 
-export function generateStaticParams() {
-  return LOCALES.map((lang) => ({ lang }));
-}
-
-export const dynamicParams = false;
-
-export async function generateMetadata(props: {
-  params: Promise<{ lang: string }>;
-}): Promise<Metadata> {
-  const { lang } = await props.params;
-  if (!LOCALES.includes(lang as Locale)) return {};
-  const locale = lang as Locale;
-  const localePrefix = locale === "en" ? "" : `/${locale}`;
-  const url = `${SITE_URL}${localePrefix}/books`;
+export async function generateMetadata(): Promise<Metadata> {
+  const url = `${SITE_URL}/books`;
   const title = "Books by Noel D'Costa | SAP, ERP and Enterprise AI";
   const description =
     "Practical books for SAP consultants, CIOs, CFOs, and ERP programme leaders covering SAP careers, enterprise AI, autonomous agents, and the SAP career playbook for the AI era.";
@@ -59,7 +45,7 @@ export async function generateMetadata(props: {
       url,
       siteName: SITE_NAME,
       type: "website",
-      locale,
+      locale: "en",
     },
     twitter: {
       card: "summary_large_image",
@@ -83,14 +69,8 @@ const ACCORDION_QUESTIONS = [
   "How do I access this?",
 ] as const;
 
-export default async function BooksPage(props: {
-  params: Promise<{ lang: string }>;
-}) {
-  const { lang } = await props.params;
-  if (!LOCALES.includes(lang as Locale)) notFound();
-  const locale = lang as Locale;
-  const localePrefix = locale === "en" ? "" : `/${locale}`;
-  const pageUrl = `${SITE_URL}${localePrefix}/books`;
+export default async function BooksPage() {
+  const pageUrl = `${SITE_URL}/books`;
 
   const allBooks = getAllBooks();
   const frontmatters = allBooks.map((b) => b.frontmatter);

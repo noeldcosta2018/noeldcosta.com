@@ -73,12 +73,10 @@ export function pickRelated(
 export default function RelatedArticles({
   label = "Related reading",
   items,
-  localePrefix,
   columns = 3,
 }: {
   label?: string;
   items: RelatedCandidate[];
-  localePrefix: string;
   columns?: 2 | 3 | 4;
 }) {
   if (!items.length) return null;
@@ -101,7 +99,7 @@ export default function RelatedArticles({
           </h2>
         </div>
         <Link
-          href={`${localePrefix}/`}
+          href="/"
           className="hidden md:inline-flex items-center gap-1.5 font-mono text-[0.72rem] font-medium tracking-[2px] uppercase text-corbeau/60 hover:text-papaya transition-colors"
         >
           Browse all
@@ -111,7 +109,7 @@ export default function RelatedArticles({
       <div className={`grid grid-cols-1 ${colsClass} gap-4`}>
         {items.map((r, idx) => {
           const catMeta = CATEGORIES[r.category as keyof typeof CATEGORIES];
-          const href = `${localePrefix}/${r.slug}`;
+          const href = `/${r.slug}`;
           return (
             <FadeUp key={r.slug} delay={idx * 140}>
               <Link

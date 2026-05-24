@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { Epilogue, Sora, JetBrains_Mono } from "next/font/google";
-import { LOCALES, type Locale } from "@/lib/content";
 import { personJsonLd, websiteJsonLd } from "@/lib/seo";
 import "../globals.css";
 
@@ -30,9 +28,6 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ["400", "500", "600"],
   display: "swap",
 });
-
-// RTL locales — the only one in scope today is Arabic.
-const RTL_LOCALES = new Set<Locale>(["ar"]);
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://noeldcosta.com"),
@@ -72,28 +67,15 @@ export const metadata: Metadata = {
   },
 };
 
-export function generateStaticParams() {
-  return LOCALES.map((lang) => ({ lang }));
-}
-
-export const dynamicParams = false;
-
-export default async function LocaleRootLayout({
+export default function SiteRootLayout({
   children,
-  params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ lang: string }>;
 }) {
-  const { lang } = await params;
-  if (!LOCALES.includes(lang as Locale)) notFound();
-  const locale = lang as Locale;
-  const dir = RTL_LOCALES.has(locale) ? "rtl" : "ltr";
-
   return (
     <html
-      lang={locale}
-      dir={dir}
+      lang="en"
+      dir="ltr"
       className={`${epilogue.variable} ${sora.variable} ${jetbrainsMono.variable}`}
     >
       <body>

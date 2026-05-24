@@ -12,11 +12,9 @@ import Link from "next/link";
  * so it reads as a brand card without being as heavy as a full orange fill.
  */
 export default function AuthorBox({
-  localePrefix,
   ctaTitle = "Running an ERP programme right now?",
   ctaBody = "If this article touched on a programme you are live in right now, a 30-minute conversation usually gets further than another week of internal analysis.",
 }: {
-  localePrefix: string;
   ctaTitle?: string;
   ctaBody?: string;
 }) {
@@ -62,7 +60,7 @@ export default function AuthorBox({
           {/* Secondary mono links */}
           <div className="flex flex-wrap items-center gap-x-1 gap-y-1 font-mono text-[0.72rem] uppercase tracking-[1.6px]">
             <Link
-              href={`${localePrefix}/about`}
+              href="/about"
               className="px-2 py-1 text-corbeau/60 hover:text-papaya transition-colors rounded-md"
             >
               About Noel
@@ -111,7 +109,7 @@ export default function AuthorBox({
             </a>
 
             <Link
-              href={`${localePrefix}/case-studies`}
+              href="/case-studies"
               className="inline-flex items-center gap-2 bg-transparent text-corbeau px-7 py-3.5 rounded-[10px] font-semibold text-[0.92rem] border-2 border-papaya/40 hover:border-papaya hover:bg-papaya/5 transition-all hover:-translate-y-px"
             >
               See case studies

@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import MdxBody from "@/components/mdx/MdxBody";
-import { getPage, LOCALES, type Locale } from "@/lib/content";
+import { getPage } from "@/lib/content";
 import {
   SITE_URL,
   aboutPageJsonLd,
@@ -13,35 +13,20 @@ import {
   personJsonLd,
 } from "@/lib/seo";
 
-export function generateStaticParams() {
-  return LOCALES.map((lang) => ({ lang }));
-}
-
-export const dynamicParams = false;
-
-export async function generateMetadata(
-  props: { params: Promise<{ lang: string }> }
-): Promise<Metadata> {
-  const { lang } = await props.params;
-  if (!LOCALES.includes(lang as Locale)) return {};
-  const locale = lang as Locale;
-  const page = getPage("about", locale);
+export async function generateMetadata(): Promise<Metadata> {
+  const page = getPage("about", "en");
   if (!page) return {};
   return buildPageMetadata(page);
 }
 
-export default async function AboutPage(props: { params: Promise<{ lang: string }> }) {
-  const { lang } = await props.params;
-  if (!LOCALES.includes(lang as Locale)) notFound();
-  const locale = lang as Locale;
-  const page = getPage("about", locale);
+export default async function AboutPage() {
+  const page = getPage("about", "en");
   if (!page) notFound();
   const fm = page.frontmatter;
 
-  const localePrefix = locale === "en" ? "" : `/${locale}`;
-  const aboutUrl = `${SITE_URL}${localePrefix}/about`;
+  const aboutUrl = `${SITE_URL}/about`;
   const breadcrumbs = [
-    { name: "Home", url: `${SITE_URL}${localePrefix}/` },
+    { name: "Home", url: `${SITE_URL}/` },
     { name: "About", url: aboutUrl },
   ];
 

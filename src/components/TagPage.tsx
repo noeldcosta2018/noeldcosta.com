@@ -16,7 +16,6 @@ import CTABanner from "@/components/CTABanner";
 import {
   getPostsByAnyTag,
   readingTime,
-  type Locale,
   type PostRecord,
 } from "@/lib/content";
 import { breadcrumbJsonLd, collectionPageJsonLd, SITE_URL } from "@/lib/seo";
@@ -29,20 +28,17 @@ import {
 
 function PostCard({
   post,
-  locale,
   priority,
 }: {
   post: PostRecord;
-  locale: string;
   priority?: boolean;
 }) {
-  const localePrefix = locale === "en" ? "" : `/${locale}`;
   const mins = readingTime(post.body);
   const tags = (post.frontmatter.tags ?? []).slice(0, 1);
 
   return (
     <Link
-      href={`${localePrefix}/${post.frontmatter.slug}`}
+      href={`/${post.frontmatter.slug}`}
       className="group flex flex-col bg-paper rounded-2xl overflow-hidden transition-all duration-200 hover:-translate-y-0.5"
       style={{
         border: "1px solid rgba(14,16,32,0.07)",
@@ -108,19 +104,16 @@ function PostCard({
 
 export default function TagPage({
   tag,
-  locale,
 }: {
   tag: string;
-  locale: Locale;
 }) {
   const info = tagInfo(tag);
   const Icon = info.icon;
-  const posts = getPostsByAnyTag(tagSynonyms(tag), locale);
-  const localePrefix = locale === "en" ? "" : `/${locale}`;
+  const posts = getPostsByAnyTag(tagSynonyms(tag), "en");
 
-  const tagUrl = `${SITE_URL}${localePrefix}/tag/${tag}`;
+  const tagUrl = `${SITE_URL}/tag/${tag}`;
   const crumbs = [
-    { name: "Home", url: `${SITE_URL}${localePrefix}/` },
+    { name: "Home", url: `${SITE_URL}/` },
     { name: info.label, url: tagUrl },
   ];
 
@@ -132,7 +125,7 @@ export default function TagPage({
     posts: posts.map((p) => ({
       slug: p.frontmatter.slug,
       title: p.frontmatter.title,
-      locale,
+      locale: "en",
     })),
   });
 
@@ -289,7 +282,7 @@ export default function TagPage({
                 {otherTags.map((t) => (
                   <Link
                     key={t}
-                    href={`${localePrefix}/tag/${t}`}
+                    href={`/tag/${t}`}
                     className="inline-flex items-center gap-1.5 text-[0.82rem] font-medium px-3 py-1.5 rounded-full transition-colors hover:bg-[rgba(252,152,90,0.12)]"
                     style={{
                       background: "rgba(14,16,32,0.05)",
@@ -341,7 +334,6 @@ export default function TagPage({
                       <PostCard
                         key={p.frontmatter.slug}
                         post={p}
-                        locale={locale}
                         priority={i === 0}
                       />
                     ))}
@@ -386,7 +378,6 @@ export default function TagPage({
                       <PostCard
                         key={p.frontmatter.slug}
                         post={p}
-                        locale={locale}
                       />
                     ))}
                   </div>
@@ -422,7 +413,7 @@ export default function TagPage({
                 {otherTags.map((t) => (
                   <Link
                     key={t}
-                    href={`${localePrefix}/tag/${t}`}
+                    href={`/tag/${t}`}
                     className="inline-flex items-center gap-1.5 text-[0.85rem] font-medium px-3.5 py-2 rounded-full transition-colors hover:bg-[rgba(252,152,90,0.2)]"
                     style={{
                       background: "rgba(255,255,255,0.05)",

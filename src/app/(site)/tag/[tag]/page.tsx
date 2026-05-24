@@ -1,11 +1,6 @@
-import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import TagPage from "@/components/TagPage";
-import {
-  getAllTagSlugs,
-  LOCALES,
-  type Locale,
-} from "@/lib/content";
+import { getAllTagSlugs } from "@/lib/content";
 import { SITE_URL } from "@/lib/seo";
 import { tagInfo, WORDPRESS_TAG_SLUGS } from "@/components/tagMeta";
 
@@ -16,21 +11,15 @@ function allTagSlugs(): string[] {
 }
 
 export function generateStaticParams() {
-  const tags = allTagSlugs();
-  const params: { lang: string; tag: string }[] = [];
-  for (const lang of LOCALES) {
-    for (const tag of tags) params.push({ lang, tag });
-  }
-  return params;
+  return allTagSlugs().map((tag) => ({ tag }));
 }
 
 export const dynamicParams = false;
 
 export async function generateMetadata(
-  props: { params: Promise<{ lang: string; tag: string }> },
+  props: { params: Promise<{ tag: string }> },
 ): Promise<Metadata> {
-  const { lang, tag } = await props.params;
-  if (!LOCALES.includes(lang as Locale)) return {};
+  const { tag } = await props.params;
   const info = tagInfo(tag);
   const description =
     info.description ||
@@ -39,15 +28,14 @@ export async function generateMetadata(
     title: `${info.label} | Noel D'Costa`,
     description,
     alternates: {
-      canonical: `${SITE_URL}/${lang}/tag/${tag}`,
+      canonical: `${SITE_URL}/tag/${tag}`,
     },
   };
 }
 
 export default async function Route(
-  props: { params: Promise<{ lang: string; tag: string }> },
+  props: { params: Promise<{ tag: string }> },
 ) {
-  const { lang, tag } = await props.params;
-  if (!LOCALES.includes(lang as Locale)) notFound();
-  return <TagPage tag={tag} locale={lang as Locale} />;
+  const { tag } = await props.params;
+  return <TagPage tag={tag} />;
 }

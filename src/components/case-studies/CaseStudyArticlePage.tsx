@@ -9,10 +9,7 @@ import PullQuote from "@/components/article/PullQuote";
 import ProductPromoCard from "@/components/article/ProductPromoCard";
 import AuthorBox from "@/components/article/AuthorBox";
 import FadeUp from "@/components/article/FadeUp";
-import {
-  getPost,
-  type Locale,
-} from "@/lib/content";
+import { getPost } from "@/lib/content";
 import {
   articleJsonLd,
   breadcrumbJsonLd,
@@ -58,17 +55,14 @@ function extractFaqItems(body: string): { question: string; answer: string }[] {
 
 export default function CaseStudyArticlePage({
   slug,
-  locale,
 }: {
   slug: string;
-  locale: Locale;
 }) {
-  const post = getPost(slug, locale);
+  const post = getPost(slug, "en");
   const study = CASE_STUDIES.find((c) => c.slug === slug);
   if (!post || !study) notFound();
 
   const fm = post.frontmatter;
-  const localePrefix = locale === "en" ? "" : `/${locale}`;
 
   const headings = extractHeadings(post.body);
   const [bodyTop, bodyBottom] = splitAtMidH2(post.body);
@@ -78,9 +72,9 @@ export default function CaseStudyArticlePage({
   const faqItems = extractFaqItems(post.body);
 
   const breadcrumbs: { name: string; url: string }[] = [
-    { name: "Home", url: `${SITE_URL}${localePrefix}/` },
-    { name: "Case Studies", url: `${SITE_URL}${localePrefix}/case-studies` },
-    { name: fm.title, url: `${SITE_URL}${localePrefix}/${fm.slug}` },
+    { name: "Home", url: `${SITE_URL}/` },
+    { name: "Case Studies", url: `${SITE_URL}/case-studies` },
+    { name: fm.title, url: `${SITE_URL}/${fm.slug}` },
   ];
 
   return (
@@ -205,7 +199,7 @@ export default function CaseStudyArticlePage({
 
                 {/* Combined author + advisory CTA card */}
                 <FadeUp>
-                  <AuthorBox localePrefix={localePrefix} />
+                  <AuthorBox />
                 </FadeUp>
               </div>
 

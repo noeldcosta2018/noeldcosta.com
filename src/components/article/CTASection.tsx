@@ -13,7 +13,6 @@ export default function CTASection({
   primaryHref,
   secondaryCta = "See how I help",
   secondaryHref,
-  localePrefix,
 }: {
   title?: string;
   body?: string;
@@ -21,10 +20,9 @@ export default function CTASection({
   primaryHref?: string;
   secondaryCta?: string;
   secondaryHref?: string;
-  localePrefix: string;
 }) {
-  const primary = primaryHref ?? `${localePrefix}/contact-noel-erp-support`;
-  const secondary = secondaryHref ?? `${localePrefix}/about`;
+  const primary = primaryHref ?? "/contact-noel-erp-support";
+  const secondary = secondaryHref ?? "/about";
 
   return (
     <section

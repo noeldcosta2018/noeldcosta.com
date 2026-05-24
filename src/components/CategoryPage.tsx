@@ -21,7 +21,6 @@ import {
   getPostsByCategory,
   readingTime,
   type Category,
-  type Locale,
   type PostRecord,
 } from "@/lib/content";
 import { breadcrumbJsonLd, collectionPageJsonLd, SITE_URL } from "@/lib/seo";
@@ -53,20 +52,17 @@ const ALL_CATEGORIES = [
 
 function PostCard({
   post,
-  locale,
   priority,
 }: {
   post: PostRecord;
-  locale: string;
   priority?: boolean;
 }) {
-  const localePrefix = locale === "en" ? "" : `/${locale}`;
   const mins = readingTime(post.body);
   const tags = (post.frontmatter.tags ?? []).slice(0, 1);
 
   return (
     <Link
-      href={`${localePrefix}/${post.frontmatter.slug}`}
+      href={`/${post.frontmatter.slug}`}
       className="group flex flex-col bg-paper rounded-2xl overflow-hidden transition-all duration-200 hover:-translate-y-0.5"
       style={{
         border: "1px solid rgba(14,16,32,0.07)",
@@ -134,12 +130,11 @@ function PostCard({
 
 // ─── StartHereRow ────────────────────────────────────────────────────────────
 
-function StartHereRow({ post, locale }: { post: PostRecord; locale: string }) {
-  const localePrefix = locale === "en" ? "" : `/${locale}`;
+function StartHereRow({ post }: { post: PostRecord }) {
   const mins = readingTime(post.body);
   return (
     <Link
-      href={`${localePrefix}/${post.frontmatter.slug}`}
+      href={`/${post.frontmatter.slug}`}
       className="flex items-center gap-3 group py-3"
       style={{ borderBottom: "1px solid rgba(252,152,90,0.15)" }}
     >
@@ -166,20 +161,17 @@ function StartHereRow({ post, locale }: { post: PostRecord; locale: string }) {
 
 export default function CategoryPage({
   category,
-  locale,
 }: {
   category: string;
-  locale: Locale;
 }) {
   if (!(category in CATEGORIES)) notFound();
 
   const meta = CATEGORIES[category as keyof typeof CATEGORIES];
-  const posts = getPostsByCategory(category as Category, locale);
-  const localePrefix = locale === "en" ? "" : `/${locale}`;
+  const posts = getPostsByCategory(category as Category, "en");
 
-  const categoryUrl = `${SITE_URL}${localePrefix}/category/${meta.slug}`;
+  const categoryUrl = `${SITE_URL}/category/${meta.slug}`;
   const crumbs = [
-    { name: "Home", url: `${SITE_URL}${localePrefix}/` },
+    { name: "Home", url: `${SITE_URL}/` },
     { name: meta.label, url: categoryUrl },
   ];
 
@@ -192,7 +184,7 @@ export default function CategoryPage({
     posts: posts.map((p) => ({
       slug: p.frontmatter.slug,
       title: p.frontmatter.title,
-      locale,
+      locale: "en",
     })),
   });
 
@@ -334,7 +326,6 @@ export default function CategoryPage({
                         <StartHereRow
                           key={p.frontmatter.slug}
                           post={p}
-                          locale={locale}
                         />
                       ))}
                     </div>
@@ -464,7 +455,6 @@ export default function CategoryPage({
                   <PostCard
                     key={p.frontmatter.slug}
                     post={p}
-                    locale={locale}
                     priority={i === 0}
                   />
                 ))}
@@ -508,7 +498,7 @@ export default function CategoryPage({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {latest.map((p) => (
-                  <PostCard key={p.frontmatter.slug} post={p} locale={locale} />
+                  <PostCard key={p.frontmatter.slug} post={p} />
                 ))}
               </div>
             </div>

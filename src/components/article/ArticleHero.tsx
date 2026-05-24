@@ -12,7 +12,6 @@ interface ArticleHeroProps {
   readingMinutes: number;
   heroImage?: string;
   heroAlt?: string;
-  localePrefix: string;
 }
 
 const DISPLAY_AUTHOR = "Noel D'Costa";
@@ -35,7 +34,6 @@ export default function ArticleHero({
   readingMinutes,
   heroImage,
   heroAlt,
-  localePrefix,
 }: ArticleHeroProps) {
   void _author;
   const author = DISPLAY_AUTHOR;
@@ -66,7 +64,7 @@ export default function ArticleHero({
     <header className="mb-12">
       {category && (
         <Link
-          href={`${localePrefix}/category/${category.slug}`}
+          href={`/category/${category.slug}`}
           style={anim("100ms")}
           className="inline-flex items-center gap-2 font-mono text-[0.72rem] font-medium tracking-[2px] uppercase text-papaya mb-5 hover:text-canyon transition-colors"
         >
