@@ -3,7 +3,12 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import MdxBody from "@/components/mdx/MdxBody";
 import { getPage } from "@/lib/content";
-import { SITE_URL, breadcrumbJsonLd } from "@/lib/seo";
+import {
+  SITE_URL,
+  breadcrumbJsonLd,
+  extractFaqItems,
+  faqPageJsonLd,
+} from "@/lib/seo";
 import Link from "next/link";
 
 interface ToolShellProps {
@@ -33,6 +38,11 @@ export default function ToolShell({
   const [aboveMdx = "", belowMdx = ""] = page
     ? page.body.split(splitMarker)
     : [];
+
+  // Tool MDX bodies carry the same `<details>/<summary>` FAQ blocks as blog
+  // posts. Extract and emit FAQPage JSON-LD when present so the cost
+  // calculator pages don't regress vs. Yoast's automatic FAQ schema.
+  const faqItems = page ? extractFaqItems(page.body) : [];
 
   const breadcrumbs = [
     { name: "Home", url: `${SITE_URL}/` },
@@ -152,6 +162,14 @@ export default function ToolShell({
           __html: JSON.stringify(breadcrumbJsonLd(breadcrumbs)),
         }}
       />
+      {faqItems.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(faqPageJsonLd(faqItems)),
+          }}
+        />
+      )}
     </>
   );
 }

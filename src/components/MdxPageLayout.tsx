@@ -4,7 +4,17 @@ import MdxBody from "@/components/mdx/MdxBody";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import { getPage } from "@/lib/content";
-import { breadcrumbJsonLd, contactPageJsonLd, SITE_URL } from "@/lib/seo";
+import {
+  PAGE_ARTICLE_WORDCOUNT_THRESHOLD,
+  SITE_URL,
+  breadcrumbJsonLd,
+  contactPageJsonLd,
+  countWords,
+  extractFaqItems,
+  faqPageJsonLd,
+  pageArticleJsonLd,
+  pageWebPageJsonLd,
+} from "@/lib/seo";
 
 export default function MdxPageLayout({ slug }: { slug: string }) {
   const page = getPage(slug, "en");
@@ -21,6 +31,11 @@ export default function MdxPageLayout({ slug }: { slug: string }) {
   // schema in addition to breadcrumbs. Covers contact-noel-erp-support
   // and any future contact variants without hard-coding the slug.
   const isContact = /^contact[-_]/i.test(fm.slug) || fm.slug === "contact";
+
+  const webPageLd = pageWebPageJsonLd(page);
+  const isSubstantive = countWords(page.body) > PAGE_ARTICLE_WORDCOUNT_THRESHOLD;
+  const articleLd = isSubstantive ? pageArticleJsonLd(page) : null;
+  const faqItems = extractFaqItems(page.body);
 
   return (
     <>
@@ -52,8 +67,24 @@ export default function MdxPageLayout({ slug }: { slug: string }) {
       <Footer />
       <script
         type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageLd) }}
+      />
+      {articleLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }}
+        />
+      )}
+      <script
+        type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd(breadcrumbs)) }}
       />
+      {faqItems.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqPageJsonLd(faqItems)) }}
+        />
+      )}
       {isContact && (
         <script
           type="application/ld+json"

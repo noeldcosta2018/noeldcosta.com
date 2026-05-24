@@ -38,12 +38,31 @@ export function toIso(input?: string | null): string | undefined {
   return parsed.toISOString();
 }
 
-function countWords(body: string): number {
+export function countWords(body: string): number {
   return body
     .replace(/```[\s\S]*?```/g, "")
     .replace(/[#>*_`~\[\]\(\)!\\-]/g, " ")
     .split(/\s+/)
     .filter(Boolean).length;
+}
+
+/**
+ * Extract question/answer pairs from inline `<details>/<summary>` blocks. Used
+ * by both blog posts and tool pages to emit FAQPage JSON-LD when the MDX body
+ * contains FAQ content. Inner HTML is stripped so schema.org receives plain
+ * text answers; answers are capped at 600 chars to stay under Google's
+ * structured-data limits.
+ */
+export function extractFaqItems(body: string): { question: string; answer: string }[] {
+  const items: { question: string; answer: string }[] = [];
+  const re = /<details[^>]*>[\s\S]*?<summary[^>]*>([\s\S]*?)<\/summary>([\s\S]*?)<\/details>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(body)) !== null) {
+    const q = m[1].trim().replace(/<[^>]+>/g, "").trim();
+    const a = m[2].trim().replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    if (q) items.push({ question: q, answer: a.slice(0, 600) });
+  }
+  return items;
 }
 
 // ─── Page Metadata builders (for Next.js `generateMetadata`) ─────────────
@@ -421,6 +440,93 @@ export function blogJsonLd() {
     inLanguage: "en",
   };
 }
+
+/**
+ * WebPage JSON-LD for MDX content pages. Mirrors Yoast's per-page WebPage
+ * emission so the entity graph on hub pages like /sap-implementation/ stays
+ * in parity with the WordPress origin. References the sitewide WebSite and
+ * Person nodes via `@id` rather than duplicating them.
+ */
+export function pageWebPageJsonLd(page: PageRecord) {
+  const fm = page.frontmatter;
+  const url = `${SITE_URL}${flatPath(page.locale, fm.slug)}`;
+  const description =
+    fm.metaDescription || fm.excerpt || `${fm.title} — Noel D'Costa.`;
+  const heroAbsolute = fm.hero
+    ? fm.hero.startsWith("http")
+      ? fm.hero
+      : `${SITE_URL}${fm.hero}`
+    : undefined;
+  const published = toIso(fm.date);
+  const modified = toIso(fm.updated || fm.date);
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${url}#webpage`,
+    url,
+    name: fm.title,
+    description,
+    inLanguage: "en",
+    isPartOf: { "@id": `${SITE_URL}/#website` },
+    author: { "@id": `${SITE_URL}/#noel-dcosta` },
+    ...(heroAbsolute
+      ? { primaryImageOfPage: { "@type": "ImageObject", url: heroAbsolute } }
+      : {}),
+    ...(published ? { datePublished: published } : {}),
+    ...(modified ? { dateModified: modified } : {}),
+  };
+}
+
+/**
+ * Article JSON-LD for MDX content pages with substantive bodies. Reuses the
+ * same author/publisher Person `@id` pattern as posts; gated on word count so
+ * thin pages (FAQs, redirect shells) don't carry an Article claim they can't
+ * defend.
+ */
+export function pageArticleJsonLd(page: PageRecord) {
+  const fm = page.frontmatter;
+  const url = `${SITE_URL}${flatPath(page.locale, fm.slug)}`;
+  const description =
+    fm.metaDescription || fm.excerpt || `${fm.title} — Noel D'Costa.`;
+  const heroAbsolute = fm.hero
+    ? fm.hero.startsWith("http")
+      ? fm.hero
+      : `${SITE_URL}${fm.hero}`
+    : undefined;
+  const personRef = { "@id": `${SITE_URL}/#noel-dcosta` };
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: fm.title,
+    description,
+    ...(heroAbsolute
+      ? { image: [{ "@type": "ImageObject", url: heroAbsolute, caption: fm.title }] }
+      : {}),
+    datePublished: toIso(fm.date),
+    dateModified: toIso(fm.updated || fm.date),
+    author: personRef,
+    publisher: personRef,
+    mainEntityOfPage: { "@type": "WebPage", "@id": `${url}#webpage` },
+    wordCount: countWords(page.body),
+    inLanguage: "en",
+  };
+}
+
+/** Wraps an array of {question, answer} pairs into a FAQPage JSON-LD object. */
+export function faqPageJsonLd(items: { question: string; answer: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
+    })),
+  };
+}
+
+/** Threshold for emitting Article schema on MDX content pages. */
+export const PAGE_ARTICLE_WORDCOUNT_THRESHOLD = 500;
 
 /** AboutPage with mainEntity = the Person. Quality raters check About pages. */
 export function aboutPageJsonLd(url: string) {
