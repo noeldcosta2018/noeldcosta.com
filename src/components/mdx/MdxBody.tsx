@@ -50,8 +50,32 @@ export default function MdxBody({ source }: { source: string }) {
       // stepper, etc.) for our diagram components. The cast lets those
       // through; everything else stays HTML-typed.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       components={({
-        a: ({ href = "", children, ...rest }: ComponentProps<"a">) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        a: ({ href = "", children, className, node, ...rest }: ComponentProps<"a"> & { node?: any }) => {
+          // rehype-autolink-headings (behavior: "wrap") emits an <a class="heading-anchor" href="#slug">
+          // around the heading content. When the heading itself contains a markdown link
+          // (## [Text](url)), routing that wrapper through Next <Link> produces
+          // <Link><a>...</a></Link> (Next 13+ rejects) AND nests an <a> inside an <a>
+          // (HTML5 invalid → hydration warning). Strip the wrapper when its children
+          // already include an anchor; otherwise render it as a plain in-page <a>.
+          const isHeadingAnchor =
+            typeof className === "string" &&
+            className.split(/\s+/).includes("heading-anchor");
+          if (isHeadingAnchor) {
+            const wrapsAnchor =
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              Array.isArray(node?.children) &&
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              node.children.some((c: any) => c?.type === "element" && c.tagName === "a");
+            if (wrapsAnchor) return <>{children}</>;
+            return (
+              <a href={href} className={className} {...rest}>
+                {children}
+              </a>
+            );
+          }
           const internal =
             typeof href === "string" &&
             (href.startsWith("/") || href.startsWith("#"));
