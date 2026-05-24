@@ -4,7 +4,10 @@ Master plan for the rebuild. Read this before starting any work.
 Read CLAUDE.md for rules and constraints. Read this for what to
 build, in what order, and when something is "done."
 
-Last updated: 2026-04-28
+Read `playbook.md` for the step-by-step migration plan including
+SEO audit, mobile audit, and GTranslate setup.
+
+Last updated: 2026-05-24
 
 ---
 
@@ -16,6 +19,25 @@ Programme Directors who are running ECC-to-S/4HANA migrations or
 adding AI on top of ERP. It eventually replaces the WordPress site
 at noeldcosta.com without losing SEO. Same URLs. Better copy.
 Better design. Built for a buyer who scans for under 90 seconds.
+
+---
+
+## Translation architecture
+
+The WordPress site uses GTranslate as a Translation Delivery Network.
+GTranslate is an external proxy that serves all `/{lang}/` URLs
+(Spanish, Japanese, French, Russian, Italian, German, Portuguese,
+Greek, Arabic, Dutch, Chinese, etc.) by fetching the English version
+from the origin and translating it.
+
+Search Console data shows 64.5% of clicks come from these translated
+URLs. GTranslate is not optional. It stays in place after migration.
+
+The Next.js site serves English only at flat URLs. No language prefix
+in the URL. No `[lang]` segment. GTranslate handles all translation
+externally after the request reaches its proxy.
+
+See `_docs/references/search-console-findings.md` for the traffic data.
 
 ---
 
@@ -50,6 +72,10 @@ Measurement method: Google Search Console + Google Analytics
 (or Plausible). Capture WordPress baseline for the 90 days
 before cutover. Compare against the same 90-day window post-cutover.
 
+Critical context. 64.5% of organic traffic comes via GTranslate-served
+translated URLs. Both English URL preservation AND GTranslate continuity
+must work for this metric to hold.
+
 This metric forces the zero-redirect URL contract. Every WordPress
 URL maps 1:1 to a Next.js route. See `_docs/references/wordpress-urls.md`.
 
@@ -77,8 +103,9 @@ working on one of these, stop and ask.
 - A newsletter platform integration (deferred to phase 2 of the
   for-consultants page only).
 - Live chat or chatbot widgets.
-- Multi-language translation work. English first. Other locales
-  are a separate downstream phase.
+- Replacing GTranslate or building native translation in Next.js.
+  GTranslate stays. The Next.js site serves English only. GTranslate
+  proxies everything else externally.
 - Migration of every WordPress post. Top 20-30 only in this build.
 - A redesign of erpcv.com or commandcc.io. Those sites stay as-is.
 - Custom analytics or A/B testing infrastructure.
@@ -123,7 +150,7 @@ Two models. Two roles. Don't mix them.
 ### Rules for Sonnet
 
 - Sonnet does not change architecture. If a task seems wrong,
-  flag it — don't fix it.
+  flag it. Don't fix it.
 - Sonnet does not invent task IDs. If something needs doing that
   isn't in the PRD, add it as `proposed` and ask Noel.
 - Sonnet does not skip dependencies. If H-04 says "depends on H-01",
@@ -157,20 +184,44 @@ Status: 90% done.
 | F-03 | DESIGN_SYSTEM.md at root | done | F-01 | Documents Command Center tokens; matches src/app/globals.css |
 | F-04 | _docs/ folder structure created | done | — | _docs/homepage/, /for-consultants/, /about/, /case-studies/, /tools/, /blog/, /references/ all exist |
 | F-05 | content/_source/ folder for blog source material | ready | — | Folder exists. .gitignore decision made (track or ignore based on repo public/private) |
-| F-06 | _docs/references/wordpress-urls.md | done | — | URL master list from sitemap; referenced when creating new pages |
+| F-06 | _docs/references/wordpress-urls.md | done | — | URL master list from sitemap plus top 50 priority URLs from Search Console traffic |
 | F-07 | _docs/references/client-list.md | pending | — | List of clients we can name publicly, with scope and outcome numbers. Source material for case studies. |
 | F-08 | _docs/references/testimonials.md | pending | — | Real testimonials with attribution. No invented quotes. |
 | F-09 | Logos directory in /public | pending | — | Black-and-white SVG or optimized PNG logos for each named client. Naming convention: `/public/logos/{client-slug}.svg` |
+| F-10 | _docs/references/search-console-findings.md | done | — | Traffic analysis from Search Console export. Documents the 64.5% non-English traffic finding. |
+| F-11 | _docs/references/priority-urls.md | done | — | Top 143 URLs ranked by combined traffic across all language versions. |
+| F-12 | _docs/references/search-console-export.xlsx | done | — | Raw 16-month export from Google Search Console. |
+| F-13 | _docs/audits/_prompts/ folder with audit prompts | done | — | audit-1-mobile.md, audit-2-seo.md, phase-3-gtranslate.md saved as Claude Code prompts |
+| F-14 | playbook.md | done | — | Step-by-step migration plan at repo root or in _docs/. |
 
 F-07, F-08, F-09 are blocking content for Phase 2. Address before
 starting H-02 (trust bar) and H-05 (case studies).
 
 ---
 
+## Phase 1.5 — Migration prep (NEW)
+
+Goal: prepare the codebase for the English-only architecture before
+building new homepage sections. See playbook.md steps 4-7.
+
+| ID | Task | Status | Depends on | Acceptance criteria |
+|---|---|---|---|---|
+| M-01 | Run SEO audit | pending | F-06, F-13 | Audit completes. Findings saved to _docs/audits/seo-audit-YYYY-MM-DD.md. Critical issues identified. |
+| M-02 | Remove [lang] segment from routing | pending | M-01 | Every src/app/[lang]/* file moved to src/app/*. src/lib/locales.ts removed or stubbed. Middleware locale logic removed. |
+| M-03 | Update sitemap.ts to flat English URLs only | pending | M-02 | sitemap.ts generates URLs matching WordPress exactly. No language prefixes. No hreflang annotations. |
+| M-04 | Run mobile audit | pending | F-13 | Audit completes. Findings saved to _docs/audits/mobile-audit-YYYY-MM-DD.md. Can run in parallel with M-02. |
+| M-05 | Fix critical mobile issues only | pending | M-04 | Only ship-blocker mobile issues fixed. Polish deferred. |
+| M-06 | Pre-launch URL verification | pending | M-02, M-03 | Every WordPress URL in _docs/references/wordpress-urls.md serves 200 with real content on Next.js. |
+
+These tasks run before or in parallel with Phase 2 (Homepage). Don't
+launch without M-01 through M-06 complete.
+
+---
+
 ## Phase 2 — Homepage
 
 Goal: ship a homepage that wins the 90-second scan for the CEO buyer.
-11 sections. Build in order. Each section has a brief in `_docs/homepage/`.
+15 sections plus assembly. Build in order. Each section has a brief in `_docs/homepage/`.
 
 | ID | Section | Component | Status | Depends on | Brief |
 |---|---|---|---|---|---|
@@ -189,7 +240,7 @@ Goal: ship a homepage that wins the 90-second scan for the CEO buyer.
 | H-13 | Final CTA | `src/components/CTABanner.tsx` | pending | H-01 | `_docs/homepage/13-cta.md` |
 | H-14 | Nav (global) | `src/components/Nav.tsx` | pending | H-01 | `_docs/homepage/14-nav.md` |
 | H-15 | Footer (global) | `src/components/Footer.tsx` | pending | H-01 | `_docs/homepage/15-footer.md` |
-| H-16 | Page assembly | `src/app/[lang]/page.tsx` | pending | H-01 through H-15 | — |
+| H-16 | Page assembly | `src/app/page.tsx` | pending | H-01 through H-15, M-02 | — |
 
 ### Acceptance criteria for the homepage as a whole (H-16)
 
@@ -199,13 +250,16 @@ Goal: ship a homepage that wins the 90-second scan for the CEO buyer.
 - All sections render correctly on 375px (mobile), 768px (tablet),
   1280px+ (desktop)
 - Zero `'use client'` directives unless the section genuinely needs
-  interactivity (only Ticker, LogoScroll, animations should be client)
+  interactivity (only Ticker, LogoScroll, animations should be client).
+  Server components also matter for GTranslate compatibility.
 - All copy passes VOICE.md checklist (no buzzwords, sentence-case,
   first person, no em-dash drama patterns)
 - All colors use --cc-* tokens
 - The 90-second scan test: a non-Noel reviewer can identify
   (a) what Noel does, (b) who he's worked with, (c) how to book a
-  call — within 90 seconds of first view
+  call within 90 seconds of first view
+- GTranslate compatibility check passes: no content rendered client-side
+  only, no critical text inside untranslatable SVG
 
 ### Section dependencies note
 
@@ -216,6 +270,9 @@ Don't start H-02 through H-15 until H-01 is `done`.
 
 H-02 (trust bar) and H-05 (case studies) are blocked by F-07
 (client list) and F-09 (logos). Sort those first.
+
+H-16 (page assembly) is blocked by M-02 (lang segment removal).
+The page lives at `src/app/page.tsx`, not under `[lang]`.
 
 ---
 
@@ -272,7 +329,8 @@ plus referenced numbers from `_docs/references/client-list.md`.
 
 Tool pages S-25 to S-29 likely exist in the current Next.js codebase.
 Task is "review and update" not "build from scratch." Check
-`src/app/[lang]/` for existing routes before starting each.
+`src/app/` for existing routes before starting each. If the routes
+are currently nested under `[lang]`, they need to move as part of M-02.
 
 ---
 
@@ -284,15 +342,18 @@ without losing SEO equity.
 | ID | Task | Status | Depends on | Acceptance criteria |
 |---|---|---|---|---|
 | P-01 | MDX content infrastructure verified | pending | F-01 | `mdx-components.tsx`, `content/`, PostPage.tsx all working. Build succeeds with at least one test post. |
-| P-02 | Identify top 20 priority articles | pending | — | List in `_docs/references/priority-posts.md`. Ranked by current organic traffic (use Google Search Console). |
+| P-02 | Identify top 20 priority articles | done | — | Done. See `_docs/references/priority-urls.md`. Top 50 URLs documented with traffic data. Top 20 for migration are the highest-traffic entries. |
 | P-03 | Create voice memo / source process | pending | F-05 | Document workflow in `_docs/blog/CONTEXT.md`: voice memo → transcript → MDX draft. |
 | P-04 | Migrate priority post 1 (proof) | pending | P-01, P-02, P-03 | First post live at `/{wordpress-slug}/`. Same URL, same metadata, rewritten copy per VOICE.md. SEO score >= WordPress equivalent. |
 | P-05 | Migrate posts 2-10 | pending | P-04 | Each post follows the same pattern. Frontmatter complete with experience_source field. |
 | P-06 | Migrate posts 11-20 | pending | P-05 | As above. |
 | P-07 | Set up category pages | pending | P-04 | All 4 category pages render with correct posts: ai-governance, erp-consulting-guide, sap-case-studies, sap-modules. |
-| P-08 | Configure sitemap.xml output | pending | P-06, P-07 | Next.js sitemap matches WordPress sitemap structure. All migrated URLs included. |
+| P-08 | Configure sitemap.xml output | pending | P-06, P-07, M-03 | Next.js sitemap matches WordPress sitemap structure. All migrated URLs included. English only (no language prefixes). |
 | P-09 | robots.txt configured | pending | P-08 | robots.txt exists, allows search engines, references sitemap. |
 | P-10 | Long-tail post strategy | pending | P-06 | Decision documented: archive un-migrated posts on WordPress until migration, OR redirect to a coming-soon page, OR full migration timeline. |
+
+Note. Translated versions of migrated posts are handled by GTranslate
+automatically after launch. No per-language MDX files needed.
 
 ---
 
@@ -300,21 +361,26 @@ without losing SEO equity.
 
 Goal: launch without dropping traffic. Ship it.
 
+See `playbook.md` steps 8-12 for the detailed launch sequence including
+GTranslate cutover.
+
 | ID | Task | Status | Depends on | Acceptance criteria |
 |---|---|---|---|---|
 | L-01 | Lighthouse audit (mobile + desktop) | pending | Phase 2 + 3 done | Performance >= 90, Accessibility >= 95, Best Practices >= 95, SEO 100. Both mobile and desktop. |
 | L-02 | Mobile review (real devices) | pending | L-01 | Tested on actual iOS Safari (iPhone) and Android Chrome (mid-range device). All sections render correctly. |
 | L-03 | Accessibility audit (WCAG AA) | pending | L-01 | All interactive elements keyboard-accessible. Color contrast meets AA. Screen reader test on hero and forms. |
 | L-04 | Cross-browser test | pending | L-02 | Chrome, Safari, Firefox, Edge all render correctly on desktop and mobile. |
-| L-05 | Capture WordPress baseline (90 days) | pending | — | Snapshot Search Console: top 50 keywords, organic traffic graph, top landing pages. Save to `_docs/references/seo-baseline.md`. |
+| L-05 | WordPress baseline captured | done | — | 16-month Search Console export saved to `_docs/references/search-console-export.xlsx`. Analysis in `_docs/references/search-console-findings.md`. |
 | L-06 | Set up Google Search Console for Vercel domain | pending | — | New property added. Verified. Ready to receive traffic. |
 | L-07 | Set up Calendly source tracking | pending | — | Calendly URL on the new site has UTM parameters or unique slug to attribute bookings. |
 | L-08 | Set up LinkedIn DM tracking spreadsheet | pending | — | Simple Notion or sheet for Noel to log inbound DMs with date, company, title, source. |
-| L-09 | DNS cutover plan documented | pending | Phase 2 + 3 + 4 done | Step-by-step in `_docs/launch/dns-cutover.md`. Includes rollback plan. |
-| L-10 | DNS cutover (the launch) | pending | L-01 through L-09 | noeldcosta.com points at Vercel. WordPress disabled or set to readonly. New site live. |
-| L-11 | Submit new sitemap to Search Console | pending | L-10 | Sitemap submitted. No errors. Crawl status confirmed. |
-| L-12 | Monitor weeks 1-4 post-launch | pending | L-10 | Daily check Search Console for crawl errors, indexing issues, traffic drops. Log issues in `_docs/launch/post-launch-log.md`. |
-| L-13 | 30-day post-launch review | pending | L-12 | Compare to baseline. Document traffic changes, ranking changes, conversion changes. Update PRD with phase 6 if needed. |
+| L-09 | Phase 3 GTranslate setup audit | pending | Phase 2 + 3 + 4 done | Run `_docs/audits/_prompts/phase-3-gtranslate.md`. Findings saved. Compatibility issues addressed. |
+| L-10 | DNS cutover plan documented | pending | L-09 | Step-by-step in `_docs/launch/dns-cutover.md`. Includes rollback plan and GTranslate origin switch. |
+| L-11 | Staging test with GTranslate | pending | L-09 | Point GTranslate at staging Next.js. Test 10 priority URLs in 5 languages. Document failures. |
+| L-12 | DNS cutover (the launch) | pending | L-01 through L-11 | noeldcosta.com points at Vercel. GTranslate origin updated. WordPress disabled or set to readonly. New site live. |
+| L-13 | Submit new sitemap to Search Console | pending | L-12 | Sitemap submitted. No errors. Crawl status confirmed. |
+| L-14 | Monitor weeks 1-4 post-launch | pending | L-12 | Daily check Search Console for crawl errors, indexing issues, traffic drops. Watch both English and translated URL performance. Log issues in `_docs/launch/post-launch-log.md`. |
+| L-15 | 30-day post-launch review | pending | L-14 | Compare to baseline. Document traffic changes, ranking changes, conversion changes. Update PRD with phase 6 if needed. |
 
 ---
 
