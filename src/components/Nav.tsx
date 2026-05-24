@@ -122,6 +122,7 @@ export default function Nav() {
     pathname === href || pathname?.startsWith(href + "/");
 
   return (
+    <>
     <nav
       ref={navRef}
       style={{
@@ -333,8 +334,13 @@ export default function Nav() {
           </li>
         </ul>
       </div>
+    </nav>
 
-      {/* Mobile drawer — full-screen overlay with staggered link reveal.
+      {/* Mobile drawer — rendered as a sibling of <nav>, not a child.
+          The nav uses backdrop-filter: blur(20px), which establishes a
+          containing block for any fixed-position descendant. Nesting the
+          drawer inside the nav clamped it to the nav's 64 px height, so
+          the drawer rendered at height 0 and looked broken on tap.
           Backdrop blur reuses the existing nav glass token. Links reveal
           one at a time, 60 ms stagger, so the open feels like a curtain
           drawing back instead of a popup flash. Body scroll is locked
@@ -405,6 +411,6 @@ export default function Nav() {
           })()}
         </div>
       </div>
-    </nav>
+    </>
   );
 }
