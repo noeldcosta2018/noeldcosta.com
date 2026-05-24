@@ -120,10 +120,14 @@ export default function PostPage({
                   </li>
                 </>
               )}
-              <li aria-hidden className="text-eyebrow/40">/</li>
+              {/* Post title hidden at < md — at 375 px the title was
+                  truncated to ~200 px which cut most titles mid-word. The
+                  Home / Category trail is enough orientation on mobile;
+                  the full title is the h1 immediately below the breadcrumb. */}
+              <li aria-hidden className="hidden md:inline text-eyebrow/40">/</li>
               <li
                 aria-current="page"
-                className="text-corbeau/60 truncate max-w-[200px] md:max-w-[360px] normal-case tracking-normal text-[0.68rem]"
+                className="hidden md:inline truncate max-w-[360px] text-corbeau/60 normal-case tracking-normal text-[0.68rem]"
               >
                 {fm.title}
               </li>

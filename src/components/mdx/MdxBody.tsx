@@ -222,9 +222,9 @@ export default function MdxBody({ source }: { source: string }) {
           />
         ),
         table: (p: ComponentProps<"table">) => (
-          <FadeUp as="figure" className="not-prose my-10 overflow-hidden rounded-xl border border-corbeau/[0.08] bg-paper shadow-[0_2px_20px_rgba(14,16,32,0.04)]">
+          <FadeUp as="figure" className="not-prose my-10 overflow-x-auto rounded-xl border border-corbeau/[0.08] bg-paper shadow-[0_2px_20px_rgba(14,16,32,0.04)]">
             <table
-              className="w-full table-fixed text-[0.78rem] md:text-[0.9rem] border-collapse"
+              className="w-full min-w-[560px] text-[0.78rem] md:text-[0.9rem] border-collapse"
               {...p}
             />
           </FadeUp>

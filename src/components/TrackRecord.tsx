@@ -186,9 +186,12 @@ export default function TrackRecord() {
           Real companies. Real numbers. I was in the room running these.
         </p>
 
-        <div className="grid grid-cols-2 gap-14 items-start max-lg:grid-cols-1">
-          {/* Project list */}
-          <div className="flex flex-col">
+        <div className="grid grid-cols-2 gap-14 items-start max-lg:grid-cols-1 max-lg:gap-8">
+          {/* Project list. On < lg the dashboard renders above the list
+              (CSS order) so the active-project showcase is visible before
+              the user scrolls past it — the previous layout buried the
+              dashboard below five list rows, off-screen on mobile. */}
+          <div className="flex flex-col max-lg:order-2">
             {PROJECTS.map((p, i) => (
               <div
                 key={p.company}
@@ -214,9 +217,12 @@ export default function TrackRecord() {
             ))}
           </div>
 
-          {/* Dashboard mockup — sticky, content swaps with AnimatePresence */}
+          {/* Dashboard mockup — content swaps with AnimatePresence.
+              Sticky only at lg+ where it shares a row with the project
+              list. At < lg it renders above the list (order-1) and stays
+              in normal flow so the user actually sees it. */}
           <div
-            className="cc-card relative rounded-2xl overflow-hidden max-lg:max-w-[500px] sticky top-[84px]"
+            className="cc-card relative rounded-2xl overflow-hidden max-lg:order-1 max-lg:max-w-[500px] max-lg:mx-auto max-lg:w-full lg:sticky lg:top-[84px]"
             style={{ boxShadow: "0 24px 48px -12px rgba(14,16,32,0.15)" }}
           >
             <div className="cc-scan-line" />

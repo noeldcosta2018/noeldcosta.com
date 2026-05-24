@@ -7,12 +7,11 @@ import { ArrowUpRight, ArrowRight } from 'lucide-react';
  *
  * Sequence (~1600 ms total):
  *   1. Eyebrow + pulse dot fade in       — 0 ms,    400 ms duration
- *   2. Headline reveals word-by-word     — 100 ms,  60 ms stagger
- *   3. Italic emphasis fades in last     — chained from word reveal
- *   4. Body paragraph fades in           — 900 ms after eyebrow
- *   5. CTA row fades up                  — 1000 ms
- *   6. Stat row reveals stat-by-stat     — 1100 ms, 80 ms stagger
- *   7. Headshot fades in with scale      — 400 ms (parallel)
+ *   2. Headline fades up                 — 100 ms
+ *   3. Body paragraph fades in           — 900 ms after eyebrow
+ *   4. CTA row fades up                  — 1000 ms
+ *   5. Stat row reveals stat-by-stat     — 1100 ms, 80 ms stagger
+ *   6. Headshot fades in with scale      — 400 ms (parallel)
  *
  * Uses CSS keyframes rather than framer-motion variants so the
  * server-rendered initial state matches the client hydration exactly
@@ -23,7 +22,7 @@ import { ArrowUpRight, ArrowRight } from 'lucide-react';
  * No "use client" needed — pure CSS animation runs on the compositor.
  */
 
-const HEADLINE_WORDS = ['I', 'run', 'ERP', 'transformations'];
+const HEADLINE = 'I run ERP transformations';
 const EMPHASIS = 'the board can defend.';
 
 const STATS = [
@@ -46,6 +45,37 @@ export default function Hero() {
           {/* Left content stack */}
           <div className="lg:col-span-6">
 
+            {/* Mobile/tablet headshot — small framed photo above the
+                eyebrow at < lg. The desktop frame below is hidden under
+                lg and is too large to scale down without dominating the
+                fold; this smaller framed shot keeps "this is a person"
+                on the page for the 90-second scan. */}
+            <div className="lg:hidden cc-enter-scale" style={{ marginBottom: 20, animationDelay: '100ms' }}>
+              <div
+                style={{
+                  position: 'relative',
+                  width: 96,
+                  height: 96,
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                  border: '4px solid #ffffff',
+                  boxShadow:
+                    '0 8px 20px rgba(252,152,90,0.18), 0 2px 6px rgba(14,16,32,0.08), 0 0 0 1px rgba(14,16,32,0.06)',
+                }}
+              >
+                <Image
+                  src="/images/headshot.png"
+                  alt="Noel D'Costa"
+                  width={192}
+                  height={192}
+                  priority
+                  quality={70}
+                  sizes="96px"
+                  className="object-cover object-top w-full h-full"
+                />
+              </div>
+            </div>
+
             {/* Eyebrow — fade in first, 0 ms delay */}
             <div
               className="cc-enter-up"
@@ -57,10 +87,14 @@ export default function Hero() {
               </span>
             </div>
 
-            {/* H1 — word-by-word reveal via per-span animation-delay */}
+            {/* H1 — single text node so the browser can wrap naturally.
+                Per-word stagger has been removed: at narrow viewports the
+                old per-span flex-wrap broke lines in places normal text
+                wouldn't (single word orphans on their own line). A whole-
+                headline fade-up is calmer and lets text-wrap balance handle
+                the line breaks. */}
             <h1
-              aria-label={`${HEADLINE_WORDS.join(' ')} ${EMPHASIS}`}
-              className="cc-display"
+              className="cc-display cc-enter-up"
               style={{
                 fontWeight: 900,
                 fontSize: 'clamp(36px, 5.5vw, 64px)',
@@ -68,26 +102,13 @@ export default function Hero() {
                 color: 'var(--cc-text-primary)',
                 margin: 0,
                 letterSpacing: '-0.02em',
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: '0.22em',
+                textWrap: 'balance',
+                animationDelay: '100ms',
               }}
             >
-              {HEADLINE_WORDS.map((w, i) => (
-                <span
-                  key={w}
-                  aria-hidden
-                  className="cc-enter-up-word"
-                  style={{ animationDelay: `${100 + i * 60}ms` }}
-                >
-                  {w}
-                </span>
-              ))}
+              {HEADLINE}{' '}
               <span
-                aria-hidden
-                className="cc-enter-up-word"
                 style={{
-                  animationDelay: `${100 + HEADLINE_WORDS.length * 60}ms`,
                   fontStyle: 'italic',
                   fontWeight: 300,
                   color: 'var(--cc-canyon)',
