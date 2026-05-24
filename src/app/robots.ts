@@ -14,6 +14,12 @@ import { SITE_URL } from "@/lib/seo";
  * and scrape aggressively without attribution.
  */
 export default function robots(): MetadataRoute.Robots {
+  if (process.env.VERCEL_ENV === "preview") {
+    return {
+      rules: [{ userAgent: "*", disallow: "/" }],
+    };
+  }
+
   const aiCrawlers = [
     // OpenAI
     "GPTBot",
