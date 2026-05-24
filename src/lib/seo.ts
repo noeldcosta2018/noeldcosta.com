@@ -25,6 +25,29 @@ function flatPath(_locale: Locale, slug: string): string {
   return `/${slug}/`;
 }
 
+// Resolve the canonical URL for an MDX page. Pages whose WordPress origin
+// was at a nested path (e.g. /sap-implementation/for-manufacturing/) carry
+// that path in `frontmatter.originalUrl`; the catch-all route serves them
+// at the nested URL but `slug` is only the last segment, so naively
+// building the canonical from `flatPath(slug)` yields a wrong canonical
+// pointing at a flat URL that isn't the WordPress canonical. Use the
+// originalUrl pathname when present so the canonical matches the URL
+// indexed on WordPress.
+function canonicalUrlForPage(page: PageRecord): string {
+  const fm = page.frontmatter;
+  if (fm.canonical) return fm.canonical;
+  if (fm.originalUrl) {
+    try {
+      const u = new URL(fm.originalUrl);
+      const path = u.pathname.endsWith("/") ? u.pathname : `${u.pathname}/`;
+      return `${SITE_URL}${path}`;
+    } catch {
+      // Fall through to flat-slug path if originalUrl is malformed.
+    }
+  }
+  return `${SITE_URL}${flatPath(page.locale, fm.slug)}`;
+}
+
 /**
  * Convert a date string of any format into ISO 8601. WordPress exports use
  * `"YYYY-MM-DD HH:mm:ss"` which fails Google's structured-data validator.
@@ -111,8 +134,7 @@ export function buildPageMetadata(page: PageRecord): Metadata {
   const title = fm.metaTitle || fm.title;
   const description =
     fm.metaDescription || fm.excerpt || `${fm.title} — Noel D'Costa.`;
-  const canonical =
-    fm.canonical || `${SITE_URL}${flatPath(page.locale, fm.slug)}`;
+  const canonical = canonicalUrlForPage(page);
 
   return {
     title,
@@ -449,7 +471,7 @@ export function blogJsonLd() {
  */
 export function pageWebPageJsonLd(page: PageRecord) {
   const fm = page.frontmatter;
-  const url = `${SITE_URL}${flatPath(page.locale, fm.slug)}`;
+  const url = canonicalUrlForPage(page);
   const description =
     fm.metaDescription || fm.excerpt || `${fm.title} — Noel D'Costa.`;
   const heroAbsolute = fm.hero
@@ -485,7 +507,7 @@ export function pageWebPageJsonLd(page: PageRecord) {
  */
 export function pageArticleJsonLd(page: PageRecord) {
   const fm = page.frontmatter;
-  const url = `${SITE_URL}${flatPath(page.locale, fm.slug)}`;
+  const url = canonicalUrlForPage(page);
   const description =
     fm.metaDescription || fm.excerpt || `${fm.title} — Noel D'Costa.`;
   const heroAbsolute = fm.hero
