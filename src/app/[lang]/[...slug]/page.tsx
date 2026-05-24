@@ -40,9 +40,9 @@ const RESERVED_SLUGS = new Set<string>([
   "sap-solution-builder",
 ]);
 
-// Slugs that match a known category id (e.g. "case-studies"). Hitting
-// /en/case-studies should render the same listing as
-// /en/category/case-studies, not a separate MDX content page. Keeps
+// Slugs that match a known category id (e.g. "sap-case-studies"). Hitting
+// /en/sap-case-studies should render the same listing as
+// /en/category/sap-case-studies, not a separate MDX content page. Keeps
 // both URLs alive (zero-redirect SEO contract from CLAUDE.md) while
 // surfacing the same article grid.
 const CATEGORY_SLUGS = new Set<string>(Object.keys(CATEGORIES));
@@ -50,6 +50,12 @@ const CATEGORY_SLUGS = new Set<string>(Object.keys(CATEGORIES));
 function isCategorySlug(slug: string): slug is Category {
   return CATEGORY_SLUGS.has(slug);
 }
+
+// WordPress also publishes /case-studies/ as a flat index URL (separate
+// from the /category/sap-case-studies/ archive). Both URLs render the
+// bespoke portfolio. The flat slug is NOT a CATEGORIES key — it's a
+// shortcut hard-coded here to keep the WordPress URL alive.
+const CASE_STUDIES_INDEX_SLUG = "case-studies";
 
 // Parse an `originalUrl` like
 // `https://noeldcosta.com/sap-implementation/sap-modules/` into
@@ -104,6 +110,10 @@ export function generateStaticParams() {
   // Category slugs (single-segment).
   for (const cat of CATEGORY_SLUGS) pathSet.add(JSON.stringify([cat]));
 
+  // Flat /case-studies/ index URL — preserved for the WordPress URL contract
+  // even though "case-studies" is no longer a CATEGORIES key.
+  pathSet.add(JSON.stringify([CASE_STUDIES_INDEX_SLUG]));
+
   const params: { lang: string; slug: string[] }[] = [];
   for (const lang of LOCALES) {
     for (const pathJson of pathSet) {
@@ -133,6 +143,17 @@ export async function generateMetadata(
     };
   }
 
+  // Flat /case-studies/ index URL — borrows the sap-case-studies category
+  // metadata since both URLs render the same portfolio page.
+  if (slug.length === 1 && lastSlug === CASE_STUDIES_INDEX_SLUG) {
+    const meta = CATEGORIES["sap-case-studies"];
+    return {
+      title: `${meta.label} | Noel D'Costa`,
+      description: meta.description,
+      alternates: { canonical: `${SITE_URL}/${locale}/${CASE_STUDIES_INDEX_SLUG}` },
+    };
+  }
+
   const post = getPost(lastSlug, locale);
   if (post) return buildPostMetadata(post);
   const page = getPage(lastSlug, locale);
@@ -155,14 +176,20 @@ export default async function LocalizedRoute(
   // /ai-insights-shiftgearx-noeldcosta/) still resolve here.
   if (slug.length === 1 && RESERVED_SLUGS.has(lastSlug)) notFound();
 
+  // Flat /case-studies/ index URL — WordPress publishes this alongside
+  // the /category/sap-case-studies/ archive. Both render the bespoke
+  // portfolio layout (hero + filters + anchor/archive grids).
+  if (slug.length === 1 && lastSlug === CASE_STUDIES_INDEX_SLUG) {
+    return <CaseStudyPortfolioPage />;
+  }
+
   // Category slug shortcut: /en/<category-slug> renders the same
   // CategoryPage component as /en/category/<category-slug>. Canonical
   // URL points at the /category/ form (set in generateMetadata).
-  // Special case: "case-studies" gets the bespoke portfolio layout
-  // (hero + filters + anchor/archive grids) instead of the generic
-  // category listing.
+  // Special case: "sap-case-studies" gets the bespoke portfolio layout
+  // instead of the generic category listing.
   if (slug.length === 1 && isCategorySlug(lastSlug)) {
-    if (lastSlug === "case-studies") return <CaseStudyPortfolioPage />;
+    if (lastSlug === "sap-case-studies") return <CaseStudyPortfolioPage />;
     return <CategoryPage category={lastSlug} locale={locale} />;
   }
 

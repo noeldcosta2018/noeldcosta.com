@@ -20,7 +20,7 @@ import {
  *
  * View Transitions: the cover image carries a unique view-transition-name
  * matching the case-study card on the index page, so the navigation
- * from /category/case-studies into this article feels like the card
+ * from /case-studies into this article feels like the card
  * grew into the hero (Chrome 126+; gracefully no-ops elsewhere).
  *
  * No client JS needed — pure server-rendered DOM with one Next/Image.
@@ -127,7 +127,7 @@ export default function CaseStudyArticleHero({ c }: { c: CaseStudy }) {
           <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[0.7rem] tracking-[2px] uppercase">
             <li>
               <Link
-                href="/category/case-studies"
+                href="/case-studies"
                 className="inline-flex items-center min-h-[44px] -ml-2 px-2 text-eyebrow hover:text-papaya transition-colors"
               >
                 ← All case studies

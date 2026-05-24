@@ -13,7 +13,7 @@ import CaseStudyGrid from "./CaseStudyGrid";
 import CaseStudyMethodology from "./CaseStudyMethodology";
 
 /**
- * /category/case-studies + /<lang>/case-studies portfolio page.
+ * /case-studies + /category/sap-case-studies portfolio page.
  *
  * Composition (top → bottom):
  *   1. Hero         — featured case study, large cover, count-up stats

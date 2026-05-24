@@ -71,23 +71,23 @@ const TAG_LABEL: Record<string, string> = Object.fromEntries(
 // ─── Per-category taglines for the hero H1 italic emphasis ──────────────────
 
 const CATEGORY_TAGLINES: Record<string, string> = {
-  "erp-implementation": "From the field, not the slides.",
-  "platforms-modules":  "Deep technical. Real projects.",
-  "erp-strategy":       "Real numbers. Not estimates.",
-  "ai-governance":      "Grounded. Not hype.",
-  "agentic-ai":         "What works now.",
-  "case-studies":       "Named clients. Real outcomes.",
+  "erp-consulting-guide": "From the field, not the slides.",
+  "sap-modules":          "Deep technical. Real projects.",
+  "erp-strategy":         "Real numbers. Not estimates.",
+  "ai-governance":        "Grounded. Not hype.",
+  "agentic-ai":           "What works now.",
+  "sap-case-studies":     "Named clients. Real outcomes.",
 };
 
 // ─── Other categories for navigation ────────────────────────────────────────
 
 const ALL_CATEGORIES = [
-  { slug: "erp-implementation", label: "ERP Implementation" },
-  { slug: "platforms-modules", label: "Platforms & Modules" },
+  { slug: "erp-consulting-guide", label: "ERP Consulting Guide" },
+  { slug: "sap-modules", label: "SAP Modules" },
   { slug: "erp-strategy", label: "ERP Strategy & Cost" },
   { slug: "ai-governance", label: "AI Governance" },
   { slug: "agentic-ai", label: "Agentic AI" },
-  { slug: "case-studies", label: "Case Studies" },
+  { slug: "sap-case-studies", label: "SAP Case Studies" },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

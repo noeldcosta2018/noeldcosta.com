@@ -225,9 +225,9 @@ function defaultMentionsForCategory(category: string): { name: string; sameAs?: 
     ENTITY_MAP["fiori"],
   ];
   switch (category) {
-    case "platforms-modules":
-    case "erp-implementation":
-    case "case-studies":
+    case "sap-modules":
+    case "erp-consulting-guide":
+    case "sap-case-studies":
       return sapEntities;
     case "agentic-ai":
     case "ai-governance":
@@ -338,7 +338,7 @@ function authorPerson() {
 
 /**
  * Article-class JSON-LD. Returns `BlogPosting` for all posts, OR `TechArticle`
- * for posts in `platforms-modules` (most technical category). Both inherit
+ * for posts in `sap-modules` (most technical category). Both inherit
  * from Article so all article rich-result eligibility carries through.
  */
 export function articleJsonLd(post: PostRecord) {
@@ -351,7 +351,7 @@ export function articleJsonLd(post: PostRecord) {
     : undefined;
   const cat = CATEGORIES[fm.category as keyof typeof CATEGORIES];
 
-  const isTechArticle = fm.category === "platforms-modules";
+  const isTechArticle = fm.category === "sap-modules";
   const articleType = isTechArticle ? "TechArticle" : "BlogPosting";
 
   const mentionsList =

@@ -28,8 +28,8 @@ import NumberTicker from "./NumberTicker";
  * vars on the host. Disabled on touch via the @media rule on the
  * utility.
  *
- * Link target: /<slug>. Same URL the existing /category/case-studies
- * page already points to — zero SEO impact.
+ * Link target: /<slug>. Same URL the existing /case-studies
+ * portfolio page already points to — zero SEO impact.
  */
 
 interface Props {

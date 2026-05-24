@@ -11,23 +11,22 @@ import { LOCALES, TIER_1_LOCALES, RTL_LOCALES, type Locale } from "./locales";
 export { LOCALES, TIER_1_LOCALES, RTL_LOCALES, type Locale };
 
 export type Category =
-  | "erp-implementation"
-  | "platforms-modules"
+  | "erp-consulting-guide"
+  | "sap-modules"
   | "erp-strategy"
   | "ai-governance"
   | "agentic-ai"
-  | "case-studies"
-  | "consulting-career";
+  | "sap-case-studies";
 
 export const CATEGORIES: Record<Category, { label: string; slug: string; description: string }> = {
-  "erp-implementation": {
-    label: "ERP Implementation",
-    slug: "erp-implementation",
-    description: "Planning, cost, risk, and delivery of ERP implementations.",
+  "erp-consulting-guide": {
+    label: "ERP Consulting Guide",
+    slug: "erp-consulting-guide",
+    description: "Planning, cost, risk, and delivery of ERP implementations, plus career frameworks and thinking tools for ERP consultants.",
   },
-  "platforms-modules": {
-    label: "Platforms & Modules",
-    slug: "platforms-modules",
+  "sap-modules": {
+    label: "SAP Modules",
+    slug: "sap-modules",
     description: "Deep technical coverage of SAP and ERP modules.",
   },
   "erp-strategy": {
@@ -45,15 +44,10 @@ export const CATEGORIES: Record<Category, { label: string; slug: string; descrip
     slug: "agentic-ai",
     description: "Generative and agentic AI in enterprise ERP contexts.",
   },
-  "case-studies": {
-    label: "Case Studies",
-    slug: "case-studies",
+  "sap-case-studies": {
+    label: "SAP Case Studies",
+    slug: "sap-case-studies",
     description: "Real programmes, outcomes, and lessons.",
-  },
-  "consulting-career": {
-    label: "Consulting Career",
-    slug: "consulting-career",
-    description: "Career frameworks, skills, and thinking tools for ERP consultants.",
   },
 };
 

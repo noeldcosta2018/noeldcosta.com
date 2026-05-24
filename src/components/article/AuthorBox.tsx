@@ -111,7 +111,7 @@ export default function AuthorBox({
             </a>
 
             <Link
-              href={`${localePrefix}/category/case-studies`}
+              href={`${localePrefix}/case-studies`}
               className="inline-flex items-center gap-2 bg-transparent text-corbeau px-7 py-3.5 rounded-[10px] font-semibold text-[0.92rem] border-2 border-papaya/40 hover:border-papaya hover:bg-papaya/5 transition-all hover:-translate-y-px"
             >
               See case studies

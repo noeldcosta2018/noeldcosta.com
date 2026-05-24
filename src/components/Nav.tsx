@@ -21,16 +21,18 @@ function MobileDrawerScrollLock() {
   return null;
 }
 
-// 6 content pillars. "Consulting Career" is deliberately footer-only per CLAUDE.md.
+// 6 content pillars. Slugs match WordPress Yoast category slugs 1:1
+// (CATEGORIES keys in src/lib/content.ts). The former "Consulting
+// Career" category is now merged into "ERP Consulting Guide".
 const PILLARS: { label: string; slug: string; blurb: string }[] = [
   {
-    label: "ERP Implementation",
-    slug: "erp-implementation",
+    label: "ERP Consulting Guide",
+    slug: "erp-consulting-guide",
     blurb: "Delivery playbooks, programme recovery, go-live readiness.",
   },
   {
-    label: "Platforms & Modules",
-    slug: "platforms-modules",
+    label: "SAP Modules",
+    slug: "sap-modules",
     blurb: "SAP S/4HANA, Oracle, Dynamics. Module-level deep dives.",
   },
   {
@@ -49,8 +51,8 @@ const PILLARS: { label: string; slug: string; blurb: string }[] = [
     blurb: "Autonomous agents in the ERP stack. What actually works.",
   },
   {
-    label: "Case Studies",
-    slug: "case-studies",
+    label: "SAP Case Studies",
+    slug: "sap-case-studies",
     blurb: "Real programme outcomes from aviation, government, and retail.",
   },
 ];
@@ -255,7 +257,7 @@ export default function Nav() {
 
           <li>
             <Link
-              href="/category/case-studies"
+              href="/category/sap-case-studies"
               style={{
                 fontSize: 14,
                 fontWeight: 700,

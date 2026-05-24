@@ -3,13 +3,12 @@ import BrandWordmark from "./BrandWordmark";
 
 export default function Footer() {
   const solutions: { label: string; href: string }[] = [
-    { label: "ERP Implementation", href: "/category/erp-implementation" },
-    { label: "Platforms & Modules", href: "/category/platforms-modules" },
+    { label: "ERP Consulting Guide", href: "/category/erp-consulting-guide" },
+    { label: "SAP Modules", href: "/category/sap-modules" },
     { label: "ERP Strategy", href: "/category/erp-strategy" },
     { label: "AI Governance", href: "/category/ai-governance" },
     { label: "Agentic AI", href: "/category/agentic-ai" },
-    { label: "Case Studies", href: "/category/case-studies" },
-    { label: "Consulting Career", href: "/category/consulting-career" },
+    { label: "SAP Case Studies", href: "/category/sap-case-studies" },
   ];
   const tools: { label: string; href: string }[] = [
     { label: "ERP Cost Calculator", href: "/erp-implementation-cost-calculator" },
@@ -21,7 +20,7 @@ export default function Footer() {
   const company: { label: string; href: string; external?: boolean }[] = [
     { label: "About", href: "/about" },
     { label: "Books", href: "/books" },
-    { label: "Case Studies", href: "/category/case-studies" },
+    { label: "Case Studies", href: "/case-studies" },
     { label: "YouTube", href: "https://www.youtube.com/@NoelDCostaERPAI", external: true },
     { label: "Contact", href: "/contact-noel-erp-support" },
   ];

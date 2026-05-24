@@ -79,7 +79,7 @@ export default function CaseStudyArticlePage({
 
   const breadcrumbs: { name: string; url: string }[] = [
     { name: "Home", url: `${SITE_URL}${localePrefix}/` },
-    { name: "Case Studies", url: `${SITE_URL}${localePrefix}/category/case-studies` },
+    { name: "Case Studies", url: `${SITE_URL}${localePrefix}/case-studies` },
     { name: fm.title, url: `${SITE_URL}${localePrefix}/${fm.slug}` },
   ];
 

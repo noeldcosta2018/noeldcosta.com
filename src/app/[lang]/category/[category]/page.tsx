@@ -36,6 +36,6 @@ export default async function Route(
   if (!LOCALES.includes(lang as Locale)) notFound();
   // Case studies get the bespoke portfolio layout (hero + filters +
   // anchor/archive grids). Other categories use the generic listing.
-  if (category === "case-studies") return <CaseStudyPortfolioPage />;
+  if (category === "sap-case-studies") return <CaseStudyPortfolioPage />;
   return <CategoryPage category={category} locale={lang as Locale} />;
 }

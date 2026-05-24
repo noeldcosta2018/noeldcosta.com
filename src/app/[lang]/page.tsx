@@ -99,7 +99,7 @@ export default async function Home(props: { params: Promise<{ lang: string }> })
       />
       <Nav />
       <main style={{ paddingTop: 64 }}>
-        <Hero lang={lang} />
+        <Hero />
         <LogoScroll />
         <ProblemStats />
         <Services />

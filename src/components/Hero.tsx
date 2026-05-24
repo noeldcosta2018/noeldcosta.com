@@ -33,7 +33,7 @@ const STATS = [
   { num: '5', label: 'continents' },
 ] as const;
 
-export default function Hero({ lang }: { lang: string }) {
+export default function Hero() {
   return (
     <section style={{ position: 'relative', overflow: 'hidden' }}>
       {/* Warm glow */}
@@ -136,7 +136,7 @@ export default function Hero({ lang }: { lang: string }) {
                 Book a 30-min call <ArrowUpRight size={16} />
               </a>
               <Link
-                href={`/${lang}/case-studies`}
+                href="/case-studies"
                 style={{
                   color: 'var(--cc-corbeau)',
                   fontWeight: 600,
