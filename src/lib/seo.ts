@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { Locale, PostRecord, PageRecord } from "./content";
-import { LOCALES, getAvailableLocales, CATEGORIES } from "./content";
+import { LOCALES, CATEGORIES } from "./content";
 
 export const SITE_URL = "https://noeldcosta.com";
 export const SITE_NAME = "Noel D'Costa";
@@ -17,25 +17,12 @@ export const AUTHOR = {
   ],
 };
 
-const LOCALE_HREFLANG: Record<Locale, string> = {
-  en: "en",
-  ja: "ja",
-  es: "es",
-  fr: "fr",
-  ru: "ru",
-  it: "it",
-  pt: "pt",
-  de: "de",
-  ar: "ar",
-  zh: "zh",
-  ko: "ko",
-  hi: "hi",
-  tr: "tr",
-  nl: "nl",
-};
-
-function localePath(locale: Locale, slug: string): string {
-  return locale === "en" ? `/${slug}` : `/${locale}/${slug}`;
+// English-only flat URL with a trailing slash, matching the WordPress URL
+// contract (every legacy URL ends in `/`) and Next.js's `trailingSlash: true`
+// config. Locale parameter retained for call-site compatibility — GTranslate
+// handles all non-English variants externally on its proxy. See CLAUDE.md.
+function flatPath(_locale: Locale, slug: string): string {
+  return `/${slug}/`;
 }
 
 /**
@@ -67,21 +54,12 @@ export function buildPostMetadata(post: PostRecord): Metadata {
   const description =
     fm.metaDescription || fm.excerpt || `${fm.title} — by Noel D'Costa.`;
   const canonical =
-    fm.canonical || `${SITE_URL}${localePath(post.locale, fm.slug)}`;
-
-  const available = getAvailableLocales("posts", fm.slug);
-  const languages: Record<string, string> = {};
-  for (const loc of available) {
-    languages[LOCALE_HREFLANG[loc]] = `${SITE_URL}${localePath(loc, fm.slug)}`;
-  }
-  if (available.includes("en")) {
-    languages["x-default"] = `${SITE_URL}${localePath("en", fm.slug)}`;
-  }
+    fm.canonical || `${SITE_URL}${flatPath(post.locale, fm.slug)}`;
 
   return {
     title,
     description,
-    alternates: { canonical, languages },
+    alternates: { canonical },
     // Only override the layout's default robots config when the post is
     // explicitly noindex; otherwise let the parent indexing directives flow
     // through (omitting the field — passing `undefined` would shadow it).
@@ -92,7 +70,7 @@ export function buildPostMetadata(post: PostRecord): Metadata {
       url: canonical,
       siteName: SITE_NAME,
       type: "article",
-      locale: post.locale,
+      locale: "en",
       publishedTime: toIso(fm.date),
       modifiedTime: toIso(fm.updated),
       authors: [AUTHOR.name],
@@ -115,21 +93,12 @@ export function buildPageMetadata(page: PageRecord): Metadata {
   const description =
     fm.metaDescription || fm.excerpt || `${fm.title} — Noel D'Costa.`;
   const canonical =
-    fm.canonical || `${SITE_URL}${localePath(page.locale, fm.slug)}`;
-
-  const available = getAvailableLocales("pages", fm.slug);
-  const languages: Record<string, string> = {};
-  for (const loc of available) {
-    languages[LOCALE_HREFLANG[loc]] = `${SITE_URL}${localePath(loc, fm.slug)}`;
-  }
-  if (available.includes("en")) {
-    languages["x-default"] = `${SITE_URL}${localePath("en", fm.slug)}`;
-  }
+    fm.canonical || `${SITE_URL}${flatPath(page.locale, fm.slug)}`;
 
   return {
     title,
     description,
-    alternates: { canonical, languages },
+    alternates: { canonical },
     // Only override the layout's default robots config when the post is
     // explicitly noindex; otherwise let the parent indexing directives flow
     // through (omitting the field — passing `undefined` would shadow it).
@@ -140,7 +109,7 @@ export function buildPageMetadata(page: PageRecord): Metadata {
       url: canonical,
       siteName: SITE_NAME,
       type: "website",
-      locale: page.locale,
+      locale: "en",
       images: fm.hero ? [{ url: fm.hero }] : undefined,
     },
     twitter: {
@@ -343,7 +312,7 @@ function authorPerson() {
  */
 export function articleJsonLd(post: PostRecord) {
   const fm = post.frontmatter;
-  const url = `${SITE_URL}${localePath(post.locale, fm.slug)}`;
+  const url = `${SITE_URL}${flatPath(post.locale, fm.slug)}`;
   const heroAbsolute = fm.hero
     ? fm.hero.startsWith("http")
       ? fm.hero
@@ -399,7 +368,7 @@ export function articleJsonLd(post: PostRecord) {
     },
     articleSection: cat?.label,
     wordCount: countWords(post.body),
-    inLanguage: post.locale,
+    inLanguage: "en",
     speakable: {
       "@type": "SpeakableSpecification",
       cssSelector: ["h1", "header p"],
@@ -500,7 +469,7 @@ export function collectionPageJsonLd(args: {
     hasPart: args.posts.slice(0, 50).map((p) => ({
       "@type": "BlogPosting",
       headline: p.title,
-      url: `${SITE_URL}${localePath(p.locale, p.slug)}`,
+      url: `${SITE_URL}${flatPath(p.locale, p.slug)}`,
     })),
   };
 }

@@ -12,7 +12,7 @@ import { SITE_URL, SITE_NAME } from "@/lib/seo";
  */
 
 export async function generateMetadata(): Promise<Metadata> {
-  const url = `${SITE_URL}/privacy`;
+  const url = `${SITE_URL}/privacy/`;
   const title = "Privacy | Noel D'Costa";
   const description =
     "How noeldcosta.com handles your name, email, and request data. Plain English, written by Noel.";

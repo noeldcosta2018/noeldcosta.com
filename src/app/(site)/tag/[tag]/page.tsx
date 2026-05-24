@@ -28,7 +28,7 @@ export async function generateMetadata(
     title: `${info.label} | Noel D'Costa`,
     description,
     alternates: {
-      canonical: `${SITE_URL}/tag/${tag}`,
+      canonical: `${SITE_URL}/tag/${tag}/`,
     },
   };
 }

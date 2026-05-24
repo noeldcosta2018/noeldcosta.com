@@ -19,7 +19,7 @@ export async function generateMetadata(
   return {
     title: `${meta.label} | Noel D'Costa`,
     description: meta.description,
-    alternates: { canonical: `${SITE_URL}/category/${meta.slug}` },
+    alternates: { canonical: `${SITE_URL}/category/${meta.slug}/` },
   };
 }
 

@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Preserve the WordPress URL contract: every legacy URL ends in `/`, and
+  // 64.5% of clicks come via GTranslate, which fetches the origin path
+  // verbatim. With `trailingSlash: true`, Next.js emits trailing slashes in
+  // sitemap, canonical, and generated <Link> hrefs, and 308-redirects any
+  // bare-path hit to its trailing-slash form. Single source of truth for
+  // the URL shape — matters more than the routing ergonomics.
+  trailingSlash: true,
   // Inline critical above-the-fold CSS and defer the rest. Uses
   // `critters` under the hood (already in deps). Eliminates the two
   // large render-blocking _next/static/chunks/*.css requests for

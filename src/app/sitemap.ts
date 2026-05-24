@@ -4,11 +4,8 @@ import {
   getAllPostSlugs,
   getAllPageSlugs,
   getAllTagSlugs,
-  getAvailableLocales,
   getPost,
   getPage,
-  LOCALES,
-  type Locale,
 } from "@/lib/content";
 import { SITE_URL, toIso } from "@/lib/seo";
 import { WORDPRESS_TAG_SLUGS } from "@/components/tagMeta";
@@ -24,117 +21,150 @@ function lastModDate(input?: string): Date | undefined {
   return iso ? new Date(iso) : undefined;
 }
 
-const RESERVED_SLUGS = new Set<string>([
+/**
+ * Resolve a hero path to an absolute URL for `<image:loc>` entries.
+ * Frontmatter heroes are mostly site-relative (`/images/wp/foo.webp`); pass
+ * through already-absolute URLs unchanged so external hosts (Pexels, etc.)
+ * still emit a valid image entry.
+ */
+function absoluteImage(hero: string): string {
+  return hero.startsWith("http") ? hero : `${SITE_URL}${hero}`;
+}
+
+// Short URLs that have a dedicated route but NO WordPress equivalent — the
+// canonical for /about points at the WP /sap-erp-consultant-my-story-noel-dcosta/
+// (set in MDX frontmatter), so emitting /about would duplicate canonical
+// signal. /books has no WordPress page; /privacy and /contact short URLs are
+// net-new and the WP equivalents (privacy-policy-noeldcosta, contact-noel-
+// erp-support) come through the pages loop already.
+const SHORT_URL_SLUGS = new Set<string>([
   "about",
-  "books",
   "contact",
   "privacy",
   "category",
-  "erp-implementation-cost-calculator",
-  "sap-implementation-cost-calculator",
-  "free-data-migration-estimator-sap-oracle-microsoft",
-  "sap-job-description-generator",
-  "sap-solution-builder",
 ]);
 
-function urlFor(locale: Locale, path: string) {
-  if (path.startsWith("/")) path = path.slice(1);
-  return locale === "en" ? `${SITE_URL}/${path}` : `${SITE_URL}/${locale}/${path}`;
-}
-
-function alternates(kind: "posts" | "pages", slug: string) {
-  const locales = getAvailableLocales(kind, slug);
-  const languages: Record<string, string> = {};
-  for (const l of locales) languages[l] = urlFor(l, slug);
-  if (locales.includes("en")) languages["x-default"] = urlFor("en", slug);
-  return { languages };
+/**
+ * Parse an `originalUrl` like
+ * `https://noeldcosta.com/sap-implementation/sap-modules/` into
+ * `["sap-implementation", "sap-modules"]`. Mirrors the static-params logic
+ * in src/app/(site)/[...slug]/page.tsx so the sitemap stays in lockstep
+ * with the routes the catch-all actually serves.
+ */
+function pathSegmentsFromOriginalUrl(
+  url: string | undefined,
+): string[] | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    const path = u.pathname.replace(/^\/+|\/+$/g, "");
+    if (!path) return null;
+    return path.split("/");
+  } catch {
+    return null;
+  }
 }
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const items: MetadataRoute.Sitemap = [];
 
-  // Homepage per locale
-  for (const l of LOCALES) {
-    items.push({
-      url: l === "en" ? SITE_URL : `${SITE_URL}/${l}`,
-      changeFrequency: "weekly",
-      priority: 1,
-    });
-  }
+  // Homepage. Single flat URL with trailing slash — matches the WordPress
+  // URL contract and the `trailingSlash: true` Next.js config. GTranslate
+  // proxies translated variants externally; we do NOT emit /{locale}
+  // entries from the origin (see CLAUDE.md, "DO NOT generate sitemap
+  // entries with language prefixes").
+  items.push({
+    url: `${SITE_URL}/`,
+    changeFrequency: "weekly",
+    priority: 1,
+  });
 
-  // /books per locale — static catalogue page, content drawn from
-  // content/books/*.mdx but the URL itself is not slug-driven.
-  for (const l of LOCALES) {
+  // /books — net-new short URL, no WordPress equivalent. Single entry.
+  items.push({
+    url: `${SITE_URL}/books/`,
+    changeFrequency: "weekly",
+    priority: 0.7,
+  });
+
+  // Category indexes.
+  for (const c of Object.keys(CATEGORIES)) {
     items.push({
-      url: urlFor(l, "books"),
+      url: `${SITE_URL}/category/${c}/`,
       changeFrequency: "weekly",
       priority: 0.7,
     });
   }
 
-  // Category indexes per locale
-  for (const c of Object.keys(CATEGORIES)) {
-    for (const l of LOCALES) {
-      items.push({
-        url: urlFor(l, `category/${c}`),
-        changeFrequency: "weekly",
-        priority: 0.7,
-      });
-    }
-  }
-
-  // Tag archives — English-only flat URLs to match the WordPress
-  // /tag/{slug}/ contract. GTranslate serves translated variants on its
-  // proxy; we do not emit per-locale entries here.
+  // Tag archives — flat URLs to match the WordPress /tag/{slug}/ contract.
   const tagSet = new Set<string>(WORDPRESS_TAG_SLUGS);
   for (const t of getAllTagSlugs()) tagSet.add(t);
   for (const t of tagSet) {
     items.push({
-      url: `${SITE_URL}/tag/${t}`,
+      url: `${SITE_URL}/tag/${t}/`,
       changeFrequency: "weekly",
       priority: 0.6,
     });
   }
 
-  // Posts — only emit URLs for locales that actually have content
+  // Posts. Image entry per post when a hero is present (Yoast parity —
+  // Google's image sitemap helps Discover and Image Search picks rich
+  // results that link back to the post).
   for (const slug of getAllPostSlugs()) {
     if (slug === "https-noeldcosta-com-sap-implementation-expert") continue;
-    const available = getAvailableLocales("posts", slug);
-    for (const l of available) {
-      const post = getPost(slug, l);
-      if (!post) continue;
-      if (post.frontmatter.noindex) continue;
-      items.push({
-        url: urlFor(l, slug),
-        lastModified: lastModDate(
-          post.frontmatter.lastReviewed ||
-            post.frontmatter.updated ||
-            post.frontmatter.date,
-        ),
-        changeFrequency: "monthly",
-        priority: 0.8,
-        alternates: alternates("posts", slug),
-      });
-    }
+    const post = getPost(slug, "en");
+    if (!post) continue;
+    if (post.frontmatter.noindex) continue;
+    items.push({
+      url: `${SITE_URL}/${slug}/`,
+      lastModified: lastModDate(
+        post.frontmatter.lastReviewed ||
+          post.frontmatter.updated ||
+          post.frontmatter.date,
+      ),
+      changeFrequency: "monthly",
+      priority: 0.8,
+      images: post.frontmatter.hero
+        ? [absoluteImage(post.frontmatter.hero)]
+        : undefined,
+    });
   }
 
-  // Pages — skip reserved + junk slugs
+  // Pages. Emit at the flat slug AND at the multi-segment WordPress URL
+  // when `originalUrl` reveals one — the catch-all in
+  // src/app/(site)/[...slug]/page.tsx serves both, and Google sees them as
+  // distinct URLs unless they're listed here.
   for (const slug of getAllPageSlugs()) {
-    if (RESERVED_SLUGS.has(slug)) continue;
+    if (SHORT_URL_SLUGS.has(slug)) continue;
     if (slug === "https-noeldcosta-com-sap-implementation-expert") continue;
-    const available = getAvailableLocales("pages", slug);
-    for (const l of available) {
-      const page = getPage(slug, l);
-      if (!page) continue;
-      if (page.frontmatter.noindex) continue;
+    const page = getPage(slug, "en");
+    if (!page) continue;
+    if (page.frontmatter.noindex) continue;
+
+    const lastModified = lastModDate(
+      page.frontmatter.updated || page.frontmatter.date,
+    );
+    const images = page.frontmatter.hero
+      ? [absoluteImage(page.frontmatter.hero)]
+      : undefined;
+
+    items.push({
+      url: `${SITE_URL}/${slug}/`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.6,
+      images,
+    });
+
+    const segments = pathSegmentsFromOriginalUrl(
+      page.frontmatter.originalUrl,
+    );
+    if (segments && segments.length > 1) {
       items.push({
-        url: urlFor(l, slug),
-        lastModified: lastModDate(
-          page.frontmatter.updated || page.frontmatter.date,
-        ),
+        url: `${SITE_URL}/${segments.join("/")}/`,
+        lastModified,
         changeFrequency: "monthly",
         priority: 0.6,
-        alternates: alternates("pages", slug),
+        images,
       });
     }
   }

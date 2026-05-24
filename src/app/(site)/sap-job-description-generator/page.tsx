@@ -15,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: LABEL,
     description: DESCRIPTION,
-    alternates: { canonical: `${SITE_URL}/${SLUG}` },
+    alternates: { canonical: `${SITE_URL}/${SLUG}/` },
   };
 }
 

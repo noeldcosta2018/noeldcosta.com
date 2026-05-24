@@ -10,7 +10,7 @@ import { SITE_URL, SITE_NAME } from "@/lib/seo";
  */
 
 export async function generateMetadata(): Promise<Metadata> {
-  const url = `${SITE_URL}/terms`;
+  const url = `${SITE_URL}/terms/`;
   const title = "Terms of use | Noel D'Costa";
   const description =
     "Plain-English terms covering use of noeldcosta.com, the books, and the site's content.";

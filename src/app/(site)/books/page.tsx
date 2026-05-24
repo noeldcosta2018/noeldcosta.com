@@ -31,7 +31,7 @@ import { SITE_URL, SITE_NAME, AUTHOR } from "@/lib/seo";
  */
 
 export async function generateMetadata(): Promise<Metadata> {
-  const url = `${SITE_URL}/books`;
+  const url = `${SITE_URL}/books/`;
   const title = "Books by Noel D'Costa | SAP, ERP and Enterprise AI";
   const description =
     "Practical books for SAP consultants, CIOs, CFOs, and ERP programme leaders covering SAP careers, enterprise AI, autonomous agents, and the SAP career playbook for the AI era.";
