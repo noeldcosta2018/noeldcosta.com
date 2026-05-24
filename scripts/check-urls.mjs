@@ -9,7 +9,11 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 const PORT = process.env.PORT || '3456';
-const BASE = `http://localhost:${PORT}`;
+const BASE = process.env.BASE_URL || `http://localhost:${PORT}`;
+// Production builds (Vercel) emit smaller HTML than `next dev` — no dev runtime,
+// no source-map blobs. A real production page is still well above 8 KB; the
+// 404 page is ~2 KB. Threshold scaled per environment.
+const MIN_SIZE = BASE.startsWith('http://localhost') ? 30000 : 8000;
 
 const PAGES = [
   '/',
@@ -155,24 +159,29 @@ async function check(url) {
     const hasHreflang = /rel=["']?alternate["']?[^>]*hreflang=/i.test(text);
     const hreflangCount = (text.match(/hreflang=/gi) || []).length;
     const langLinks = (text.match(/href=["']\/(es|ja|fr|ru|it|de|pt|el|ar|nl|zh-CN|zh-TW|ko|hr|hi|ka|ml|da|tl)\//g) || []).length;
+    const enLinks = (text.match(/href=["']\/en\//g) || []).length;
+    const canonicalMatch = text.match(/<link[^>]+rel=["']canonical["'][^>]*href=["']([^"']+)["']/i) ||
+      text.match(/<link[^>]+href=["']([^"']+)["'][^>]*rel=["']canonical["']/i);
+    const canonical = canonicalMatch ? canonicalMatch[1] : '';
     return {
       status: res.status,
       size: text.length,
       title,
       hreflangCount,
       langLinks,
+      enLinks,
+      canonical,
       elapsedMs: elapsed,
     };
   } catch (err) {
-    return { status: 0, size: 0, title: '', hreflangCount: 0, langLinks: 0, elapsedMs: Date.now() - start, error: String(err) };
+    return { status: 0, size: 0, title: '', hreflangCount: 0, langLinks: 0, enLinks: 0, canonical: '', elapsedMs: Date.now() - start, error: String(err) };
   }
 }
 
 function classify(r) {
   if (r.status !== 200) return 'FAIL';
-  // Next dev 404 page is ~12KB with no <title>. Real pages are >>30KB with a meaningful title.
   if (!r.title) return 'FAIL';
-  if (r.size < 30000) return 'FAIL';
+  if (r.size < MIN_SIZE) return 'FAIL';
   return 'PASS';
 }
 
@@ -180,6 +189,7 @@ async function main() {
   const results = [];
   let totalHreflang = 0;
   let totalLangLinks = 0;
+  let totalEnLinks = 0;
   console.log(`Checking ${ALL.length} URLs against ${BASE}…`);
 
   // Small concurrency to avoid hammering the dev server
@@ -193,6 +203,7 @@ async function main() {
       const verdict = classify(r);
       totalHreflang += r.hreflangCount;
       totalLangLinks += r.langLinks;
+      totalEnLinks += r.enLinks;
       results.push({ section, path: p, ...r, verdict });
       process.stdout.write(`${verdict === 'PASS' ? '.' : 'X'}`);
     }
@@ -231,11 +242,14 @@ async function main() {
     results,
     totalHreflang,
     totalLangLinks,
+    totalEnLinks,
     sitemap: sitemapInfo,
     robots: robotsInfo,
   };
 
-  const outPath = path.join('scripts', 'check-urls-output.json');
+  const outName = process.env.OUTPUT_NAME ||
+    (BASE.startsWith('http://localhost') ? 'check-urls-output.json' : 'check-urls-output-staging.json');
+  const outPath = path.join('scripts', outName);
   await fs.writeFile(outPath, JSON.stringify(out, null, 2), 'utf8');
   console.log(`Wrote ${outPath}`);
 
@@ -249,6 +263,7 @@ async function main() {
   }
   console.log(`\nTotal hreflang annotations across all pages: ${totalHreflang}`);
   console.log(`Total /{lang}/ links across all pages: ${totalLangLinks}`);
+  console.log(`Total /en/ links across all pages: ${totalEnLinks}`);
   console.log(`Sitemap: status=${sitemapInfo.status} urls=${sitemapInfo.urlCount} langPrefixes=${sitemapInfo.hasLangPrefixes} validXml=${sitemapInfo.validXml}`);
   console.log(`Robots:  status=${robotsInfo.status} size=${robotsInfo.size}`);
 }
