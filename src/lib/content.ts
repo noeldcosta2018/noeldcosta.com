@@ -227,6 +227,30 @@ export function getPostsByCategory(category: Category, locale: Locale = "en"): P
   return getAllPosts(locale).filter((p) => p.frontmatter.category === category);
 }
 
+export function getAllTagSlugs(): string[] {
+  const tags = new Set<string>();
+  for (const post of getAllPosts("en")) {
+    for (const tag of post.frontmatter.tags ?? []) tags.add(tag);
+  }
+  return Array.from(tags).sort();
+}
+
+export function getPostsByTag(tag: string, locale: Locale = "en"): PostRecord[] {
+  return getAllPosts(locale).filter((p) =>
+    (p.frontmatter.tags ?? []).includes(tag),
+  );
+}
+
+export function getPostsByAnyTag(
+  tags: string[],
+  locale: Locale = "en",
+): PostRecord[] {
+  const set = new Set(tags);
+  return getAllPosts(locale).filter((p) =>
+    (p.frontmatter.tags ?? []).some((t) => set.has(t)),
+  );
+}
+
 /**
  * Which locales have first-class content for a given post slug?
  * Used to emit hreflang only for locales that actually have an MDX file.

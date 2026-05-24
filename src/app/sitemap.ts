@@ -3,6 +3,7 @@ import {
   CATEGORIES,
   getAllPostSlugs,
   getAllPageSlugs,
+  getAllTagSlugs,
   getAvailableLocales,
   getPost,
   getPage,
@@ -10,6 +11,7 @@ import {
   type Locale,
 } from "@/lib/content";
 import { SITE_URL, toIso } from "@/lib/seo";
+import { WORDPRESS_TAG_SLUGS } from "@/components/tagMeta";
 
 /**
  * Coerce frontmatter date strings (often `"YYYY-MM-DD HH:mm:ss"` from
@@ -79,6 +81,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
         priority: 0.7,
       });
     }
+  }
+
+  // Tag archives — English-only flat URLs to match the WordPress
+  // /tag/{slug}/ contract. GTranslate serves translated variants on its
+  // proxy; we do not emit per-locale entries here.
+  const tagSet = new Set<string>(WORDPRESS_TAG_SLUGS);
+  for (const t of getAllTagSlugs()) tagSet.add(t);
+  for (const t of tagSet) {
+    items.push({
+      url: `${SITE_URL}/tag/${t}`,
+      changeFrequency: "weekly",
+      priority: 0.6,
+    });
   }
 
   // Posts — only emit URLs for locales that actually have content

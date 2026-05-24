@@ -5,11 +5,6 @@ import {
   ArrowRight,
   ArrowUpRight,
   Clock,
-  Target,
-  Layers,
-  Settings,
-  RefreshCw,
-  AlertCircle,
   Globe,
   BookOpen,
   ShieldCheck,
@@ -30,43 +25,7 @@ import {
   type PostRecord,
 } from "@/lib/content";
 import { breadcrumbJsonLd, collectionPageJsonLd, SITE_URL } from "@/lib/seo";
-
-// ─── Tag display config ──────────────────────────────────────────────────────
-
-const TAG_META: Record<
-  string,
-  { label: string; description: string; icon: React.ElementType }
-> = {
-  "sap-planning-and-selection": {
-    label: "Planning & Selection",
-    description: "Vendor shortlisting, readiness, and programme setup.",
-    icon: Target,
-  },
-  "sap-implementation-strategies": {
-    label: "Strategy",
-    description: "Delivery frameworks, governance, and go-live planning.",
-    icon: Layers,
-  },
-  "sap-technical-decisions": {
-    label: "Technical",
-    description: "Architecture, integration, and technical risk decisions.",
-    icon: Settings,
-  },
-  "sap-erp-modernization": {
-    label: "Modernization & Industry",
-    description: "Cloud migration, clean core, sector-specific patterns, and ERP transformation.",
-    icon: RefreshCw,
-  },
-  "sap-crisis-management": {
-    label: "Crisis & Recovery",
-    description: "Programme recovery, risk mitigation, and escalation.",
-    icon: AlertCircle,
-  },
-};
-
-const TAG_LABEL: Record<string, string> = Object.fromEntries(
-  Object.entries(TAG_META).map(([k, v]) => [k, v.label])
-);
+import { TAG_META, tagLabel } from "@/components/tagMeta";
 
 // ─── Per-category taglines for the hero H1 italic emphasis ──────────────────
 
@@ -89,19 +48,6 @@ const ALL_CATEGORIES = [
   { slug: "agentic-ai", label: "Agentic AI" },
   { slug: "sap-case-studies", label: "SAP Case Studies" },
 ];
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function tagLabel(tag: string) {
-  return (
-    TAG_LABEL[tag] ??
-    tag
-      .split("-")
-      .slice(0, 2)
-      .map((w) => w[0].toUpperCase() + w.slice(1))
-      .join(" ")
-  );
-}
 
 // ─── PostCard ────────────────────────────────────────────────────────────────
 
