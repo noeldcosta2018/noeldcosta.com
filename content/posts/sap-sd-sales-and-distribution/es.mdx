@@ -1,773 +1,323 @@
 ---
-title: "Errores de SAP SD que pueden afectar su proceso de ventas"
-slug: "sap-sd-sales-and-distribution"
-date: "2025-04-08 20:07:46"
-updated: "2025-10-17 07:39:20"
-hero: "/images/wp/2025/04/What-You-Must-Know-Before-Starting-SAP-SD-Implementation.webp"
-category: "sap-modules"
-tags: ["sap-technical-decisions"]
-author: "noeldcosta"
-originalUrl: "https://noeldcosta.com/sap-sd-sales-and-distribution/"
-h1: "Errores de SAP SD que pueden afectar su proceso de ventas"
-metaDescription: "Gestione las ventas, los envíos y la facturación con SAP SD. Conozca los componentes clave, los desafíos y las mejores prácticas. Mejoremos sus procesos de SAP hoy mismo."
-excerpt: "Gestione las ventas, los envíos y la facturación con SAP SD. Conozca los componentes clave, los desafíos y las mejores prácticas. Mejoremos sus procesos de SAP hoy mismo."
-metaTitle: "Errores de SAP SD que pueden afectar su proceso de ventas"
-canonicalUrl: "https://noeldcosta.com/es/sap-sd-sales-and-distribution/"
-locale: "es"
-translatedFrom: "en"
-translationSource: "gtranslate-scrape-cleanup"
+title: 'SAP SD: qué hace y dónde fallan las implantaciones'
+slug: sap-sd-sales-and-distribution
+date: '2025-04-08'
+updated: '2026-05-21'
+hero: /images/wp/2025/04/What-You-Must-Know-Before-Starting-SAP-SD-Implementation.webp
+heroAlt: Diagrama del proceso order-to-cash en SAP SD con flujo de pedido, entrega y facturación
+category: sap-modules
+tags:
+  - sap-technical-decisions
+  - sap-sd
+  - order-to-cash
+  - rise-with-sap
+author: Noel D'Costa
+metaTitle: 'SAP SD en 2026: qué hace y dónde fallan las implantaciones'
+metaDescription: SAP SD en 2026 desde experiencia real de implantación. Flujo order-to-cash en S/4HANA, componentes, estructura organizativa, integración con MM/PP/FI y puntos de fallo.
+excerpt: En un rollout europeo de manufactura en 2023, tras una implantación completa de SAP, los pasos de order-to-cash se habían construido exactamente como se diseñaron. En el mapa de procesos, todo parecía correcto. Pero nadie comprobó cómo llegaban las actualizaciones de stock desde producción. Ventas prometía cinco días a los clientes. Manufactura sabía que eran más bien diez. Esa diferencia costó más que entregas tardías. Costó confianza. Cuando SAP SD está bien implantado, conecta las promesas comerciales con la realidad operativa. Cuando está mal implantado, traslada esa desconexión directamente al cliente.
+experienceSource: Direct experience implementing SAP SD across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets, covering manufacturing, retail, and distribution environments. Covers customer master setup, pricing conditions, availability checking, billing integration, and order-to-cash cycle optimisation. 2026 SAP SD on S/4HANA, RISE deployment, and Joule for sales positioning reflects current SAP product roadmap.
+lastReviewed: '2026-05-21'
+keyTakeaways:
+  - 'SAP SD gestiona todo el ciclo order-to-cash: consulta, oferta, pedido de ventas, entrega, salida de mercancías, facturación y pago'
+  - Un cliente industrial redujo el ciclo order-to-cash un 40% tras implantar SD al eliminar traspasos manuales entre ventas, almacén y finanzas
+  - Ventas prometía cinco días; manufactura sabía que eran diez. El ATP no estaba bien configurado. Esa diferencia costó la confianza del cliente, no solo el rendimiento de entrega
+  - Las condiciones de precio son la configuración más subestimada en SD. Registros de condición antiguos generan facturas incorrectas. Después llegan las reclamaciones
+  - La gestión del crédito solo funciona si los datos de crédito se mantienen. Los límites de crédito estáticos del primer año dejan de ser relevantes en dieciocho meses
+  - El documento de facturación es donde SD traspasa a FI. Una determinación de cuentas errónea o códigos fiscales ausentes bloquean facturas de forma silenciosa hasta el cierre de mes
+  - La integración con MM determina si las promesas de disponibilidad son reales. La integración con PP determina si los compromisos de producción se reflejan en ATP
+  - La calidad de los datos maestros de cliente es la base. Campos ausentes (clasificación fiscal, condiciones de pago, condiciones de expedición) provocan errores posteriores en cada pedido
+pullQuote: SAP SD conecta la promesa comercial con la realidad operativa. Cuando esa conexión falla, el cliente es el primero en verlo.
+mentions:
+  - SAP S/4HANA
+  - SAP SD
+  - SAP MM
+  - SAP PP
+  - SAP FI
+  - SAP ECC
+  - SAP TM
+  - RISE with SAP
+  - Joule
+locale: es
+translatedFrom: en
+translationSource: openai-gpt-5.4
+translationDate: '2026-05-25T21:14:20.618Z'
+canonicalUrl: https://noeldcosta.com/es/sap-sd-sales-and-distribution/
 ---
 
-### Módulos SAP
+En un despliegue europeo de fabricación en 2023, después de una implementación completa de SAP, los pasos de order-to-cash se construyeron exactamente como se habían diseñado. En el mapa de procesos se veía bien. Nadie había comprobado cómo llegaban las actualizaciones de stock desde producción.
 
-# Errores de SAP SD que pueden afectar su proceso de ventas
+Ventas decía a los clientes cinco días. Fabricación sabía que estaba más cerca de diez.
 
+Esa brecha costó más que entregas tardías. Costó confianza, y la confianza es más difícil de reconstruir que un ajuste de configuración.
 
-### Noel D'Costa
+SAP SD es el módulo que gestiona todo el proceso de ventas, desde la primera consulta del cliente hasta el cobro final. Si está bien configurado, conecta lo que ventas promete a los clientes con lo que operaciones realmente puede entregar. Si está mal configurado, traslada esa brecha directamente a sus clientes.
 
-*   Última actualización : 8 de Abril, 2025
+La situación en 2026 ya no sigue el manual de ECC. En S/4HANA, el módulo ahora se llama formalmente "Sales" en lugar de SD, pero la comunidad de FICO y logística sigue llamándolo SD. Advanced ATP (aATP) sustituye al ATP clásico en los programas nuevos. El Universal Journal elimina la sobrecarga de conciliación entre SD y FI que arrastraban las implementaciones de ECC. Revenue Accounting and Reporting (RAR) gestiona de forma nativa el reconocimiento de ingresos según IFRS 15. Bajo RISE with SAP y GROW with SAP, el cumplimiento de clean core es contractual; los patrones de personalización que funcionaban en ECC (tablas Z para rutinas de precios, user exits personalizados, ABAP para determinación de salida) ahora tienen que moverse a SAP BTP o retirarse.
 
-He estado en reuniones de ventas y operaciones donde [SAP](https://www.sap.com) SD estaba funcionando, los pedidos fluían sin problemas por el sistema, pero los clientes seguían molestos. No porque el sistema fallara, sino porque las fechas de entrega prometidas nunca eran realistas.
+## Qué gestiona realmente SAP SD
 
-En un lanzamiento tras otro [Implementación completa de SAP](https://noeldcosta.com/es/mastering-sap-implementation-a-step-by-step-guide-for-2025/)Los pasos del pedido al cobro se construyeron exactamente como se diseñaron. Se veían bien en el mapa de procesos. Pero nadie verificaba cómo llegaban las actualizaciones de stock desde producción. Ventas les dijo a los clientes "cinco días". Fabricación sabía que eran casi diez. Esa diferencia costó más que solo retrasos en las entregas: perjudicó la confianza.
+SD está al inicio de la cadena logística. Gestiona la secuencia de documentos y procesos que convierten el interés de un cliente en una factura.
 
-También he visto lo que pasa cuando [el gobierno de datos](https://noeldcosta.com/es/sap-project-scope-template-management-and-control/) Pasa a un segundo plano. Condiciones de precios antiguas, registros maestros de clientes con campos clave faltantes, códigos fiscales que no coinciden... estos pequeños detalles pueden bloquear pedidos o generar disputas sobre facturas antes de que nadie se dé cuenta del problema.
+El flujo order-to-cash en SAP SD estándar:
 
-A veces, la verdadera mejora no reside en añadir más configuración de SD. Se trata de conectar SD con los procesos que lo rodean. Si vende a clientes gubernamentales o regulados, [cumplimiento del sector público](https://noeldcosta.com/es/sap-implementation-public-sector-compliance/) Debe estar integrado desde el principio. Y si los departamentos de finanzas y ventas no están alineados en cuanto a las condiciones de pago, puedes terminar enviando productos sin un plan claro de pago.
+1. **Consulta** -- el cliente solicita información de precios o disponibilidad
+2. **Oferta** -- oferta formal de precio y entrega, con periodo de validez
+3. **Pedido de ventas** -- el cliente se compromete; se ejecuta la verificación de disponibilidad; se confirma la fecha de entrega
+4. **Entrega** -- el almacén recoge y embala la mercancía; la salida de mercancías registra la reducción de inventario
+5. **Facturación** -- se genera la factura; se crea el documento contable; se reconoce el ingreso
+6. **Pago** -- el pago entrante se compensa contra la factura abierta en FI
 
-No se trata de tecnificar SD. Se trata de que funcione en el mundo real. En el resto de este artículo, explicaré dónde suelen fallar los procesos de venta, cómo solucionarlos rápidamente y qué hábitos mantienen el ciclo de pedidos funcionando sin problemas.
+Cada documento de la cadena hace referencia al anterior. Ese flujo documental es lo que hace trazable el order-to-cash. Si la cadena está limpia, se puede rastrear cada factura hasta la solicitud original del cliente. Si los documentos se crean fuera de secuencia o se omiten, los informes se rompen y llegan las disputas.
 
+## Componentes principales
 
-#### SAP SD gestiona todo el proceso de ventas desde la consulta del cliente hasta la facturación final.  
-Garantiza una integración fluida entre las operaciones de ventas, logística y finanzas de una empresa.
+### Procesamiento de pedidos de ventas
 
-[Habla con Noel – ¡Llamada gratuita de 15 minutos para ayudarte!](mailto:solutions@noeldcosta.com)
+El procesamiento de pedidos de ventas es donde cae la mayor parte del esfuerzo de configuración de SD. Gestiona la determinación del tipo de pedido, la asignación de categorías de posición, la configuración de líneas de reparto y la verificación de disponibilidad.
 
-## 10 conclusiones clave sobre SAP SD (Ventas y Distribución)
+Available-to-promise (ATP) es el elemento más crítico para el negocio. ATP comprueba si la fecha de entrega solicitada puede cumplirse en función del stock actual, las recepciones planificadas y los compromisos existentes. Cuando ATP está bien configurado, ventas dice a los clientes lo que el sistema realmente puede comprometer. Cuando no lo está, ventas dice a los clientes lo que espera poder entregar.
 
-1.  **Vea la historia completa del pedido al cobro** – Cuando SAP SD se configura correctamente durante su [implementación SAP](https://noeldcosta.com/es/mastering-sap-implementation-a-step-by-step-guide-for-2025/)Puedes seguir un pedido desde su creación hasta el momento del pago. Sin puntos ciegos.
+El cliente industrial cuya historia abre este artículo tenía ATP configurado, pero no correctamente conectado con la corrida de planificación de producción. La verificación ATP estaba leyendo stock de seguridad estático en lugar de órdenes planificadas en vivo. Ventas estaba cotizando con datos equivocados.
 
-2.  **Mantenga limpios los registros de los clientes** – Direcciones desactualizadas, números de identificación fiscal faltantes o contactos antiguos lo ralentizan todo. Bueno [el gobierno de datos](https://noeldcosta.com/es/sap-project-scope-template-management-and-control/) significa menos llamadas para corregir errores básicos.
+### Precios y condiciones
 
-3.  **Los precios sólo funcionan si se mantienen** – SAP SD puede gestionar precios complejos, pero si las tarifas no se revisan periódicamente como parte de [Gestión ERP](https://noeldcosta.com/es/mastering-sap-implementation-a-step-by-step-guide-for-2025/)Terminarás con disputas que no necesitabas.
+La determinación de precios es la configuración más subestimada en SD. Parece sencilla hasta la primera disputa de factura.
 
-4.  **Prométeme fechas que puedas cumplir** Los compromisos de entrega se basan en datos de producción y existencias en vivo. Esto implica vínculos estrechos con [procesos de planificación y producción](https://noeldcosta.com/es/sap-implementation-public-sector-compliance/).
+La técnica de condiciones de SAP SD permite una lógica de precios compleja: precio base, descuentos específicos por cliente, escalados por volumen, recargos, flete, impuestos. Cada elemento de precio está controlado por un tipo de condición y una secuencia de acceso. El registro de condición contiene el valor real.
 
-5.  **Manténgase sincronizado con MM y PP** Ventas no es un espacio aislado. Si los datos de material y producción son incorrectos, SAP SD transmite esos errores directamente al cliente.
+El problema de precios más común que veo: registros de condición del go-live que nunca se actualizaron. Un cliente que negoció un descuento del 12% hace tres años sigue teniendo ese registro de condición activo. El negocio renegoció al 8%. Nadie actualizó SD. El cliente recibe la tarifa antigua, la factura está mal y la disputa pasa a cuentas por cobrar.
 
-6.  **Sepa dónde está el envío** – Con la configuración adecuada, puedes ver dónde están los productos y advertir al cliente antes de que tenga que preguntar.
+La gobernanza de datos de precios no es una decisión de configuración. Es una decisión de proceso. Alguien tiene que ser responsable del mantenimiento de los registros de condición.
 
-7.  **Bill tiene razón la primera vez** – Fuentes SAP SD [finanzas](https://noeldcosta.com/es/case-study-finance-process-modernization/) directamente. Los códigos de impuestos o los enlaces de cuenta incorrectos pueden bloquear las facturas, por lo que [alineación del cumplimiento](https://noeldcosta.com/es/sap-implementation-public-sector-compliance/) es clave.
+### Expedición y transporte
 
-8.  **Utilice los límites de crédito de forma inteligente** – Las verificaciones de crédito en SAP SD ayudan a evitar deudas incobrables, pero solo si los datos de crédito se mantienen actualizados.
+El procesamiento de entregas en SD cubre la solicitud de picking, el traspaso a gestión de almacenes, el embalaje y la salida de mercancías. La salida de mercancías es el evento crítico. Registra la reducción de inventario en MM, activa la lista de vencimientos de facturación y marca la fecha real de entrega.
 
-9.  **Cumplir con todas las reglas que se aplican** – En los sectores regulados, SAP SD debe gestionar el papeleo y los informes contemplados en [cumplimiento del sector público](https://noeldcosta.com/es/sap-implementation-public-sector-compliance/).
+La determinación del punto de expedición, la determinación de ruta y la configuración del grupo de planificación de transporte controlan cómo se crean los documentos de entrega y cómo se gestiona la logística. Para empresas con redes de distribución complejas, SAP Transportation Management (TM) amplía de forma significativa las capacidades nativas de SD.
 
-10.  **Haga que los datos trabajen para usted** – Los datos de SAP SD pueden generar informes útiles de ventas y entregas si están vinculados a su estrategia más amplia. [estructuras de informes](https://noeldcosta.com/es/sap-project-scope-template-management-and-control/).
+### Facturación y determinación de cuentas
 
-## ¿Qué es SAP SD?
+La facturación convierte el documento de entrega en una factura. El documento de facturación activa el documento contable que contabiliza en FI.
 
-Básicamente, SAP SD (Ventas y Distribución) es un [módulo dentro del sistema ERP de SAP](https://noeldcosta.com/es/ai-insights-shiftgearx-noeldcosta/erp-implementation-cost-calculator/) que gestiona todo el proceso de ventas de una empresa. 
+La determinación de cuentas asigna el evento de facturación a la cuenta correcta de ingresos, impuestos y coste de mercancía vendida. Cuando la determinación de cuentas es incorrecta, la factura se contabiliza en la cuenta de mayor equivocada. Finanzas se entera al cierre de mes durante la conciliación de saldos de cuentas, no durante UAT.
 
-Gestiona todo, desde las consultas iniciales de los clientes hasta las cotizaciones, el procesamiento de pedidos, el envío, la entrega y la facturación. Su objetivo principal es... [agiliza tus operaciones](https://noeldcosta.com/es/ai-insights-shiftgearx-noeldcosta/) y haz tu vida más fácil.
+La determinación de impuestos es igual de frágil. Los códigos fiscales deben alinearse con la clasificación fiscal del cliente, la clasificación fiscal del material y la jurisdicción fiscal del centro suministrador. Un desajuste produce en silencio una factura con impuesto cero en una transacción gravada, o un cargo fiscal en una exenta.
 
-SAP SD existe desde la década de 1990, cuando SAP presentó su sistema R/3. En aquel entonces, era bastante básico comparado con la versión actual. 
+### Gestión de crédito
 
-A lo largo de los años, ha evolucionado significativamente, especialmente con el [cambiar a SAP ECC](https://noeldcosta.com/es/the-50-billion-erp-failure-why-cfos-still-reach-for-excel-instead/) Y ahora S/4HANA. Cada iteración ha añadido más funcionalidad y mejores capacidades de integración.
+Las verificaciones de crédito en SD bloquean o marcan pedidos que superan el límite de crédito de un cliente. Este es el mecanismo que evita enviar producto a un cliente cuyo historial de pagos no justifica la exposición.
 
-Dentro del [Ecosistema SAP, SD no funciona](https://noeldcosta.com/es/5-best-crm-systems-for-sap-in-2024/) de forma aislada. Está estrechamente conectado con otros. [módulos como Gestión de Materiales](https://noeldcosta.com/es/sap-job-description-generator/) (MM), Planificación de la Producción (PP) y Contabilidad Financiera (FI). 
+La gestión de crédito solo funciona si los límites de crédito se mantienen actualizados. Los límites estáticos fijados en el go-live dejan de ser relevantes en dieciocho meses, a medida que cambian el comportamiento de pago del cliente y los volúmenes de negocio. Un cliente minorista con el que trabajé descubrió durante una revisión de AR que dieciocho clientes tenían límites de crédito que no se habían actualizado en dos años. Tres de ellos tenían límites inferiores a un único pedido estándar. Todos los pedidos de esos clientes se estaban bloqueando automáticamente, y el equipo de ventas había aprendido a liberar los bloqueos manualmente en lugar de escalar para una revisión del límite.
 
-Su inventario, sus cronogramas de producción y sus registros financieros se mantienen sincronizados con sus actividades de ventas, y tener toda esta integración le hace la vida mucho más fácil.  
+Eso no es gestión de crédito. Eso es un workaround.
 
-Vi esto de primera mano con un cliente de fabricación que [redujeron su ciclo de pedido a cobro](https://noeldcosta.com/es/sap-manufacturing-industry-secrets/) En un 40% tras implementar SAP SD. Su equipo de ventas dejó de preocuparse por el papeleo y empezó a centrarse en los clientes. Su departamento de envíos siempre supo qué debía enviarse. 
+## Estructura organizativa
 
-Y los contadores cobraron más rápido. Eso sí que tiene un impacto empresarial.
+| Elemento de estructura | Propósito en SAP SD | Vinculación clave |
+|---|---|---|
+| Organización de ventas | Unidad de ventas de nivel superior; responsable de la responsabilidad por producto y del derecho de repetición | Vincula SD con la sociedad en FI |
+| Canal de distribución | Mecanismo por el que los productos llegan al cliente (mayorista, minorista, directo) | Controla precios, datos maestros y determinación de interlocutores |
+| División | Clasificación de grupo de productos dentro de la organización de ventas | Agrupación de materiales para reporting y control de salidas |
+| Área de ventas | Combinación de organización de ventas, canal de distribución y división; la unidad operativa para SD | Requerida para cada documento de ventas |
+| Oficina de ventas | Unidad geográfica de ventas por debajo de la organización de ventas | Reporting regional y determinación de interlocutores |
+| Grupo de ventas | Equipo dentro de una oficina de ventas | Asignación del responsable en los pedidos |
+| Punto de expedición | Ubicación física desde la que se expide la mercancía | Vincula SD con WM/EWM y transporte |
+| Centro | Unidad productiva o suministradora | Vinculado al punto de expedición; origen del inventario |
 
-#### ¿Qué es SAP SD (Ventas y Distribución)?
+El área de ventas es la unidad operativa. Cada maestro de clientes debe mantenerse a nivel de área de ventas. Cada documento de ventas se crea dentro de un área de ventas. Aquí es donde fallan muchas migraciones: los registros maestros de clientes de sistemas legacy que no encajan limpiamente con la estructura de área de ventas requieren una preparación de datos importante antes de la carga.
 
-Área
+## Cómo S/4HANA, Advanced ATP y Joule cambian SD en 2026
 
-Descripción
+Hay cuatro cambios respecto al manual de SD en ECC que importan en cualquier programa de 2026.
 
-Rol en el proceso de negocio
+**Advanced ATP (aATP) sustituye al ATP clásico en implementaciones nuevas.** Advanced ATP añade asignación de producto, procesamiento de backorders, ATP multinivel para BOM complejas y actualización en tiempo real de confirmaciones. En un programa industrial europeo en 2024, el paso de ATP clásico a aATP redujo la latencia de confirmación de pedidos de minutos a segundos durante ventanas pico de pedidos. El ATP clásico sigue funcionando en instalaciones existentes de S/4HANA, pero las nuevas conversaciones de diseño parten por defecto de aATP, y es el modelo en el que SAP está invirtiendo.
 
-Gestión de pedidos de venta
+**El Universal Journal elimina la conciliación entre SD y FI.** En ECC, los documentos de facturación contabilizaban en FI a través de tablas agregadas que requerían conciliación al cierre del periodo. En S/4HANA, los documentos de facturación contabilizan partidas directamente en ACDOCA. El trabajo de conciliación desaparece. La contrapartida: los errores de determinación de cuentas crean asientos reales que hay que revertir con asientos contables, no absorber en la conciliación.
 
-Gestiona todo el ciclo de vida del pedido, desde la entrada del mismo hasta la entrega y la facturación.
+**Revenue Accounting and Reporting (RAR) gestiona IFRS 15 de forma nativa.** Para organizaciones con acuerdos de múltiples elementos, facturación por suscripción o contratos a largo plazo, RAR sustituye la lógica personalizada de diferimiento de ingresos que los programas SD en ECC solían construir. Los programas nuevos de 2026 usan RAR por defecto; las migraciones desde ECC que tenían lógica de ingresos personalizada en user exits normalmente reconstruyen sobre RAR durante la conversión.
 
-Garantiza el procesamiento preciso de pedidos, precios y seguimiento para la satisfacción del cliente y la facturación.
+**Joule sobre SAP Activate acelera el fit-gap y la configuración de SD.** En alcance estándar (tipos de pedido, categorías de posición, precios básicos, determinación de salida), Joule reduce entre un 30 y un 50 por ciento el fit-gap y la redacción de scripts de prueba. El alcance complejo (configuración de variantes, RAR profundo, precios multinivel para redes de distribución) sigue necesitando consultores senior. Joule en S/4HANA Cloud también detecta anomalías en patrones de pedidos y excepciones de precios, lo que resulta útil como capa de control durante la estabilización del go-live.
 
-Precios y Condiciones
+El clean core bajo RISE y GROW cambia la forma de abordar la personalización de SD. Las tablas Z, las rutinas personalizadas en procedimientos de precios y las ampliaciones en ABAP que históricamente vivían en la configuración de SD ahora tienen que moverse. La mayoría de las personalizaciones de precios pueden sustituirse por configuración (tipos de condición personalizados, rutinas de fórmula entregadas como estándar y BAdIs). Las pocas personalizaciones genuinas que quedan pertenecen a SAP BTP como servicios side-by-side, no dentro del core digital.
 
-Administra las estructuras de precios, incluidos descuentos, recargos, impuestos y términos específicos del cliente.
+## Puntos de integración
 
-Admite una estrategia de precios flexible alineada con los contratos de ventas y promociones.
+### SD con MM
 
-Comprobación de disponibilidad (ATP)
+La verificación de disponibilidad en SD lee el stock desde MM. La salida de mercancías en la entrega registra un movimiento de inventario en MM. Estas dos transacciones son donde la integración SD-MM se ve con más claridad.
 
-Verifica la disponibilidad del producto en tiempo real antes de confirmar los pedidos.
+Si los datos de inventario en MM son inexactos, la verificación ATP produce resultados poco fiables. Si la salida de mercancías falla porque el material no está realmente disponible en el punto de expedición, la entrega no puede completarse y la lista de vencimientos de facturación se detiene.
 
-Evita promesas excesivas, mejora la confiabilidad de la entrega y favorece la precisión de la planificación.
+Mantener estos dos módulos sincronizados requiere tanto alineación de configuración (maestro de materiales, datos de centro, parámetros MRP) como disciplina de datos (sin ajustes manuales de stock que se salten la lógica estándar de contabilización).
 
-Envíos y entregas
+### SD con PP
 
-Cubre la selección, el embalaje, la programación de rutas y la confirmación de entrega.
+En escenarios make-to-order, los pedidos de ventas pueden activar órdenes de producción directamente. La fecha de entrega confirmada en el pedido de ventas se convierte en un compromiso respaldado por una orden de producción.
 
-Garantiza una distribución oportuna y conforme de los productos a los clientes.
+El grupo de estrategia en el maestro de materiales controla cómo interactúan los pedidos de ventas y las previsiones de producción. Una configuración incorrecta del grupo de estrategia significa que los pedidos de ventas y la producción planificada corren como demanda aditiva en lugar de compensarse. La corrida de planificación sobreestima los requerimientos. Luego llega la sobreproducción.
 
-Facturación y facturación
+### SD con FI
 
-Genera facturas a partir de órdenes de entrega o de venta y se integra con FI para contabilidad.
+El documento de facturación es la interfaz entre SD y FI. Cada factura crea un documento contable. En S/4HANA, el documento contable contabiliza directamente en el Universal Journal (ACDOCA) sin una tabla agregada intermedia; ingresos, impuestos y partidas abiertas de cliente aparecen como partidas individuales en un único registro.
 
-Permite la contabilización precisa de ingresos y la conciliación financiera.
+Revenue Accounting and Reporting (RAR) gestiona el reconocimiento de ingresos según IFRS 15. Para proyectos a largo plazo, suscripciones o contratos de servicios, el ingreso puede diferirse y reconocerse a lo largo del tiempo en lugar de en el evento de facturación. RAR debe configurarse antes del go-live, no identificarse durante la auditoría de cierre de ejercicio. En un cliente de software de EE. UU. en 2023, el diseño original de SD trataba todos los ingresos como reconocidos en la facturación; el retrofit de IFRS 15 añadió seis meses al programa y un gasto de consultoría de siete cifras.
 
-Gestión de crédito
+Las condiciones de pago en el maestro de clientes controlan el cálculo de la fecha de vencimiento en FI. Cuando ventas negocia condiciones de pago sin coordinarse con finanzas, crea condiciones en el maestro de clientes que finanzas no aprobó.
 
-Supervisa los límites de crédito de los clientes y bloquea los pedidos si se exceden.
+## Dónde se rompen las implementaciones de SD
 
-Reduce el riesgo financiero al aplicar políticas de crédito durante el procesamiento de pedidos.
+### Datos maestros de clientes no listos antes del go-live
 
-Devoluciones y Reclamaciones
+Cada campo del maestro de clientes afecta al procesamiento posterior. Una clasificación fiscal ausente significa impuestos incorrectos en las facturas. La falta de condiciones de pago significa que FI no puede calcular fechas de vencimiento. La falta de condiciones de expedición significa que falla la programación de entregas.
 
-Gestiona órdenes de devolución, notas de crédito y quejas de clientes.
+El maestro de clientes siempre se subestima en el plan del proyecto. El volumen suele ser mayor de lo esperado. La integridad de los datos fuente suele ser peor de lo asumido. Las reglas de negocio para depurarlo requieren decisiones del negocio que llevan tiempo.
 
-Apoya el servicio postventa y mantiene los niveles de satisfacción del cliente.
+Empiece pronto el stream de trabajo del maestro de clientes. No lo trate como una tarea técnica de migración.
 
-Determinación de la pareja
+### Condiciones de precios no mantenidas
 
-Identifica roles como vendedor, enviador, facturador y pagador para cada transacción.
+Las condiciones de precios del go-live que nunca se revisan se convierten en una fuente de disputas de facturas dentro del primer año. Establezca en el go-live un proceso para el mantenimiento continuo de registros de condición. Defina quién es responsable, cuándo se revisa y cómo es el proceso de aprobación de cambios.
 
-Permite el correcto flujo transaccional y el procesamiento de documentos en el ciclo de ventas.
+### Verificación de disponibilidad desconectada de la realidad
 
-Integración con MM y FI
+Las verificaciones ATP que leen datos obsoletos o incorrectos no protegen los compromisos de entrega. Generan promesas que el negocio no puede cumplir. Valide la configuración ATP contra escenarios reales de producción y stock, no solo contra los datos de prueba usados en UAT.
 
-SD se integra estrechamente con [Gestión de materiales y contabilidad financiera](https://noeldcosta.com/es/sap-implementation/sap-modules/).
+### Brechas en la determinación de cuentas detectadas después del go-live
 
-Admite controles de inventario, contabilización de costos y procesos de pedido a cobro de principio a fin.
+La determinación de cuentas debe probarse con el plan de cuentas real, los códigos fiscales reales y los grupos de materiales reales dentro del alcance. Los casos de prueba escritos con datos simplificados no detectan brechas de determinación que aparecen en producción. En un programa industrial europeo en 2024, una brecha en la combinación de clasificación fiscal para una sola línea de producto creó seis semanas de reemisión de facturas tras el go-live y una recuperación de seis cifras contra el SoW original.
 
-## ¿Qué impulsa SAP SD? Estos son los componentes
+El Universal Journal de S/4HANA cambia aquí el perfil del fallo. En ECC, una brecha en la determinación de cuentas podía absorberse en la conciliación de cierre de periodo. En S/4HANA, la brecha crea una contabilización inmediata en la cuenta de mayor equivocada, visible para los auditores a nivel de partida individual. Pruebe la determinación de cuentas con el plan de cuentas real antes del sign-off de UAT.
 
+### La gestión de crédito convertida en workaround manual
 
-Bien, ¿qué compone exactamente SAP SD? Permítanme explicarles los componentes principales.Lo que realmente importa para su negocio.
+Si el equipo de ventas libera rutinariamente bloqueos de crédito en lugar de activar una revisión de crédito, el proceso de gestión de crédito se ha roto. Corrija esto en los primeros noventa días tras el go-live, antes de que el hábito se consolide. SAP Credit Management (FSCM-CR) en S/4HANA añade scoring más sofisticado e integración con agencias externas de crédito que la gestión de crédito clásica de SD; los programas que migran desde ECC deberían evaluar si pasar a FSCM-CR durante la migración en lugar de arrastrar la lógica clásica de crédito de SD.
 
-#### **1\. El procesamiento de pedidos de venta es básicamente donde todo comienza.** 
+## Resumen de riesgos de implementación
 
-Este es el verdadero [núcleo de SAP](https://noeldcosta.com/es/sap-clean-core-strategy-what-it-means-for-your-business/) DAKOTA DEL SUR. Cuando alguien le compra, se adquieren todos los detalles: productos, cantidades, fechas de entrega, pedidos especiales. 
+| Riesgo | Impacto | Mitigación |
+|---|---|---|
+| Maestro de clientes incompleto | Errores de factura, fallos de entrega, brechas en contabilización FI | Iniciar pronto el stream de datos; definir la lista de campos obligatorios antes de la migración |
+| Condiciones de precios obsoletas | Disputas de facturas, ingresos incorrectos | Establecer propiedad y ciclo de revisión de registros de condición en el go-live |
+| ATP desconectado de PP o MM | Promesas de entrega poco fiables | Probar ATP con escenarios de planificación reales antes del sign-off de UAT |
+| Brechas en determinación de cuentas | Contabilización incorrecta de ingresos detectada al cierre de mes | Probar con el plan de cuentas real y el conjunto completo de códigos fiscales |
+| Bypass de gestión de crédito | Exposición no controlada, disputas de AR | Hacer cumplir el proceso de revisión de crédito; no aceptar liberaciones manuales de bloqueos como práctica estándar |
+| Falta de determinación de salida | Facturas y albaranes no generados automáticamente | Probar todos los tipos de salida con impresora real y enrutamiento real de correo electrónico en el entorno previo al go-live |
+| Desalineación de condiciones de pago entre SD y FI | Cálculo incorrecto de vencimientos; errores en reporting de flujo de caja | Alinear condiciones entre ventas y finanzas antes de cargar el maestro de clientes |
 
-La mejor parte es que una vez que ingresas esta información una vez, fluye a todos los departamentos de la empresa, lo que significa que no hay necesidad de duplicados. [entrada de datos o jugar al detective](https://noeldcosta.com/es/ai-governance-services/) para encontrar detalles del pedido.
+## Preguntas frecuentes
 
-#### **2\. Precios y condiciones es probablemente la parte más subestimada.** 
+<details>
+<summary>¿Qué es SAP SD y qué hace?</summary>
 
-¿Sabes lo frustrante que es cuando los distintos canales de venta muestran precios distintos? Esto soluciona ese problema por completo. 
+SAP SD (Sales and Distribution) es el módulo de SAP que gestiona el proceso order-to-cash. Maneja consultas de clientes, ofertas, pedidos de ventas, entrega, facturación y el traspaso a contabilidad financiera.
 
-Puede configurar todas sus reglas de precios, descuentos, promociones especiales y ofertas específicas para cada cliente en un solo lugar. Las empresas realmente descubrieron que estaban regalando dinero antes de resolver este problema.
+El flujo documental principal va de pedido de ventas a entrega de salida, a documento de facturación, a documento contable. Cada documento hace referencia al anterior, y eso es lo que hace que el order-to-cash sea totalmente trazable en SAP.
 
-#### **3\. Envío y transporte se encarga de todo después de que el cliente hace clic en "comprar".** 
+SD se integra estrechamente con Materials Management (para disponibilidad de inventario y salida de mercancías), Production Planning (para escenarios make-to-order y fiabilidad de ATP) y Financial Accounting (para contabilización de ingresos, impuestos y gestión de crédito).
 
-Determina los métodos de envío, crea toda la documentación de entrega, planifica las mejores rutas y mantiene a todos informados sobre dónde están las cosas.
+En S/4HANA, SD se sitúa dentro del módulo Sales. El alcance funcional es en líneas generales coherente con SAP ECC SD. La analítica embebida y el modelo de datos simplificado en S/4HANA reducen parte de la complejidad en la verificación de disponibilidad y la integración de facturación.
 
-El personal de su almacén obtiene lo que necesita, los equipos de envío obtienen sus documentos y los clientes saben cuándo llegarán sus cosas.
+</details>
 
-#### **4\. El procesamiento de facturación y pagos crea automáticamente facturas basadas en lo que se ha enviado o pedido.** 
+<details>
+<summary>¿Cuál es la estructura organizativa en SAP SD?</summary>
 
-También gestiona todos los escenarios complicados: envíos parciales, devoluciones, notas de crédito, lo que sea. Y aquí está la cuestión: habla directamente contigo. [sistema de contabilidad](https://noeldcosta.com/es/create-and-manage-sap-universal-id-link-s-user-and-p-user-ids/), para que las ventas y las finanzas finalmente permanezcan sincronizadas.
+La unidad operativa en SAP SD es el área de ventas, que es la combinación de organización de ventas, canal de distribución y división.
 
-#### **5\. La gestión de crédito le ayuda a evitar esas situaciones incómodas de "¿dónde está mi dinero?".**
+La organización de ventas representa la entidad vendedora de nivel superior, vinculada a una sociedad en FI. El canal de distribución controla cómo llegan los productos a los clientes (mayorista, minorista, directo). La división clasifica el grupo de productos.
 
-Verifica los límites de crédito antes de aceptar pedidos y puede marcar aquellos que son riesgosos para que los revise. Esto le ahorra ese ciclo frustrante de tener que perseguir pagos de clientes que ya estaban sobreexigidos desde el principio.
+Cada documento de ventas se crea dentro de un área de ventas. Cada maestro de clientes debe mantenerse a nivel de área de ventas para que el cliente sea visible en las transacciones de ventas.
 
-#### **6\. El sistema de información de ventas le proporciona la información real que necesita para tomar decisiones inteligentes.**
+Por debajo del área de ventas, las oficinas de ventas representan unidades geográficas de venta, y los grupos de ventas representan equipos dentro de esas oficinas. Ambos aparecen en los documentos de ventas para reporting y determinación de interlocutores.
 
-¿Quieres saber quiénes son tus productos más vendidos? ¿Quiénes son tus clientes más rentables? ¿Qué vendedores están realmente obteniendo resultados? Esto pone esa información a tu disposición.
+En el lado logístico, los puntos de expedición representan la ubicación física de salida para las entregas, vinculada a centros en MM. La combinación de centro y punto de expedición determina dónde se recoge el inventario y desde dónde se mueve la mercancía.
 
-Cuando estos componentes trabajan en conjunto, crean un proceso fluido desde que se recibe un pedido hasta que el dinero llega a tu cuenta bancaria. Esto soluciona los problemas que suelen surgir.
+Acertar con esta estructura antes de cargar el maestro de clientes es crítico. Los cambios retrospectivos en la estructura del área de ventas después de haber cargado los datos maestros de clientes requieren trabajo de migración de datos y pueden alterar la determinación de precios y de interlocutores.
 
-#### Componentes clave de SAP SD (Ventas y Distribución)
+</details>
 
-Componente
+<details>
+<summary>¿Cómo funciona la determinación de precios en SAP SD?</summary>
 
-Función
+La determinación de precios en SAP SD está controlada por la técnica de condiciones. Cada elemento de precio (precio base, descuento, recargo, flete, impuesto) es un tipo de condición. Una secuencia de acceso define cómo busca el sistema el registro de condición válido. El registro de condición contiene el valor real.
 
-Rol empresarial
+Un procedimiento de precios reúne los tipos de condición en secuencia, con dependencias y reglas de cálculo. Cada pedido de ventas llama al procedimiento de precios asignado a la combinación de área de ventas y procedimiento de precios del cliente.
 
-Procesamiento de pedidos de ventas
+Tres problemas de precios aparecen con más frecuencia en la práctica. Primero, registros de condición que se cargaron en el go-live y nunca se mantuvieron a medida que cambiaban las condiciones comerciales. Segundo, secuencias de acceso que no reflejan la prioridad entre precios específicos por cliente y específicos por material. Tercero, tipos de condición ausentes para cargos o descuentos que no se identificaron en el blueprint.
 
-Crea y gestiona documentos de ventas como cotizaciones, pedidos y contratos.
+Las disputas de precios casi siempre se remontan a fallos en el mantenimiento de registros de condición, no a errores de configuración. Alguien acordó una condición comercial distinta y eso no se reflejó en SD.
 
-Controla el flujo transaccional central en el ciclo de pedido a cobro.
+</details>
 
-Precios y Condiciones
+<details>
+<summary>¿Qué es availability-to-promise (ATP) en SAP SD?</summary>
 
-Administra los tipos de condiciones, los procedimientos de fijación de precios y la lógica de descuento/recargo.
+ATP (available-to-promise) es la verificación que se ejecuta cuando se crea un pedido de ventas para determinar si la fecha de entrega solicitada puede confirmarse en función del stock actual y planificado.
 
-Define estrategias de precios flexibles para diferentes clientes y mercados.
+La verificación ATP lee el stock actual en MM, pedidos de compra y órdenes de producción abiertos, compromisos existentes de pedidos de ventas y requisitos de stock de seguridad. El resultado es una cantidad confirmada y una fecha de entrega en la línea de reparto del pedido de ventas.
 
-Facturación
+La calidad de ATP depende por completo de la precisión de las entradas. Si las confirmaciones de órdenes de producción no se contabilizan a tiempo, la verificación ATP lee producción planificada que ya se ha consumido. Si las cantidades abiertas de pedidos de ventas no están actualizadas, la verificación compromete inventario dos veces.
 
-Genera documentos de facturación a partir de entregas y órdenes de venta; se integra con FI.
+En S/4HANA, ATP se ha mejorado mediante Advanced ATP (aATP), que añade asignación de producto, procesamiento de backorders y ATP multinivel para cadenas de suministro complejas. Para la mayoría de escenarios estándar de fabricación y distribución, el ATP básico bien configurado es suficiente.
 
-Impulsa el reconocimiento de ingresos y la contabilización financiera en el libro mayor.
+La prueba crítica para ATP antes del go-live: ejecútelo con escenarios que reflejen la volatilidad real de producción y stock, no con los datos de prueba limpios usados en unit testing.
 
-Envíos y entregas
+</details>
 
-Cubre la programación de envíos, la selección, el embalaje y la publicación de salidas de mercancías.
+<details>
+<summary>¿Cómo se integra SAP SD con la contabilidad financiera?</summary>
 
-Garantiza la ejecución logística precisa y apoya el cumplimiento de la entrega.
+El documento de facturación es el punto de integración entre SD y FI. Cuando un documento de facturación se libera a contabilidad, crea un documento contable de FI que contabiliza en cuentas de ingresos, cuentas fiscales y partidas abiertas del cliente.
 
-Gestión de crédito
+La determinación de cuentas controla qué cuentas de mayor se impactan. Depende de la combinación de organización de ventas, grupo de imputación en el cliente, grupo de imputación en el material y el tipo de condición del elemento de ingreso. Si falta o es incorrecto cualquier elemento de esta combinación, el documento contable o bien no contabiliza o bien contabiliza en la cuenta equivocada.
 
-Monitorea la exposición crediticia, gestiona límites y se integra con FI-AR.
+La determinación de impuestos en facturación depende de la clasificación fiscal en el maestro de clientes, la clasificación fiscal en el maestro de materiales y la jurisdicción fiscal del centro suministrador. Un desajuste produce importes fiscales incorrectos en la factura.
 
-Reduce el riesgo crediticio al aplicar verificaciones de crédito en el pedido de venta y en el nivel de entrega.
+Las condiciones de pago en el maestro de clientes controlan cómo FI calcula la fecha de vencimiento de la partida abierta. Las organizaciones de ventas que negocian condiciones de pago sin actualizar el maestro de clientes crean una desconexión entre lo acordado y lo que el sistema aplica.
 
-Comprobación de disponibilidad (ATP)
+El reconocimiento de ingresos en S/4HANA añade otra capa: para contratos, servicios o entregas a largo plazo, el ingreso puede diferirse en lugar de contabilizarse en el evento de facturación. Esto debe configurarse y probarse antes del go-live, no descubrirse en la primera auditoría de cierre de ejercicio.
 
-Realiza la verificación en tiempo real de la disponibilidad del producto antes de la confirmación del pedido.
+</details>
 
-Evita el compromiso excesivo y mejora la confiabilidad de la entrega.
+<details>
+<summary>¿Cuáles son los errores más comunes en implementaciones de SAP SD?</summary>
 
-Control de texto y salida
+Cinco patrones explican la mayor parte de lo que sale mal.
 
-Gestiona las comunicaciones con los clientes y la salida de documentos (PDF, EDI, impresión).
+Datos maestros de clientes subestimados. El volumen de registros de clientes suele ser mayor de lo esperado. La integridad de los datos fuente suele ser peor de lo asumido. Las reglas de negocio para depurarlos requieren decisiones que llevan tiempo. Tratar el maestro de clientes como una tarea de datos de fase tardía es la forma más consistente de preparar un go-live difícil.
 
-Automatiza confirmaciones de pedidos, facturas y avisos de envío.
+Registros de condición de precios sin gobernanza después del go-live. Las condiciones comerciales cambian. Los registros de condición no se actualizan automáticamente. Dentro del primer año, las condiciones de precios obsoletas generan disputas de facturas que se remontan al momento en que alguien olvidó actualizar un registro.
 
-Determinación de la pareja
+ATP no validado frente a escenarios operativos reales. Un ATP bien configurado en un entorno de prueba limpio se comporta de forma distinta en producción, donde el stock está parcialmente comprometido, las órdenes de producción están parcialmente confirmadas y las prioridades de entrega entran en conflicto. Pruebe ATP con escenarios que reflejen la complejidad operativa real antes del sign-off de UAT.
 
-Asigna automáticamente roles de cliente (vendedor, enviador, facturador, pagador) en las transacciones.
+Brechas en la determinación de cuentas descubiertas al cierre de mes. Probar la determinación de cuentas con datos de prueba simplificados no detecta brechas que aparecen cuando entran en juego grupos de materiales reales, códigos fiscales reales y combinaciones reales de clientes. Use el plan de cuentas real en las pruebas.
 
-Permite el correcto flujo de documentos y asientos contables.
+Determinación de salida no probada de extremo a extremo. La salida de facturas, albaranes y confirmaciones de pedido requiere que estén configurados el enrutamiento a impresoras y correo electrónico. Las brechas en la determinación de salida significan que los documentos no se envían automáticamente. La impresión manual se convierte en workaround. El workaround se vuelve permanente.
 
-Sistema de Información de Ventas (SIS)
+</details>
 
-Proporciona informes analíticos sobre volúmenes de ventas, ingresos y rendimiento.
+<details>
+<summary>¿En qué se diferencia Advanced ATP del ATP clásico en S/4HANA?</summary>
 
-Admite la planificación de ventas y el seguimiento del rendimiento con datos históricos y en tiempo real.
+Advanced ATP (aATP) es el sustituto en S/4HANA del ATP clásico. Es el modelo en el que SAP está invirtiendo y el valor por defecto para los nuevos programas de 2026.
 
-Procesamiento de devoluciones y quejas
+La brecha de capacidades es importante en escenarios complejos. El ATP clásico realiza la verificación básica de disponibilidad (stock, recepciones planificadas, compromisos de ventas) y produce una cantidad y fecha confirmadas. Advanced ATP añade asignación de producto (la capacidad de reservar una parte del suministro restringido para clientes o canales prioritarios), procesamiento de backorders (la capacidad de repriorizar y volver a ejecutar compromisos cuando cambia el suministro), ATP multinivel (visibilidad sobre disponibilidad de componentes para productos basados en BOM) y liberación para entrega (un paso separado que puede controlarse mediante reglas de excepción).
 
-Maneja devoluciones de mercancías, notas de crédito y quejas de servicio.
+Para fabricantes mid-market con cadenas de suministro estables, el ATP clásico bien configurado suele ser suficiente. Para organizaciones con suministro restringido, requisitos de asignación o compromisos complejos basados en BOM, aATP es la respuesta correcta.
 
-Apoya las actividades de postventa y el seguimiento de la satisfacción del cliente.
+En migración, el ATP clásico sigue funcionando en S/4HANA, pero la dirección de inversión de SAP es clara. Las nuevas conversaciones de diseño deberían partir por defecto de aATP, salvo que el caso de negocio para seguir con el clásico sea explícito y esté cuantificado.
 
-## Dentro de los submódulos más críticos de SAP SD
+</details>
 
-Echemos un vistazo al [submódulos especializados en SAP](https://noeldcosta.com/es/sap-manufacturing-industry-secrets/) SD que necesitas conocer. Puede que no siempre sean el centro de atención, pero dependiendo de tu negocio, podrían ser revolucionarios.
+<details>
+<summary>¿Cómo cambia la personalización de SD el clean core bajo RISE y GROW?</summary>
 
-#### **1\. Las funciones básicas incluyen todos los elementos fundamentales que definitivamente utilizarás independientemente de tu industria.**
+Bajo RISE with SAP y GROW with SAP, el ABAP personalizado en el core digital bloquea upgrades y crea riesgo de regresión en cada release trimestral. Los patrones de personalización de SD que funcionaban en ECC tienen que moverse.
 
-Básicamente, tienes el control del maestro. [datos de gestión](https://noeldcosta.com/es/sap-license-negotiation-10-key-points-to-consider-in-2024/), donde almacenará la información de sus clientes, los detalles del material y los datos de precios.
+La mayoría de las personalizaciones de precios pueden sustituirse por configuración estándar. Tipos de condición personalizados, rutinas de fórmula de la librería estándar y Business Add-Ins (BAdIs) cubren la mayoría de escenarios que antes requerían tablas Z o user exits. En un programa industrial europeo en 2024, la revisión de personalización de SD eliminó el 40 por ciento de los objetos Z heredados mediante sustitución por configuración; el 20 por ciento restante se movió a SAP BTP como servicios side-by-side.
 
-Esta es básicamente su única fuente de información. También incluye la determinación de resultados, que gestiona sus confirmaciones de pedidos, facturas, albaranes de entrega y cualquier otra documentación que pueda necesitar.
+Las personalizaciones que realmente pertenecen a BTP: lógica de precios compleja que depende de fuentes de datos externas, determinación de salida que requiere integración personalizada con servicios documentales de terceros y reglas de negocio específicas por interlocutor que varían por región. Estas extensiones interactúan con S/4HANA mediante APIs estándar y sobreviven a cada release.
 
-#### **2\. El comercio exterior es una necesidad si vendes a través de fronteras internacionales.**
+Las personalizaciones que no sobreviven al clean core: tablas Z para rutinas de precios, ABAP personalizado en user exits dentro de la configuración de SD y modificaciones sobre objetos estándar de SAP. Estas deben retirarse durante la migración o reconstruirse sobre BTP. Hacer esto tarde en el programa es caro; hacerlo durante el análisis fit-gap es la diferencia entre una migración limpia y una recuperación de seis cifras.
 
-Hay trámites, problemas de cumplimiento y regulaciones que cambian constantemente. Este módulo se encarga de la compleja documentación de exportación/importación, calcula los aranceles e impuestos, y le ayuda a garantizar que no infrinja ninguna ley comercial accidentalmente.
-
-Si alguna vez ha tenido un envío atascado en la aduana, ya comprende por qué esto es importante.
-
-#### **3\. El transporte es mucho más detallado que las funciones de envío normales.**
-
-Ayuda con las tareas complejas: planificar rutas de varias etapas, calcular los costos de envío reales, encontrar los métodos de entrega más eficientes y controlar sus envíos.
-
-Para las empresas con necesidades logísticas serias, esto puede ahorrarle toneladas de dinero a largo plazo.
-
-#### **4\. La facturación se encarga de aquellas situaciones en las que la facturación simple no es suficiente.**
-
-Quizás necesite facturación por hitos para proyectos, facturación por suscripción para servicios o cálculos complejos de reembolsos. Si su gestión de precios y facturación no es sencilla, sin duda agradecerá tener esto.
-
-#### Submódulos de SAP SD (Ventas y Distribución)
-
-Submódulo
-
-Funcionalidad central
-
-Uso para negocios
-
-Soporte de ventas (SD-CAS)
-
-Gestiona consultas de clientes, cotizaciones y actividades de ventas con herramientas similares a CRM.
-
-Apoya las actividades de preventa, realiza un seguimiento de los clientes potenciales y mejora la adquisición de clientes.
-
-Ventas (SD-SLS)
-
-Maneja la creación de órdenes de venta, contratos y condiciones a nivel de artículo.
-
-Impulsa el ciclo de ventas central y los procesos de cumplimiento de pedidos.
-
-Envío (SD-SHP)
-
-Gestiona la programación de entregas, la planificación del transporte y la emisión de mercancías.
-
-Garantiza el envío oportuno y la ejecución logística precisa.
-
-Facturación (SD-BIL)
-
-Crea facturas, notas de crédito/débito y se integra con Contabilidad Financiera.
-
-Automatiza la captura de ingresos y permite el cumplimiento de las políticas financieras.
-
-Gestión de Crédito (SD-CM)
-
-Realiza verificaciones de crédito y monitorea los límites de crédito en todas las cuentas de los clientes.
-
-Previene el riesgo crediticio y refuerza los controles financieros en las etapas de pedido y entrega.
-
-Comercio Exterior/Exportación (SD-FTT)
-
-Maneja el cumplimiento del comercio internacional, incluidas las licencias y documentación de exportación.
-
-Garantiza el cumplimiento del comercio global y la precisión de la documentación para las ventas transfronterizas.
-
-Transporte (SD-TBA)
-
-Planifica envíos, rutas y selección de transportistas integrados con el procesamiento de entrega.
-
-Optimiza la logística de salida y reduce los costos de flete.
-
-Intercambio electrónico de datos (SD-EDI)
-
-Permite la transmisión automática de documentos como pedidos, facturas y avisos de envío.
-
-Mejora la velocidad de las transacciones y reduce los errores de ingreso manual de datos con los socios.
-
-Técnica de condición (SD-BF)
-
-Controla precios, descuentos, recargos y configuraciones de impuestos mediante secuencias de acceso y registros de condiciones.
-
-Permite una lógica de precios dinámicos y escenarios comerciales complejos.
-
-## Las verdaderas razones por las que SAP SD impulsa el éxito empresarial
-
-
-Entonces, ¿por qué deberías hacerlo? [Preocuparse por SAP SD](https://noeldcosta.com/es/system-implementation-sap/)Permítame explicarle por qué es importante para su resultado final.
-
-#### **1\. En primer lugar, transforma completamente sus procesos de ventas.**
-
-Todo, desde los pedidos hasta el cobro, se simplifica. ¿Se acabaron las transferencias manuales entre departamentos? 
-
-¿El tiempo que tu equipo dedica a buscar información sobre pedidos? Eliminado. He visto a empresas reducir sus pedidos. [tiempo de procesamiento en un 60% con solo implementar](https://noeldcosta.com/es/sap-project-risk-assessment-matrix-and-mitigation-strategies/) esto correctamente.
-
-#### **2\. Luego está la gestión de inventario. SAP SD trabaja directamente con sus sistemas de inventario, por lo que siempre sabrá exactamente qué tiene disponible para vender.**
-
-No más productos prometedores que no tienes ni oportunidades de venta perdidas porque no te diste cuenta de que algo estaba en stock.
-
-#### **3\. Tus clientes también notarán la diferencia.**
-
-Obtienen fechas de entrega precisas, precios consistentes y tiempos de respuesta más rápidos. Si surgen problemas (y siempre ocurren), tendrás toda la información a tu alcance para resolverlos rápidamente.
-
-#### **4\. Los datos que obtendrás son probablemente mi parte favorita.**
-
-Verás exactamente qué productos te generan más ingresos, qué clientes son más valiosos y dónde tu proceso de ventas encuentra obstáculos. Información real, no solo conjeturas.
-
-#### **5\. Finalmente, la integración con otros módulos de SAP significa que todo su negocio permanece sincronizado.**
-
-Ventas, compras, producción, finanzas: todos trabajan con la misma información. Solo esa alineación justifica la inversión.
-
-### Temas relacionados: SAP SD y cumplimiento de pedidos
-
-[
-
-Planificación
-
-### Planificación de la producción e integración de SD
-
-Vea cómo los datos de pedidos de SD fluyen hacia la planificación de la producción para optimizar el cumplimiento.
-
-](https://noeldcosta.com/es/sap-pp-production-planning/)[
-
-Logística
-
-### Elementos esenciales del almacén en SD Flow
-
-Descubra cómo EWM garantiza el movimiento oportuno de mercancías para pedidos de ventas entregados por SD.
-
-](https://noeldcosta.com/es/sap-enterprise-warehouse-management-sap-ewm-essentials/)[
-
-Migración
-
-### Dificultades en la migración de datos de ventas
-
-Qué falla al migrar datos maestros de SD y cómo evitarlo.
-
-](https://noeldcosta.com/es/why-sap-data-migration-fails-and-how-to-fix-it/)[
-
-Arquitectura
-
-### Núcleo limpio en la personalización de SD
-
-Cómo entregar lógica SD personalizada sin romper el núcleo ni realizar actualizaciones.
-
-](https://noeldcosta.com/es/sap-clean-core-strategy-what-it-means-for-your-business/)
-
-## Dónde fallan los proyectos de SAP SD y cómo evitarlo
-
-#### Dónde fallan los proyectos de SAP SD
-
-Área de falla
-
-Causa
-
-Impacto resultante
-
-Mapeo incompleto de procesos de negocio
-
-Los requisitos no están completamente documentados ni alineados con las operaciones de ventas reales.
-
-Desalineación del sistema con las necesidades del negocio, reelaboración y rechazo del usuario.
-
-Procedimientos de fijación de precios mal configurados
-
-Errores en tipos de condiciones, secuencias o registros de acceso.
-
-Precios incorrectos, pérdida de margen y disputas con clientes.
-
-Personalización excesiva
-
-Crear tablas Z, salidas y mejoras innecesarias sin un ROI claro.
-
-Altos costos de mantenimiento, problemas de actualización y procesos inestables.
-
-Migración de datos ineficaz
-
-Los datos maestros están incompletos, duplicados o desalineados entre los sistemas heredados y SAP.
-
-Fallos en el procesamiento de pedidos, retrasos en los envíos y facturación incorrecta.
-
-Falta de pruebas de integración
-
-Pruebas insuficientes con los módulos MM, FI y logística.
-
-Desgloses en el flujo de pedidos a efectivo durante la puesta en marcha.
-
-Capacitación inadecuada de los usuarios
-
-Los usuarios finales no reciben la capacitación adecuada sobre los nuevos procesos o transacciones de SD.
-
-Soluciones manuales alternativas, baja adopción y aumento de tickets de soporte.
-
-Ignorar el cumplimiento legal y fiscal
-
-Los códigos impositivos, las reglas de exportación o la lógica específica del país no están configurados correctamente.
-
-Sanciones por incumplimiento, exposición legal y rechazos de facturas.
-
-Cronograma y presupuesto poco realistas
-
-Subestimar la complejidad de los procesos de ventas y las dependencias entre módulos.
-
-Plazos incumplidos, recortes de alcance y reducción de la calidad de las soluciones.
-
-Mira, no voy a endulzarlo. [Implementando SAP](https://noeldcosta.com/es/2024-sap-timeline-planning-implementation-guide-essentials/) La SD trae consigo algunos dolores de cabeza reales que debes conocer.
-
-#### **1\. Los proyectos de implementación pueden descarrilarse muy fácilmente.**
-
-He visto empresas estancadas en el infierno de la implementación durante años porque no tenían claro lo que realmente necesitaban. 
-
-Intentaron personalizar cada detalle y se empantanaron en la complejidad. Hay que ser muy realista con lo imprescindible y lo deseable.
-
-#### **2\. ¿Conseguir que tu equipo se involucre? Ese es otro gran obstáculo. Tus vendedores ya tienen sus propias maneras de hacer las cosas.**
-
-Tienen sus hojas de cálculo, sus soluciones alternativas, sus zonas de confort. Ahora les estás imponiendo este nuevo sistema que a primera vista parece complicado.
-
-Sin una formación sólida y sin dejar en claro cómo les ayuda personalmente, se demorarán o simplemente encontrarán formas de evitarlo.
-
-#### **3\. La integración se vuelve realmente complicada. Tu SAP SD debe funcionar correctamente con todo lo demás en tu ecosistema tecnológico.**
-
-Si tienes sistemas viejos dando vueltas (¿y quién no los tiene?), conectar todo sin problemas puede convertirse en un rompecabezas técnico que genere pesadillas para tu equipo de TI.
-
-#### **4\. ¿Trasladar tus datos existentes? ¡Un auténtico rollo!**
-
-Todos sus registros de clientes, detalles de productos, estructuras de precios: todo debe transferirse correctamente.
-
-Si se introducen datos basura, se obtendrán resultados basura. He visto empresas darse cuenta demasiado tarde de que sus datos eran un desastre.
-
-#### **5\. Y hablemos de dinero por un momento. Estas implementaciones son caras.**
-
-Más allá de las cosas obvias como las licencias de software y los honorarios de los consultores, tienes el tiempo de tu equipo, las posibles interrupciones del negocio cuando haces el cambio y los costos continuos. [costos de apoyo](https://noeldcosta.com/es/contact-noel-erp-support/) que realmente pueden acumularse con el tiempo.
-
-
-### Mira cómo hago el tuyo ERP y AI Selección o implementación del sistema adecuado para usted.
-
-**Selección de sistemas ERP e IA** – Identifique y elija la plataforma ERP o habilitada para IA adecuada para satisfacer las necesidades de su negocio.
-
-**Apoyo y recuperación de proyectos** – Mantenga su proyecto en marcha o vuelva a controlar las implementaciones fallidas.
-
-**Modernización de ERP** – Transformar los sistemas ERP existentes en entornos ERP modernos, eficientes y escalables.
-
-[CONTÁCTANOS](mailto:so*******@********ta.com "Este contacto ha sido codificado por Anti-Spam by CleanTalk. Haga clic para decodificar. Para finalizar la decodificación, asegúrese de que JavaScript esté habilitado en su navegador.")
-
-## Lo que debe saber antes de comenzar la implementación de SAP SD
-
-
-Entonces estás pensando en [Implementando SAP](https://noeldcosta.com/es/best-sap-technical-change-management-tools-2025/) ¿SD? Un momento. Hay algunas cosas que debes considerar primero. He visto demasiadas empresas precipitarse y arrepentirse después.
-
-#### **1\. Comienza por tener muy claro lo que realmente necesitas.**
-
-¿Por qué haces esto realmente? ¿Qué problemas específicos te preocupan ahora mismo? No solo... [Implementar SAP](https://noeldcosta.com/es/how-to-avoid-scope-creep-in-an-sap-implementation/) Porque tus competidores lo son o porque suena impresionante.
-
-#### **2\. Tómese el tiempo para planificar cómo funciona su proceso de ventas hoy en día e identificar exactamente dónde están fallando las cosas.**
-
-Esta tarea dará grandes frutos más adelante.
-
-#### **3\. ¿Y tu equipo? ¿Está preparado para este tipo de cambio?**
-
-La mayoría no lo son, para ser honestos. Necesitarás presupuestar una capacitación seria y quizás incluso contratar a algunas personas que ya hayan trabajado con SAP. Su equipo determinará el éxito o el fracaso de este proyecto: esa es la realidad.
-
-#### **4\. Sea realista sobre cuánto tiempo tomará esto.**
-
-Cualquiera que le diga que puede ponerlo en funcionamiento en un par de meses probablemente no esté siendo sincero con usted. Dependiendo de qué tan complejas sean sus necesidades, el tiempo de implementación adecuado puede demorar entre 6 y 12 meses.
-
-#### **5\. En términos de dinero, no te concentres sólo en el precio inicial.**
-
-Hay costos de mantenimiento continuo, tarifas de soporte y futuras actualizaciones que considerar. Para tener una visión completa, calcula cuánto te costará este dispositivo en 5 años.
-
-#### **6\. Elegir el socio adecuado es muy importante.**
-
-Encuentra a alguien que haya hecho esto en tu [industria antes, no solo alguien con un SAP](https://noeldcosta.com/es/top-sap-implementation-partners-in-the-usa-2025-by-tier/) certificación. Y cuando te den referencias, llámalos y hazles las preguntas difíciles.
-
-## Mejores prácticas para maximizar su inversión en SAP SD
-
-Permítanme compartir algo de sabiduría práctica que he aprendido al observar ambos [SAP exitoso y fallido](https://noeldcosta.com/es/sap-training-strategies-for-employees-to-drive-adoption/) Proyectos de SD a lo largo de los años.
-
-#### **1\. Lo primero es lo primero: necesitas tener objetivos súper claros.**
-
-No me refiero solo a cosas vagas como "mejorar las ventas". Me refiero a objetivos específicos como "queremos reducir el tiempo de entrega del pedido al cobro en un 30 %" o "reducir los errores de envío en un 50 %".
-
-Anótalos en un lugar visible. Cuando lleves seis meses de implementación y te enfrentes a decisiones difíciles, estos objetivos te ayudarán a concentrarte en lo que realmente importa.
-
-#### **2\. No escatimes en formación.**
-
-En serio. He visto a empresas gastar millones en [Implementación y luego intentar guardar](https://noeldcosta.com/es/sap-negotiation-advisors-reduce-cost/) Céntimos en formación. Gran error.
-
-Su equipo necesita una sólida formación inicial, pero también necesita apoyo a medida que empieza a utilizar el sistema en el trabajo real. Las empresas más inteligentes que he visto crean... [Expertos en SAP](https://noeldcosta.com/es/sap-negotiation-advisors-reduce-cost/) – personal regular que recibe capacitación adicional y se convierte en la persona a quien recurrir cuando los colegas se quedan atascados.
-
-#### **3\. ¿Y la migración de datos? Empieza a trabajar en ello mucho antes de lo que crees.**
-
-Tus datos actuales probablemente estén más desordenados de lo que crees. Empieza a limpiarlos meses antes de tener que trasladarlos. Realiza migraciones de prueba. Luego, repítelas. Los datos erróneos destruirán su nuevo sistema más rápido que cualquier otra cosa.
-
-#### **4\. Considere implementar esto en etapas en lugar de todo a la vez.**
-
-Quizás deberías empezar con tu línea de productos principal o tu unidad de negocio más grande. Aprende de esa experiencia antes de expandirte. Este enfoque ha evitado que muchas empresas sufran grandes dolores de cabeza.
-
-#### **5\. Después de la puesta en marcha, programe controles periódicos para su sistema.**
-
-No espere a que algo falle. La tecnología cambia, su negocio evoluciona y su configuración de SAP debe mantenerse al día. Las revisiones trimestrales detectarán problemas mientras aún son pequeños y solucionables.
-
-#### Mejores prácticas para maximizar su inversión en SAP SD
-
-Mejores Prácticas
-
-Enfoque de ejecución
-
-valor entregado
-
-Estandarizar los procesos de ventas
-
-Alinee los equipos de negocios para adoptar configuraciones de SD y flujos de documentos consistentes.
-
-Mejora la eficiencia, reduce errores y simplifica el mantenimiento del sistema.
-
-Técnica de condición de apalancamiento eficaz
-
-Utilice procedimientos de fijación de precios y registros de condiciones para reflejar políticas comerciales reales.
-
-Permite precios flexibles y escalables sin desarrollo personalizado.
-
-Integración con Finanzas y Logística
-
-Asegúrese de que SD esté completamente conectado con MM, FI y EWM para un flujo de O2C completo.
-
-Elimina brechas de proceso y garantiza una ejecución y facturación sin inconvenientes de pedidos.
-
-Optimizar la gestión de datos maestros
-
-Mantener registros maestros de clientes, materiales y precios limpios y validados.
-
-Reduce fallas en las transacciones y mejora la generación de informes y la toma de decisiones.
-
-Implementar la lógica ATP (Disponible para la promesa)
-
-Configure ATP para confirmar la disponibilidad y las fechas de entrega precisas al ingresar el pedido.
-
-Mejora la confianza del cliente y reduce los problemas de cumplimiento.
-
-Utilice la gestión de resultados de forma estratégica
-
-Automatice confirmaciones, facturas y notas de entrega utilizando formularios inteligentes o EDI.
-
-Acelera la comunicación, reduce la intervención manual y mejora la trazabilidad.
-
-Capacitar a los equipos de ventas y atención al cliente
-
-Proporcionar capacitación práctica y procedimientos operativos estándar para transacciones SD y manejo de excepciones.
-
-Aumenta la adopción, reduce errores y mejora la capacidad de respuesta a las necesidades del cliente.
-
-Monitorizar métricas clave de SD
-
-Realice un seguimiento de las tasas de llenado, el tiempo del ciclo de facturación, las tasas de devolución y los volúmenes de pedidos bloqueados.
-
-Identifica cuellos de botella en el proceso y ayuda a impulsar la mejora continua.
-
-Limitar el desarrollo personalizado
-
-Utilice las capacidades estándar de SAP y amplíelas sólo donde existan brechas críticas para el negocio.
-
-Garantiza actualizaciones más sencillas, menor TCO y estabilidad del sistema a largo plazo.
-
-### Temas relacionados: SAP SD, Datos y riesgos del cliente
-
-[
-
-AI
-
-### IA conversacional en SAP CX
-
-Cómo los flujos de trabajo basados en chat pueden mejorar el tiempo de respuesta del cliente de SAP SD.
-
-](https://noeldcosta.com/es/sap-conversational-ai-and-successfactors-for-hr-in-2025/)[
-
-Integración:
-
-### Cuando falla la integración ERP-CRM
-
-Explicación de las fallas de sincronización de pedidos de ventas (especialmente relevantes para los flujos de SD-Salesforce).
-
-](https://noeldcosta.com/es/why-erp-integration-with-salesforce-fails-and-how-to-fix-it/)[
-
-Supervisión
-
-### Evaluación de riesgos del proceso de ventas
-
-Riesgos clave vinculados a precios, disponibilidad y bloques de entrega en SAP SD.
-
-](https://noeldcosta.com/es/sap-project-risk-assessment-matrix-and-mitigation-strategies/)[
-
-Casos de éxito
-
-### Arquitectura de información del cliente para SD
-
-Un caso real de SAP donde los datos maestros limpios de los clientes impactaron el flujo de pedidos de venta.
-
-](https://noeldcosta.com/es/my-journey-with-customer-information-solutions-defense/)
-
-## Conclusión
-
-
-SAP SD puede cambiar las reglas del juego para sus operaciones de ventas, pero solo si lo aborda correctamente.
-
-Los componentes, beneficios y desafíos de los que hablamos deberían brindarte una comprensión sólida de en qué te estás metiendo.
-
-El mundo SAP sigue evolucionando y pronto se incorporarán mejores funciones de comercio electrónico, acceso móvil y análisis más inteligentes. Hay algunas cosas emocionantes en el horizonte con la IA comenzando a abrirse camino también en estos sistemas.
-
-Si su proceso de ventas actual le está causando problemas, quizás sea hora de analizar a fondo SAP SD. Empiece por identificar qué falla realmente en su configuración actual.
-
-[La implementación es un viaje](https://noeldcosta.com/es/sap-erp-consultant-my-story-noel-dcosta/) Con algunos baches en el camino, pero con una buena planificación y la ayuda adecuada, lo conseguirás. Y créeme, cuando funcione correctamente, te preguntarás cómo te las arreglabas sin él.
-
-#### Si tiene alguna pregunta o desea discutir una situación que tenga en la implementación de su ERP, ¡no dude en contactarnos!
-
-### Temas relacionados: Habilitación y gobernanza de SAP SD
-
-[
-
-Cursos
-
-### Capacitación de equipos de ventas para SAP SD
-
-Cómo mejorar las habilidades de los usuarios finales en el ingreso de pedidos, la entrega y la facturación en los módulos SD.
-
-](https://noeldcosta.com/es/sap-training-strategies-for-employees-to-drive-adoption/)[
-
-Gobernanza
-
-### Gobernanza de los datos maestros de clientes
-
-Proteja y estandarice datos críticos para SD, como funciones de socios y límites de crédito.
-
-](https://noeldcosta.com/es/ai-governance-in-sap-implementations-compliance-security/)[
-
-Accesorios
-
-### Seguimiento de los hitos del proyecto SD
-
-Utilice herramientas de seguimiento de proyectos para garantizar que las fases de prueba y configuración de SD sigan su curso.
-
-](https://noeldcosta.com/es/top-sap-project-tracking-tools-2025/)[
-
-Construcción
-
-### Problemas de conectividad BTP que afectan a SD
-
-Comprenda cómo los enlaces BTP no confiables pueden afectar las actualizaciones de pedidos y las API de SD.
-
-](https://noeldcosta.com/es/sap-btp-cockpit-issues/)
-
-## Preguntas que podrías tener...
-
-### 1\. ¿Qué es SAP SD?
-
-SAP SD (Ventas y Distribución) es el módulo en [SAP ERP que gestiona la gestión de pedidos de clientes](https://noeldcosta.com/es/best-sap-technical-change-management-tools-2025/)Envíos, facturación y cobro. Abarca todo el ciclo de ventas, desde la cotización hasta el cobro.
-
-### 2\. ¿Cuál es el rol del SD en SAP?
-
-La SD [El rol se centra en la gestión](https://noeldcosta.com/es/sap-stakeholder-management-strategy/) Pedidos de venta, entregas, facturación y datos de la relación con los clientes. También implica la configuración de precios, límites de crédito y logística para el movimiento de mercancías.
-
-### 3\. ¿Es SAP SD una buena carrera?
-
-Sí. Los consultores de SAP SD tienen una gran demanda, especialmente en sectores con fuertes operaciones de ventas, distribución y logística. El crecimiento profesional es constante si también se aprenden los puntos de integración con FI, MM y la nube más reciente. [módulos como SAP S/4HANA](https://noeldcosta.com/es/sap-project-scope-template-management-and-control/) Sales
-
-### 4\. ¿SAP SD es fácil o difícil?
-
-SAP SD es moderadamente difícil. Los conceptos básicos, como los pedidos de venta y la facturación, son sencillos. Las complejidades surgen en los procedimientos de fijación de precios, la integración entre módulos y las necesidades reales de personalización.
-
-### 5\. ¿SAP SD sigue teniendo demanda?
-
-Sí. Las empresas que se actualizan a S/4HANA aún necesitan expertos en SD. La demanda es mayor para... [consultores que entienden tanto SAP](https://noeldcosta.com/es/top-sap-implementation-partners-in-the-usa-2025-by-tier/) Versiones ECC y S/4HANA.
-
-### 6\. ¿SAP SD requiere codificación?
-
-No para roles funcionales. Un conocimiento básico de ABAP facilita la redacción de especificaciones para desarrolladores, pero la codificación no es un requisito fundamental para los consultores de SD.
-
-### 7\. ¿Cuál es el salario de SAP SD?
-
-Los consultores principiantes suelen ganar entre $60,000 y $80,000 al año. Los consultores de nivel medio y sénior pueden ganar entre $90,000 y $140,000, dependiendo de la experiencia, la ubicación y [tamaño del proyecto](https://noeldcosta.com/es/creating-an-effective-sap-project-steering-committee/).
-
-### 8\. ¿Qué módulo de SAP es mejor?
-
-No existe un "mejor" universal. Depende de los objetivos profesionales. SD es una opción sólida para las personas interesadas en [procesos de venta](https://noeldcosta.com/es/my-journey-with-customer-information-solutions-defense/)Logística y atención al cliente. FI es más adecuado para carreras financieras, MM para compras y PP para manufactura.
-
-### 9\. ¿Cuál es el trabajo de SAP SD?
-
-El trabajo principal es configurar, dar soporte y [optimizar el SAP](https://noeldcosta.com/es/sap-negotiation-advisors-reduce-cost/) Procesos de ventas y distribución. Esto incluye el procesamiento de pedidos de venta, envíos, facturación, gestión de crédito y registro de clientes. [datos de gestión](https://noeldcosta.com/es/sap-license-negotiation-10-key-points-to-consider-in-2024/).
-
-### 10\. ¿Cuáles son los requisitos en SAP SD?
-
-Buena comprensión de [Procesos de negocios](https://noeldcosta.com/es/creating-an-effective-sap-project-steering-committee/) En ventas, envíos y facturación. Es importante tener conocimientos básicos de navegación en SAP, configuración de SD (configuración de SPRO) e integración con los módulos FI y MM. También se requieren sólidas habilidades de documentación y comunicación.
-
-### 11\. ¿Quién utiliza SAP SD?
-
-Empresas grandes y medianas de todos los sectores, como manufactura, comercio minorista, automoción, bienes de consumo y productos farmacéuticos, utilizan [SAP SD para gestionar](https://noeldcosta.com/es/best-sap-technical-change-management-tools-2025/) Sus actividades de ventas y distribución. Los consultores funcionales, analistas de negocio y usuarios finales de los departamentos de ventas trabajan directamente con SAP SD.
-
-#### Herramientas para simplificar su proceso de implementación de SAP
-
-#### **Calculadora de costos de implementación de SAP**
-
-Esta herramienta le ayudará a determinar el costo aproximado de su [Implementación de SAP](https://noeldcosta.com/es/sap-quality-gates-implementation/). 
-
-#### **Generador de descripciones de puestos de recursos de SAP**
-
-Puede utilizar esta herramienta para generar una descripción del trabajo, si está contratando a alguien para un proyecto de SAP. 
-
-#### **Calculadora de costos y esfuerzos de migración de datos**
-
-A través de esta herramienta, puede determinar los objetos de datos necesarios y los costos relacionados asociados con la migración de datos. 
-
-#### **Calculadora de costos de implementación de ERP fácil de usar**
-
-Obtenga una evaluación rápida de sus costos estimados de ERP y su cronograma. No es perfecta, pero le ofrece una buena visión de los costos.
-
-#### **Generador de hojas de ruta y soluciones SAP**
-
-Puede utilizar esta herramienta para determinar los módulos SAP que necesitará en su [Implementación de SAP](https://noeldcosta.com/es/sap-implementation-vs-rollout-differences-challenges-best-practices/).
+</details>

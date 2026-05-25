@@ -1,0 +1,216 @@
+---
+title: 'Προβλήματα στο SAP BTP Cockpit: 5 ζητήματα και λύσεις'
+slug: sap-btp-cockpit-issues
+date: '2025-06-24'
+updated: '2026-05-21'
+hero: /images/wp/2025/06/3.webp
+heroAlt: Αντιμετώπιση προβλημάτων ρύθμισης υπηρεσίας SAP BTP Cockpit σε laptop με ορατό μήνυμα σφάλματος
+category: sap-modules
+tags:
+  - sap-technical-decisions
+  - sap-btp
+  - sap-cap
+  - sap-integration-suite
+author: Noel D'Costa
+metaTitle: 'Προβλήματα στο SAP BTP Cockpit το 2026: 5 συνήθη ζητήματα και λύσεις'
+metaDescription: 'Προβλήματα στο SAP BTP Cockpit το 2026: σφάλματα σύνδεσης 401, χαλασμένη πλοήγηση, Internal Server Errors, ρύθμιση destination και περιορισμός trial με πρακτικές λύσεις.'
+excerpt: 'Την πρώτη φορά που είδα το κόκκινο banner σφάλματος στο SAP BTP Cockpit, νόμιζα ότι είχα κάνει κάτι λάθος. Την τέταρτη φορά ήταν ξεκάθαρο: δεν συνέβαινε μόνο σε μένα. Αυτά τα πέντε ζητήματα εμφανίζονται συνεχώς. Αν ξέρετε τι να ψάξετε, γλιτώνετε ώρες debugging σε λάθος κατεύθυνση.'
+experienceSource: Direct experience working with SAP BTP Cockpit across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets, covering integration, CAP application deployment, and destination configuration in both trial and production subaccount environments. 2026 BTP Cockpit issues verified against current Cloud Foundry runtime.
+lastReviewed: '2026-05-21'
+keyTakeaways:
+  - Τα σφάλματα 401 στα credentials των service keys σχεδόν πάντα οφείλονται σε πρόβλημα με το OAuth grant type ή το token URL, όχι στα ίδια τα credentials
+  - 'Τα Internal Server errors στο Integration Suite συνήθως εμφανίζονται μετά από περιόδους αδράνειας: η εκκαθάριση της cache του browser και το εκ νέου binding της υπηρεσίας συνήθως τα λύνουν'
+  - 'Τα χαλασμένα links σε boosters και tiles εμφανίζονται συχνά όταν αλλάζει η δομή του subaccount μετά το setup: πλοηγήσου χειροκίνητα από το δέντρο του Cockpit'
+  - Οι αποτυχίες destination στο CAP συνήθως οφείλονται σε ασυμφωνίες ονομάτων στο xs-app.json ή στο cds.env, όχι στην ίδια τη ρύθμιση του destination
+  - 'Ο περιορισμός πόρων στο trial environment δεν εμφανίζει σαφή προειδοποίηση: χρησιμοποίησε εργαλεία CLI για να ελέγξεις την πραγματική κατανάλωση πόρων, όχι το UI του Cockpit'
+  - 'Το άνοιγμα πολλών tabs του Cockpit δημιουργεί συγκρούσεις session που προκαλούν σιωπηλές αποτυχίες: χρησιμοποίησε ένα session κάθε φορά'
+pullQuote: Το SAP BTP Cockpit σού δίνει ελάχιστη πληροφόρηση όταν κάτι χαλάει. Το μεγαλύτερο μέρος του debugging γίνεται με δοκιμές και λάθη. Αν γνωρίζεις τα μοτίβα, γλιτώνεις ώρες.
+mentions:
+  - SAP BTP
+  - SAP Integration Suite
+  - SAP CAP
+  - SAP HANA
+  - Cloud Foundry
+  - RISE with SAP
+locale: el
+translatedFrom: en
+translationSource: openai-gpt-5.4
+translationDate: '2026-05-25T19:41:42.071Z'
+canonicalUrl: https://noeldcosta.com/el/sap-btp-cockpit-issues/
+---
+
+Την πρώτη φορά που είδα το κόκκινο banner σφάλματος στο SAP BTP Cockpit, νόμιζα ότι είχα κάνει κάτι λάθος. Ίσως πάτησα το λάθος link. Ίσως είχε λήξει το session μου.
+
+Μετά την τέταρτη φορά, έγινε ξεκάθαρο ότι δεν ήμουν μόνο εγώ.
+
+Μέσα σε λίγες εβδομάδες κράτησα σημειώσεις για κάθε φορά που κάτι χαλούσε. Internal Server Errors όταν άνοιγα το Integration Suite, destinations που αρνούνταν να συνδεθούν παρότι έδειχναν σωστά, apps που δούλευαν χθες και σήμερα κόλλαγαν χωρίς προφανή λόγο. Άρχισαν να εμφανίζονται μοτίβα. Κανένα από αυτά δεν ήταν τεκμηριωμένο κάπου χρήσιμα.
+
+Αυτά δεν είναι edge cases. Είναι αυτά που συναντούν πολλοί developers, και η απογοήτευση συνήθως δεν είναι το ίδιο το πρόβλημα· είναι ότι το Cockpit δεν σου δίνει σχεδόν κανένα feedback για να δουλέψεις.
+
+## Τι άλλαξε στο BTP Cockpit την περίοδο 2024-2026
+
+Μερικά πράγματα που αξίζει να ξέρετε πριν από τη λίστα troubleshooting. Το user experience του BTP Cockpit εξελίχθηκε μέσα στο 2024-2025 με τρόπους που επηρεάζουν αυτό που βλέπετε σε σχέση με παλαιότερα screenshots. Το Cloud Foundry είναι πλέον το προεπιλεγμένο runtime· το Neo βρίσκεται σε maintenance με περιορισμένη υποστήριξη νέων λειτουργιών, οπότε τα επίμονα προβλήματα που συναντούν οι developers το 2026 έχουν κυρίως χαρακτήρα Cloud Foundry. Οι δομές subaccount και directory ελέγχονται όλο και περισσότερο σε επίπεδο global account μέσω ιεραρχιών που δεν υπήρχαν σε παλαιότερες εκδόσεις. Το Integration Suite, το Build και το Datasphere μοιράζονται πλέον μεγαλύτερο μέρος της εμπειρίας του Cockpit με τις υποκείμενες υπηρεσίες BTP, κάτι που κάνει τα μοτίβα ρύθμισης destination και authentication πιο συνεπή μεταξύ υπηρεσιών απ’ ό,τι παλιότερα.
+
+Τα πέντε παρακάτω ζητήματα εμφανίζονται τόσο σε Cloud Foundry όσο και, όπου εξακολουθεί να έχει σημασία, σε Neo, τόσο σε RISE-bundled BTP entitlements όσο και σε standalone BTP subscriptions. Αυτά είναι όσα εμφανίζονται πιο συχνά.
+
+## Ζήτημα 1: Αποτυχίες login και credentials (401 unauthorized)
+
+Δημιουργείτε ένα service instance, παράγετε ένα service key, αντιγράφετε το client ID και το secret από το JSON. Τα βάζετε στο Postman. Προσθέτετε το token URL. Κάνετε το request. Παίρνετε 401. Καμία λεπτομέρεια. Μόνο unauthorized.
+
+Ξαναελέγχετε τα credentials. Αντιγράφετε ξανά το secret. Πάλι αποτυγχάνει. Η υπηρεσία δεν είναι χαλασμένη· το OAuth flow είναι.
+
+**Τι να ελέγξετε:**
+
+1. **Grant type.** Οι περισσότερες υπηρεσίες BTP χρησιμοποιούν `client_credentials`. Ορίστε το ρητά στο Postman. Μην υποθέτετε το default.
+2. **Token URL.** Αντιγράψτε το ακριβώς από το service key JSON. Ακόμα και μία διαφορά χαρακτήρα το χαλάει. Μην το δανείζεστε από άλλο environment.
+3. **Headers.** Όταν καλείτε απευθείας το token URL, ορίστε το `Content-Type` σε `application/x-www-form-urlencoded` και κωδικοποιήστε το client ID και το secret σας ως `Authorization: Basic <base64(clientid:clientsecret)>`.
+4. **Scopes.** Ορισμένες υπηρεσίες απαιτούν πεδίο scope στο token request (αναζητήστε το `xsappname` στο service key). Αν λείπει, μπορεί πάλι να επιστραφεί token, αλλά αυτό το token δεν θα εξουσιοδοτεί το API call.
+5. **Κατάσταση service instance.** Σε trial accounts, οι υπηρεσίες περνούν σε idle. Ελέγξτε στο Cockpit ότι το instance είναι ακόμα ενεργό.
+6. **Token audience.** Αν παίρνετε token αλλά το API εξακολουθεί να αποτυγχάνει, κάντε decode στο jwt.io. Ελέγξτε το claim `aud`. Αν δεν ταιριάζει με το API που καλείτε, αυτό είναι το πρόβλημα.
+
+| Τι να ελέγξετε | Πώς να το επιβεβαιώσετε |
+|---|---|
+| Grant type | Χρησιμοποιήστε ρητά `client_credentials`, όχι authorization code, όχι password flow. |
+| Token URL | Αντιγράψτε το απευθείας από το service key JSON. Χωρίς τροποποιήσεις. |
+| HTTP headers | `Content-Type: application/x-www-form-urlencoded` + `Authorization: Basic <base64 encoded>` |
+| Scopes | Ελέγξτε το service key για πεδίο `xsappname` ή `scope`· συμπεριλάβετέ το στο token request αν υπάρχει |
+| Δραστηριότητα service instance | Επιβεβαιώστε ότι το instance είναι ενεργό στο Cockpit· κάντε restart αν είναι idle σε trial account |
+| Token audience | Κάντε decode στο jwt.io· το claim `aud` πρέπει να ταιριάζει με το API που καλείτε |
+
+## Ζήτημα 2: Σπασμένο navigation και νεκρά links
+
+Πατάτε "Go to Application" ή "Open in Cockpit" και παίρνετε κενή οθόνη, μια γενική landing page ή ένα redirect που δεν βγάζει κανένα νόημα.
+
+Αυτό δεν είναι τυχαίο. Ακολουθεί προβλέψιμα μοτίβα:
+
+1. Τα links μέσα σε **boosters** χαλάνε όταν αλλάζει η ρύθμιση του subaccount στη μέση της διαδικασίας. Το redirect σας στέλνει στην αρχική σελίδα ή σας πετάει στο λάθος space.
+2. Τα tile links του **Integration Suite** μερικές φορές δουλεύουν, μερικές φορές πετάνε internal error, μερικές φορές κάνουν time out.
+3. Τα links του **Workzone και Launchpad** εμφανίζουν "connection denied" ακόμα κι όταν υπάρχουν entitlements.
+4. Πολλαπλά tabs ή browser profiles προκαλούν αποσυγχρονισμό των sessions, με αποτέλεσμα τα links να ανοίγουν σε ληγμένα contexts.
+
+**Workarounds που βοηθούν:**
+1. Κρατήστε bookmarks με τα direct URLs για Integration Suite, Destination Management και Launchpad. Μην βασίζεστε σε in-app links.
+2. Πλοηγηθείτε χειροκίνητα μέσω του δέντρου του Cockpit: Subaccount → Services → Instances → Subscriptions.
+3. Χρησιμοποιήστε ένα Cockpit session σε καθαρό browser profile. Αποφύγετε πολλαπλά tabs.
+
+Το ευρύτερο πρόβλημα είναι η προβλεψιμότητα. Όταν ένα link αποτυγχάνει κάθε τρίτη φορά, αρχίζετε να χτίζετε workarounds αντί να χρησιμοποιείτε την πλατφόρμα όπως έχει σχεδιαστεί.
+
+## Ζήτημα 3: Internal Server Errors (ειδικά στο Integration Suite)
+
+Προσπαθείτε να ανοίξετε το Integration Suite. Αντί για την αναμενόμενη οθόνη, παίρνετε ένα κόκκινο banner "Internal Server Error". Τίποτα άλλο. Κανένα log. Καμία εξήγηση.
+
+Κάνετε reload. Παραμένει χαλασμένο. Άλλος browser. Ίδιο αποτέλεσμα.
+
+Αυτό συνήθως συμβαίνει αφού η υπηρεσία έχει μείνει idle για λίγες ώρες: την αφήσατε ανοιχτή το πρωί, επιστρέψατε μετά από ένα διάλειμμα. Η αδράνεια φαίνεται να ενεργοποιεί ένα backend state issue, αλλά το Cockpit δεν σας δείχνει τίποτα.
+
+**Τι το λύνει συνήθως:**
+1. Καθαρίστε browser cache και cookies. Αυτό κάνει αρκετό reset στο session ώστε να φορτώσει η σελίδα.
+2. Ελέγξτε entitlements και service status στο Cockpit. Οι υπηρεσίες μπορεί να γίνουν unbound ή paused χωρίς να εμφανιστεί alert.
+3. Κάντε rebind ή restart την υπηρεσία από το subaccount. Για το Integration Suite αυτό δουλεύει αξιόπιστα.
+4. Μόνο ένα ενεργό Cockpit tab. Τα session conflicts από πολλαπλά tabs είναι συχνός trigger.
+
+Το υποκείμενο πρόβλημα είναι η ορατότητα. Δεν εμφανίζεται κανένα logging, καμία εξήγηση για το τι απέτυχε. Η επίλυση γίνεται με trial and error, γι’ αυτό και χάνεται τόσος χρόνος.
+
+## Ζήτημα 4: Αποτυχίες ρύθμισης destination σε CAP apps
+
+Κάνετε deploy ένα CAP app, ρυθμίζετε ένα destination στο Cockpit, και τα requests εξακολουθούν να αποτυγχάνουν. Το destination εμφανίζεται στη λίστα, το app τρέχει, αλλά παίρνετε "destination not found" ή σφάλματα authentication.
+
+Όλα δείχνουν σωστά. Τα μηνύματα σφάλματος δεν βοηθούν· είτε είναι υπερβολικά γενικά είτε δείχνουν στο λάθος σημείο.
+
+**Οι συνηθισμένες αιτίες:**
+
+1. Το όνομα του destination δεν αναφέρεται σωστά στο `xs-app.json` ή στο `cds.env`. Το όνομα πρέπει να ταιριάζει ακριβώς.
+2. Ασυμφωνία έκδοσης OData. Αν το app σας περιμένει v2 και το destination δείχνει σε υπηρεσία v4 (ή το αντίστροφο), το CAP αποτυγχάνει σιωπηλά. Χρησιμοποιήστε το `@sap/cds-odata-v2-adapter-proxy` για να χειριστείτε την ασυμφωνία.
+3. Λάθος μέθοδος authentication. Χρησιμοποιήστε `OAuth2ClientCredentials` ή `BasicAuthentication` στα περισσότερα CAP scenarios. Το SAML προσθέτει πολυπλοκότητα που δεν χρειάζεστε εκτός αν υπάρχει συγκεκριμένη απαίτηση.
+4. Το destination δεν βρίσκεται στο ίδιο subaccount με το app.
+
+**Checklist troubleshooting:**
+
+| Ζήτημα | Διόρθωση |
+|---|---|
+| Το destination εμφανίζεται στη λίστα αλλά το app δεν μπορεί να το προσπελάσει | Ελέγξτε το όνομα στο `xs-app.json` και στο `cds.env`: πρέπει να ταιριάζει ακριβώς |
+| Ασυμφωνία έκδοσης OData | Χρησιμοποιήστε το package `@sap/cds-odata-v2-adapter-proxy` στο CAP app |
+| Αποτυχίες authentication παρά τα έγκυρα credentials | Αλλάξτε σε `OAuth2ClientCredentials` ή `BasicAuthentication` |
+| Δουλεύει τοπικά αλλά αποτυγχάνει μετά το deployment | Ελέγξτε το `cds.env` στο deployed environment· επιβεβαιώστε ότι το destination είναι στο σωστό subaccount |
+| Δεν είστε βέβαιοι αν το destination είναι προσβάσιμο | Χρησιμοποιήστε το εργαλείο Destination Checker στο BTP Cockpit πριν από το deployment |
+
+Οι ομάδες που το χειρίζονται καλά διατηρούν ένα checklist ρυθμίσεων. Όχι επειδή είναι σύνθετο setup. Μία λάθος υπόθεση για version, name ή auth method προκαλεί μια σιωπηλή αποτυχία που παίρνει περισσότερο χρόνο να βρεθεί απ’ όσο θα έπρεπε.
+
+## Ζήτημα 5: Throttling και όρια πόρων σε trial environments
+
+Ένα CAP app που δούλευε χθες τώρα κολλάει. Κανένα σφάλμα. Το Cockpit το δείχνει ως running. Δοκιμάζετε restart. Πάλι τίποτα.
+
+Αυτό συνήθως είναι throttling ή εξάντληση πόρων στο trial environment. Η SAP δεν το εμφανίζει καθαρά. Το UI του Cockpit σπάνια δείχνει τι πραγματικά καταναλώνετε, και τα όρια για trial accounts δεν είναι καλά τεκμηριωμένα μέσα στο ίδιο το interface.
+
+Καταλήγετε να κάνετε debugging στον κώδικα του app σας ενώ η πραγματική αιτία είναι ένα quota που δεν ξέρατε ότι είχατε φτάσει.
+
+**Τι πραγματικά βοηθά:**
+
+1. Χρησιμοποιήστε CLI tools (`cf apps`, `cf services`) για να ελέγξετε κατανάλωση μνήμης και υπηρεσιών. Το UI του Cockpit κρύβει τα περισσότερα από αυτά.
+2. Μοιράστε τα workloads σε πολλαπλά subaccounts. Μην κάνετε deploy τα πάντα σε ένα.
+3. Κάντε χειροκίνητο restart σε idle υπηρεσίες μετά από μεγάλα διαστήματα αδράνειας.
+4. Διαγράψτε αχρησιμοποίητες υπηρεσίες πριν προσπαθήσετε να δημιουργήσετε νέες. Τα trial limits περιλαμβάνουν global quotas, όχι μόνο ανά app.
+
+Αν το συναντάτε επανειλημμένα αυτό (πάνω από ένα app, πάνω από μία database ή αν χρειάζεστε σταθερό uptime για demos), ένα paid plan αξίζει μόνο και μόνο για τη σταθερότητα.
+
+## Συχνές ερωτήσεις
+
+<details>
+<summary>Γιατί παίρνω σφάλμα 401 με service key credentials ακόμα κι όταν δείχνουν σωστά;</summary>
+
+Σχεδόν πάντα είναι πρόβλημα OAuth flow και όχι πρόβλημα credentials. Οι δύο πιο συνηθισμένες αιτίες: χρήση λάθος grant type (οι υπηρεσίες BTP απαιτούν `client_credentials`) ή χρήση token URL που δεν ταιριάζει ακριβώς με το service key JSON.
+
+Ελέγξτε τα headers σας. Το token request χρειάζεται `Content-Type: application/x-www-form-urlencoded` και τα credentials κωδικοποιημένα σε base64 στο Authorization header. Αν απαιτούνται scopes (ελέγξτε το service key για πεδίο `xsappname`) και λείπουν από το request, μπορεί να πάρετε πάλι token, αλλά δεν θα εξουσιοδοτεί το API call.
+
+Αν παίρνετε token αλλά το API εξακολουθεί να το απορρίπτει, κάντε decode το token στο jwt.io και ελέγξτε το claim `aud`. Πρέπει να ταιριάζει με το API που καλείτε.
+
+</details>
+
+<details>
+<summary>Τι προκαλεί Internal Server Errors όταν ανοίγω το Integration Suite στο BTP Cockpit;</summary>
+
+Συνήθως ακολουθούν μια περίοδο αδράνειας. Η υπηρεσία περνάει σε μειωμένη κατάσταση στο παρασκήνιο, αλλά το Cockpit δεν δείχνει τίποτα: κανένα alert, καμία αλλαγή κατάστασης. Το σφάλμα εμφανίζεται μόνο όταν προσπαθείτε να την ανοίξετε.
+
+Τρία πράγματα που συνήθως το λύνουν: καθαρίστε browser cache και cookies, επιβεβαιώστε ότι το service instance είναι ακόμα ενεργό στο Cockpit (και κάντε restart ή rebind αν δεν είναι), και βεβαιωθείτε ότι έχετε μόνο ένα ενεργό Cockpit session. Τα πολλαπλά tabs δημιουργούν session conflicts που ενεργοποιούν αυτό το σφάλμα ακόμα κι όταν η ίδια η υπηρεσία είναι εντάξει.
+
+</details>
+
+<details>
+<summary>Γιατί το CAP app μου αποτυγχάνει να συνδεθεί σε destination που εμφανίζεται σωστά στο Cockpit;</summary>
+
+Η πιο συνηθισμένη αιτία είναι ασυμφωνία ονομασίας. Το όνομα του destination που αναφέρεται στο `xs-app.json` ή στο `cds.env` πρέπει να ταιριάζει ακριβώς με το όνομα στο Cockpit, συμπεριλαμβανομένων των κεφαλαίων και πεζών.
+
+Αν η ονομασία είναι σωστή, ελέγξτε την έκδοση OData. Αν το app σας περιμένει v2 και το destination δείχνει σε υπηρεσία v4, το CAP αποτυγχάνει σιωπηλά. Χρησιμοποιήστε το package `@sap/cds-odata-v2-adapter-proxy` για να χειριστείτε την ασυμφωνία.
+
+Η μέθοδος authentication είναι άλλη μία συνηθισμένη πηγή προβλημάτων. Τα `OAuth2ClientCredentials` ή `BasicAuthentication` δουλεύουν προβλέψιμα στα περισσότερα CAP scenarios. Πιο σύνθετοι τύποι όπως το SAML εισάγουν μεταβλητές που είναι πιο δύσκολο να γίνουν debug.
+
+Χρησιμοποιήστε το εργαλείο Destination Checker στο Cockpit για να επιβεβαιώσετε τη συνδεσιμότητα πριν κάνετε deploy το app.
+
+</details>
+
+<details>
+<summary>Πώς ελέγχω αν έχω φτάσει τα όρια πόρων σε trial account;</summary>
+
+Το UI του Cockpit δεν το δείχνει καθαρά. Χρησιμοποιήστε το CLI: το `cf apps` δείχνει κατανάλωση μνήμης ανά app· το `cf services` δείχνει το σύνολο των υπηρεσιών που χρησιμοποιούνται. Τα trial accounts έχουν global quotas που δεν εμφανίζονται στο dashboard του Cockpit.
+
+Αν ένα app αποτυγχάνει να ξεκινήσει ή ένα νέο service instance αποτυγχάνει σιωπηλά, η εξάντληση πόρων είναι πιθανότατα η αιτία. Διαγράψτε αχρησιμοποίητα apps και υπηρεσίες πριν ξαναπροσπαθήσετε. Αν φτάνετε τα όρια τακτικά, βοηθά να μοιράζετε τα workloads σε πολλαπλά trial subaccounts ή να μεταβείτε σε paid plan για τη σταθερότητα.
+
+</details>
+
+<details>
+<summary>Γιατί τα links μέσα σε boosters και tiles οδηγούν σε κενές σελίδες ή λάθος τοποθεσίες;</summary>
+
+Τα links που δημιουργούνται από boosters χαλάνε όταν αλλάζει η δομή του subaccount μετά το setup. Ένα redirect που έδειχνε σε συγκεκριμένη τοποθεσία σας στέλνει κάπου που δεν υπάρχει πλέον ή δεν έχει ρυθμιστεί σωστά.
+
+Το αξιόπιστο workaround: πλοηγηθείτε χειροκίνητα μέσω του δέντρου του Cockpit. Subaccount → Services → Instances → Subscriptions. Κρατήστε bookmarks με τα direct URLs για τα εργαλεία που χρησιμοποιείτε τακτικά. Integration Suite, Destination Management, Launchpad. Μην βασίζεστε σε shortcut tiles ή navigation που παράγεται από boosters για οτιδήποτε κρίσιμο.
+
+</details>
+
+<details>
+<summary>Πότε πρέπει να μεταβώ από trial account BTP σε paid plan;</summary>
+
+Όταν τα όρια πόρων επηρεάζουν τη δουλειά σας σε τακτική βάση. Αν διαχειρίζεστε πάνω από ένα app ή database, ή χρειάζεστε σταθερό uptime για demos ή testing, το trial environment τελικά θα δημιουργεί περισσότερη τριβή απ’ όση αξία δίνει.
+
+Το paid plan δεν σας δίνει απαραίτητα διαφορετικές λειτουργίες· το βασικό όφελος είναι η σταθερότητα και η καθαρότερη ορατότητα των πόρων. Το trial throttling είναι απρόβλεπτο και το Cockpit δεν το εμφανίζει καθαρά, πράγμα που σημαίνει ότι ξοδεύετε χρόνο κάνοντας debugging σε προβλήματα που στην πραγματικότητα δεν βρίσκονται στον κώδικά σας.
+
+</details>

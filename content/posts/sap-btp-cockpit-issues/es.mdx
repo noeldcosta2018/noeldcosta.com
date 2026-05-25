@@ -1,559 +1,216 @@
 ---
-title: "Los 5 principales problemas de SAP BTP Cockpit con los que luchan los desarrolladores"
-slug: "sap-btp-cockpit-issues"
-date: "2025-06-24 19:49:23"
-updated: "2026-01-11 19:49:16"
-hero: "/images/wp/2025/06/3.webp"
-category: "sap-modules"
-tags: ["sap-technical-decisions"]
-author: "noeldcosta"
-originalUrl: "https://noeldcosta.com/sap-btp-cockpit-issues/"
-h1: "Las 5 principales frustraciones que enfrentan los desarrolladores con SAP BTP Cockpit"
-metaDescription: "¿Te encuentras con errores aleatorios en SAP BTP Cockpit? Descubre por qué ocurren y cómo solucionar problemas como fallos de servicio, enlaces rotos y problemas de acceso."
-excerpt: "¿Te encuentras con errores aleatorios en SAP BTP Cockpit? Descubre por qué ocurren y cómo solucionar problemas como fallos de servicio, enlaces rotos y problemas de acceso."
-metaTitle: "Los 5 principales problemas de SAP BTP Cockpit con los que luchan los desarrolladores"
-canonicalUrl: "https://noeldcosta.com/es/sap-btp-cockpit-issues/"
-locale: "es"
-translatedFrom: "en"
-translationSource: "gtranslate-scrape-cleanup"
+title: 'Problemas en SAP BTP Cockpit: cinco fallos y cómo resolverlos'
+slug: sap-btp-cockpit-issues
+date: '2025-06-24'
+updated: '2026-05-21'
+hero: /images/wp/2025/06/3.webp
+heroAlt: Desarrollador revisando la configuración de servicios en SAP BTP Cockpit en la pantalla del portátil con un mensaje de error visible
+category: sap-modules
+tags:
+  - sap-technical-decisions
+  - sap-btp
+  - sap-cap
+  - sap-integration-suite
+author: Noel D'Costa
+metaTitle: 'Problemas en SAP BTP Cockpit en 2026: 5 fallos comunes y soluciones'
+metaDescription: 'Problemas en SAP BTP Cockpit en 2026: errores 401 al iniciar sesión, navegación rota, Internal Server Errors, configuración de destinos y limitación del trial con soluciones prácticas.'
+excerpt: 'La primera vez que vi el banner rojo de error en SAP BTP Cockpit, pensé que había hecho algo mal. A la cuarta vez, quedó claro: no era solo cosa mía. Estos cinco problemas aparecen constantemente. Saber qué revisar ahorra horas depurando lo que no es.'
+experienceSource: Direct experience working with SAP BTP Cockpit across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets, covering integration, CAP application deployment, and destination configuration in both trial and production subaccount environments. 2026 BTP Cockpit issues verified against current Cloud Foundry runtime.
+lastReviewed: '2026-05-21'
+keyTakeaways:
+  - Los errores 401 en credenciales de service key casi siempre se deben al tipo de concesión OAuth o a la URL del token, no a un problema de credenciales
+  - 'Los errores Internal Server en Integration Suite suelen aparecer tras periodos de inactividad: borrar la caché del navegador y volver a enlazar el servicio suele resolverlos'
+  - 'Los enlaces rotos en boosters y tiles suelen aparecer cuando cambia la estructura de la subaccount después de la configuración inicial: navegue manualmente por el árbol del Cockpit en su lugar'
+  - Los fallos de destino en CAP suelen deberse a discrepancias de nombre en xs-app.json o cds.env, no a la configuración del destino en sí
+  - 'La limitación de recursos en el entorno trial no muestra una advertencia clara: use herramientas CLI para comprobar el consumo real de recursos, no la UI del Cockpit'
+  - 'Abrir varias pestañas de Cockpit a la vez crea conflictos de sesión que provocan fallos silenciosos: use una sola sesión cada vez'
+pullQuote: SAP BTP Cockpit ofrece muy poca información cuando algo falla. La mayor parte de la depuración se hace por prueba y error. Conocer los patrones ahorra horas.
+mentions:
+  - SAP BTP
+  - SAP Integration Suite
+  - SAP CAP
+  - SAP HANA
+  - Cloud Foundry
+  - RISE with SAP
+locale: es
+translatedFrom: en
+translationSource: openai-gpt-5.4
+translationDate: '2026-05-25T20:57:26.285Z'
+canonicalUrl: https://noeldcosta.com/es/sap-btp-cockpit-issues/
 ---
 
-### Artículos de SAP
+La primera vez que vi la franja roja de error en SAP BTP Cockpit, pensé que había hecho algo mal. Quizá hice clic en el enlace equivocado. Quizá mi sesión había caducado.
 
-# Las 5 principales frustraciones que enfrentan los desarrolladores con SAP BTP Cockpit
+A la cuarta vez, quedó claro que no era solo cosa mía.
 
+Durante unas semanas fui tomando notas cada vez que algo fallaba. Internal Server Errors al abrir Integration Suite, destinos que se negaban a conectar aunque parecían válidos, aplicaciones que ayer funcionaban y hoy se quedaban colgadas sin motivo aparente. Empezaron a aparecer patrones. Ninguno estaba documentado en ningún sitio útil.
 
-### Noel D'Costa
+No son casos aislados. Es con lo que se encuentra mucha gente que desarrolla aquí, y la frustración normalmente no es el problema en sí; es que el Cockpit casi no da información con la que trabajar.
 
-*   Última actualización : 24 de junio de 2025
+## Qué cambió en BTP Cockpit entre 2024 y 2026
 
-SAP BTP Cockpit parece facilitarte la vida. Esperas un único lugar para gestionar servicios, implementar aplicaciones, gestionar el acceso y avanzar sin problemas. Esa es la idea, al menos. Pero lo cierto es que los problemas con SAP BTP Cockpit pueden ser problemáticos. 
+Hay algunas cosas que conviene saber antes de entrar en la lista de resolución de problemas. La experiencia de usuario de BTP Cockpit evolucionó durante 2024-2025 de formas que afectan a lo que se ve frente a capturas más antiguas. Cloud Foundry es ahora el runtime por defecto; Neo está en mantenimiento con soporte limitado para nuevas funcionalidades, así que los problemas persistentes con los que se encuentran los desarrolladores en 2026 son, en su mayoría, de tipo Cloud Foundry. Las estructuras de subaccounts y directorios están cada vez más gobernadas a nivel de global account mediante jerarquías que no existían en versiones anteriores. Integration Suite, Build y Datasphere ahora comparten más de la experiencia del Cockpit con los servicios subyacentes de BTP, lo que hace que los patrones de configuración de destinos y autenticación sean más consistentes entre servicios de lo que solían ser.
 
-Pero una vez que empiezas a usarlo, todo se vuelve torpe. Algunas páginas nunca cargan. Las credenciales de inicio de sesión fallan sin motivo aparente. Sigues un enlace y terminas en un sitio sin sentido, o en ninguno.
+Los cinco problemas de abajo aparecen tanto en Cloud Foundry como en Neo (donde sigue siendo relevante), tanto en entitlements de BTP incluidos en RISE como en suscripciones independientes de BTP. Estos son los que salen con más frecuencia.
 
-No siempre es evidente qué falló. Revisas tu configuración dos veces, asumiendo que te saltaste algún paso. Luego la revisas de nuevo. Sigue sin haber nada. Después de un tiempo, parece que la mitad del tiempo lo dedicas a intentar que funcionen las cosas básicas.
+## Problema 1: Fallos de inicio de sesión y credenciales (401 unauthorized)
 
-A continuación se presentan algunos problemas comunes del SAP BTP Cockpit que surgen una y otra vez:
+Crea una instancia de servicio, genera una service key, copia el client ID y el secret del JSON. Los pega en Postman. Añade la token URL. Hace la petición. Recibe un 401. Sin detalle. Solo unauthorized.
 
-*   El inicio de sesión con credenciales de servicio falla, incluso cuando son correctas
-*   Los enlaces dentro de la cabina están rotos o redirigen a lugares irrelevantes
-*   Servicios como Integration Suite generan errores internos del servidor, a veces durante horas
-*   Las configuraciones de destino de CAP no son claras, especialmente al cambiar entre versiones de OData
-*   En las cuentas de prueba o de nivel gratuito, las aplicaciones se limitan sin mucha explicación.
+Vuelve a revisar las credenciales. Copia el secret otra vez. Sigue fallando. El servicio no está roto; el problema está en el flujo OAuth.
 
-Esta publicación analiza cinco de las frustraciones más comunes con [SAP](https://www.sap.com) Cabina BTP. Estos son problemas con los que la gente lidia constantemente. Algunos son simplemente molestos. Otros paralizan los proyectos. En cualquier caso, saber qué esperar ayuda mucho.
+**Qué revisar:**
 
-### "SAP BTP Cockpit a menudo muestra errores vagos sin una explicación clara, pero en la mayoría de los casos, Generalmente, borrar la memoria caché del navegador, volver a verificar los derechos y volver a vincular manualmente el servicio desde la subcuenta resuelve el problema."
+1. **Grant type.** La mayoría de los servicios de BTP usan `client_credentials`. Configúrelo explícitamente en Postman. No dé por hecho el valor por defecto.
+2. **Token URL.** Cópiela exactamente del JSON de la service key. Incluso una diferencia de un carácter la rompe. No la tome prestada de otro entorno.
+3. **Headers.** Al llamar directamente a la token URL, configure `Content-Type` como `application/x-www-form-urlencoded` y codifique su client ID y secret como `Authorization: Basic <base64(clientid:clientsecret)>`.
+4. **Scopes.** Algunos servicios requieren un campo scope en la petición del token (busque `xsappname` en la service key). Si falta, puede que aun así devuelva un token, pero ese token no autorizará la llamada a la API.
+5. **Estado de la instancia de servicio.** En cuentas trial, los servicios quedan inactivos. Revise el Cockpit para confirmar que la instancia sigue activa.
+6. **Token audience.** Si está recibiendo un token pero la API sigue fallando, descodifíquelo en jwt.io. Revise el claim `aud`. Si no coincide con la API que está llamando, ese es el problema.
 
-[Habla con Noel – ¡Llamada gratuita de 15 minutos para ayudarte!](mailto:solutions@noeldcosta.com)
+| Qué revisar | Cómo validarlo |
+|---|---|
+| Grant type | Use `client_credentials` explícitamente, no authorization code ni password flow. |
+| Token URL | Cópiela directamente del JSON de la service key. Sin modificaciones. |
+| HTTP headers | `Content-Type: application/x-www-form-urlencoded` + `Authorization: Basic <base64 encoded>` |
+| Scopes | Revise la service key para ver si existe el campo `xsappname` o `scope`; inclúyalo en la petición del token si está presente |
+| Actividad de la instancia de servicio | Confirme que la instancia está activa en Cockpit; reiníciela si está inactiva en una cuenta trial |
+| Token audience | Descodifique en jwt.io; el claim `aud` debe coincidir con la API que está llamando |
 
-## Problema n.° 1: Confusión de inicio de sesión y credenciales
+## Problema 2: Navegación rota y enlaces muertos
 
+Hace clic en "Go to Application" o "Open in Cockpit" y obtiene una pantalla en blanco, una página de aterrizaje genérica o una redirección que no tiene ningún sentido.
 
-Esta [Problema con la cabina SAP BTP](https://noeldcosta.com/es/sap-btp-cockpit-issues/) Aparece con más frecuencia de lo que la mayoría de la gente espera. Creas una instancia de servicio en BTP, generas una clave de servicio, abres el JSON y obtienes el ID y el secreto del cliente. Todo parece correcto.
+Esto no es aleatorio. Sigue patrones previsibles:
 
-Los conectas a Postman o a tu aplicación. Agregas la URL del token. Realizas la solicitud. Luego recibes un error 401. Eso es todo lo que dice. Sin detalles. Simplemente no autorizado.
+1. Los enlaces dentro de los **boosters** se rompen cuando la configuración del subaccount cambia a mitad del proceso. La redirección le envía a la página principal o le deja en el space equivocado.
+2. Los enlaces del tile de **Integration Suite** a veces funcionan, a veces lanzan un error interno, a veces agotan el tiempo de espera.
+3. Los enlaces de **Workzone and Launchpad** muestran "connection denied" incluso cuando los entitlements están presentes.
+4. Varias pestañas o perfiles de navegador hacen que las sesiones se desincronicen, lo que provoca que los enlaces se abran en contextos caducados.
 
-Vuelves. Verificas el ID del cliente. Quizás copias el secreto de nuevo para asegurarte. Sigue fallando. Llegados a este punto, podrías empezar a preguntarte si el servicio está roto, pero normalmente no.
+**Soluciones alternativas que ayudan:**
+1. Guarde en marcadores las URLs directas de Integration Suite, Destination Management y Launchpad. No dependa de los enlaces dentro de la aplicación.
+2. Navegue manualmente por el árbol del Cockpit: Subaccount → Services → Instances → Subscriptions.
+3. Use una sola sesión de Cockpit en un perfil limpio del navegador. Evite varias pestañas.
 
-Esto sucede mucho con las API, especialmente cuando se intenta [Conectarse a la prueba ABAP](https://noeldcosta.com/es/erp-modernization-mistakes/) O servicios como Integration Suite. El flujo parece simple en la documentación, pero hay pequeños detalles que pueden interrumpirlo.
+El problema de fondo es la previsibilidad: cuando un enlace falla una de cada tres veces, uno acaba creando soluciones alternativas en lugar de usar la plataforma como fue diseñada.
 
+## Problema 3: Internal Server Errors (especialmente en Integration Suite)
 
-#### Esto es lo que debes revisar con cuidado:
+Intenta abrir Integration Suite. En lugar de la pantalla esperada, aparece una franja roja con "Internal Server Error". Nada más. Sin log. Sin explicación.
 
-*   Primero, confirme la **tipo de subvención** es correcto. La mayoría de los servicios BTP utilizan _credenciales del cliente_En Postman, elige eso explícitamente. Algunos lo pasan por alto y terminan probando otra cosa por error.
+Recarga. Sigue roto. Otro navegador. Mismo resultado.
 
-*   En segundo lugar, la **URL del token** Debe copiarse directamente del JSON de la clave de servicio. Incluso un pequeño cambio puede romperlo. Si lo intentas adivinar o lo copias de otro entorno, fallará.
+Esto suele pasar después de que el servicio haya estado inactivo unas horas: se dejó abierto por la mañana y se retomó después de una pausa. La inactividad parece disparar un problema de estado en el backend, pero el Cockpit no muestra nada.
 
-*   En tercer lugar, verifique el **cabeceras**Al realizar una llamada directa a la URL del token, debe configurar `Content-Type` a `application/x-www-form-urlencoded`. La función de `Authorization` El encabezado debe incluir el ID del cliente y el secreto, codificados en base64 como una sola cadena.
+**Qué suele resolverlo:**
+1. Borre la caché y las cookies del navegador. Esto reinicia la sesión lo suficiente como para que la página cargue.
+2. Revise los entitlements y el estado del servicio en el Cockpit. Los servicios pueden quedar desvinculados o en pausa sin mostrar ninguna alerta.
+3. Vuelva a vincular o reinicie el servicio desde el subaccount. Funciona de forma fiable con Integration Suite.
+4. Solo una pestaña activa de Cockpit. Los conflictos de sesión por múltiples pestañas son un desencadenante habitual.
 
-*   En cuarto lugar, esté atento a **ámbitos o xsappname**A veces, la solicitud de token necesita un campo adicional, según el servicio. Si a tu token le faltan los alcances requeridos, es posible que lo obtengas, pero no funcionará al llamar a la API.
+El problema subyacente es la visibilidad. No se muestra ningún log ni ninguna explicación de qué falló. La resolución acaba siendo prueba y error, y por eso hace perder tanto tiempo.
 
-*   En quinto lugar, verificar la **La instancia de servicio está activa**En las cuentas de prueba, los servicios se inactivan o se cierran. Esto genera errores extraños y, a menudo, no muestra un mensaje claro. Debe comprobar desde la Cabina de BTP si la instancia sigue activa.
+## Problema 4: Fallos de configuración de destinos en aplicaciones CAP
 
-*   Por último, si sigues recibiendo un token pero la API falla, descodifícalo en [jwt.io](https://jwt.io)Revisa la reclamación de audiencia. Si no coincide con la API a la que llamas, ese podría ser el problema.
+Despliega una aplicación CAP, configura un destino en el Cockpit y las peticiones siguen fallando. El destino aparece en la lista, la aplicación está en ejecución, pero recibe "destination not found" o errores de autenticación.
 
-Este tipo de problema consume mucho tiempo porque el sistema proporciona muy poca información. La mayor parte de la depuración se realiza mediante prueba y error. Sin embargo, una vez que se realizan estas comprobaciones, suele empezar a tener sentido. Sigue siendo frustrante, pero al menos se sabe qué buscar.
+Todo parece correcto. Los mensajes de error no ayudan; o son demasiado genéricos o apuntan al sitio equivocado.
 
-### Solución de problemas de inicio de sesión de la clave de servicio SAP BTP
+**Las causas habituales:**
 
-Qué comprobar
+1. El nombre del destino no está referenciado correctamente en `xs-app.json` o `cds.env`. El nombre debe coincidir exactamente.
+2. Incompatibilidad de versión OData. Si su aplicación espera v2 y el destino apunta a un servicio v4 (o al revés), CAP falla en silencio. Use `@sap/cds-odata-v2-adapter-proxy` para gestionar esa incompatibilidad.
+3. Método de autenticación incorrecto. Use `OAuth2ClientCredentials` o `BasicAuthentication` en la mayoría de escenarios CAP. SAML añade una complejidad que no necesita salvo que exista un requisito específico.
+4. El destino no está en el mismo subaccount que la aplicación.
 
-Cómo arreglar o validar
+**Checklist de resolución de problemas:**
 
-Tipo de concesión utilizado en la autenticación
+| Problema | Solución |
+|---|---|
+| El destino aparece en la lista pero la aplicación no puede acceder a él | Revise el nombre en `xs-app.json` y `cds.env`: debe coincidir exactamente |
+| Incompatibilidad de versión OData | Use el paquete `@sap/cds-odata-v2-adapter-proxy` en la aplicación CAP |
+| Fallos de autenticación pese a credenciales válidas | Cambie a `OAuth2ClientCredentials` o `BasicAuthentication` |
+| Funciona en local pero falla tras el despliegue | Revise `cds.env` en el entorno desplegado; confirme que el destino está en el subaccount correcto |
+| No está seguro de si el destino es accesible | Use la herramienta Destination Checker en BTP Cockpit antes de desplegar |
 
-Asegúrese de usar "client\_credentials" en Postman o en su código. La mayoría de los servicios SAP BTP requieren este tipo de concesión, no flujos de código de autorización ni de contraseña.
+Los equipos que gestionan bien esto mantienen una checklist de configuración. No porque sea una configuración compleja. Una sola suposición incorrecta sobre versión, nombre o método de autenticación provoca un fallo silencioso que tarda más de lo debido en encontrarse.
 
-URL del token de la clave de servicio
+## Problema 5: Throttling y límites de recursos en entornos trial
 
-Copia la URL del token exactamente como aparece en el JSON de la clave de servicio. Incluso pequeños cambios o el uso de la URL de un entorno diferente pueden provocar un error en la solicitud.
+Una aplicación CAP que ayer funcionaba hoy se queda colgada. Sin error. El Cockpit la muestra como en ejecución. Intenta reiniciarla. Sigue igual.
 
-Encabezados HTTP en la solicitud de token
+Normalmente es throttling o agotamiento de recursos en el entorno trial. SAP no lo muestra con claridad. La interfaz del Cockpit rara vez enseña lo que realmente se está consumiendo, y los límites de las cuentas trial no están bien documentados dentro de la propia interfaz.
 
-Establezca "Content-Type" en "application/x-www-form-urlencoded" y utilice "Authorization: Basic" " si se envía manualmente. Postman aplicará esto automáticamente si está configurado correctamente.
+Al final uno termina depurando el código de la aplicación cuando la causa real es una cuota que ni sabía que había alcanzado.
 
-Ámbitos requeridos o xsappname
+**Qué ayuda de verdad:**
 
-Algunos servicios requieren un ámbito en la solicitud del token. Busque en la clave del servicio un campo como "xsappname" o "ámbito" e inclúyalo cuando corresponda.
+1. Use herramientas CLI (`cf apps`, `cf services`) para revisar memoria y consumo de servicios. La interfaz del Cockpit oculta la mayor parte de esto.
+2. Reparta las cargas entre varios subaccounts. No despliegue todo en uno solo.
+3. Reinicie manualmente los servicios inactivos después de largos periodos sin uso.
+4. Elimine servicios no utilizados antes de intentar crear otros nuevos. Los límites trial incluyen cuotas globales, no solo por aplicación.
 
-Actividad de instancia de servicio
+Si esto le ocurre repetidamente (más de una aplicación, más de una base de datos, o necesidad de disponibilidad estable para demos), un plan de pago merece la pena solo por la estabilidad.
 
-En las cuentas de prueba, los servicios inactivos pueden causar fallos silenciosos. Confirme que la instancia esté activa en la cabina de BTP. Reinicie o vuelva a crear si es necesario.
+## Preguntas frecuentes
 
-Validez del token y reclamo de audiencia
+<details>
+<summary>¿Por qué recibo un error 401 con credenciales de service key aunque parezcan correctas?</summary>
 
-Usa jwt.io para inspeccionar el token. Asegúrate de que la declaración "aud" coincida con la API o el servicio al que intentas acceder.
+Casi siempre es un problema del flujo OAuth más que un problema de credenciales. Las dos causas más comunes: usar el grant type equivocado (los servicios de BTP requieren `client_credentials`) o usar una token URL que no coincide exactamente con el JSON de la service key.
 
+Revise sus headers. La petición del token necesita `Content-Type: application/x-www-form-urlencoded` y las credenciales codificadas en base64 en el header Authorization. Si se requieren scopes (revise la service key para ver si existe un campo `xsappname`) y faltan en la petición, puede que aun así reciba un token, pero no autorizará la llamada a la API.
 
-### Mira cómo hago el tuyo ERP y AI Selección o implementación del sistema adecuado para usted.
+Si está recibiendo un token pero la API sigue rechazándolo, descodifique el token en jwt.io y revise el claim `aud`. Debe coincidir con la API que está llamando.
 
-**Selección de sistemas ERP e IA** – Identifique y elija la plataforma ERP o habilitada para IA adecuada para satisfacer las necesidades de su negocio.
+</details>
 
-**Apoyo y recuperación de proyectos** – Mantenga su proyecto en marcha o vuelva a controlar las implementaciones fallidas.
+<details>
+<summary>¿Qué causa los Internal Server Errors al abrir Integration Suite en BTP Cockpit?</summary>
 
-**Modernización de ERP** – Transformar los sistemas ERP existentes en entornos ERP modernos, eficientes y escalables.
+Normalmente ocurre tras un periodo de inactividad. El servicio entra en un estado reducido en segundo plano, pero el Cockpit no muestra nada: ni alerta ni cambio de estado. El error solo aparece cuando intenta abrirlo.
 
-[CONTÁCTANOS](mailto:so*******@********ta.com "Este contacto ha sido codificado por Anti-Spam by CleanTalk. Haga clic para decodificar. Para finalizar la decodificación, asegúrese de que JavaScript esté habilitado en su navegador.")
+Tres cosas que suelen resolverlo: borrar la caché y las cookies del navegador, confirmar que la instancia del servicio sigue activa en el Cockpit (y reiniciarla o volver a vincularla si no lo está), y asegurarse de tener solo una sesión activa de Cockpit. Varias pestañas crean conflictos de sesión que disparan este error incluso cuando el servicio en sí está bien.
 
-## Problema n.° 2: Navegación rota y enlaces muertos
+</details>
 
+<details>
+<summary>¿Por qué mi aplicación CAP no consigue conectarse a un destino que aparece correctamente en el Cockpit?</summary>
 
-En algún momento, casi todos hacemos clic en algo dentro de la Cabina BTP y terminamos viendo una pantalla en blanco o siendo redirigidos a un lugar completamente ajeno. La primera vez, te pilla desprevenido. Esperas que funcione, porque debería. Este es uno de los más comunes. [Problemas con la cabina SAP BTP](https://noeldcosta.com/es/sap-btp-cockpit-issues/).
+La causa más habitual es una discrepancia en el nombre. El nombre del destino referenciado en `xs-app.json` o `cds.env` debe coincidir exactamente con el nombre en el Cockpit, incluidas mayúsculas y minúsculas.
 
-Esto suele ocurrir justo después de configurar un servicio o usar un amplificador. Haces clic en "Ir a la aplicación" o "Abrir en Cockpit", esperando que te lleve directamente a donde necesitas ir. En cambio, la página muestra un error o abre una pantalla de inicio genérica. A veces no carga nada.
+Si el nombre es correcto, revise la versión OData. Si su aplicación espera v2 y el destino apunta a un servicio v4, CAP falla en silencio. Use el paquete `@sap/cds-odata-v2-adapter-proxy` para gestionar esa incompatibilidad.
 
-Parece que ciertos enlaces se configuraron sin probarlos. Puede que no sea así, pero definitivamente lo parece en este momento.
+El método de autenticación es otra fuente habitual. `OAuth2ClientCredentials` o `BasicAuthentication` funcionan de forma predecible en la mayoría de escenarios CAP. Tipos más complejos como SAML introducen variables más difíciles de depurar.
 
+Use la herramienta Destination Checker en el Cockpit para validar la conectividad antes de desplegar la aplicación.
 
-#### Hay algunos patrones en este problema:
+</details>
 
-*   Enlaces dentro **Impulsores** Suelen fallar, sobre todo si la configuración de la subcuenta cambia a mitad de camino. Una redirección podría devolverte a la página de inicio o llevarte directamente al sitio equivocado.
+<details>
+<summary>¿Cómo compruebo si he alcanzado los límites de recursos en una cuenta trial?</summary>
 
-*   **Suite de integración** Es otro caso complicado. Acceder desde la instancia de servicio a veces funciona, a veces genera un error interno y, en ocasiones, simplemente se agota el tiempo de espera.
+La interfaz del Cockpit no lo muestra con claridad. Use la CLI: `cf apps` muestra el consumo de memoria por aplicación; `cf services` muestra el total de servicios en uso. Las cuentas trial tienen cuotas globales que no se muestran en el dashboard del Cockpit.
 
-*   **Enlaces de Workzone y Launchpad** A menudo se generan errores de "conexión denegada" o de acceso. Incluso con la autorización establecida, el enrutamiento parece interrumpirse aleatoriamente.
+Si una aplicación no arranca o una nueva instancia de servicio falla en silencio, es probable que la causa sea el agotamiento de recursos. Elimine aplicaciones y servicios no utilizados antes de volver a intentarlo. Si alcanza los límites con regularidad, ayuda repartir las cargas entre varios subaccounts trial, o pasar a un plan de pago por estabilidad.
 
-*   Si la cabina está abierta en varias pestañas o en diferentes perfiles de navegador, las sesiones pueden desincronizarse. Esto provoca que los enlaces se abran en una pestaña que ya ha caducado.
+</details>
 
-Estos problemas parecen insignificantes hasta que llegas a una fecha límite o estás incorporando a alguien nuevo. Entonces, lo ralentizan todo. Interrumpen el flujo. Haces clic, falla, y luego pasas los siguientes minutos averiguando qué salió mal, cuando la tarea real debía tomar 30 segundos.
+<details>
+<summary>¿Por qué los enlaces dentro de boosters y tiles llevan a páginas en blanco o ubicaciones incorrectas?</summary>
 
-#### Algunas soluciones alternativas ayudan, pero ninguna lo resuelve por completo:
+Los enlaces generados por boosters se rompen cuando la estructura del subaccount cambia después de la configuración inicial. Una redirección que apuntaba a una ubicación específica le envía a un sitio que ya no existe o que no se ha configurado correctamente.
 
-*   Guardar **URL directas marcadas** Para las herramientas que usas con frecuencia, como Integration Suite, Destination Management y Launchpad. Evita depender demasiado de los enlaces dentro de la aplicación.
+La solución alternativa fiable: navegar manualmente por el árbol del Cockpit. Subaccount → Services → Instances → Subscriptions. Guarde en marcadores las URLs directas de las herramientas que usa con frecuencia. Integration Suite, Destination Management, Launchpad. No dependa de tiles de acceso directo ni de navegación generada por boosters para nada crítico.
 
-*   Use el **Árbol de navegación de la cabina manualmente**Vaya a su subcuenta y luego navegue hacia abajo a través de Servicios > Instancias > Suscripciones, en lugar de hacer clic en los accesos directos de nivel de servicio.
+</details>
 
-*   Abrir solo uno **Sesión de cabina** A la vez, en un perfil de navegador limpio. Parece innecesario, pero evita muchos problemas de pérdida de contexto.
+<details>
+<summary>¿Cuándo debería pasar de una cuenta trial de BTP a un plan de pago?</summary>
 
-El mayor problema aquí es la previsibilidad. Una plataforma como esta debería permitirte concentrarte en tu trabajo. Si un enlace falla cada tres veces, la confianza en la plataforma se erosiona lentamente. Empiezas a desarrollar hábitos para sortearlo en lugar de superarlo. Lo cual no es ideal, pero, sinceramente, eso es lo que mucha gente termina haciendo.
+Cuando los límites de recursos afectan a su trabajo de forma habitual. Si está gestionando más de una aplicación o base de datos, o necesita disponibilidad estable para demos o pruebas, el entorno trial acabará generando más fricción que valor.
 
-### Problemas comunes de navegación en SAP BTP Cockpit
+El plan de pago no necesariamente le da funcionalidades distintas; el beneficio principal es la estabilidad y una visibilidad más clara de los recursos. El throttling en trial es impredecible y el Cockpit no lo muestra con claridad, lo que significa que termina dedicando tiempo a depurar problemas que en realidad no están en su código.
 
-Donde se rompe
-
-Qué puedes hacer al respecto
-
-Los enlaces dentro de los boosters redireccionan incorrectamente o abren pantallas en blanco
-
-Si la configuración de la subcuenta cambia a mitad de camino, algunos boosters no se vinculan correctamente. Regrese manualmente a la subcuenta y acceda a los servicios desde allí.
-
-Integration Suite genera un “error interno” al iniciarse desde su mosaico
-
-Utilice la URL directa de Integration Suite o acceda a ella a través de la ruta de navegación de Cockpit en lugar del mosaico de acceso directo.
-
-Los enlaces de Workzone o Launchpad muestran "conexión denegada" incluso cuando los servicios tienen derecho a ello
-
-Verifique los derechos y luego inicie desde Suscripciones en lugar del panel principal. Evite usar accesos directos para la configuración inicial.
-
-Abrir servicios desde sesiones caducadas en varias pestañas provoca fallos silenciosos
-
-Trabaja en una sesión de navegador limpia y evita tener abiertas varias pestañas de Cockpit. Esto evita la incompatibilidad de contexto y sesiones obsoletas.
-
-La falta general de fiabilidad de la navegación dentro de la aplicación ralentiza el flujo de tareas
-
-Guarde las URL directas de herramientas como Integration Suite y Destination Management. Utilice la ruta Servicios → Instancias → Suscripciones en Cockpit para navegar manualmente.
-
-## Problema n.º 3: Errores internos aleatorios del servidor
-
-
-En algún momento, intentas abrir un servicio como Integration Suite desde BTP Cockpit y, en lugar de la pantalla esperada, ves un mensaje de error rojo que dice "Error interno del servidor". Nada más. Ninguna explicación. Solo una pantalla rota.
-
-Te pilla desprevenido, sobre todo si el mismo enlace funcionaba antes. Recargas la página. Sigue rota. Pruebas con otro navegador. El mismo resultado. Parece aleatorio, pero no lo es del todo.
-
-Esto suele ocurrir después de que el servicio no se haya utilizado durante un tiempo. Quizás lo abriste por la mañana, te ausentaste unas horas y regresaste más tarde. O quizás el servicio estuvo inactivo durante la noche. Ese periodo de inactividad parece desencadenar algo, pero el sistema no te da ninguna respuesta.
-
-No se muestran registros ni detalles de errores en la Cabina. Te quedas con la duda de qué falló.
-
-
-#### Hay algunos patrones en los que esto tiende a suceder:
-
-*   Integration Suite genera un error cuando se abre después de algunas horas de inactividad
-
-*   Los servicios de prueba dejan de responder cuando se regresa a ellos después de una interrupción
-
-*   Las sesiones en varias pestañas se desincronizan y provocan fallas en el backend
-
-*   Los servicios en segundo plano parecen activos pero fallan silenciosamente durante la reinicialización
-
-Estas situaciones te frenan, aunque al principio no parezcan gran cosa. Pierdes tiempo y el contexto en el que te encontrabas se rompe por completo. Es más difícil recuperarse de lo que debería ser.
-
-#### Generalmente algunas soluciones alternativas ayudan, aunque ninguna lo soluciona por completo:
-
-*   Borra la caché y las cookies de tu navegador. A menudo, esto restablece la sesión lo suficiente como para que la página se cargue correctamente.
-
-*   Consulta los derechos y límites de uso en la Consola. A veces, los servicios no están vinculados o se pausan sin mostrar ninguna alerta.
-
-*   Vuelva a vincular o reinicie el servicio desde la subcuenta. Esto funciona bien con Integration Suite y la mayoría de las aplicaciones basadas en suscripción.
-
-*   Evite dejar la Cabina abierta en varias pestañas. Esto ayuda a prevenir conflictos de sesión que provocan este error.
-
-El mayor problema es la falta de visibilidad. No te dicen qué falló. Así que terminas repitiendo los mismos pasos de prueba y error una y otra vez. Debería ser más fácil solucionar los problemas, pero ahora mismo, esto es lo que la mayoría de la gente usa para solucionarlos.
-
-### Solución de errores internos del servidor en SAP BTP Cockpit
-
-Qué lo causa
-
-Cómo manejarlo o prevenirlo
-
-Integration Suite no se carga después de algunas horas de inactividad
-
-Borra la caché y las cookies de tu navegador. Esto suele restablecer la sesión y permite que la página se recargue correctamente.
-
-Los servicios del entorno de prueba dejan de responder después de estar inactivos
-
-Vaya a la subcuenta, verifique el estado de la instancia de servicio y reiníciela o vuelva a vincularla manualmente si aparece inactiva.
-
-Varias pestañas de Cockpit crean estados de sesión conflictivos
-
-Cierre las pestañas adicionales y use una sola sesión limpia del navegador. Evite tener la Cabina abierta en varias ventanas o perfiles.
-
-Los servicios aparecen activos en la interfaz de usuario, pero fallan silenciosamente durante la reinicialización del backend.
-
-Verifique los derechos y las cuotas desde la Cabina. Si los servicios están pausados o desvinculados, reasigne los derechos o vuelva a crear la instancia.
-
-No se muestran registros de errores detallados después de la falla
-
-Actualmente no hay acceso al registro desde la interfaz de usuario de Cockpit para estos errores. Utilice el método de prueba y error o recurra a las comprobaciones basadas en la CLI si es necesario.
-
-Imprevisibilidad general después de largos períodos de inactividad del usuario
-
-Actualice manualmente los tokens, reinicie los servicios y evite largas sesiones inactivas. Algunos usuarios automatizan los pasos de reinicialización para reducir los fallos.
-
-### Temas relacionados: SAP BTP Cockpit
-
-[
-
-Cabina BTP
-
-### Domine el SAP BTP Cockpit
-
-Pasos sencillos para navegar por SAP BTP Cockpit y evitar errores comunes.
-
-](https://noeldcosta.com/es/master-the-sap-btp-cockpit-simple-steps/)[
-
-Integración:
-
-### Descripción general del IPC de SAP
-
-Cubre consejos de implementación y conexión en integraciones basadas en BTP.
-
-](https://noeldcosta.com/es/sap-cpi/)[
-
-de calidad
-
-### Herramientas de prueba y validación de SAP
-
-Compare herramientas para solucionar problemas de conexiones de servicio en aplicaciones BTP.
-
-](https://noeldcosta.com/es/sap-testing-validation-tools-comparison/)[
-
-Implementación
-
-### Estrategias de implementación de SAP
-
-Estrategias para evitar errores y cuellos de botella durante implementaciones basadas en BTP.
-
-](https://noeldcosta.com/es/best-sap-implementation-strategies-to-avoid-costly-mistakes/)
-
-## Problema n.° 4: Problemas con la configuración de destino (especialmente para aplicaciones CAP)
-
-
-En algún momento, implementas una aplicación CAP en BTP, configuras un destino en la Cabina y esperas que todo se conecte. Pero no es así. El destino aparece, la aplicación se ejecuta, pero las solicitudes fallan. Recibes errores como "destino no encontrado" o errores de autenticación, aunque el destino esté claramente indicado y parezca válido.
-
-Vuelves a comprobar la configuración y todo parece estar bien. Pero la aplicación sigue sin poder acceder al servicio. ¡Qué frustrante! Parece que falta algo en la configuración, pero no logras determinar cuál podría ser el problema. Y los mensajes de error no ayudan en absoluto. Son demasiado genéricos o engañosos.
-
-Esto tiende a suceder especialmente cuando se trabaja con servicios OData, sobre todo cuando la aplicación espera la versión 2 pero el destino apunta a la versión 4. CAP no siempre maneja esa falta de coincidencia con elegancia.
-
-
-#### Hay algunos patrones en los que aparece este problema:
-
-*   Los destinos se configuran en el Cockpit pero no son recogidos por la aplicación implementada
-
-*   Las discrepancias entre las versiones de OData (destino v4 con un cliente v2) provocan fallos silenciosos
-
-*   Los nombres de destino son correctos pero no están asignados correctamente en `xs-app.json` or `cds-env`
-
-*   Las aplicaciones CAP no se autentican a través del destino incluso cuando las credenciales son válidas
-
-Estos problemas suelen tardar más de lo debido en diagnosticarse. Se dedica más tiempo a solucionar problemas de configuración que a escribir código. Esto frena el proceso y añade mucha fricción a lo que debería ser una configuración estándar.
-
-#### Algunas soluciones alternativas ayudan a reducir la confusión:
-
-*   Verifique el tipo de destino y el método de autenticación. Para las aplicaciones CAP, "OAuth2ClientCredentials" o "BasicAuthentication" son más predecibles que SAML u otros.
-
-*   Añade el destino manualmente a tu `default-env.json` durante las pruebas locales y asegúrese de que esté asignado correctamente en `cds.env` para el entorno implementado
-
-*   Si su aplicación CAP está llamando a un servicio OData v2 pero su destino es v4, utilice el `@sap/cds-odata-v2-adapter-proxy` Para manejar la falta de coincidencia de versiones
-
-*   Valide el destino con la herramienta Verificador de destino dentro del BTP Cockpit antes de vincularlo a la aplicación
-
-El problema no es solo la complejidad de la configuración, sino lo oculta que puede estar la causa real. Todo parece estar conectado, pero una suposición errónea puede provocar una versión, una asignación o un tipo incorrectos, y la aplicación falla silenciosamente. La mayoría de los equipos terminan manteniendo una lista de verificación para asegurarse de que todo esté en orden antes de volver a implementar.
-
-### Problemas de configuración de destino en SAP BTP para aplicaciones CAP
-
-Dónde aparece el problema
-
-Qué puedes hacer al respecto
-
-El destino aparece correctamente en la cabina, pero la aplicación CAP no puede acceder a él
-
-Asegúrese de que el nombre de destino esté correctamente referenciado en \`xs-app.json\` y \`cds.env\`. Los nombres no coincidentes o las configuraciones faltantes suelen provocar fallos silenciosos.
-
-Desajuste de la versión de OData entre el servicio (v4) y la aplicación CAP (espera v2)
-
-Utilice \`@sap/cds-odata-v2-adapter-proxy\` en su aplicación CAP para manejar la diferencia de versión sin modificar el destino en sí.
-
-El tipo de destino es válido pero la aplicación no puede autenticarse
-
-Utilice "OAuth2ClientCredentials" o "BasicAuthentication" para la mayoría de los casos de CAP. Evite tipos complejos como SAML a menos que tenga una razón específica.
-
-El destino funciona en teoría pero no durante el desarrollo local
-
-Agregue manualmente la configuración de destino a \`default-env.json\` cuando realice pruebas locales y asegúrese de que esté reflejada en \`cds.env\` de su entorno implementado.
-
-No está seguro de si la configuración de destino es válida o accesible
-
-Utilice la herramienta Verificador de Destino disponible en BTP Cockpit. Valida la conectividad y la configuración antes de implementar la aplicación.
-
-## Problema n.° 5: Limitaciones impredecibles y problemas de recursos
-
-
-En algún momento, implementas algo simple. Una aplicación CAP que ayer funcionaba bien. Hoy, simplemente se bloquea. No se bloquea. No hay un error evidente. Parece que debería funcionar, pero no es así.
-
-Revisas la Cabina. La aplicación está ahí. Los enlaces de servicio se ven bien. No hay nada destacable. Intentas reiniciarla, pero no funciona. Te preguntas si el problema está en tu código, pero parece que es otra cosa.
-
-Esto sucede a menudo en entornos de prueba, sobre todo si llevas un tiempo usando la misma subcuenta. Todo funciona bien un rato, y de repente, algo falla. No hay ninguna alerta. El medidor de uso no parpadea en rojo. Simplemente se detiene.
-
-![Serie de incorporación de SAP BTP] SAP BTP Cockpit - Glob... - Comunidad SAP](data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E)
-
-#### Hay algunos patrones en los que esto tiende a aparecer:
-
-*   Una aplicación CAP que funcionaba ayer ahora no se inicia, aunque nada haya cambiado
-
-*   Las consultas de base de datos que eran rápidas antes de comenzar a perder el tiempo o devolver respuestas vacías
-
-*   Implementar un servicio más de repente hace que todo lo demás se ralentice
-
-*   Intenta crear una nueva instancia y falla silenciosamente o nunca finaliza
-
-El problema suele ser la limitación o los límites de recursos. Pero SAP no lo muestra claramente. Cockpit rara vez muestra el consumo real, y los límites de los niveles de prueba no están claramente definidos.
-
-Terminas buscando el problema equivocado. Revisas la configuración. Depuras la lógica. Reimplementas la aplicación. Mientras tanto, la verdadera causa es que te quedaste sin espacio o alcanzaste un límite que desconocías.
-
-#### Algunas cosas ayudan a evitar lo peor:
-
-*   Utilice las herramientas de la CLI para comprobar qué se está ejecutando. La vista de cabina suele ocultar detalles de recursos que necesita.
-
-*   No sobrecargues una subcuenta. Si estás desarrollando más de una aplicación, distribúyelas con antelación.
-
-*   Reiniciar los servicios manualmente tras largos periodos de actividad. No es ideal, pero ayuda a restablecer los ajustes.
-
-*   Si te encuentras con esto más de una vez, considera cambiarte a un plan de pago. No por las funciones, sino por la estabilidad.
-
-Lo más difícil es que a menudo no te das cuenta de que has alcanzado un límite. Parece que tu aplicación falló. Así que intentas arreglar algo que no es el problema. Esa desconexión es lo que hace que esto sea especialmente frustrante. La mayoría de la gente lo descubre con el tiempo, pero no sin antes perder horas buscando en el lugar equivocado.
-
-### Manejo de limitaciones y problemas de recursos en entornos de prueba de SAP BTP
-
-Lo que ves
-
-Qué puedes hacer al respecto
-
-La aplicación CAP que funcionó ayer ahora no se inicia y no muestra ningún error.
-
-Usa la CLI para inspeccionar el estado de la aplicación y el uso de memoria. Es posible que la Cabina no muestre claramente los problemas de cuota.
-
-Las consultas de base de datos comienzan a agotar el tiempo de espera o devuelven datos vacíos
-
-Comprueba si el servicio HANA está limitado por límites de memoria o actividad de la cuenta de prueba. Reiniciar podría ser útil temporalmente.
-
-Agregar un servicio más ralentiza o daña las aplicaciones existentes
-
-Distribuya su carga de trabajo entre varias subcuentas de prueba. Evite implementar todo en un único entorno.
-
-La creación de una nueva instancia de servicio falla silenciosamente o nunca se completa
-
-Revisa el número de servicios activos y los límites de memoria. Si estás cerca del límite, elimina los servicios no utilizados antes de volver a intentarlo.
-
-No se puede saber si se han alcanzado los límites de recursos
-
-Use las herramientas CLI \`cf\` o \`btp\` para supervisar la memoria, los servicios y los detalles de cuota. Es posible que la interfaz de usuario de Cockpit no muestre el uso completo de los recursos.
-
-Las aplicaciones dejan de responder aleatoriamente después de estar inactivas
-
-Reiniciar manualmente los servicios inactivos con regularidad. No es eficiente, pero ayuda a recuperarse de la limitación silenciosa en segundo plano.
-
-Problemas recurrentes que parecen no estar relacionados con el código de su aplicación
-
-Considera cambiarte a un plan de pago o de socio. Solo por la estabilidad, vale la pena el cambio, incluso si las funciones son las mismas.
-
-### Temas relacionados: SAP BTP e implementación
-
-[
-
-Costo
-
-### Desglose de los costos de implementación de SAP
-
-Comprenda cómo los límites de recursos en entornos BTP pueden incrementar silenciosamente el costo del proyecto.
-
-](https://noeldcosta.com/es/sap-implementation-cost-breakdown-why-budgets-explode-50/)[
-
-Análisis estadísticos
-
-### Integración de SAP Analytics Cloud
-
-Vea cómo los servicios BTP se conectan con SAP Analytics Cloud y qué sale mal cuando no lo hacen.
-
-](https://noeldcosta.com/es/sap-analytics-cloud/)[
-
-Arquitectura
-
-### Estrategia de núcleo limpio de SAP
-
-Descubra por qué una arquitectura limpia puede reducir errores en implementaciones en la nube como SAP BTP.
-
-](https://noeldcosta.com/es/sap-clean-core-strategy-what-it-means-for-your-business/)[
-
-Accesorios
-
-### Las mejores herramientas de seguimiento de proyectos de SAP
-
-Herramientas útiles que ayudan a validar el comportamiento del servicio BTP más allá de la cabina.
-
-](https://noeldcosta.com/es/top-sap-project-tracking-tools-2025/)
-
-## Conclusión
-
-
-La primera vez que vi el banner de error rojo en SAP BTP Cockpit, honestamente pensé que había hecho algo mal.
-
-Quizás hice clic en el enlace equivocado. Quizás mi sesión expiró. Pero después de la tercera o cuarta vez, me di cuenta de que no era solo yo. Esta es la ironía de los errores de SAP BTP Cockpit. 
-
-Durante las siguientes semanas, mantuve un cuaderno. Empecé a anotar cada vez que algo fallaba. Ya fuera un "error interno del servidor" al abrir Integration Suite o un destino que simplemente se negaba a conectarse aunque parecía estar bien. Empezaron a aparecer patrones. Y, sin embargo, ninguno de esos patrones estaba documentado en ningún lugar útil.
-
-Lo que más me impactó fue la fricción que generaban estos pequeños problemas. Podías pasar 45 minutos depurando un error que podría haberse evitado con un solo mensaje claro. O perder horas pensando que tu configuración era incorrecta, cuando en realidad solo se trataba de una discrepancia de sesión o de un límite de recursos en segundo plano.
-
-Por eso escribí esto. Porque la frustración es real. No son casos excepcionales. Nos pasan a muchos.
-
-SAP BTP Cockpit tiene potencial. Pero para que realmente ayude a los desarrolladores, necesita mayor transparencia y mejor retroalimentación. Si usted también se ha encontrado con estos problemas, comparta sus hallazgos. A veces, la solución alternativa de otros puede salvarle la vida.
-
-Si tiene alguna pregunta o desea analizar su implementación de ERP, ¡no dude en contactarnos!
-
-## Preguntas frecuentes que los tomadores de decisiones hacen antes de modernizarse
-
-### 1\. ¿Por qué obtengo un error 401 No autorizado al usar credenciales de clave de servicio en Postman o código?
-
-Esto suele ocurrir cuando el flujo de OAuth es incorrecto. La mayoría de los servicios SAP BTP requieren... **credenciales\_del\_cliente** tipo de concesión. Debe utilizar el **URL del token** del JSON de la clave de servicio _exactamente como se indica_e incluye:
-
-*   `Content-Type: application/x-www-form-urlencoded`
-
-*   `Authorization: Basic <base64(clientid:clientsecret)>`
-
-Si se requieren alcances (por ejemplo, desde `xsappname`), si faltan, aún podrían devolver un token, pero ese token no autorizará el acceso a la API real.
-
-### 2\. ¿Por qué mi aplicación CAP no puede conectarse a un destino incluso cuando aparece en el Cockpit?
-
-Esto a menudo se debe a discrepancias en la nomenclatura o la asignación. El nombre del destino debe estar referenciado correctamente en su `xs-app.json`, `cds.env` o `default-env.json`. Compruebe también que:
-
-*   El método de autenticación es compatible (`OAuth2ClientCredentials` or `BasicAuthentication`)
-
-*   El destino está en la misma subcuenta que la aplicación.
-
-*   La aplicación tiene la función adecuada `scope` y enlaces de servicio configurados
-
-### 3\. ¿Qué causa el “Error interno del servidor” al abrir Integration Suite u otros servicios?
-
-Esto suele ocurrir después de que un servicio haya estado inactivo o tras el tiempo de espera de una sesión. Las causas incluyen:
-
-*   Sesiones expiradas en varias pestañas
-
-*   Los servicios de prueba se vuelven inactivos sin previo aviso
-
-*   Desvinculación o limitación del backend
-
-Las soluciones alternativas incluyen borrar el caché del navegador, utilizar una sola sesión activa y reiniciar el servicio desde Cockpit.
-
-### 4\. ¿Por qué los destinos que funcionan localmente fallan en el entorno implementado?
-
-Los entornos locales e implementados dependen de configuraciones diferentes. Si funciona localmente, pero no después de la implementación:
-
-*   Comprobar `cds.env` en el entorno implementado
-
-*   Asegúrese de que el destino exista en la subcuenta de destino
-
-*   Confirme que la aplicación implementada esté vinculada a los servicios requeridos a través de `mta.yaml` o enlaces de servicio
-
-### 5\. ¿Cómo puedo comprobar si estoy alcanzando los límites de recursos en una cuenta de prueba?
-
-Entornos de prueba de SAP BTP **No se muestran los límites claramente en la interfaz de usuario de la cabina**Para comprobarlo:
-
-*   Usa `cf apps` y `cf services` Para ver el consumo de memoria y servicios
-
-*   Si las aplicaciones no se inician o los servicios fallan silenciosamente, intente eliminar las aplicaciones o instancias no utilizadas
-
-*   Algunos límites se aplican a nivel de subcuenta o usuario de prueba global, no solo por aplicación.
-
-### 6\. ¿Cuál es la forma correcta de gestionar las discrepancias en la versión de OData en las aplicaciones CAP?
-
-Si su servicio backend expone **OData versión 2** pero el destino está fijado en **v4**, o viceversa, el CAP puede fallar silenciosamente. Utilice el `@sap/cds-odata-v2-adapter-proxy` Paquete para añadir compatibilidad. Permite exponer servicios v2 desde un backend v4, evitando la reasignación manual.
-
-### 7\. ¿Por qué los enlaces dentro de los potenciadores o mosaicos en la cabina conducen a páginas en blanco o incorrectas?
-
-La navegación defectuosa es un problema común. Suele ocurrir cuando:
-
-*   La configuración del amplificador está incompleta o interrumpida
-
-*   La estructura de la subcuenta cambió después de la configuración
-
-*   La sesión expiró y los enlaces ahora no tienen contexto
-
-Utilice el árbol de Cockpit para navegar manualmente: Subcuenta → Servicios → Instancias → Suscripciones.
-
-### 8\. ¿Por qué la creación de una nueva instancia de servicio falla o se bloquea silenciosamente?
-
-Esto suele indicar un agotamiento de recursos, especialmente en entornos de prueba. Si no se muestra ningún error:
-
-*   Comprobar `cf services` para el total de servicios en uso
-
-*   Los límites de prueba a menudo incluyen **cuotas globales**, no solo por subcuenta
-
-*   Intente eliminar los servicios no utilizados o mover la configuración a una nueva subcuenta
-
-### 9\. ¿Es seguro mantener el BTP Cockpit abierto en varias pestañas?
-
-No recomendado. Las sesiones en varias pestañas pueden desincronizarse, especialmente tras inactividad. Esto puede provocar que los servicios no se carguen, muestren estados de autenticación caducados o devuelvan errores sin explicación. Use una sola pestaña a la vez o trabaje en modo de navegación privada para evitar conflictos.
-
-### 10\. ¿Cuándo debería considerar cambiar del plan de prueba a un plan BTP pago?
-
-Si tu:
-
-*   Alcanza los límites de recursos con regularidad
-
-*   Administrar más de una aplicación o base de datos
-
-*   Necesita un tiempo de actividad estable para demostraciones o uso real
-
-*   ¿Quieres una mejor observabilidad y soporte?
-
-Entonces vale la pena mudarse a un **plan de desarrollo** or **socio inquilino**Los entornos de prueba están bien para explorar, pero no están diseñados para un trabajo sostenido.
+</details>

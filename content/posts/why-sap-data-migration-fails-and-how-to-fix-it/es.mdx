@@ -1,1064 +1,216 @@
 ---
-title: "Por qué falla la migración de datos de SAP (y cómo solucionarlo)"
-slug: "why-sap-data-migration-fails-and-how-to-fix-it"
-date: "2025-03-22 08:16:25"
-updated: "2025-10-16 21:57:58"
-hero: "/images/wp/2025/03/Data-Migration-4.png"
-category: "erp-strategy"
-tags: ["sap-crisis-management"]
-author: "noeldcosta"
-originalUrl: "https://noeldcosta.com/why-sap-data-migration-fails-and-how-to-fix-it/"
-h1: "5 estrategias de migración de datos para evitar desastres en proyectos SAP"
-metaDescription: "Descubra cómo evitar costosos fallos en la migración de datos de SAP. Aprenda estrategias probadas de limpieza, gobernanza y pruebas para garantizar el éxito."
-excerpt: "Descubra cómo evitar costosos fallos en la migración de datos de SAP. Aprenda estrategias probadas de limpieza, gobernanza y pruebas para garantizar el éxito."
-metaTitle: "Por qué falla la migración de datos de SAP (y cómo solucionarlo)"
-canonicalUrl: "https://noeldcosta.com/es/why-sap-data-migration-fails-and-how-to-fix-it/"
-locale: "es"
-translatedFrom: "en"
-translationSource: "gtranslate-scrape-cleanup"
+title: Por qué falla la migración de datos SAP y cómo corregirla
+slug: why-sap-data-migration-fails-and-how-to-fix-it
+date: '2025-03-22'
+updated: '2026-05-21'
+hero: /images/wp/2025/03/Data-Migration-4.png
+heroAlt: Equipo de migración de datos revisando errores de extracción y tablas de mapeo durante la preparación del cutover en una implantación SAP
+category: erp-strategy
+tags:
+  - sap-crisis-management
+  - sap-data-migration
+  - sap-migration-cockpit
+  - sap-datasphere
+author: Noel D'Costa
+metaTitle: Por qué falla la migración de datos SAP y cómo corregirla en 2026
+metaDescription: 'Por qué falla la migración de datos SAP en proyectos de implantación en 2026: errores habituales, correcciones concretas, Migration Cockpit vs Data Services vs Datasphere y cómo es una estrategia de migración que funciona.'
+excerpt: En 2023, una empresa industrial europea invirtió 18 meses y una suma de siete cifras en una implantación de SAP. La configuración era sólida. Las pruebas fueron exhaustivas. El día del cutover, la migración de datos falló. Faltaban registros de clientes o estaban duplicados. Los saldos de inventario eran incorrectos. El equipo financiero no pudo cerrar el período de apertura. El CEO detuvo la salida a productivo. La causa raíz no era el sistema SAP. Eran los datos. La evaluación de la calidad de los datos realizada al inicio del proyecto se había basado en cómo el negocio creía que eran sus datos, no en cómo eran realmente.
+experienceSource: 'Direct experience managing SAP data migration workstreams across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets over 25 years of ERP implementations. Includes Material Management master data, Customer and Vendor master, Financial opening balances, and production order migration in manufacturing, public sector, and financial services. Anchored stories: European manufacturing 2023 (18-month programme, seven-figure cutover failure on data), GCC manufacturing 2024 (50,000 to 500,000 material record discovery), European financial services 2024 (vendor balance reconciliation gap surfaced three weeks late). 2026 SAP Migration Cockpit, Datasphere, and Joule for data migration positioning reflects current SAP product roadmap.'
+lastReviewed: '2026-05-21'
+keyTakeaways:
+  - La migración de datos SAP es la línea de trabajo de mayor riesgo en la mayoría de las implantaciones y la más sistemáticamente subestimada en el plan del proyecto
+  - Un cliente industrial pensaba que tenía 50.000 registros de materiales. La cifra real se acercaba más a 500.000 al incluir registros específicos por centro y variantes. La migración se planificó para tres ciclos de extracción. Fueron necesarios siete
+  - La evaluación de la calidad de los datos al inicio del proyecto debe basarse en extracciones reales de datos, no en lo que el negocio cree que contienen sus datos
+  - La participación del negocio en la migración de datos no es opcional. Solo el equipo financiero sabe qué registros de proveedores están duplicados. Solo el equipo de almacén sabe qué registros de materiales están obsoletos. TI no puede tomar esas decisiones
+  - La migración de datos del cutover no es un ejercicio separado de las cargas de prueba. Es la última de varias ejecuciones ya ensayadas. Si no ha hecho simulacros, llegará al cutover sin preparación
+  - El coste de corregir errores de migración de datos después de la salida a productivo suele ser entre cinco y diez veces mayor que corregirlos durante el proyecto. Los errores que llegan al go-live son los que ya estaban en los datos, pero nadie los revisó con suficiente detalle
+pullQuote: La evaluación de la calidad de los datos se basó en cómo el negocio creía que eran sus datos. La primera carga de extracción mostró la realidad. Para entonces, el plan del proyecto ya estaba definido, el calendario estaba cerrado y el descubrimiento consumió seis semanas que no se habían presupuestado.
+mentions:
+  - SAP S/4HANA
+  - SAP LTMC
+  - SAP Migration Cockpit
+  - SAP Data Services
+  - SAP Datasphere
+  - RISE with SAP
+  - Joule
+  - SAP Cloud ALM
+locale: es
+translatedFrom: en
+translationSource: openai-gpt-5.4
+translationDate: '2026-05-25T21:26:05.090Z'
+canonicalUrl: https://noeldcosta.com/es/why-sap-data-migration-fails-and-how-to-fix-it/
 ---
 
-### Artículos de SAP
+Una empresa manufacturera europea en 2023 dedicó 18 meses y aproximadamente siete cifras a una implementación de SAP. El equipo de configuración construyó un sistema sólido. Las pruebas duraron tres meses. El negocio recibió formación. El día del cutover, la migración de datos falló.
 
-# 5 estrategias de migración de datos para evitar desastres en proyectos SAP
+Faltaban registros de clientes o llegaban con números de cuenta duplicados. Los saldos de inventario en el nuevo sistema no coincidían con los saldos del sistema legacy. El equipo financiero no pudo completar los asientos del período de apertura porque los saldos de proveedores estaban incompletos. El CEO detuvo la salida a productivo después de cuatro horas.
 
+La configuración de SAP estaba bien. La formación era adecuada. El fallo estaba en los datos, concretamente en la diferencia entre cómo el negocio creía que eran sus datos y cómo eran en realidad.
 
-### Noel D'Costa
+Esa distinción es el punto de partida para entender por qué falla la migración de datos en SAP.
 
-*   Última actualización : Marzo 22, 2025
+## Por qué la migración de datos en SAP es diferente
 
-Les cuento sobre una empresa del sector manufacturero que invirtió 18 meses y 4.5 millones de dólares en la implementación de SAP. Llegó el día del lanzamiento. Todos estaban nerviosos, pero emocionados. Entonces… ¡el desastre llegó! Data Migrated falló. 
+El modelo de datos de SAP es más complejo de lo que la mayoría de las organizaciones anticipa. No es una importación plana. El sistema tiene interdependencias estrictas entre registros. Un registro maestro de materiales se vincula con datos específicos de centro en MARC, con datos de valoración en MBEW, con parámetros de MRP en MDMA. Si se carga la cabecera del material sin los registros dependientes, el material existe en el sistema pero no puede usarse en transacciones.
 
-Nada funcionaba bien. Faltaban datos de los clientes. Los números de inventario eran incorrectos. Contabilidad no pudo cerrar los libros. El director ejecutivo estaba furioso.
+La cadena de dependencias va más allá. Los pedidos de venta hacen referencia a maestros de clientes, que hacen referencia a datos de gestión de crédito, que a su vez hacen referencia a asignaciones de sociedad. Un registro de cliente que está incompleto de una forma que un sistema legacy toleraba fallará la validación en SAP.
 
-¿Qué pasó? La migración de datos les falló. No fue el software. Ni el equipo de implementación. Fueron los datos.
+Y luego está el volumen. Un cliente manufacturero del GCC en 2024 estimó que tenía aproximadamente 50,000 registros de materiales. Cuando extrajimos el sistema legacy y contamos todas las variantes y registros específicos por centro, la cifra real estaba más cerca de 500,000. El plan de migración se había construido para 50,000 registros. El cronograma, los recursos y el número de ciclos de carga de prueba se habían calibrado con esa estimación. La recuperación le costó al programa un sobrecoste de seis cifras en la extensión de contratistas y en la revisión de la planificación del fin de semana de cutover.
 
-Quizás le sorprenda saber que esto no es raro. Alrededor del 40% de [SAP](https://www.sap.com) Las implementaciones se enfrentan a graves problemas, y los problemas de migración de datos son los culpables en casi la mitad de esos casos. He visto a empresas perder millones porque trataron [La migración de datos como una idea de último momento](https://noeldcosta.com/es/erp-implementation-kpis-metrics/).
+Eso no era un problema de migración de datos. Era un problema de alcance que se convirtió en un problema de migración de datos.
 
-Aquí está la verdad. Su implementación de SAP tendrá éxito o fracasará según lo bien que gestione su [migración de datos](https://noeldcosta.com/es/essential-sap-implementation-team-roles/). Es así de simple.
+## Por qué la calidad de los datos se descubre tarde
 
-En este artículo, te explicaré todo lo que necesitas saber. [Conozca SAP](https://noeldcosta.com/es/sap-manufacturing-industry-secrets/) Migración de datos. Aprenderá por qué es diferente de otras migraciones. Le mostraré los problemas comunes que dificultan incluso a los equipos con experiencia. Analizaremos... [herramientas que pueden salvar](https://noeldcosta.com/es/simplify-your-business-with-erp-ai-tools/) tu tiempo y dinero.
+La evaluación de la calidad de los datos al inicio de un proyecto casi siempre se basa en una descripción del negocio sobre los datos, no en un examen real de ellos. El director financiero dice "nuestro maestro de proveedores está bien mantenido". El responsable de almacén dice "nuestros materiales están bastante limpios, con algunos duplicados". Estas descripciones se basan en impresiones, no en análisis.
 
-Lo más importante es que te daré una estrategia paso a paso que funciona. La he utilizado con clientes en los sectores de manufactura, comercio minorista y salud. No es teoría, sino consejos prácticos que puedes aplicar ahora mismo.
+La primera extracción revela la verdad. Registros de proveedores que supuestamente debían haberse depurado hace tres años y no se depuraron. Registros de materiales de productos que se descatalogaron en 2019 pero nunca se desactivaron. Direcciones de clientes con códigos de país inconsistentes en distintas transacciones. Datos bancarios ausentes en proveedores a los que se paga por EFT.
 
-Entonces, si desea saber más, profundicemos y comprendamos cómo asegurarse de que su [Implementación de SAP](https://noeldcosta.com/es/system-implementation-sap/) tuvo una migración de datos exitosa.
+Cada uno de estos casos requiere una decisión de negocio, no solo una corrección técnica. Solo el equipo de cuentas a pagar puede decidir cuál de dos registros duplicados de proveedor es el correcto. Solo el equipo de compras puede decidir qué materiales obsoletos deben desactivarse frente a archivarse. Estas decisiones llevan tiempo y requieren a las personas que conocen los datos.
 
+Si la evaluación de la calidad de los datos no se basa en una extracción real y en un análisis real, el plan del proyecto se construye sobre supuestos. Esos supuestos no sobrevivirán al contacto con los datos reales.
 
-[La calidad de la migración de datos impacta directamente](https://noeldcosta.com/es/erp-implementation-kpis-metrics/) El éxito de la implementación de SAP es crucial, pero el 40% de las empresas subestiman su complejidad hasta que es demasiado tarde.  
+## Los cinco errores más comunes en migración de datos
 
-El costo de corregir errores de migración de datos después de la implementación suele ser cinco veces mayor que invertir adecuadamente en gobernanza y pruebas de datos de antemano.
+### Tratar la migración como una actividad técnica de fase tardía
 
-[Habla con Noel – ¡Llamada gratuita de 15 minutos para ayudarte!](mailto:solutions@noeldcosta.com)
+La migración de datos pertenece a todas las fases del proyecto. En Explore, se define el alcance de los datos: qué objetos, qué sistemas legacy, qué volúmenes, qué estado de calidad. En Realize, se construyen las plantillas de migración y se ejecutan las primeras cargas de prueba. En Deploy, se ejecutan y reconcilian cargas simuladas. En Run, la migración de cutover es la ejecución final de un proceso que se ha ensayado varias veces.
 
-## ¿Qué hace que la migración de datos de SAP sea diferente?
+Los proyectos que empiezan el trabajo de migración en la fase Deploy lo empiezan seis meses demasiado tarde. Para entonces, los problemas de calidad de datos que deberían haberse identificado y resuelto durante Realize se descubren en la primera carga simulada, semanas antes del cutover.
 
+### Participación insuficiente del negocio
 
-No todas las migraciones de datos son iguales. He trabajado en docenas de proyectos de ERP y [Migración de datos de SAP](https://noeldcosta.com/es/essential-sap-implementation-team-roles/) se distingue del resto.
+La migración de datos es una actividad técnica en la ejecución. Es una actividad de negocio en la toma de decisiones. La lista de qué registros de proveedores están duplicados no puede producirla el equipo de TI. La decisión sobre qué cuentas de clientes migrar como activas frente a históricas es una decisión financiera. La depuración de registros de materiales obsoletos requiere aportaciones de compras, almacén y gestión de producto.
 
-En primer lugar, [Estructuras de datos de SAP](https://noeldcosta.com/es/the-50-billion-erp-failure-why-cfos-still-reach-for-excel-instead/) Son complejas. Realmente complejas. No hablamos de tablas simples con relaciones claras. SAP tiene miles de tablas con nombres enigmáticos como MARA, MARC y MBEW. Cada módulo tiene su propia estructura. Gestión de Materiales no se parece en nada a Finanzas. Y si asignas algo al campo equivocado, todo el sistema podría rechazarlo.
+Los programas que dotan el stream de trabajo de migración de datos exclusivamente con recursos técnicos, y tratan la participación del negocio como una actividad de aprobación al final, producen datos que se cargan técnicamente. Desde el punto de vista comercial, están mal.
 
-Algunos factores clave de complejidad incluyen:
+### Planificar muy pocos ciclos de carga simulada
 
-*   Más de [10,000 tablas en un SAP ERP típico](https://noeldcosta.com/es/start-your-sap-implementation-project-right/) te
-*   Validaciones a nivel de campo que pueden rechazar conjuntos de datos completos
-*   Campos personalizados que requieren un manejo especial
-*   Diferentes estructuras para datos históricos y actuales
+Una migración de datos de SAP bien gestionada normalmente requiere de cuatro a seis ciclos de carga simulada antes de la carga de cutover. El primer ciclo revela las brechas estructurales de mapeo. El segundo ciclo valida las correcciones y revela los problemas de calidad de datos que esas correcciones de mapeo dejaron al descubierto. El tercer y cuarto ciclo resuelven las decisiones de reglas de negocio y los casos límite. La simulación final es un ensayo general completo de la secuencia de cutover.
 
-Luego está la cuestión de la interdependencia. [En SAP, todo está conectado](https://noeldcosta.com/es/the-50-billion-erp-failure-why-cfos-still-reach-for-excel-instead/) a todo lo demás. Los datos maestros de sus clientes se vinculan con los pedidos de venta, que a su vez se vinculan con las entregas, que a su vez se vinculan con los documentos de facturación. Si se pierde una conexión, toda la cadena se interrumpe. Esto hace que... [La planificación de la migración es mucho más difícil](https://noeldcosta.com/es/best-sap-implementation-strategies-to-avoid-costly-mistakes/) que con sistemas independientes.
+Los proyectos que planifican dos ciclos simulados están planificando para el escenario optimista en el que la calidad de los datos es buena y el mapeo está limpio. Ese escenario es raro. Más ciclos no son una señal de una migración problemática. Son una señal de una migración correctamente planificada.
 
-### El volumen es otro reto. ¡Uno grande!
+### No reconciliar los resultados de las cargas de prueba
 
-La mayoría de las empresas con las que trabajo se sorprenden de la cantidad de datos que realmente tienen. Un cliente creía tener unos 50,000 registros de materiales. Resultó que eran casi 500,000 al contar todas las variantes y los registros específicos de cada planta. [SAP necesita gestionarlo todo](https://noeldcosta.com/es/building-the-perfect-erp-implementation-team-in-2024/) sin frenar.
+Cargar datos en el sistema SAP no es validación. La validación requiere comparar lo que se cargó con lo que se esperaba: recuentos de registros, totales financieros, saldos de partidas abiertas. También requiere pruebas rápidas de proceso que confirmen que los datos cargados pueden usarse en transacciones.
 
-No lo olvides [cumplimiento regulatorio](https://noeldcosta.com/es/ai-governance-framework-guide-building-a-responsible-ai-plan/)Dependiendo de su sector, podría necesitar conservar los datos durante más de 7 años para auditorías. Los clientes del sector sanitario necesitan cumplir con la HIPAA. Los servicios financieros tienen requisitos SOX. SAP [La migración de datos debe preservar todo este historial](https://noeldcosta.com/es/best-sap-implementation-strategies-to-avoid-costly-mistakes/) información manteniendo registros de cumplimiento.
+En un programa europeo de servicios financieros en 2024, la carga de prueba se consideró completa cuando el job de carga terminó sin errores. La reconciliación, que habría revelado que los saldos de partidas abiertas de proveedores eran un 15 percent diferentes de los saldos legacy, no se hizo hasta el mock cutover tres semanas después. Se consumieron tres semanas de investigación que deberían haberse usado en otras cosas persiguiendo una brecha de reconciliación que la carga de prueba ya había producido.
 
-Muchas empresas con las que trabajo piensan que podrían utilizar lo mismo [enfoque migratorio que utilizaron](https://noeldcosta.com/es/the-50-billion-erp-failure-why-cfos-still-reach-for-excel-instead/) para su último ERP. Eso es un grave error. No tienen en cuenta los requisitos de validación de SAP y, por lo tanto, tienen que realizar muchas modificaciones.
+### Una migración de cutover distinta de las cargas de prueba
 
-La [La migración de datos de SAP necesita una planificación especializada](https://noeldcosta.com/es/sap-pp-production-planning/), herramientas y experiencia. No es algo que se pueda aprender sobre la marcha. Créeme.
+La migración de cutover debería ser la ejecución final de un proceso que se ha ensayado por completo. Los scripts de extracción, la lógica de transformación, la secuencia de carga, las comprobaciones de validación y los tiempos deberían ser idénticos a lo que se hizo en el mock final.
 
-### Temas relacionados: Migración de datos de SAP y preparación del sistema
+Los proyectos que cambian el proceso de migración para el cutover real introducen un riesgo no probado en el punto de mayor presión del programa. Cualquier desviación del proceso probado es un modo potencial de fallo que no ha sido validado.
 
-[
+## Cómo es una estrategia de migración que funciona
 
-Estimador
+**Extracción temprana de datos.** En la fase Prepare, extraiga los datos. No una muestra. Todo. Ejecute una evaluación de calidad de datos sobre los registros reales: integridad, exactitud, consistencia y análisis de duplicados. Use los resultados para dimensionar el trabajo de depuración y calibrar el cronograma de migración.
 
-### Estimador de migración de datos
+**Mapeo de migración objeto por objeto.** Para cada objeto de datos dentro del alcance (maestro de clientes, maestro de proveedores, maestro de materiales, pedidos de compra abiertos, pedidos de venta abiertos, partidas financieras abiertas, saldos de inventario), documente el mapeo de campos origen-destino. Documente las reglas de transformación y los criterios de validación. Documente las reglas de negocio para gestionar excepciones.
 
-Calcule rápidamente el tiempo, el esfuerzo y el costo de las migraciones de SAP, Oracle o Microsoft.
+**Programa estructurado de cargas simuladas.** Planifique un mínimo de cuatro ciclos simulados. Cada ciclo tiene un objetivo específico: validación estructural, análisis de calidad de datos, prueba de reglas de negocio, ensayo general completo. Cada ciclo tiene un requisito de reconciliación antes de considerarse completo.
 
-](https://noeldcosta.com/es/free-data-migration-estimator-sap-oracle-microsoft/)[
+**Data stewards del negocio.** Asigne responsables de negocio nominales para cada dominio de datos. El equipo financiero es propietario de los datos financieros de proveedores y clientes. Compras es propietaria del maestro de materiales. La gestión de almacén es propietaria del inventario. Cada data steward es responsable de las decisiones de depuración en su dominio y de aprobar que los resultados de la carga de prueba son aceptables.
 
-Preparación
+**Congelación y secuencia de datos para el cutover.** Defina el punto de congelación de datos: la fecha a partir de la cual no se realizan cambios en los datos del sistema legacy que están dentro del alcance de la migración. Documente la secuencia de cutover: extraer, transformar, cargar, validar, aprobación del negocio, decisión go/no-go. La secuencia es la misma para el cutover que para el mock final.
 
-### Estrategia de núcleo limpio para la migración
+## Herramientas de migración en 2026
 
-Evite el desorden heredado antes de migrar a SAP S/4HANA o BTP.
+**SAP Migration Cockpit (LTMC/LTMOM)** es la herramienta nativa de migración de SAP para implementaciones de S/4HANA. Proporciona plantillas estándar de migración para los principales tipos de objetos. Valida los datos frente a la propia lógica de negocio de SAP antes de cargarlos. Proporciona un área de staging que permite la revisión por parte del negocio antes de que los datos se graben en el sistema productivo. Para tipos de objeto estándar con estructuras estándar de SAP, es el punto de partida correcto.
 
-](https://noeldcosta.com/es/sap-clean-core-strategy-what-it-means-for-your-business/)[
+**SAP Data Services** es la plataforma ETL de SAP para escenarios de migración complejos. Úsela para altos volúmenes de datos, lógica de transformación compleja o estructuras no estándar del sistema origen. También encaja en programas de migración que requieren un framework reutilizable para la gestión continua de datos.
 
-Equipo
+**SAP Datasphere** (la capa de datos cloud antes conocida como Data Warehouse Cloud) es la capa estratégica de datos en 2026 para nuevos entornos cloud de SAP. Para programas de RISE with SAP y GROW with SAP, Datasphere es cada vez más la respuesta correcta para la capa analítica y de reporting posterior a la migración, incluso cuando Migration Cockpit gestiona la carga principal de datos maestros.
 
-### ¿Quién se encarga del trabajo migratorio?
+**Herramientas ETL de terceros** (Informatica, Talend, Microsoft SSIS) se usan cuando la organización ya ha invertido en estas plataformas o cuando la complejidad de la migración requiere capacidades más allá de las herramientas nativas de SAP.
 
-Comprenda qué roles de SAP son críticos para una migración de datos limpia.
+Para la mayoría de las implementaciones estándar de S/4HANA, SAP Migration Cockpit cubre la mayoría de los objetos. Los escenarios complejos con altos volúmenes, sistemas legacy muy personalizados o estructuras de origen no estándar normalmente requieren Data Services o una herramienta ETL de terceros. Bajo RISE with SAP, la interacción de customer success de SAP ahora proporciona orientación práctica sobre migración de datos durante las primeras fases, y merece la pena usarla como mecanismo para forzar la calidad de datos en lugar de tratarla como un proceso separado. Joule en SAP Datasphere acelera la detección de anomalías y la elaboración de borradores de reglas de mapeo durante 2026.
 
-](https://noeldcosta.com/es/essential-sap-implementation-team-roles/)[
+## Preguntas frecuentes
 
-Supervisión
+<details>
+<summary>¿Qué es la migración de datos en SAP?</summary>
 
-### Riesgos y controles de la migración de datos
+La migración de datos en SAP es el proceso de extraer datos de sistemas legacy, transformarlos para que encajen con las estructuras de datos y reglas de negocio de SAP, y cargarlos en el sistema SAP como parte de un proyecto de implementación o conversión de sistema.
 
-Evite fallas en la migración con mitigación de riesgos estructurada.
+Los objetos que normalmente se migran incluyen: datos maestros de clientes y proveedores, datos maestros de materiales con asignaciones a centro y ubicación de almacenamiento, pedidos de compra y pedidos de venta abiertos, saldos de inventario, partidas financieras abiertas (facturas pendientes, pagos en proceso) y datos de activos fijos.
 
-](https://noeldcosta.com/es/sap-project-risk-assessment-matrix-and-mitigation-strategies/)
+La complejidad de la migración de datos en SAP proviene de tres factores. El modelo de datos de SAP tiene interdependencias estrictas entre objetos: un material debe existir antes de que un pedido de compra pueda referenciarlo, un cliente debe existir antes de que un pedido de venta pueda referenciarlo. Estas dependencias significan que la secuencia de carga está fuertemente restringida. SAP también aplica reglas de validación de negocio durante la carga de datos que los sistemas legacy a menudo no imponen, por lo que datos que eran válidos en el sistema origen pueden fallar la validación en SAP. Por último, el volumen y la calidad de los datos en la mayoría de los sistemas legacy es peor de lo que sugiere la evaluación inicial, lo que significa que el esfuerzo real normalmente supera la estimación.
 
-## Errores comunes de migración de datos que he visto
+</details>
 
+<details>
+<summary>¿Cuáles son los principales tipos de migración de datos en SAP?</summary>
 
-He visto gente inteligente y capaz. [Los equipos tropiezan con SAP](https://noeldcosta.com/es/best-sap-documentation-tools-2024-guide/) Migración de datos. Permítanme compartir los errores más comunes que veo repetidamente. Aprendan de los problemas de otros; así es más económico.
+Tres enfoques explican la mayoría de los escenarios de migración de SAP.
 
-### **1\. Subestimar el tiempo y los recursos**
+Migración completa: todos los datos históricos y abiertos se migran del sistema legacy a SAP. Se usa cuando el negocio necesita acceso al historial completo de transacciones en el nuevo sistema. Mayor volumen y mayor complejidad, pero continuidad completa de los datos.
 
-Casi todo el mundo hace esto. Un cliente me dijo: «Exportaremos a Excel e importaremos a SAP. Debería tardar un mes». Catorce meses después, seguían migrando datos.
+Migración de partidas abiertas: solo se migran las partidas abiertas actuales. Los datos históricos de transacciones permanecen en el sistema legacy y se accede a ellos mediante un archivo de solo lectura o un sistema paralelo. Menor complejidad y volumen de migración, pero el negocio debe operar dos sistemas en paralelo para consultas históricas.
 
-[La migración de datos de SAP normalmente toma](https://noeldcosta.com/es/build-a-winning-sap-business-case-template-implementation-guide/) Entre el 20 % y el 30 % del cronograma de implementación. No el 5 % ni el 10 %. Si su proyecto tiene una duración de 12 meses, calcule entre 3 y 4 meses para la migración de datos.
+Transición selectiva de datos: un enfoque híbrido específico de las conversiones de sistema SAP (brownfield). Algunos datos se mueven tal cual de ECC a S/4HANA. Los objetos selectivos se migran de nuevo. Se usa cuando la calidad de los datos de ECC es alta en algunos dominios y problemática en otros.
 
-En cuanto a recursos, se necesitan personas dedicadas. No equipos que trabajen en la migración "cuando tengan tiempo". Eso nunca ocurre. Se necesitan expertos en bases de datos, analistas de negocio que comprendan los datos y testers. Un cliente del sector manufacturero contrató solo dos recursos a tiempo parcial para la migración de datos. Finalmente, retrasaron la entrada en funcionamiento seis meses.
+El enfoque correcto depende de los requisitos regulatorios de acceso a datos, de la calidad y volumen de los datos legacy, y de la tolerancia del negocio a operar sistemas en paralelo después de la salida a productivo.
 
-### **2\. Mala calidad de los datos en sistemas heredados**
+</details>
 
-Tus datos heredados probablemente estén peor de lo que crees. Registros de clientes duplicados. Productos con unidades de medida incorrectas. Información de precios faltante.
+<details>
+<summary>¿Qué es SAP Migration Cockpit (LTMC) y cuándo debería usarlo?</summary>
 
-Trabajé con una empresa de distribución que descubrió que el 40 % de las descripciones de sus productos contenían errores. Otra empresa encontró miles de clientes inactivos que aún estaban marcados como activos. Estos datos basura dañarán su nuevo sistema SAP si lo migra tal como está.
+SAP Migration Cockpit, al que se accede mediante la transacción LTMC (y su sucesor LTMOM), es la herramienta nativa de migración de datos de SAP para implementaciones de S/4HANA. Proporciona plantillas de migración preconfiguradas para tipos de objeto estándar de SAP (maestro de clientes, maestro de proveedores, maestro de materiales, pedidos de compra abiertos, saldos financieros y otros), valida los datos frente a las reglas de negocio de SAP en un área de staging antes de cargarlos, y genera informes de error con información específica a nivel de campo sobre por qué fallaron los registros.
 
-### **3\. Falta de participación empresarial**
+Use LTMC cuando: la implementación sea un proyecto estándar de S/4HANA que use tipos de objeto estándar de SAP; los volúmenes de datos sean manejables (cientos de miles de registros en lugar de decenas de millones); y la lógica de transformación sea relativamente sencilla.
 
-Los técnicos no pueden depurar datos por sí solos. No saben qué clientes son reales y cuáles son de prueba. No pueden determinar si un precio parece razonable.
+Es menos apropiado para: migraciones de muy alto volumen en las que el rendimiento de LTMC puede no cumplir los requisitos de tiempo del cutover; estructuras complejas del sistema origen legacy que requieren un procesamiento ETL significativo antes de ajustarse al formato de plantilla de LTMC; u organizaciones que ya han invertido en una plataforma ETL de terceros y quieren reutilizarla.
 
-Cuando los usuarios comerciales no están involucrados [Migración de datos, pasan cosas malas](https://noeldcosta.com/es/building-the-perfect-erp-implementation-team-in-2024/)Vi a una empresa migrar inventarios que valían millones y que en realidad no existían, porque... [jefe de almacén](https://noeldcosta.com/es/sap-enterprise-warehouse-management-sap-ewm-essentials/) No fue consultado.
+</details>
 
-### **4\. Pruebas insuficientes**
+<details>
+<summary>¿Cómo se gestionan los problemas de calidad de datos en una migración de SAP?</summary>
 
-Muchas empresas realizan una migración de prueba y la dan por terminada. ¡Cruel error!
+La secuencia es: identificar, decidir, depurar, validar.
 
-Necesitarás varias rondas:
+La identificación viene de ejecutar los datos a través de las plantillas de migración y revisar la salida de errores. SAP Migration Cockpit genera informes de error a nivel de campo. Data Services genera informes de excepciones. En cualquier caso, la salida es una lista de registros que fallaron la validación y la razón específica de cada fallo.
 
-*   Migración de prueba inicial para detectar problemas básicos
-*   [Pruebas funcionales para verificar](https://noeldcosta.com/es/sap-quality-gates-implementation/) Los procesos de negocio funcionan
-*   Pruebas de integración entre módulos
-*   Pruebas de rendimiento con volúmenes de datos completos
-*   Verificación final antes de la puesta en marcha
+La decisión es el paso de negocio. Los errores técnicos (campos obligatorios ausentes, formato incorrecto) a menudo pueden resolverlos el equipo de migración. Los errores de negocio (cuál de dos proveedores duplicados es correcto, si un material inactivo debe archivarse o desactivarse) requieren una decisión de negocio del propietario de los datos.
 
-Un minorista omitió pruebas exhaustivas y, durante la puesta en marcha, descubrió que los costos de los productos no se migraban correctamente. Sus informes financieros fueron inútiles durante meses.
+La depuración es la implementación técnica de la decisión. Esto puede ocurrir en el sistema origen, en el área de staging o en la capa de transformación, según lo que haya decidido el propietario de los datos y lo que permita la arquitectura de migración.
 
-### **5\. Gobernanza de datos inadecuada**
+La validación confirma que la corrección resolvió el error y no introdujo otros nuevos. Vuelva a ejecutar los registros afectados a través del proceso de migración y reconcilie la salida con el resultado esperado.
 
-¿Quién decide qué datos migrar? ¿Quién aprueba los conjuntos de datos finales? Sin [gobernanza clara, estas cuestiones causan retrasos](https://noeldcosta.com/es/project-planning-and-control-get-sap-projects-back-on-track/) y conflictos.
+La disciplina más importante: haga seguimiento de cada error, cada decisión y cada corrección. El registro de migración de datos es la pista de auditoría de cada decisión sobre calidad de datos tomada durante el proyecto. Si un saldo es incorrecto después de la salida a productivo, el registro de migración es donde empieza la investigación.
 
-He visto a miembros del equipo discutir durante semanas sobre si migrar los datos históricos de ventas. Con una gobernanza adecuada, esa decisión habría requerido una sola reunión.
+</details>
 
-Sin gobernanza de datos, también se corre el riesgo de repetir los mismos problemas de calidad de datos en el nuevo sistema. Es como mudarse a una casa nueva y llevarse todos los trastos.
+<details>
+<summary>¿Cuántas cargas simuladas debería planificar un proyecto de migración de datos de SAP?</summary>
 
-Aprende de estos errores. Tu [implementación SAP](https://noeldcosta.com/es/start-your-sap-implementation-project-right/) te lo agradeceré.
+Un mínimo de cuatro, siendo la última un ensayo completo de cutover.
 
-#### Errores comunes en la migración de datos y empresas que los sufrieron
+La primera carga simulada es una ejecución de validación estructural. El objetivo es identificar brechas de mapeo, errores de formato y problemas de secuenciación de dependencias. El resultado suele ser una tasa alta de errores, algo esperado e informativo.
 
-Error de migración
+La segunda carga simulada prueba las correcciones de la primera ejecución y revela los problemas de calidad de datos que las correcciones de mapeo dejaron al descubierto. Las tasas de error deberían ser más bajas, pero seguirán siendo significativas.
 
-Ejemplo de empresa
+La tercera carga simulada resuelve los casos límite de reglas de negocio: cómo se gestionan las excepciones, qué ocurre con registros que no encajan limpiamente en las estructuras de SAP, y si los propietarios de datos del negocio están satisfechos con cómo se están gestionando categorías específicas de registros.
 
-Impacto / Lección aprendida
+La cuarta carga simulada (o mock final, que puede ser la quinta o sexta en proyectos complejos) es el ensayo general completo. Usa los mismos scripts de extracción, la misma lógica de transformación, la misma secuencia de carga y los mismos tiempos que el cutover real. Los resultados de reconciliación de esta ejecución son la línea base con la que el equipo de cutover comparará el día de la salida a productivo.
 
-Falta de validación de datos
+Los proyectos que planifican dos cargas simuladas están planificando que la migración de datos salga bien. Planificar de cuatro a seis es planificar que la migración de datos salga correctamente.
 
-Lidl (Alemania)
+</details>
 
-Un proyecto SAP de 500 millones de euros fracasó porque el formato de datos incompatible de los sistemas heredados provocó fallos en los procesos posteriores.
+<details>
+<summary>¿Qué hace que falle la migración de datos en SAP durante el cutover?</summary>
 
-Limpieza inadecuada de datos maestros
+Cinco patrones explican la mayoría de los fallos en cutover.
 
-Nike (principios de la década de 2000)
+Ciclos insuficientes de carga simulada. El cutover es la primera vez que la migración se ejecuta a volumen completo con datos de calidad productiva. Los problemas que se habrían encontrado y resuelto en una cuarta o quinta carga simulada aparecen por primera vez durante la ventana de cutover.
 
-100 millones de dólares en ventas perdidas debido a una planificación incorrecta del inventario; mala calidad de los datos maestros del producto durante la integración.
+Secuencia de cutover que nunca se probó completamente. Los pasos de extracción, transformación, carga y validación se ejecutan en una secuencia específica con dependencias entre ellos. Una secuencia que no se ha probado de extremo a extremo tendrá problemas de tiempos y dependencias que no son visibles en pruebas de pasos individuales.
 
-Subestimar el volumen y la complejidad de los datos
+Cambios en los datos después del mock final. Entre la carga simulada final y el cutover, los datos legacy siguen cambiando: se añaden nuevos proveedores, se actualizan pedidos abiertos, se producen movimientos de inventario. La migración delta que captura estos cambios suele ser la parte menos probada del proceso.
 
-Objetivo Canadá
+Brechas de reconciliación que no se resolvieron. Saldos financieros de apertura que son un 3% diferentes del sistema legacy, saldos de inventario que difieren por un puñado de registros: estas brechas parecen pequeñas en pruebas y catastróficas el día de la salida a productivo, cuando el equipo financiero no puede reconciliar el período de apertura.
 
-Una rápida implementación con datos erróneos sobre artículos y ubicaciones provocó desabastecimiento y pérdidas de 2 mil millones de dólares; la empresa finalmente abandonó el mercado canadiense.
+Aprobación del negocio basada en extrapolación en lugar de validación. "Los primeros 1,000 registros parecían correctos, así que el resto probablemente también" no es una metodología de validación. La preparación para la salida a productivo en migración de datos requiere reconciliación de recuentos y totales, no una comprobación puntual.
 
-La falta de [alineación de las partes interesadas](https://noeldcosta.com/es/sap-stakeholder-management-strategy/)
-
-BBC (Iniciativa de Medios Digitales)
-
-Se cerró un programa de 100 millones de libras tras no lograrse un acuerdo sobre metadatos y reglas de propiedad entre los departamentos.
-
-Ignorar las dependencias de datos heredados
-
-Sistema de nómina del estado de California (MyCalPAYS)
-
-Se perdieron $250 millones debido a la incapacidad de conciliar las estructuras de nómina heredadas en el entorno SAP.
-
-Migrar demasiados datos históricos
-
-Puesta en marcha del ERP de Hershey (1999)
-
-El exceso de datos históricos y una puesta en marcha simultánea y repentina provocaron un caos en el cumplimiento de pedidos durante la temporada alta.
-
-No hay conciliación de datos después de la carga
-
-Royal Bank of Scotland
-
-Multa de $300 millones debido a actualizaciones de lotes fallidas y desajustes de cuentas después de la actualización; acceso de clientes interrumpido durante semanas.
-
-Ciclos de prueba inadecuados
-
-Tesco (proyecto ERP en Polonia)
-
-Interrupción de la cadena de suministro debido a rutinas de migración de datos no probadas; los informes comerciales clave fallaron después de la migración.
-
-## Desarrollo de una estrategia eficaz de migración de datos de SAP
-
-
-Ahora que sabemos qué no hacer, centrémonos en crear una estrategia que funcione. He utilizado este enfoque con decenas de clientes y siempre da resultados.
-
-### **1\. Evaluación e inventario de datos**
-
-Empieza con un inventario completo de tus datos. No puedes migrar lo que no sabes que tienes. Recomiendo crear un catálogo de datos que identifique:
-
-*   Todas las fuentes de datos (no solo su ERP principal)
-*   Volúmenes de datos para cada tipo de objeto
-*   Propietarios de datos de la empresa
-*   Niveles de calidad actuales
-*   criticidad empresarial (alta, media, baja)
-*   La era de los datos
-
-Esto suena básico, pero a menudo es revelador. Un cliente descubrió que tenía datos de clientes en 14 sistemas diferentes. Otro descubrió que mantenía tres maestros de productos separados.
-
-No se apresure en este paso. Una evaluación exhaustiva le ahorrará muchos dolores de cabeza más adelante. Tome capturas de pantalla de las pantallas e informes de sus sistemas heredados. Serán invaluables al mapearlos a SAP.
-
-### **2\. Limpieza y preparación**
-
-La limpieza de datos no es atractiva, pero es esencial. Empiece a limpiar con tiempo, idealmente meses antes de comenzar la migración.
-
-Comience con sus datos maestros (clientes, proveedores, materiales, etc.). Estos constituyen la base de su sistema SAP. Si son incorrectos, todo lo que se construya sobre ellos también lo será.
-
-Aconsejo a mis clientes:
-
-*   Eliminar duplicados (te sorprendería saber cuántos hay)
-*   Estandarizar el formato (números de teléfono, direcciones, etc.)
-*   Agregar campos obligatorios faltantes
-*   Archivar registros obsoletos en lugar de migrarlos
-*   Corrija errores obvios
-
-Un cliente de fabricación redujo su maestro de materiales en un 60 % simplemente eliminando productos obsoletos. Esto simplificó drásticamente su migración y mejoró el rendimiento del sistema.
-
-### **3\. Mapeo de estructuras heredadas a SAP**
-
-Aquí es donde entra en juego la verdadera complejidad técnica. Debe definir exactamente cómo se traduce cada campo de su sistema heredado a SAP.
-
-Cree documentos cartográficos detallados que muestren:
-
-*   Nombre y descripción del campo de origen
-*   Campo SAP de destino (nombre de tabla y campo)
-*   Reglas de transformación (si las hay)
-*   Valores predeterminados para los nuevos campos de SAP
-*   Requisitos de validación
-
-No intentes mapear todo a la vez. Empieza con un objeto de datos (como los clientes) y aplícalo correctamente. Luego, pasa al siguiente.
-
-He descubierto que los talleres funcionan bien aquí. Consigue a tus expertos en sistemas heredados y a tu [consultores sap](https://noeldcosta.com/es/how-to-create-an-sap-implementation-project-charter/) En la misma habitación. Recorre cada campo uno por uno. Es tedioso, pero necesario.
-
-### **4\. Reglas de validación y lógica empresarial**
-
-SAP garantiza la calidad de los datos mediante reglas de validación. Es importante comprender estas reglas antes de migrar.
-
-Por ejemplo, en SAP, no se puede crear un pedido de venta para un cliente inexistente. Parece obvio, pero he visto migraciones que fallan porque los números de cliente cambian y los pedidos de venta no se actualizan.
-
-Documente todas estas interdependencias. Pruébelas rigurosamente. Un minorista con el que trabajé dedicó tres semanas adicionales a mapear las jerarquías de productos porque no comprendía bien los requisitos de validación de SAP.
-
-### **5\. Opciones de enfoque migratorio**
-
-Tienes dos opciones principales: big bang o por fases.
-
-Con Big Bang, se migra todo a la vez y se activan todos los módulos simultáneamente. Es más rápido, pero más arriesgado.
-
-Con un enfoque por fases, se migran los datos de un módulo, se pone en marcha y luego se pasa al siguiente. Esto distribuye el riesgo, pero amplía el plazo.
-
-La complejidad de su negocio, su tolerancia al riesgo y sus recursos deberían determinar esta decisión. No existe una solución universal.
-
-### **6\. Planificación del cronograma**
-
-Crea un cronograma detallado con dependencias y rutas críticas. Trabaja hacia atrás desde la fecha de entrada en funcionamiento prevista.
-
-Dedicar tiempo a:
-
-*   Varias migraciones simuladas (al menos tres)
-*   Validación de datos por parte de los usuarios comerciales
-*   Solución de problemas encontrados durante las pruebas
-*   Actividades de corte final
-
-Y siempre añade tiempo de reserva. Siempre ocurre algo inesperado.
-
-#### Creación de una estrategia eficaz de migración de datos y sus requisitos
-
-EstrategiaComponente
-
-Propósito
-
-Requisitos clave
-
-Evaluación de datos
-
-Comprender la estructura, la calidad y los volúmenes de los datos actuales.
-
-Ejecute herramientas de creación de perfiles, analice duplicados e identifique dependencias heredadas.
-
-Definicion del alcance
-
-Identificar qué datos migrar (maestros, transaccionales, históricos).
-
-Acordar reglas de transferencia, umbrales de archivo y límites del sistema de registros.
-
-Limpieza de datos
-
-Corrija registros inexactos, incompletos y obsoletos.
-
-Definir reglas de validación, utilizar herramientas de transformación (por ejemplo, SAP Data Services, reglas de Excel).
-
-Data Mapping
-
-Establecer la lógica de transformación de origen a destino.
-
-Mantener documentos cartográficos, validarlos con los propietarios de negocios y realizar un seguimiento de los cambios a nivel de campo.
-
-Selección de herramienta
-
-Elija la plataforma y las utilidades para realizar la extracción, transformación y carga.
-
-Evalúe SAP LTMOM, BODS, cargadores BAPI, IDOC o herramientas ETL de terceros en función del volumen y la complejidad.
-
-Gobierno de datos
-
-Garantizar los controles de propiedad, responsabilidad y aprobación.
-
-Defina administradores de datos, roles, flujos de trabajo de aprobación y puntos de control de cumplimiento de seguridad.
-
-Ciclos de prueba
-
-Validar el rendimiento y la precisión de cada ciclo de carga antes de la puesta en marcha.
-
-Ejecute cargas simuladas, concilie registros, pruebe con escenarios comerciales y confirme los puntos de referencia de tiempo de carga.
-
-Planificación de la transición
-
-Definir cronograma, plan de reversión, ventana de congelación y secuencia de ejecución.
-
-Documentar las tareas por hora/día, asignar propiedad, preparar reversiones y recuperaciones instantáneas.
-
-Conciliación y validación
-
-Asegúrese de que el sistema de destino refleje datos precisos y completos.
-
-Ejecute recuentos de registros, totales de hash, verificaciones funcionales y aprobaciones de usuarios después de la carga.
-
-Monitoreo posterior a la puesta en marcha
-
-Realice un seguimiento de los problemas, valide el uso en tiempo real y estabilice las operaciones.
-
-Activar monitores de datos, registros de excepciones, canales de retroalimentación de usuarios comerciales y modelo de soporte.
-
-
-### Mira cómo hago el tuyo ERP y AI Selección o implementación del sistema adecuado para usted.
-
-**Selección de sistemas ERP e IA** – Identifique y elija la plataforma ERP o habilitada para IA adecuada para satisfacer las necesidades de su negocio.
-
-**Apoyo y recuperación de proyectos** – Mantenga su proyecto en marcha o vuelva a controlar las implementaciones fallidas.
-
-**Modernización de ERP** – Transformar los sistemas ERP existentes en entornos ERP modernos, eficientes y escalables.
-
-[CONTÁCTANOS](mailto:so*******@********ta.com "Este contacto ha sido codificado por Anti-Spam by CleanTalk. Haga clic para decodificar. Para finalizar la decodificación, asegúrese de que JavaScript esté habilitado en su navegador.")
-
-## Gobernanza de datos para una migración exitosa
-
-
-La gobernanza de datos no es solo jerga corporativa. Es la base de una migración de datos de SAP exitosa. Permítanme explicarles cómo hacerlo correctamente.
-
-### **1\. Establecer la propiedad de los datos**
-
-Cada dato necesita un propietario. Punto. Sin una propiedad clara, no se toman decisiones ni se solucionan los problemas.
-
-Siempre creo un gráfico RACI para la migración de datos que muestra quién:
-
-*   Responsable de realizar el trabajo
-*   Responsable de las decisiones
-*   Consultado antes de los cambios
-*   Informado después de los cambios
-
-Esta claridad evita las acusaciones mutuas que veo tan a menudo. Tu [El maestro de clientes podría necesitar las ventas](https://noeldcosta.com/es/my-journey-with-customer-information-solutions-defense/) El director es el propietario responsable, y el personal de operaciones de ventas es responsable del trabajo real.
-
-Sea específico. "Finanzas posee las cuentas del Libro Mayor" no es suficiente. Mencione nombres. Póngalo por escrito. Consiga el acuerdo de todos.
-
-### **2\. Creación de estándares de datos**
-
-Su sistema SAP necesita estándares de datos consistentes. Esto implica acordar:
-
-*   Convenciones de nombres
-*   Los campos necesarios
-*   Reglas de formato
-*   Sistemas de clasificación
-*   Jerarquías de datos
-
-Un cliente minorista creó estándares para las descripciones de productos que especificaban exactamente qué información incluir y en qué orden. Esto eliminó la confusión y facilitó considerablemente la elaboración de informes.
-
-### **3\. Implementación de controles de calidad**
-
-Necesita puntos de control durante todo el proceso de migración. No espere hasta el final para comprobar la calidad.
-
-Configure reglas de validación automatizadas siempre que sea posible. Por ejemplo, si los códigos de producto deben seguir un formato específico, cree una verificación para marcar las excepciones.
-
-Cree paneles para monitorear las métricas de calidad de los datos. Me gusta usar indicadores simples de rojo, amarillo y verde para cada objeto de datos. Esto permite que los problemas sean visibles para todos.
-
-### **4\. Gestión de datos maestros**
-
-Los datos maestros merecen especial atención. Son la base sobre la que se construye todo lo demás.
-
-Establecer procedimientos para:
-
-*   Creación de nuevos registros de datos maestros
-*   Modificar registros existentes
-*   Manejo de duplicados
-*   Gestión de jerarquías
-*   Tablas de referencias cruzadas
-
-Un cliente de fabricación creó un equipo de datos maestros que continuó tras la puesta en marcha. Fue una de las decisiones más inteligentes que tomaron.
-
-### **5\. Procedimientos de mantenimiento continuo**
-
-La migración de datos no es un evento único. Se necesitan procedimientos para mantener la calidad de los datos después de la puesta en marcha.
-
-Documentar cómo:
-
-*   Revisar periódicamente la calidad de los datos
-*   Limpiar datos basura
-*   Gestionar nuevos requisitos de datos
-*   Administrar los cambios del sistema que afectan a los datos
-
-Empresas que tratan la gobernanza de datos como una función permanente en lugar de una [Las tareas del proyecto ven resultados a largo plazo mucho mejores de su SAP](https://noeldcosta.com/es/top-sap-project-tracking-tools-2025/) puesta en práctica.
-
-Recuerde: la buena gobernanza evita los datos basura. Y los datos basura arruinarán su... [El sistema SAP es más rápido que cualquier software](https://noeldcosta.com/es/sap-bpc-features-deployment-best-practice-guide/) insecto.
-
-### Temas relacionados: Migración de datos de SAP y planificación de proyectos
-
-[
-
-Estrategia
-
-### Migración de terrenos verdes frente a terrenos contaminados
-
-Decida la ruta de migración de SAP S/4HANA adecuada según su panorama actual.
-
-](https://noeldcosta.com/es/sap-s4hana-migration-strategy-greenfield-vs-brownfield/)[
-
-Cronograma
-
-### Migración de datos en SAP Cronogramas
-
-Mapee hitos realistas de migración de datos dentro de su cronograma de SAP.
-
-](https://noeldcosta.com/es/2024-sap-timeline-planning-implementation-guide-essentials/)[
-
-Control
-
-### Control del proyecto durante la carga de datos
-
-Evite sorpresas de datos de último momento con una supervisión de migración más estricta.
-
-](https://noeldcosta.com/es/project-planning-and-control-get-sap-projects-back-on-track/)[
-
-Pruebas
-
-### Herramientas para la validación posterior a la migración
-
-Valide y concilie los datos de SAP después de la migración utilizando estas herramientas.
-
-](https://noeldcosta.com/es/sap-testing-validation-tools-comparison/)
-
-## Consideraciones técnicas para la conversión de datos heredados
-
-
-Analicemos los aspectos técnicos de la conversión de datos heredados al formato SAP. Aquí es donde los equipos de TI se ganan la vida.
-
-### **1\. Métodos de extracción de datos**
-
-La forma de extraer datos de sus sistemas heredados es importante. Sus opciones suelen incluir:
-
-*   Consultas directas a bases de datos (más rápidas pero requieren experiencia técnica)
-*   Llamadas API (buenas para sistemas en la nube, pero pueden tener una velocidad limitada)
-*   Funciones de exportación estándar (las más fáciles, pero a menudo limitadas)
-*   Herramientas de extracción de terceros (enfoque equilibrado)
-
-He visto a empresas perder semanas intentando extraer datos mediante informes cuando consultas SQL directas habrían bastado en horas. Un cliente del sector manufacturero tuvo que escribir scripts personalizados para extraer datos de su sistema COBOL de 20 años de antigüedad. No es divertido, pero es necesario.
-
-Elija métodos de extracción que equilibren velocidad y precisión. Documente las consultas o procedimientos exactos para garantizar la repetibilidad durante las pruebas.
-
-### **2\. Herramientas y tecnologías de transformación**
-
-Una vez extraídos, los datos necesitan una transformación. Las opciones más comunes incluyen:
-
-*   Banco de trabajo de migración de sistemas heredados (LSMW) de SAP
-*   Servicios de datos de SAP
-*   Microsoft SSIS
-*   informática
-*   Tenso de datos de ChainSys
-*   Scripts personalizados (Python, Perl, etc.)
-
-Cada uno tiene sus ventajas y desventajas. LSMW es nativo de SAP, pero tiene una curva de aprendizaje pronunciada. Los Servicios de Datos son potentes, pero caros. ChainSys ofrece buenas funciones específicas de SAP. [plantillas pero requiere](https://noeldcosta.com/es/adopt-my-requirements-gathering-template-7-hacks-to-follow/) Licencias. Los scripts personalizados ofrecen flexibilidad, pero requieren habilidades de codificación.
-
-Suelo recomendar un enfoque híbrido: usar herramientas estándar para transformaciones sencillas y código personalizado para reglas de negocio complejas.
-
-### **3\. Técnicas de carga**
-
-Tiene varias opciones para cargar datos en SAP:
-
-*   Cargas directas de bases de datos (más rápidas pero omiten la validación)
-*   Llamadas BAPI/API (respeta la lógica empresarial pero es más lenta)
-*   Sesiones de entrada por lotes (un buen punto medio)
-*   Entrada manual (para pequeños volúmenes o datos confidenciales)
-
-La velocidad importa, pero la precisión lo es aún más. Un cliente minorista utilizó cargas directas para los datos de referencia, pero BAPI para los datos de transacciones, a fin de garantizar el cumplimiento de las reglas de negocio.
-
-### **4\. Procesos de validación**
-
-La validación debe ocurrir en múltiples puntos:
-
-*   Preextracción (verificar la calidad de los datos de origen)
-*   Post-transformación (verificar precisión del mapeo)
-*   Postcarga (verificar [Integración SAP](https://noeldcosta.com/es/why-sap-integrated-business-planning-sap-ibp-matters/))
-
-Cree comprobaciones automatizadas siempre que sea posible. Los informes de conciliación son esenciales: comparan los recuentos de los sistemas de origen y destino, así como las métricas clave.
-
-### **5\. Protocolos de manejo de errores**
-
-Encontrarás errores. Planifícalos con:
-
-*   Registro y categorización de errores claros
-*   Rutas de resolución definidas para errores comunes
-*   Procedimientos de escalamiento para problemas críticos
-*   Capacidades de reversión si fallan las cargas
-
-Documentar todo. Un cliente del sector salud creó un catálogo de errores durante las pruebas, que resultó invaluable durante la migración.
-
-Su enfoque técnico debe ser lo suficientemente sólido para manejar sorpresas pero lo suficientemente flexible para adaptarse cuando surjan los inevitables problemas inesperados.
-
-#### Consideraciones técnicas para la conversión de datos heredados
-
-Consideración técnica
-
-Propósito / Relevancia
-
-Acciones clave / Mejores prácticas
-
-Análisis del sistema fuente
-
-Comprender la estructura, las dependencias y los métodos de acceso de los datos heredados.
-
-Revisar el esquema de la base de datos, extraer metadatos e identificar campos personalizados no documentados.
-
-Enfoque de extracción de datos
-
-Seleccione un método eficiente y seguro para extraer datos de sistemas heredados.
-
-Utilice exportaciones SQL, archivos planos, API o conectores personalizados según la pila tecnológica.
-
-Lógica de transformación de datos
-
-Asegúrese de que los datos heredados se ajusten al formato y la lógica del ERP objetivo.
-
-Asignar valores, unidades y formatos; aplicar reglas en herramientas ETL o SAP LTMOM/BODS.
-
-Capa de almacenamiento temporal de datos
-
-Almacenamiento temporal para datos limpios/transformados antes de cargarlos al destino.
-
-Utilice archivos planos estructurados, bases de datos de almacenamiento temporal de SQL o áreas de almacenamiento temporal de LSM; aplique control de versiones.
-
-Codificación de caracteres y manejo de formatos
-
-Evite la corrupción de datos durante la exportación o carga debido a desajustes de codificación.
-
-Estandarizar en UTF-8, garantizar la normalización del formato de fechas y números.
-
-Manejo de volumen de datos
-
-Administre el rendimiento de los lotes y evite desbordamientos de memoria en conjuntos de datos grandes.
-
-Dividir por objeto comercial, programar ejecuciones nocturnas, aplicar indexación o trabajos paralelos.
-
-Gestión de campos clave
-
-Garantizar la coherencia y singularidad de las claves primarias y externas heredadas.
-
-Cree tablas de cruce, resuelva duplicados y asigne previamente números de ERP cuando sea posible.
-
-Integridad referencial
-
-Preservar las relaciones de los objetos durante la carga (por ejemplo, cliente → pedidos de venta).
-
-Definir la secuencia de carga, utilizar el seguimiento de dependencia, validar las uniones posteriores a la carga.
-
-Selección del método de carga
-
-Elija el método de carga correcto compatible con SAP según el tipo de objeto y volumen.
-
-Utilice IDOC, BAPI, LTMC o inserciones de tabla directas solo donde esté permitido.
-
-Registro y pista de auditoría
-
-Rastrear el éxito/fracaso y respaldar la conciliación con los sistemas heredados.
-
-Habilitar el registro a nivel de campo, mantener registros de lotes de carga y registros de auditoría técnica.
-
-## Herramientas y tecnologías de migración de datos para SAP
-
-
-Hablemos de herramientas. Las herramientas adecuadas pueden hacer que tu migración sea más fluida, rápida y sencilla. Esto es lo que debes saber.
-
-### **1\. Herramientas de migración nativas de SAP**
-
-SAP ofrece varias opciones integradas:
-
-*   Legacy System Migration Workbench (LSMW): El clásico y confiable. Siempre presente. Ideal para técnicos que conocen SAP. Complejo pero potente.
-*   SAP [Cabina de migración: una opción más nueva diseñada para S/4HANA](https://noeldcosta.com/es/ecc-to-s4hana-migration/)Más fácil de usar que LSMW. Utiliza plantillas. Ideal para objetos estándar, pero menos flexible para necesidades personalizadas.
-*   SAP Data Services: Herramienta ETL de nivel empresarial. Gestiona eficazmente transformaciones complejas. Costosa, pero completa. Funciona más allá de los escenarios de migración.
-
-He tenido clientes que han usado los tres con éxito. Tus conocimientos de SAP y la complejidad determinarán cuál se adapta mejor a tus necesidades.
-
-### **2\. Herramientas ETL de terceros**
-
-Varias herramientas que no son de SAP funcionan bien para las migraciones de SAP:
-
-*   Informatica PowerCenter: de nivel empresarial. Caro, pero potente.
-*   Microsoft SSIS: más asequible. Ideal si ya tienes una tienda Microsoft.
-*   Talend: núcleo de código abierto con opciones empresariales pagas.
-*   ChainSys DataTense: diseñado específicamente para SAP con plantillas útiles.
-
-Un cliente minorista comparó [Los costos y las herramientas de terceros encontradas eran un 30% más baratas que SAP](https://noeldcosta.com/es/sap-implementation-cost-breakdown-why-budgets-explode-50/) Servicios de Datos para sus necesidades.
-
-### **3\. Software de calidad de datos**
-
-No pases por alto estos:
-
-*   Administrador de información de SAP
-*   Calidad de datos de Informatica
-*   Trillium
-*   Limpiador de datos
-
-Pueden automatizar la búsqueda de duplicados, la estandarización de formatos y la validación de datos. Vale cada centavo.
-
-### **4\. Posibilidades de automatización**
-
-Busque herramientas que ofrezcan:
-
-*   Mapeos de migración reutilizables
-*   Capacidades de programación
-*   Automatización del manejo de errores
-*   Informes de conciliación
-*   Generación de datos de prueba
-
-El tiempo ahorrado gracias a la automatización se amortiza rápidamente.
-
-### **5\. Personalizado vs. Listo para usar**
-
-Las soluciones prediseñadas funcionan con objetos estándar de SAP. Sin embargo, la mayoría de las empresas necesitan elementos personalizados.
-
-Recomiendo un enfoque híbrido: usar herramientas estándar para el 80 % de los objetos y luego crear soluciones personalizadas para escenarios complejos.
-
-### **6\. Herramientas de migración basadas en la nube**
-
-Las opciones en la nube están creciendo:
-
-*   [Nube de SAP](https://noeldcosta.com/es/sap-analytics-cloud/) Integración de plataforma
-*   Pegamento AWS
-*   Fábrica de datos de Azure
-*   buomi
-
-Ofrecen ventajas de escalabilidad pero pueden tener desafíos de integración con los sistemas locales.
-
-### **7\. Consideraciones de costos y ROI**
-
-Las buenas herramientas no son baratas. Prepárate para gastar entre $50 y $500, dependiendo de la complejidad.
-
-Pero considere el retorno de la inversión: un cliente gastó $75 en herramientas que le ahorraron 2,000 horas-persona. Otro redujo los defectos de entrada en producción en un 70% con las herramientas adecuadas.
-
-Las herramientas adecuadas son una inversión, no un gasto. Elige con cuidado.
-
-#### Herramientas y tecnologías de migración de datos para SAP
-
-Herramienta / Tecnología
-
-Propósito
-
-Casos de uso / Notas
-
-SAP LTMC (Cabina de migración de transferencia heredada)
-
-Herramienta de bajo código para administrar cargas de datos de objetos estándar en S/4HANA.
-
-Se utiliza para datos maestros y algunos datos transaccionales; admite plantillas predefinidas.
-
-SAP LTMOM (Modelador de objetos de migración)
-
-Herramienta de extensión para personalizar o crear nuevos objetos de migración.
-
-Se utiliza con LTMC para campos personalizados o asignaciones complejas en migraciones S/4HANA.
-
-Servicios de datos de SAP (BODS)
-
-Plataforma ETL para extracción, limpieza, transformación y carga de datos.
-
-Admite lógica compleja, cargas históricas, modernización heredada y escenarios de integración.
-
-Administrador de información de SAP
-
-Perfilado de datos y monitorización de la calidad de los datos.
-
-Se utiliza para evaluar la calidad de los datos heredados antes de la migración y aplicar estándares de limpieza.
-
-IDOC (Documentos intermedios)
-
-Método de carga de datos SAP asincrónico para objetos comerciales estándar.
-
-Útil en replicación en tiempo real o por lotes entre sistemas SAP (ECC a S/4).
-
-BAPIs (Interfaz de programación de aplicaciones empresariales)
-
-Interfaz basada en módulos de funciones para cargas de datos comerciales/transaccionales.
-
-Se utiliza para la creación de datos programáticos (por ejemplo, pedidos de ventas, materiales); admite el manejo de errores.
-
-LSMW (Banco de trabajo de migración de sistemas heredados)
-
-Herramienta heredada para la carga de datos mediante entrada por lotes, IDOC o métodos de entrada directa.
-
-Todavía se utiliza en ECC y algunos escenarios S/4 para objetos más pequeños o no estándar.
-
-Integración de datos inteligentes (SDI) de SAP HANA
-
-Integración en tiempo real y por lotes desde fuentes externas a sistemas basados en HANA.
-
-Admite adaptadores, replicación y push-down de SQL para transformaciones nativas de HANA.
-
-Integración en la nube de SAP / Suite de integración
-
-Plataforma de middleware para integración basada en API o mensajes.
-
-Se utiliza en paisajes híbridos para cargar o sincronizar datos entre sistemas locales y en la nube.
-
-Herramientas ETL de terceros (por ejemplo, Informatica, Talend, Dell Boomi)
-
-Plataformas de integración de datos que no son SAP utilizadas en entornos de TI complejos.
-
-A menudo se aprovecha cuando SAP no es el único sistema central o para una alineación más amplia de la arquitectura empresarial.
-
-## Estrategias de prueba y validación
-
-
-Permítanme decirles algo importante. Las pruebas son la clave. Es donde descubrirán si su migración de datos realmente funcionará o fracasará. No me canso de enfatizarlo: si recortan gastos en este aspecto, se están preparando para el desastre.
-
-### **1\. Enfoque de pruebas unitarias**
-
-Debes empezar por lo básico. Prueba cada tipo de datos individualmente antes de intentar combinarlos todos.
-
-Cuando trabajo con datos de clientes, siempre reviso estas cosas:
-
-*   ¿Son realmente correctas las asignaciones de campos?
-*   ¿Las reglas de transformación funcionan como deberían?
-*   ¿Se completaron todos los campos obligatorios?
-*   ¿Los formatos de datos coinciden con las necesidades de SAP?
-*   ¿Pueden los datos pasar todas las reglas de validación?
-
-Redacta scripts de prueba para cada tipo de dato. Anota lo que esperas ver. Luego, compara lo que realmente obtuviste.
-
-El año pasado trabajé con una empresa de fabricación y encontraron problemas con el 40 % de sus asignaciones de materiales durante las pruebas unitarias. Créeme, es mucho mejor detectar esos problemas con antelación que al lanzar el producto.
-
-### **2\. Pruebas de integración**
-
-Una vez que las piezas individuales funcionan, hay que ver si se complementan bien. Aquí es donde surgen los problemas de relación.
-
-Intente probar escenarios reales como:
-
-*   ¿Es realmente posible crear órdenes de venta utilizando a sus clientes migrados?
-*   ¿Las transacciones de inventario funcionan con los materiales migrados?
-*   ¿Puedes publicar información financiera en tus centros de costos migrados?
-
-Estos problemas de integración pueden ser un verdadero problema. Tuve un cliente del sector sanitario que asignaba correctamente todos los números de sus clientes, pero el historial de ventas usaba un formato totalmente diferente. Por lo tanto, no era posible vincular los pedidos con los clientes. Las pruebas de integración detectaron esto antes de que se convirtiera en un problema grave.
-
-### **3\. Pruebas de aceptación del usuario**
-
-Es fundamental involucrar a los usuarios de su negocio. Conocen estos datos mucho mejor que su equipo de TI.
-
-Pídales que hagan cosas como:
-
-*   Mire los datos migrados y vea si parecen correctos
-*   Intente utilizar los datos migrados en procesos de negocio reales
-*   Compare informes entre su sistema antiguo y SAP
-*   Compruebe si todas las reglas comerciales críticas siguen funcionando
-
-Pero no les digas simplemente "verifiquen si los datos son correctos"; eso es demasiado vago. En su lugar, di algo específico como "verifiquen el límite de crédito y las condiciones de pago del cliente ABC".
-
-### **4\. Pruebas de rendimiento**
-
-Mucha gente olvida el rendimiento. Que la migración funcione correctamente con 100 registros no significa que funcione con un millón.
-
-Realice pruebas con sus volúmenes de datos de producción reales. Registre la duración de cada paso. Identifique los cuellos de botella.
-
-Trabajé con un cliente minorista cuya migración se ejecutó perfectamente con datos de prueba, pero luego tardó 72 horas con sus datos reales. Tuvieron que replantear su enfoque por completo.
-
-### **5\. Métodos de conciliación**
-
-Necesita una prueba sólida de que su migración funcionó. La conciliación es la forma de obtenerla.
-
-Algunos buenos métodos incluyen:
-
-*   Comparar el número de registros (como total de clientes, productos, etc.)
-*   Validar totales financieros (valor de inventario, cuentas por cobrar, etc.)
-*   Muestreo (comparación detallada de registros importantes)
-*   Informe de excepciones (listado de registros que fallaron)
-
-Genere informes que realicen esto automáticamente. Uno de mis clientes de distribución creó paneles que mostraban el grado de finalización de su migración y las tasas de error para cada tipo de datos.
-
-Sí, las pruebas exhaustivas llevan tiempo. Pero créeme, no es nada comparado con el tiempo que dedicarás. [Solución de problemas de datos después de un fallo](https://noeldcosta.com/es/why-erp-integration-with-salesforce-fails-and-how-to-fix-it/) Puesta en marcha. Lo he visto suceder y no es nada agradable.
-
-#### Estrategias de prueba y validación para la migración de datos
-
-Área de Estrategia
-
-Propósito
-
-Directrices de ejecución
-
-Pruebas unitarias (lógica de transformación)
-
-Asegúrese de que las reglas de transformación se implementen correctamente.
-
-Pruebe asignaciones individuales con datos de muestra; valídelas contra los resultados esperados en la capa de preparación.
-
-Validación a nivel de campo
-
-Confirme que los valores del campo sean precisos, consistentes y tengan el formato correcto.
-
-Verifique los tipos de datos, los campos obligatorios y los campos de referencia; compárelos con la documentación de mapeo.
-
-Conciliación de recuento de registros
-
-Asegúrese de que no haya pérdida ni duplicación de registros durante la extracción o carga.
-
-Coincida los recuentos de registros entre el origen, el almacenamiento y el destino; registre las discrepancias para su revisión.
-
-Prueba de integridad entre tablas
-
-Verificar las relaciones de clave externa y la integridad referencial.
-
-Utilice consultas de prueba para validar uniones (por ejemplo, clientes con pedidos, materiales con listas de materiales).
-
-Cargas simuladas
-
-Realice ejecuciones en seco de ciclos de carga de datos completos o parciales para probar la ejecución de un extremo a otro.
-
-Ejecutar en un entorno de pruebas o sandbox; incluir puntos de control de reversión; registrar el rendimiento y los errores.
-
-Validación de reglas de negocio
-
-Asegúrese de que se cumplan las reglas de datos específicas de la empresa (por ejemplo, códigos impositivos, límites de crédito).
-
-Revise los datos transformados con las pymes comerciales y aplique filtros basados en reglas para las excepciones.
-
-Prueba de funcion
-
-Confirme que los datos cargados admitan la ejecución del proceso de extremo a extremo.
-
-Ejecutar transacciones en el sistema de destino utilizando datos migrados (por ejemplo, crear un pedido de venta utilizando el cliente migrado).
-
-Pruebas de regresión
-
-Validar que los procesos existentes no se vean afectados por la migración de datos.
-
-Automatice y ejecute procesos comerciales clave después de la migración para garantizar la continuidad.
-
-Revisión del registro de auditoría
-
-Garantizar la trazabilidad de todos los cambios de datos durante la migración.
-
-Registra la marca de tiempo, el usuario, el archivo de origen y la lógica de mapeo por lote de carga de datos; almacena los registros de forma segura.
-
-Prueba de aceptación del usuario (UAT)
-
-Obtener la confirmación comercial final de que los datos son correctos y utilizables.
-
-Involucre a los usuarios clave para validar los datos migrados en escenarios del mundo real antes de la aprobación inicial.
-
-### Temas relacionados: Migración y preparación de datos de SAP
-
-[
-
-Costo
-
-### Calcule su presupuesto de migración
-
-Utilice la calculadora SAP para estimar el costo real de su migración de datos.
-
-](https://noeldcosta.com/es/sap-implementation-cost-calculator/)[
-
-Personas
-
-### Roles de datos en proyectos de SAP
-
-Conozca qué roles son responsables de las actividades de limpieza, mapeo y validación de datos.
-
-](https://noeldcosta.com/es/essential-sap-implementation-team-roles/)[
-
-Estrategia
-
-### Mantenga sus datos SAP limpios
-
-Minimice la complejidad de la migración con una estrategia de núcleo limpia desde el primer día.
-
-](https://noeldcosta.com/es/sap-clean-core-strategy-what-it-means-for-your-business/)[
-
-Estimador
-
-### Pruebe el estimador de datos gratuito
-
-Obtenga visibilidad temprana de los volúmenes de datos y el esfuerzo en todas las plataformas.
-
-](https://noeldcosta.com/es/free-data-migration-estimator-sap-oracle-microsoft/)
-
-## Conclusión
-
-
-La migración de datos puede ser decisiva para el éxito o el fracaso de su implementación de SAP. A lo largo de este artículo, he compartido las estrategias y los enfoques que he visto que funcionan en la práctica.
-
-Recuerde estos puntos clave:
-
-*   [Migración de datos de SAP](https://noeldcosta.com/es/sap-license-negotiation-10-key-points-to-consider-in-2024/) es singularmente complejo debido a las interdependencias
-*   La gobernanza de datos no es opcional: es esencial
-*   Comience a limpiar sus datos con anticipación
-*   Elija las herramientas adecuadas para sus necesidades específicas
-*   Realice pruebas exhaustivas con volúmenes de datos reales
-
-Cuando la migración de datos se realiza correctamente, los beneficios van mucho más allá de la puesta en marcha. Observará una mejor calidad de los datos en toda su organización. Sus procesos de negocio serán más eficientes. Los informes serán más fiables. La adopción por parte de los usuarios aumentará. Y su coste total de propiedad disminuirá.
-
-Lo más importante es que evitas el escenario de pesadilla de un fracaso. [implementación que cuesta](https://noeldcosta.com/es/sap-business-one-price-guide/) millones y daña la reputación y las operaciones de su empresa.
-
-Le animo a comenzar hoy mismo su planificación de migración de datos a SAP, incluso si la implementación tardará meses. Comience con una evaluación de datos. Identifique a los responsables de sus datos. Comience a depurar sus datos más críticos.
-
-¿Has pasado por una migración de datos de SAP? Me encantaría conocer tus experiencias en los comentarios. ¿Qué desafíos enfrentaste? ¿Qué estrategias te funcionaron? Tus ideas podrían ayudar a otros a evitar los mismos problemas que tú.
-
-¿O quizás estás planeando una migración pronto y tienes preguntas? Déjalas a continuación y haré todo lo posible por responder. Estamos todos juntos en esto, y compartir nuestros conocimientos facilita la implementación.
-
-Cuanto antes empieces, mejores resultados obtendrás. Da el primer paso hoy. Tu éxito con SAP depende de ello.
-
-Si tienes alguna pregunta o quieres discutir una situación que tengas en tu [Implementación de SAP](https://noeldcosta.com/es/best-sap-implementation-templates-activate-2024/) ¡Equipo, no duden en contactarnos!
-
-## Preguntas que podrías tener...
-
-### 1\. ¿Qué es la migración de datos de SAP?
-
-SAP es un sistema de planificación de recursos empresariales (ERP) [software que las organizaciones implementan para gestionar los negocios](https://noeldcosta.com/es/best-erp-software-small-business-a-real-world-guide-for-2025/) Procesos. En la migración de datos, SAP se refiere al sistema de destino donde se transferirán los datos de su empresa. El proceso de migración implica extraer datos de sistemas heredados, transformarlos para cumplir con los requisitos de estructura específicos de SAP y cargarlos en su entorno SAP.
-
-### 2\. ¿Cuáles son los diferentes tipos de migración en SAP?
-
-Existen varios tipos de migraciones de SAP:
-
-*   Migración del sistema: pasar de una versión de SAP a otra (como ECC a S/4HANA)
-*   Migración de datos: transferencia de datos desde sistemas heredados a SAP
-*   Migración de plataforma: cambio del hardware o la base de datos subyacente
-*   Migración a la nube: pasar de SAP local a soluciones basadas en la nube
-*   Migración del entorno: reestructuración del entorno de su sistema SAP
-
-### 3\. ¿Cuál es la diferencia entre LSMW y LTMC?
-
-LSMW (Legacy System Migration Workbench) es la herramienta tradicional de SAP para la migración de datos. Es técnicamente compleja, pero muy potente y flexible. LTMC (Legacy Transfer Migration Cockpit) es la herramienta de migración más reciente de SAP, diseñada específicamente para S/4HANA. LTMC es más intuitiva con plantillas predefinidas, pero menos flexible para objetos personalizados. LSMW requiere conocimientos de ABAP, mientras que LTMC tiene una interfaz más intuitiva.
-
-### 4\. ¿Cómo transferir datos de un sistema SAP a otro sistema SAP?
-
-Para transferir datos entre sistemas SAP, puede utilizar:
-
-*   Herramientas de migración de SAP como Migration Cockpit
-*   Copia del cliente (para copias completas del sistema)
-*   Transformación del paisaje del sistema (SLT) para la replicación en tiempo real
-*   Transportes para datos de configuración
-*   Exportaciones/importaciones directas de bases de datos
-*   BAPI e IDocs para objetos comerciales específicos
-*   Herramientas ETL de terceros
-
-El mejor método depende de sus requisitos específicos, el volumen y si se trata de una transferencia única o continua.
-
-### 5\. ¿Qué es SAP Data Migration Cockpit?
-
-SAP Data Migration Cockpit es una herramienta diseñada específicamente para migrar datos a S/4HANA. Ofrece una interfaz de usuario simplificada con plantillas de migración prediseñadas para objetos SAP estándar. Admite la migración basada en archivos, la migración directa desde sistemas SAP y la migración basada en pruebas mediante SAP Data Services. La herramienta ofrece funciones de monitorización, validación y gestión de errores para agilizar el proceso de migración.
-
-### 6\. ¿Cuáles son los 3 tipos principales de datos en SAP?
-
-Los tres tipos principales de datos en SAP son:
-
-1.  Datos maestros: objetos comerciales centrales relativamente estables, como clientes, proveedores, materiales y empleados
-2.  Datos transaccionales: registros de procesos comerciales como órdenes de venta, órdenes de compra y contabilizaciones financieras
-3.  Datos de configuración: configuraciones del sistema que controlan cómo opera SAP, incluida la estructura organizacional, las reglas comerciales y los flujos de procesos.
-
-### 7\. ¿Cuál es la mejor herramienta ETL para la migración de datos de SAP?
-
-No existe una única herramienta ETL ideal para la migración de datos de SAP, ya que depende de sus necesidades específicas. Las opciones más populares incluyen:
-
-*   SAP Data Services: la mejor opción para entornos centrados en SAP
-*   Informatica PowerCenter: potente para proyectos a escala empresarial
-*   Microsoft SSIS: ideal para organizaciones centradas en Microsoft
-*   Talend: Rentable y con buenos conectores SAP
-*   ChainSys DataTense: diseñado específicamente para migraciones de SAP
-
-Tenga en cuenta factores como su entorno técnico, presupuesto, cronograma y habilidades internas al seleccionar una herramienta.
-
-### 8\. ¿Qué es el proceso de migración de datos?
-
-El proceso de migración de datos es un enfoque estructurado para trasladar datos de los sistemas de origen a un sistema de destino. Generalmente incluye:
-
-1.  Planificación y evaluación
-2.  Extracción de datos de los sistemas fuente
-3.  Limpieza y transformación de datos
-4.  Cargando datos en el sistema de destino
-5.  Validación y conciliación
-6.  Pruebas y aseguramiento de la calidad
-7.  Soporte para la transición en vivo y posterior a la migración
-
-Cada fase requiere una planificación cuidadosa, herramientas apropiadas y pruebas rigurosas para garantizar el éxito.
-
-### 9\. ¿Qué es la transferencia de datos en SAP?
-
-La transferencia de datos en SAP se refiere al proceso de transferir datos hacia, desde o entre sistemas SAP. Esto puede incluir cargas iniciales de datos durante la implementación, importaciones/exportaciones periódicas para informes, interfaces con otros sistemas o el archivado de datos. SAP ofrece diversas herramientas para la transferencia de datos, como Data Migration Cockpit, LSMW, BAPI, IDOC y conexiones directas a bases de datos.
-
-### 10\. ¿Qué es el procesamiento de datos de SAP?
-
-El procesamiento de datos de SAP se refiere a cómo el sistema SAP gestiona, manipula y transforma los datos a medida que fluyen a través de los procesos de negocio. Esto incluye la entrada de datos (manual o automatizada), la validación según las reglas de negocio, el procesamiento mediante lógica programada, el almacenamiento en la base de datos y la recuperación para la elaboración de informes. Las capacidades de procesamiento de datos de SAP garantizan la integridad, la consistencia y la disponibilidad de los datos en toda la organización, a la vez que aplican las reglas de negocio y los flujos de trabajo.
-
-#### Herramientas para simplificar su proceso de implementación de SAP
-
-#### **Calculadora de costos de implementación de SAP**
-
-Esta herramienta le ayudará a determinar el costo aproximado de su [Implementación de SAP](https://noeldcosta.com/es/sap-implementation-vs-rollout-differences-challenges-best-practices/). 
-
-#### **Generador de descripciones de puestos de recursos de SAP**
-
-Puede utilizar esta herramienta para generar una descripción del trabajo, si está contratando a alguien para un puesto [Proyecto SAP](https://noeldcosta.com/es/creating-an-effective-sap-project-steering-committee/). 
-
-#### **Calculadora de costos y esfuerzos de migración de datos**
-
-A través de esta herramienta, puede determinar los objetos de datos necesarios y los costos relacionados asociados con la migración de datos. 
-
-#### **Calculadora de costos de implementación de ERP fácil de usar**
-
-Obtenga una evaluación rápida de sus costos estimados de ERP y su cronograma. No es perfecta, pero le ofrece una buena visión de los costos.
-
-#### **Generador de hojas de ruta y soluciones SAP**
-
-Puede utilizar esta herramienta para determinar los módulos SAP que necesitará en su [Implementación de SAP](https://noeldcosta.com/es/mastering-sap-implementation-a-step-by-step-guide-for-2025/).
+</details>

@@ -1,0 +1,224 @@
+---
+title: 'Κατακτήστε το SAP BTP Cockpit: απλά βήματα για όλους'
+slug: master-the-sap-btp-cockpit-simple-steps
+date: '2025-03-27'
+updated: '2026-05-21'
+hero: /images/wp/2025/03/SAP-BTP-Cockpit-3.webp
+heroAlt: Περιβάλλον SAP BTP Cockpit με δομή global account, subaccounts, υπηρεσίες και dashboard monitoring
+category: sap-modules
+tags:
+  - sap-technical-decisions
+  - sap-btp
+  - sap-cap
+  - cloud-foundry
+author: Noel D'Costa
+metaTitle: 'SAP BTP Cockpit το 2026: απλά βήματα για admins και developers'
+metaDescription: 'Πώς να κινηθείτε στο SAP BTP Cockpit το 2026: subaccounts, entitlements, διαχείριση χρηστών, service instances, integration, monitoring και τι να αποφύγετε.'
+excerpt: 'Το SAP BTP Cockpit είναι το κέντρο ελέγχου για κάθε SAP cloud service. Οι περισσότερες ομάδες αγοράζουν SAP cloud προϊόντα χωρίς να αξιοποιούν πλήρως την αξία τους, επειδή δεν ξέρουν πώς να το χειριστούν. Εδώ καλύπτω όσα έχουν πραγματικά σημασία: δομή λογαριασμών, υπηρεσίες, ρυθμίσεις integration και monitoring που προλαμβάνει προβλήματα.'
+experienceSource: 'Direct experience configuring and managing SAP BTP environments across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets, covering manufacturing, financial services, and consumer goods. Includes subaccount design, integration setup, service deployment, and post-go-live BTP governance. Anchored stories: European manufacturing 2024 (50+ randomly named subaccounts, three weeks to untangle). 2026 BTP Cockpit, Cloud Foundry runtime, and Joule positioning reflects current SAP product roadmap.'
+lastReviewed: '2026-05-21'
+keyTakeaways:
+  - 'Σχεδιάστε τη δομή των subaccounts πριν δημιουργήσετε οτιδήποτε: ένας πελάτης είχε 50+ subaccounts με τυχαία ονόματα και κανείς δεν έβρισκε τίποτα'
+  - 'Συνδέστε πρώτα τον identity provider: η σύνδεση του BTP με το κεντρικό σύστημα διαχείρισης χρηστών της εταιρείας σας εξαλείφει τα περισσότερα προβλήματα authentication'
+  - 'Ξεκινήστε με τα ελάχιστα entitlements και επεκταθείτε σταδιακά: αυτή η προσέγγιση εξοικονομεί στους πελάτες χιλιάδες σε αχρησιμοποίητες υπηρεσίες'
+  - 'Κάντε deploy σε production περιβάλλοντα βήμα βήμα: build-pack detection, εισαγωγή environment variables, service binding και μετά ρύθμιση routes'
+  - Ρυθμίστε το monitoring πριν το χρειαστείτε. Ελέγχω τα dashboards κάθε πρωί· αυτό έχει προλάβει αρκετές στιγμές του τύπου «γιατί είναι κάτω το σύστημα;»
+  - 'Αυτοματοποιήστε τις επαναλαμβανόμενες αναπτύξεις με το BTP CLI: τα αυτοματοποιημένα deployments μείωσαν τον χρόνο setup κατά 80% σε ένα έργο'
+  - 'Τεκμηριώστε τη δομή λογαριασμών και τις αποφάσεις σας εκτός Cockpit: η πλατφόρμα δεν καταγράφει το σκεπτικό σας και αυτό το κενό οδηγεί σε δαπανηρό troubleshooting'
+pullQuote: Όταν ξέρετε να κινείστε στο BTP Cockpit, ελέγχετε όλο το SAP cloud περιβάλλον από ένα σημείο. Όταν όχι, κάθε εργασία παίρνει περισσότερο χρόνο απ’ όσο πρέπει και κοστίζει περισσότερο απ’ όσο χρειάζεται.
+mentions:
+  - SAP BTP
+  - SAP S/4HANA
+  - SAP Cloud Integration
+  - SAP SuccessFactors
+  - SAP Ariba
+  - SAP HANA Cloud
+  - SAP Build
+  - SAP Datasphere
+locale: el
+translatedFrom: en
+translationSource: openai-gpt-5.4
+translationDate: '2026-05-25T19:39:31.908Z'
+canonicalUrl: https://noeldcosta.com/el/master-the-sap-btp-cockpit-simple-steps/
+---
+
+Το Cockpit του SAP Business Technology Platform είναι το κεντρικό περιβάλλον διαχείρισης για το cloud περιβάλλον σας στο SAP. Εφαρμογές, υπηρεσίες, ρυθμίσεις ασφάλειας, συνδρομές: όλα περνούν από εδώ.
+
+Τρεις βασικές ομάδες χρησιμοποιούν το Cockpit. Οι τεχνικοί διαχειριστές χειρίζονται τη ρύθμιση και την παρακολούθηση. Οι developers κάνουν deployment και διαχειρίζονται εφαρμογές. Οι business users έχουν πρόσβαση σε συγκεκριμένα εργαλεία· κάθε ρόλος χρησιμοποιεί διαφορετικά τμήματα. Οι περισσότερες εταιρείες αγοράζουν cloud προϊόντα της SAP και δεν παίρνουν την πλήρη αξία, επειδή κανείς δεν αφιέρωσε χρόνο να μάθει σωστά το Cockpit. Εργασίες που θα έπρεπε να παίρνουν λεπτά, παίρνουν ώρες. Το κόστος συσσωρεύεται από αχρησιμοποίητες υπηρεσίες. Εμφανίζονται κενά ασφάλειας σε entitlements που κανείς δεν έλεγξε.
+
+Αποκτήστε πρόσβαση στο Cockpit στο `https://account.hana.ondemand.com`. Για trial accounts: `https://account.hanatrial.ondemand.com`. Χρειάζεστε ένα user ID στο SAP: ζητήστε το από τον διαχειριστή σας αν δεν έχετε.
+
+## Τι λύνει το SAP BTP
+
+Το BTP αντιμετωπίζει τρεις κατηγορίες προβλημάτων που εμφανίζονται σε κάθε cloud έργο SAP.
+
+**Ενοποίηση.** Το SAP Cloud Integration (πρώην CPI) συνδέει τα S/4HANA, SuccessFactors, Ariba και μη-SAP συστήματα όπως το Salesforce με οπτικές ροές ενοποίησης. Το API Management εκθέτει business functions σε άλλες εφαρμογές. Το Event Mesh διαχειρίζεται επικοινωνία system-to-system με βάση business events. Το Open Connectors παρέχει έτοιμες ενοποιήσεις για εκατοντάδες third-party συστήματα.
+
+**Custom development χωρίς να αγγίζετε τον πυρήνα.** Το ABAP Cloud Environment επιτρέπει στους developers να χτίζουν επεκτάσεις χωρίς να τροποποιούν τον βασικό κώδικα SAP (κάτι που κρατά καθαρές τις διαδρομές αναβάθμισης). Το runtime του Cloud Foundry υποστηρίζει Java, Node.js και Python. Το Business Application Studio δίνει στους developers ένα browser-based IDE. Το SAP Build δίνει στους business users low-code εργαλεία για απλές εφαρμογές.
+
+**Διαχείριση δεδομένων.** Το HANA Cloud παρέχει δυνατότητες in-memory database. Το Datasphere (πρώην Data Warehouse Cloud) συνδυάζει δεδομένα από πολλαπλές πηγές για business reporting. Το Data Intelligence Cloud δημιουργεί pipelines για μεταφορά και μετασχηματισμό δεδομένων μεταξύ συστημάτων.
+
+## Ρύθμιση του BTP για καθημερινή χρήση
+
+Οι επόμενες έξι ενότητες καλύπτουν τα στοιχεία της διαχείρισης του BTP που θα χρησιμοποιείτε πιο συχνά: δομή λογαριασμού, ταυτότητα, υπηρεσίες, deployment, ενοποίηση και monitoring. Καθεμία έχει μια απόφαση ρύθμισης που την παίρνετε μία φορά και ζείτε με αυτή για όλη τη διάρκεια ζωής της πλατφόρμας.
+
+### Subaccounts και entitlements
+
+Εδώ είναι που οι περισσότερες ομάδες δημιουργούν ένα χάος που τις κυνηγά για χρόνια.
+
+Δημιουργήστε ξεχωριστά subaccounts για development, testing και production. Στο global account σας, κάντε κλικ στο "Create Subaccount" και χρησιμοποιήστε μια συνεπή σύμβαση ονοματοδοσίας: κάτι όπως "Finance-Dev", "Finance-Test", "Finance-Prod". Δούλεψα με πελάτη που είχε 50+ subaccounts με τυχαία ονόματα και κανείς δεν μπορούσε να βρει τίποτα. Το να ξαναχτίσεις αυτή τη δομή στη μέση του έργου είναι επώδυνο.
+
+Για multi-environment setups: αντιγράψτε τη δομή των subaccounts σας σε όλες τις περιοχές αν είστε παγκόσμια επιχείρηση. Κρατήστε τα development entitlements στο ελάχιστο. Δώστε προτεραιότητα στα production environments για πόρους που είναι ευαίσθητοι στην απόδοση και χρησιμοποιήστε labels για να ομαδοποιείτε σχετικά subaccounts.
+
+Τα **Entitlements** ελέγχουν σε ποιες υπηρεσίες μπορεί να έχει πρόσβαση κάθε subaccount και πόσο από την καθεμία. Από το global account σας, πηγαίνετε στο "Entitlements" → "Configure Entitlements", επιλέξτε το subaccount και προσθέστε υπηρεσίες. Το global account σας έχει ένα πεπερασμένο pool πόρων για διανομή: ξεκινήστε με τα ελάχιστα και προσθέστε ό,τι χρειάζεται. Πολλές υπηρεσίες έχουν free tier, κάτι χρήσιμο για testing.
+
+Να τεκμηριώνετε πάντα κάπου εκτός Cockpit πώς έχετε μοιράσει τα entitlements. Η πλατφόρμα δεν καταγράφει τις αποφάσεις σας ούτε τη λογική πίσω από αυτές.
+
+### Διαχείριση χρηστών και authentication
+
+Πηγαίνετε στο "Security" → "Users" στο subaccount σας. Προσθέστε χρήστες έναν-έναν ή ανεβάστε ένα CSV για μαζικές προσθήκες.
+
+Αν ο οργανισμός σας έχει identity provider (Azure AD, Okta ή παρόμοιο), συνδέστε τον αντί να διαχειρίζεστε χρήστες χειροκίνητα. Πηγαίνετε στο "Security" → "Trust Configuration" και ανταλλάξτε metadata files μεταξύ της SAP και του IdP σας. Αυτό εξαλείφει τα περισσότερα προβλήματα authentication και συγκεντρώνει κεντρικά τη διαχείριση του lifecycle των χρηστών.
+
+Για enterprise setups, οι custom SAML identity providers σας δίνουν τη μεγαλύτερη ευελιξία. Το προεπιλεγμένο SAP ID Service λειτουργεί για testing και μικρά deployments.
+
+Τα role collections είναι πακέτα δικαιωμάτων που ανατίθενται σε χρήστες. Η δική μου προσέγγιση:
+1. Δημιουργήστε role collections με βάση τις λειτουργίες εργασίας, όχι τα άτομα
+2. Κρατήστε τα αρκετά συγκεκριμένα ώστε να έχουν νόημα, αλλά όχι τόσο λεπτομερή ώστε να έχετε εκατοντάδες να συντηρείτε
+3. Συμπεριλάβετε ένα break-glass role collection "admin" για έκτακτες ανάγκες
+4. Ελέγχετε τις αναθέσεις ρόλων ανά τρίμηνο: οι άνθρωποι αλλάζουν δουλειές αλλά συχνά κρατούν τα παλιά δικαιώματα
+
+Ενεργοποιήστε two-factor authentication, περιορίστε την πρόσβαση σε trusted networks όπου είναι δυνατό και ελέγχετε τακτικά την ενότητα "Security Alerts". Η SAP τη χρησιμοποιεί για να επισημαίνει πιθανά ζητήματα στο περιβάλλον σας.
+
+### Service instances και εφαρμογές
+
+Δημιουργία service instance:
+1. Πηγαίνετε στο "Services" → "Service Marketplace" στο subaccount σας
+2. Βρείτε την υπηρεσία που χρειάζεστε και κάντε κλικ στο "Create"
+3. Επιλέξτε το plan σας: αυτό ελέγχει δυνατότητες και κόστος
+4. Ρυθμίστε τις απαιτούμενες παραμέτρους και αποθηκεύστε τες εκτός συστήματος (θα τις χρειαστείτε όταν κάνετε troubleshooting)
+
+Αφού δημιουργήσετε μια υπηρεσία, κάντε bind με την εφαρμογή σας στο "Service Bindings". Το BTP διαχειρίζεται τη σύνδεση και τα credentials.
+
+Τα **Service keys** είναι credentials για εξωτερικά εργαλεία ή ομάδες που χρειάζονται πρόσβαση στην υπηρεσία χωρίς να είναι χρήστες του BTP. Δώστε τους περιγραφικά ονόματα: `dev-team-access` ή `jenkins-deployment`, όχι `key1`.
+
+Στο Service Marketplace: χρησιμοποιήστε τη γραμμή αναζήτησης όταν ξέρετε τι χρειάζεστε και το "Recently Used" για επαναλαμβανόμενη πρόσβαση. Φιλτράρετε ανά environment (Cloud Foundry, Kyma) όταν εξερευνάτε και ξεκινήστε με free plans για οτιδήποτε δοκιμάζετε.
+
+### Deployment εφαρμογών
+
+Το Cockpit του BTP υποστηρίζει τρία runtime environments. Επιλέξτε με βάση τις δεξιότητες της ομάδας σας και τις απαιτήσεις της εφαρμογής σας.
+
+| Runtime | Κατάλληλο για | Σημειώσεις |
+|---|---|---|
+| Cloud Foundry | Εφαρμογές Java, Node.js, Python· παραδοσιακές web εφαρμογές | Το πιο ώριμο περιβάλλον· μεγάλος κατάλογος υπηρεσιών |
+| Kyma | Kubernetes-native workloads· microservices με σύνθετο scaling | Πιο ευέλικτο αλλά απαιτεί γνώση Kubernetes |
+| ABAP Cloud | Επεκτάσεις βασισμένες σε ABAP· clean core development | Οικείο στους developers SAP· ενσωματώνεται απευθείας με το S/4HANA |
+
+Έχω δει έργα να καθυστερούν μήνες επειδή οι developers πιέστηκαν να μπουν σε ένα περιβάλλον που ταίριαζε στο αρχιτεκτονικό πλάνο αλλά όχι στις δεξιότητές τους. Ταιριάξτε το runtime με την ομάδα.
+
+Deployment σε Cloud Foundry:
+1. Δημιουργήστε ένα αρχείο manifest.yml που ορίζει memory, instances, build packs και environment variables
+2. Κάντε push χρησιμοποιώντας το CF CLI ή αυτοματοποιήστε το μέσω του Cockpit του BTP
+3. Το BTP εντοπίζει αυτόματα το build pack
+4. Τα environment variables εισάγονται, οι υπηρεσίες γίνονται bind και τα routes ρυθμίζονται
+
+Αυτοματοποιήστε τα επαναλαμβανόμενα deployments με BTP CLI και APIs όσο το δυνατόν νωρίτερα. Οι χειροκίνητες διαδικασίες deployment είναι χρονοβόρες σε μεγάλη κλίμακα. Τα αυτοματοποιημένα deployments μείωσαν τον χρόνο setup κατά 80% σε ένα έργο: η επένδυση αποσβένεται γρήγορα.
+
+### Σενάρια ενοποίησης και επέκτασης
+
+| Σενάριο | Τι επιτρέπει | Πώς ρυθμίζεται |
+|---|---|---|
+| Ενοποίηση S/4HANA | Κοινή χρήση δεδομένων μεταξύ S/4HANA και εφαρμογών BTP | Ρυθμίστε Cloud Connector → ρυθμίστε Destination Service → αποκτήστε πρόσβαση σε OData APIs του S/4HANA |
+| Επέκταση SuccessFactors | Δημιουργία custom HR workflows με χρήση δεδομένων SuccessFactors | Ενεργοποιήστε SAP Event Mesh + API Management → επεκτείνετε με CAP ή Node.js |
+| Third-party integration | Συνδέστε Salesforce, Workday ή οποιοδήποτε μη-SAP σύστημα | Χρησιμοποιήστε έτοιμους connectors του Open Connectors ή φτιάξτε custom μέσω Integration Suite |
+| On-premise connectivity | Ασφαλής πρόσβαση από το BTP σε εσωτερικά συστήματα | Εγκαταστήστε Cloud Connector στο δίκτυό σας → ρυθμίστε το στο Cockpit στην ενότητα "Connectivity" |
+| API exposure | Εκθέστε υπηρεσίες BTP ή functions του S/4HANA ως APIs | Χρησιμοποιήστε API Management → σχεδιάστε και δημοσιεύστε API products → παρακολουθήστε την κατανάλωση |
+
+Το Cloud Connector είναι η γέφυρα μεταξύ του on-premise δικτύου σας και του BTP. Δημιουργεί ένα ασφαλές tunnel χωρίς να απαιτούνται inbound firewall rules. Ρυθμίστε το ώστε να εκθέτει μόνο τα συγκεκριμένα συστήματα και paths που χρειάζεστε: και εδώ ισχύει η αρχή της ελάχιστης πρόσβασης.
+
+### Monitoring και analytics
+
+Ρυθμίστε το monitoring πριν το χρειαστείτε, όχι αφού σπάσει κάτι. Στο subaccount σας, πηγαίνετε στο "Monitoring" και ρυθμίστε alerts για τις υπηρεσίες που έχουν σημασία. Το δικό μου standard setup: email alerts για κρίσιμες εφαρμογές, webhook notifications για υπηρεσίες που δεν επιτρέπεται να πέσουν.
+
+Τι να παρακολουθείτε:
+1. **Υγεία εφαρμογών**: χρόνοι απόκρισης και ποσοστά σφαλμάτων ανά εφαρμογή
+2. **Κατάσταση υπηρεσιών**: διαθεσιμότητα και κατανάλωση quota για βασικές υπηρεσίες
+3. **Usage analytics**: κατανάλωση πόρων ανά υπηρεσία, subaccount και χρονική περίοδο: χρήσιμο για να εντοπίζετε σπατάλη πριν γίνει πρόβλημα κόστους
+
+Διαγράφετε αχρησιμοποίητες υπηρεσίες κάθε μήνα. Κάντε scale down στα development environments εκτός εργάσιμων ωρών. Ελέγχετε την κατανάλωση entitlements πριν ανανεώσετε συμβόλαια: οι αχρησιμοποίητες κατανομές είναι συχνή πηγή υπερβάσεων κόστους.
+
+Το Cockpit δείχνει την τρέχουσα κατάσταση. Δεν σας δείχνει τάσεις αν δεν ρυθμίσετε dashboards. Ρυθμίστε usage dashboards για τις υπηρεσίες με το υψηλότερο κόστος από την πρώτη μέρα.
+
+## Προχωρημένες δυνατότητες
+
+**Τα custom domains** βελτιώνουν την αποδοχή από τους χρήστες. Ρυθμίστε τα στο "Security" → "Custom Domain" για κάθε subaccount. Η πιο επαγγελματική εικόνα κάνει πραγματική διαφορά στους τελικούς χρήστες που αλλιώς θα έβλεπαν τεχνικά URLs της SAP.
+
+**Ο αυτοματισμός μέσω BTP CLI και APIs** αφαιρεί χειροκίνητα βήματα από επαναλαμβανόμενες διαδικασίες. Συνήθεις αυτοματισμοί: provisioning περιβαλλόντων, deployment pipelines, διανομή entitlements σε νέα subaccounts. Το CLI συνδέεται με το Cockpit μέσω API και σας επιτρέπει να κάνετε script ό,τι κάνει το UI.
+
+**Το Extension Factory** (στο περιβάλλον Kyma) παρέχει runtime για επέκταση συστημάτων SAP με event-driven microservices. Χρήσιμο για δυνατότητες που πρέπει να αντιδρούν σε events της SAP χωρίς να τροποποιούν τα core systems.
+
+**Τα περιβάλλοντα ABAP Cloud** στο BTP παρέχουν ένα managed σύστημα για την εκτέλεση επεκτάσεων βασισμένων σε ABAP, διατηρώντας παράλληλα καθαρό τον πυρήνα του S/4HANA. Οι επεκτάσεις που χτίζονται εδώ ακολουθούν την αρχή clean core: αλληλεπιδρούν με το S/4HANA μέσω σταθερών APIs και όχι με άμεση πρόσβαση σε πίνακες.
+
+## Τι να αποφύγετε
+
+1. Να δημιουργείτε subaccounts χωρίς σύμβαση ονοματοδοσίας πριν καν ξεκινήσετε
+2. Να αναθέτετε ρόλους σε άτομα αντί για role collections: το διοικητικό βάρος πολλαπλασιάζεται με τον χρόνο
+3. Να αγνοείτε την ενότητα "Security Alerts"
+4. Να αφήνετε development services να τρέχουν με production configurations
+5. Να μην τεκμηριώνετε τη δομή του account σας και τη λογική πίσω από αυτή: το Cockpit αποθηκεύει το τι, όχι το γιατί
+
+## Συχνές ερωτήσεις
+
+<details>
+<summary>Τι είναι το Cockpit του SAP BTP και τι κάνει;</summary>
+
+Το Cockpit του SAP BTP είναι το web-based περιβάλλον διαχείρισης για το SAP Business Technology Platform περιβάλλον σας. Εκεί δημιουργείτε και διαχειρίζεστε subaccounts, ρυθμίζετε entitlements, διαχειρίζεστε χρήστες και ασφάλεια, κάνετε deployment εφαρμογών, ενεργοποιείτε συνδρομές σε υπηρεσίες και παρακολουθείτε το cloud περιβάλλον σας.
+
+Αποκτήστε πρόσβαση στο `https://account.hana.ondemand.com` (ή στο `https://account.hanatrial.ondemand.com` για trial accounts). Χρειάζεστε ένα user ID στο SAP: αν δεν έχετε, το ρυθμίζει ο διαχειριστής SAP της εταιρείας σας.
+
+</details>
+
+<details>
+<summary>Πώς πρέπει να δομήσω τα subaccounts στο SAP BTP;</summary>
+
+Ξεχωρίστε development, testing και production σε διαφορετικά subaccounts από την αρχή. Δώστε τους συνεπή ονόματα (κάτι όπως "Finance-Dev", "Finance-Test", "Finance-Prod") ώστε το περιβάλλον και η λειτουργία να είναι ξεκάθαρα μόνο από το όνομα.
+
+Για μεγαλύτερους οργανισμούς, εξετάστε και τον διαχωρισμό ανά τμήμα ή business unit. Η δομή που δημιουργείτε νωρίς αλλάζει δύσκολα αργότερα χωρίς να διαταράξει υπηρεσίες που ήδη τρέχουν. Πριν δημιουργήσετε οτιδήποτε, αφιερώστε χρόνο να χαρτογραφήσετε τη δομή σε χαρτί. Έχω δει ομάδες να ξοδεύουν εβδομάδες σε αναδιοργάνωση επειδή ξεκίνησαν χωρίς σχέδιο: πελάτες με 50+ subaccounts με τυχαία ονόματα όπου κανείς δεν μπορούσε να εντοπίσει γρήγορα τις υπηρεσίες.
+
+</details>
+
+<details>
+<summary>Ποιοι είναι οι τέσσερις πυλώνες του SAP BTP;</summary>
+
+Database and Data Management. HANA Cloud, Datasphere και εργαλεία data pipeline για αποθήκευση, επεξεργασία και analytics. Application Development. Cloud Foundry, Kyma, ABAP Cloud και Business Application Studio για δημιουργία επεκτάσεων και εφαρμογών. Integration. SAP Cloud Integration, API Management, Event Mesh και Open Connectors για σύνδεση συστημάτων και διαδικασιών. Intelligent Technologies. Δυνατότητες AI, machine learning και analytics, συμπεριλαμβανομένων των SAP Joule και AI Core.
+
+Αυτοί οι τέσσερις πυλώνες ορίζουν τι μπορείτε να χτίσετε και να συνδέσετε μέσω του Cockpit. Τα περισσότερα έργα BTP ξεκινούν με integration και application development και μετά επεκτείνονται σε data και intelligence καθώς ωριμάζει το τοπίο.
+
+</details>
+
+<details>
+<summary>Πώς λειτουργούν η διαχείριση χρηστών και τα role collections στο SAP BTP;</summary>
+
+Οι χρήστες διαχειρίζονται ανά subaccount στην ενότητα "Security" → "Users". Για enterprise setups, συνδέστε τον εταιρικό σας identity provider (Azure AD, Okta ή παρόμοιο) μέσω SAML trust configuration αντί να διαχειρίζεστε χρήστες χειροκίνητα στο BTP. Αυτό συγκεντρώνει κεντρικά τη διαχείριση του lifecycle των χρηστών και αφαιρεί μια ολόκληρη κατηγορία διοικητικού φόρτου.
+
+Τα role collections είναι πακέτα δικαιωμάτων που ανατίθενται σε χρήστες. Δημιουργήστε τα με βάση τις λειτουργίες εργασίας, όχι τα άτομα. Συνήθη παραδείγματα: "Developer-Subaccount-Admin", "Business-User-Read-Only", "Integration-Administrator". Ελέγχετε τις αναθέσεις ανά τρίμηνο: οι άνθρωποι αλλάζουν ρόλους αλλά τα δικαιώματα συχνά παραμένουν. Αξίζει να διατηρείτε ένα έκτακτο role collection "admin" με πλήρη πρόσβαση για break-glass σενάρια.
+
+</details>
+
+<details>
+<summary>Ποιο runtime environment να επιλέξω στο BTP; Cloud Foundry, Kyma ή ABAP Cloud;</summary>
+
+Ταιριάξτε το περιβάλλον με τις υπάρχουσες δεξιότητες της ομάδας σας, όχι μόνο με το αρχιτεκτονικό διάγραμμα. Το Cloud Foundry είναι το πιο ώριμο και έχει τον μεγαλύτερο κατάλογο υπηρεσιών: χρησιμοποιήστε το για εφαρμογές Java, Node.js και Python. Το Kyma είναι Kubernetes-native και ευέλικτο, αλλά απαιτεί γνώση Kubernetes που πολλές ομάδες με εστίαση στο SAP δεν έχουν. Το ABAP Cloud είναι για επεκτάσεις βασισμένες σε ABAP και είναι η φυσική επιλογή για ομάδες με υπόβαθρο στο development SAP.
+
+Έχω δει έργα να καθυστερούν μήνες επειδή το runtime επιλέχθηκε με βάση αρχιτεκτονικές αρχές χωρίς να ελεγχθεί τι πραγματικά ήξεραν οι developers. Η τεχνικά ανώτερη επιλογή που η ομάδα δεν μπορεί να υλοποιήσει αποτελεσματικά είναι χειρότερη από την πρακτική επιλογή που μπορεί.
+
+</details>
+
+<details>
+<summary>Πώς συνδέω το SAP BTP με on-premise συστήματα SAP;</summary>
+
+Εγκαταστήστε το Cloud Connector στο on-premise δίκτυό σας. Δημιουργεί ένα ασφαλές outbound tunnel προς το BTP χωρίς να απαιτούνται αλλαγές στο inbound firewall. Ρυθμίστε το ώστε να εκθέτει μόνο τα συγκεκριμένα συστήματα και URL paths που χρειάζεται το BTP: αρχή ελάχιστης πρόσβασης.
+
+Στο Cockpit του BTP, πηγαίνετε στην ενότητα "Connectivity" του subaccount σας για να επιβεβαιώσετε τη σύνδεση του Cloud Connector και να ελέγξετε την κατάστασή του. Στη συνέχεια δημιουργήστε Destinations που δείχνουν στα εκτεθειμένα SAP συστήματά σας. Οι εφαρμογές και οι integration flows του BTP αναφέρονται σε αυτά τα Destinations όταν χρειάζεται να καλέσουν on-premise συστήματα. Δοκιμάστε ολόκληρη τη διαδρομή από το BTP μέχρι το on-premise σύστημά σας πριν μεταφέρετε οτιδήποτε σε production.
+
+</details>

@@ -1,750 +1,267 @@
 ---
-title: "Verwenden Sie die SAP Integration Suite, um Lieferverzögerungen zu reduzieren"
-slug: "sap-integration-suite-delivery-delays"
-date: "2025-07-16 06:16:07"
-updated: "2025-08-17 14:10:52"
-hero: "/images/wp/2025/07/10-1.webp"
-category: "sap-modules"
-tags: ["sap-industry-topics", "sap-technical-decisions"]
-author: "noeldcosta"
-originalUrl: "https://noeldcosta.com/sap-integration-suite-delivery-delays/"
-h1: "Verwenden Sie die SAP Integration Suite, um Ihre Lieferverzögerungen zu reduzieren"
-metaDescription: "Erfahren Sie, wie Sie mit der SAP Integration Suite Schnittstellenfehler reduzieren, die Governance verbessern und die Bereitstellung komplexer SAP-Projekte systemübergreifend optimieren."
-excerpt: "Erfahren Sie, wie Sie mit der SAP Integration Suite Schnittstellenfehler reduzieren, die Governance verbessern und die Bereitstellung komplexer SAP-Projekte systemübergreifend optimieren."
-metaTitle: "Verwenden Sie die SAP Integration Suite, um Lieferverzögerungen zu reduzieren"
-canonicalUrl: "https://noeldcosta.com/de/sap-integration-suite-delivery-delays/"
-locale: "de"
-translatedFrom: "en"
-translationSource: "gtranslate-scrape-cleanup"
+title: 'SAP Integration Suite: Entscheidungen und Trade-offs im Betrieb'
+slug: sap-integration-suite-delivery-delays
+date: '2025-07-16'
+updated: '2026-05-21'
+hero: /images/wp/2025/07/10-1.webp
+heroAlt: SAP-Integrationsarchitekt prüft Message-Flow-Diagramm und Fehlerprotokolle auf zwei Monitoren im Enterprise-Rechenzentrum
+category: sap-modules
+tags:
+  - sap-industry-topics
+  - sap-technical-decisions
+  - sap-integration-suite
+  - rise-with-sap
+author: Noel D'Costa
+metaTitle: 'SAP Integration Suite 2026: Entscheidungen und Trade-offs im Betrieb'
+metaDescription: 'SAP Integration Suite 2026 aus realer Projekterfahrung: Komponenten, Standard- vs. Custom-Content, RISE/GROW-Deployment, PI/PO-Ende und Governance.'
+excerpt: SAP Integration Suite ist nicht einfach ein umbenanntes CPI. Sie ist eine breitere Architektur, die bestimmt, wie belastbar Ihre systemübergreifende Kommunikation ist – besonders in S/4HANA-Programmen und hybriden Landschaften. 2026 ist sie die Standard-Middleware für RISE und GROW und ersetzt PI/PO. Die falschen Entscheidungen betreffen selten die Technologie. Es geht um Zuständigkeiten, Annahmen über Altsysteme und Teststrategien, die auf Bestehen statt auf Scheitern ausgelegt sind.
+experienceSource: 'Direct experience designing and governing SAP integration architectures across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets. Includes cases of interface failure due to ownership gaps, token expiry, legacy system load limits, and late-discovered localisation requirements. Anchored stories: European retail 2023 (token expiry caused silent failure), European manufacturing 2024 (legacy load limits surfaced in production). 2026 SAP Integration Suite as default for RISE/GROW reflects current SAP product roadmap.'
+lastReviewed: '2026-05-21'
+keyTakeaways:
+  - SAP Integration Suite ist nicht nur ein umbenanntes CPI; sie umfasst Cloud Integration (CPI), API Management, Event Mesh, Integration Advisor und Open Connectors. Jede Komponente erfüllt einen anderen Zweck.
+  - 'Die meisten Integrationsfehler in SAP-Programmen gehen auf Lücken in den Zuständigkeiten zurück, nicht auf Technologie: Benennen Sie vor dem Go-live für jede Schnittstelle einen Verantwortlichen'
+  - Standard-Integrationsinhalte funktionieren für Standard-SAP-zu-SAP-Szenarien; kundenspezifische Entwicklung ist nötig, wenn Geschäftsprozesse vom SAP-Referenzmodell abweichen
+  - 'Altsysteme können oft keine gleichzeitigen synchronen Aufrufe verarbeiten: Finden Sie das im Design heraus, nicht erst im UAT'
+  - 'Integrationstests müssen Last-, Timing- und Batch-Überschneidungsszenarien abdecken: Funktionale Tests, die isoliert sauber laufen, scheitern unter realem Produktionsdruck'
+  - 'Integration Advisor ist ein Ausgangspunkt, keine Strategie: Rechnen Sie mit 40–60 % Abdeckung, nicht mit 80 %; planen Sie manuellen Mapping-Aufwand und die Validierung der Geschäftslogik ein'
+  - 'Die Dokumentation muss nach dem Go-live aktuell bleiben: Feldzuordnungen, Fehlerbehandlungspfade, Authentifizierungsdetails, Volumenerwartungen; wenn jemand Neues damit keine Fehleranalyse durchführen kann, reicht sie nicht aus'
+pullQuote: Die meisten Integrationsfehler in SAP-Programmen gehen auf unklare Zuständigkeiten zurück, nicht auf Technologie. Ohne klar definierte Verantwortung für Message-Monitoring, Retries und Fehlerbehebung scheitern selbst gut entworfene iFlows im Produktivbetrieb still.
+mentions:
+  - SAP Integration Suite
+  - SAP BTP
+  - SAP CPI
+  - SAP S/4HANA
+  - SAP Ariba
+  - SAP SuccessFactors
+  - SAP API Management
+  - SAP Event Mesh
+  - SAP Integration Advisor
+  - SAP Solution Manager
+  - SAP Cloud ALM
+  - RISE with SAP
+  - GROW with SAP
+locale: de
+translatedFrom: en
+translationSource: openai-gpt-5.4
+translationDate: '2026-05-25T21:07:25.342Z'
+canonicalUrl: https://noeldcosta.com/de/sap-integration-suite-delivery-delays/
 ---
 
-### SAP Artikel
+SAP Integration Suite klingt wie eine Umbenennung von SAP Cloud Platform Integration. Ist es aber nicht. Der Umfang ist größer. SAP positioniert sie als Grundlage für die gesamte systemübergreifende Kommunikation in Cloud- und Hybrid-Landschaften. Damit ist sie zentraler denn je, vor allem für Programme, die S/4HANA zusammen mit Altsystemen, Drittplattformen und komplexen Datenflüssen steuern.
 
-# Verwenden Sie die SAP Integration Suite, um Ihre Lieferverzögerungen zu reduzieren
+## Wie RISE-Bündelung, das PI/PO-Ende und Joule das Bild der Integration Suite 2026 verändern
 
+Drei Veränderungen gegenüber dem Playbook von 2022 sind für jedes aktuelle Programm relevant.
 
-### Noel D. Costa
+**Integration Suite ist in Abonnements von RISE with SAP und GROW with SAP gebündelt.** Basiskapazität ist enthalten; bei hohem Volumen über die gebündelte Stufe hinaus fallen Aufschläge an. Für Organisationen auf Cloud-Editionen ist die Entscheidung für die Integrationsplattform damit keine isolierte mehr. Programme, die MuleSoft oder Boomi mit Integration Suite vergleichen, sollten die gebündelte Wirtschaftlichkeit unter RISE berücksichtigen; es geht nicht nur um einen Feature-für-Feature-Vergleich.
 
-*   Letztes Update : Juli 16, 2025
+**Der Mainstream-Support für PI/PO endet 2027.** Programme, die noch auf PI/PO laufen, brauchen eine Migrations-Roadmap. Das wellenbasierte Migrationsmuster (zuerst risikoarme SAP-zu-SAP-Flows, B2B-EDI in der Mitte, volumenstarkes Auftragsmanagement zuletzt) dauert in einer Landschaft mit vielen Schnittstellen typischerweise sechs Monate und bleibt im geplanten Budget. Ein erzwungener Cutover unter dem Zeitdruck der Frist 2027 dauert neun Monate und zieht meist sechsstellige Zusatzkosten für die Stabilisierung nach sich.
 
-SAP Integration Suite mag neu klingen, ist aber in Wirklichkeit die Weiterentwicklung von [SAP](https://www.sap.com) Cloud-Plattform-Integration. Der Name hat sich geändert, doch die Probleme, die sie lösen soll, bleiben bekannt. Was sich jetzt geändert hat, ist der Umfang. SAP positioniert die Integration Suite als Grundlage für die gesamte systemübergreifende Kommunikation in Cloud- und Hybridlandschaften. 
+**Joule auf Integration Suite erreichte 2024-2025 die allgemeine Verfügbarkeit.** Entwurf von iFlows in natürlicher Sprache, KI-gestützte Fehlertriage bei fehlgeschlagenen Nachrichten, Anomalieerkennung bei Integrationsvolumenmustern. Die Beschleunigung ist bei Standard-iFlows real. Komplexe Orchestrierung mit tiefer Business-Logik braucht weiterhin erfahrene Architekten. Das 2026er Joule für SAP Activate erstellt Integrations-Designartefakte im Standardscope 30 bis 50 Prozent schneller.
 
-Dadurch ist es zentraler als je zuvor, insbesondere für Teams, die S/4HANA-Programme oder komplexe Ökosysteme von Drittanbietern verwalten.
+Die technischen Entscheidungen, bei denen Teams hier falsch liegen, haben selten mit der Technologie zu tun. Es geht um Lücken bei Zuständigkeiten, ungetestete Annahmen über Altsysteme und Integrations-Teststrategien, die darauf ausgelegt sind zu bestehen, statt die Fehler zu finden, die die Produktion ohnehin finden wird.
 
-In realen Projekten besteht die Herausforderung darin, das Tool unter chaotischen und wechselnden Bedingungen optimal einzusetzen. Zeitpläne geraten ins Wanken. Quellsysteme ändern sich spät. Datenformate driften leicht und unbemerkt. In solchen Fällen scheitert die Integration häufig. Und leider bemerken es die Fachanwender meist genau dort.
+Das ist die Gruppe von Entscheidungen und blinden Flecken, über die Teams normalerweise erst sprechen, wenn etwas kaputtgeht.
 
-Viele Teams unterschätzen, was tatsächlich geplant werden muss. Zum Beispiel:
+## Die Komponenten und was jede davon tatsächlich macht
 
-*   Werden wir die Integration mit vorgefertigten Inhalten erstellen oder eine individuelle Lösung wählen?
+SAP Integration Suite ist kein einzelnes Tool. Es ist ein Bündel von Services. Zu wissen, welches Teil wann und warum eingesetzt wird, entscheidet darüber, wie gut die Integrationslandschaft über die Zeit trägt.
 
-*   Wer ist für die Überwachung, Wiederholungsversuche und Fehlerbehandlungslogik verantwortlich?
+| Komponente | Rolle | Was schiefläuft, wenn sie falsch eingesetzt wird |
+|---|---|---|
+| Cloud Integration (CPI) | Nachrichtenflüsse, Routing, Transformationen: der Standard für die meisten iFlows | Wenn alles in CPI gepackt wird, einschließlich APIs und Events, werden Schnittstellen schwer wartbar und schwer testbar |
+| API Management | Steuert die externe API-Bereitstellung: Rate Limiting, Sicherheit, Analytics | Wenn es übersprungen wird, vervielfachen sich Punkt-zu-Punkt-Aufrufe und Governance lässt sich später nicht mehr sinnvoll nachrüsten |
+| Event Mesh | Asynchrone Nachrichtenübermittlung für entkoppelte nachgelagerte Trigger | Wenn es nicht sauber überwacht wird, wachsen Message Queues unbemerkt, ohne jemanden zu alarmieren |
+| Integration Advisor | Mapping-Vorschläge für strukturierte Formate wie EDI und IDoc | Teams gehen von 80% Abdeckung aus; tatsächlich sind es oft 40–60%; der Rest ist manuelle Arbeit |
+| Open Connectors | Kapselt Drittanbieter-APIs wie Salesforce oder Shopify | Updates externer Plattformen brechen Konnektoren still; jemand muss Endpunkte aktiv überwachen |
 
-*   Wie testen wir die Leistung für Schnittstellen mit hohem Volumen?
+Teams, die Integration Suite als „CPI mit Add-ons“ behandeln, ignorieren oft API Management und Event Mesh komplett. Das funktioniert, bis die Komplexität sie einholt.
 
-*   Gibt es API-Ratenbegrenzungen von externen Systemen, die niemand erwähnt hat?
+## Standard-Content versus kundenspezifische Entwicklung
 
-Manchmal liegt der Fehler auch an nicht übereinstimmenden Annahmen der Fach-, Funktions- und Integrationsteams. Und sobald das System live ist, ist die Nacharbeit mühsam.
+Vorgepackter SAP-Integrations-Content ist im richtigen Kontext wirklich nützlich. Wenn Sie SAP S/4HANA mit SAP Ariba oder SAP SuccessFactors über deren Standardprozesse verbinden, passt das oft sauber. Reale Geschäftsprozesse bleiben aber selten innerhalb der Referenzlinien von SAP.
 
-Außerdem wird heute mehr auf ereignisgesteuerte Architektur gesetzt, insbesondere bei [SAP-BTP](https://noeldcosta.com/de/sap-btp-cockpit-issues/) und neuere UX-Ebenen. Diese Teile müssen mit der gleichen Ernsthaftigkeit getestet werden wie die Backend-Logik. Ich habe einen breiteren Blick auf [SAP-Integrationsplattformen](https://noeldcosta.com/de/sap-implementation/sap-integration-platforms/) bereits, und wie schlecht gehandhabt [Datenmigration](https://noeldcosta.com/de/why-sap-data-migration-fails-and-how-to-fix-it/) letztendlich wird Druck auf die Middleware ausgeübt.
+| Kriterien | Standard-Content | Kundenspezifische Entwicklung |
+|---|---|---|
+| Prozessabgleich | Am besten für Standard-SAP-zu-SAP-Szenarien | Wenn die Business-Logik von der SAP-Referenz abweicht |
+| Zeit bis zur Bereitstellung | Schnellere Ersteinrichtung, sofern nur minimale Anpassungen nötig sind | Mehr Aufwand am Anfang; vermeidet Nacharbeit, wenn Standard-Flows zu starr sind |
+| Änderbarkeit | Schwer tiefgreifend anzupassen, ohne die SAP-Supportfähigkeit zu gefährden | Für den tatsächlichen Prozess gebaut; Change Requests lassen sich sauberer umsetzen |
+| Langfristige Wartung | Risiko technischer Schulden, wenn über die ursprüngliche Absicht hinaus geändert wird | Sauberer für den langfristigen Support, wenn mit klarer Architektur gebaut |
+| Schnittstellenkomplexität | Am besten für einfache, einseitige Flows | Erforderlich für bedingtes Routing, mehrstufige Logik und Eigenheiten von Altsystemen |
 
-Dieser Artikel konzentriert sich auf die eigentliche Arbeit hinter der Integration Suite, d. h. auf Entscheidungen, Kompromisse und blinde Flecken, über die die meisten Teams nicht sprechen, bis etwas kaputt geht.
+Die Entscheidung lässt sich nicht aufschieben. Wenn sie spät getroffen wird, stellen Teams mitten im Projekt fest, dass ein „Standard“-iFlow so stark verändert wurde, dass er nicht mehr mit dem SAP-Supportmodell kompatibel ist, und bauen ihn unter Go-live-Druck neu.
 
+Ich habe Projekte gesehen, die Wochen verloren haben, weil Teams davon ausgingen, dass Standard-Content gleichzeitig kundenspezifische Stammdatenstrukturen, zusätzliche Felder aus interner Entwicklung und Legacy-Authentifizierungsmodelle abdecken würde. Tat er nicht. Die Analyse, die im Design hätte stattfinden müssen, fand erst während des UAT statt.
 
-### Die meisten Integrationsfehler in SAP-Programmen sind auf Lücken in den Verantwortlichkeiten und nicht in der Technologie zurückzuführen. Ohne definierte Verantwortlichkeiten für Nachrichtenüberwachung, Wiederholungsversuche und Fehlerbehebung scheitern selbst die am besten konzipierten iFlows und APIs in der Produktion.
+Die Frage in der Blueprint-Phase lautet: Liegt dieser Prozess wirklich nahe an der SAP Best Practice, oder haben Jahre interner Entscheidungen daraus etwas anderes gemacht? Wenn Letzteres zutrifft, bekommen Sie mit kundenspezifischer Entwicklung saubereren Code und klarere Zuständigkeiten.
 
-[Sprechen Sie mit Noel – ein kostenloser 15-minütiger Anruf hilft Ihnen!](mailto:solutions@noeldcosta.com)
+## Integration in komplexen Programmen
 
+In großen SAP-Programmen ist Integration oft das Erste, was zwischen die Workstreams fällt; jedes Team hat eigene Prioritäten und Zeitpläne. Schnittstellen überschreiten diese Grenzen, aber niemand verantwortet die Koordination.
 
-## 10 wichtige Erkenntnisse zur SAP Integration Suite
+Ich habe erlebt, dass zwei Projektteams unabhängig voneinander Integrationen für denselben Geschäftspartner gebaut haben, beide auf denselben Endpunkt. Keines der Teams wusste vom anderen. Entdeckt wurde das erst im UAT. Diese Fehler sind nicht technisch, sondern strukturell.
 
-1.  Die SAP Integration Suite ist nicht einfach eine Umbenennung von CPI. Sie erweitert den architektonischen Umfang. Teams, die sie wie „CPI mit Add-ons“ behandeln, ignorieren oft Komponenten wie Event Mesh oder Integration Advisor, die die Integrationsflexibilität langfristig prägen.
+Zentrale Integrations-Governance muss früh etabliert werden. Das bedeutet:
 
-2.  Die Wahl zwischen Standardinhalten und benutzerdefinierten Flows ist eine Planungsentscheidung, nicht nur eine technische. Teams unterschätzen den Aufwand, vorgefertigte Inhalte zu ändern. Ich habe diesen Kompromiss bereits in [diese Aufschlüsselung der SAP-Implementierungsstrategie](https://noeldcosta.com/de/best-sap-implementation-strategies-to-avoid-costly-mistakes/).
+1. Ein gemeinsames Integrations-Backlog, sichtbar für alle Workstreams
+2. Benannte Schnittstellenverantwortliche, die über die Umsetzung hinweg nachverfolgt werden
+3. Abstimmungspunkte zwischen den Workstreams vor jedem größeren Deployment
+4. Eine Prüfung der Schnittstellenabhängigkeiten vor jeder Go-live-Zusage
 
-3.  Verantwortlichkeiten sind oft unklar. Wenn Fehler auftreten, weiß niemand, wer sie beheben soll. Bestimmen Sie Schnittstellenverantwortliche und legen Sie SLAs für die Reaktion fest. Andernfalls geraten Produktionsverzögerungen außer Kontrolle.
+| Problembereich | Was schiefläuft | Wie man es angeht |
+|---|---|---|
+| Workstream-Koordination | Jeder Stream baut Schnittstellen isoliert; Abhängigkeiten überschneiden sich | Gemeinsames Integrations-Backlog mit Design-Checkpoints über alle Streams hinweg |
+| Wiederverwendung von Middleware | Mehrere Programme überladen CPI mit nicht zusammengehöriger Logik | Shared Services mit Versionskontrolle; dokumentierte Zuständigkeit pro Flow |
+| Zuständigkeitslücken | Wenn Fehler auftreten, weiß niemand, wer sie behebt | Benannte Verantwortliche für jeden iFlow oder jede API, sichtbar für Business und IT-Support |
+| Parallele Deployments | Zwei Go-lives teilen sich Endpunkte oder Queues; einer stört den anderen | Abhängige Releases sequenzieren; Integrationsabhängigkeiten im Cutover-Plan |
+| Umgebungsabweichungen | Dev, Test und Produktion spiegeln sich nicht; Credentials unterscheiden sich | Automatisierte Deployment-Skripte; dokumentierte Credentials pro Landschaft |
+| Späte Änderungen an Business-Regeln | UAT-Änderungen erfordern Last-Minute-Anpassungen über mehrere Integrationen hinweg | Fachliche Verantwortliche in jeder Iteration einbinden; Mapping-Annahmen früh prüfen |
 
-4.  Schnittstellenfehler entstehen oft durch nicht übereinstimmende Stammdaten oder fehlerhafte Zuordnungen, insbesondere nach der Umstellung. Dies wird noch schlimmer, wenn die Datenmigration überstürzt wurde. Siehe [Häufige Risiken bei der SAP-Datenmigration](https://noeldcosta.com/de/why-sap-data-migration-fails-and-how-to-fix-it/).
+## Altsysteme und Integration von Drittsystemen
 
-5.  Middleware benötigt ebenso wie die Benutzeroberfläche Belastungstests. Teams gehen davon aus, dass „es in der Entwicklung funktioniert hat“ ausreicht. Das bricht unter echtem Druck zusammen.
+Die größten Integrationsprobleme liegen selten bei den modernen Plattformen. Es sind die älteren Systeme mitten in kritischen Prozessen.
 
-6.  Ereignisbasierte Integrationen erhöhen das Latenzrisiko. Sie sind zwar nützlich, benötigen aber die richtige Überwachung, um hängengebliebene Nachrichten abzufangen.
+Legacy-ERPs können unter Last oft keine parallelen synchronen Aufrufe verarbeiten. Stellen Sie fünf parallele API-Calls in die Queue, und der Server wird langsam, friert ein oder verliert still Daten. Asynchrone Integration kann helfen, aber nur, wenn das empfangende System Queues verarbeiten kann. Viele Legacy-Systeme können das nicht.
 
-7.  Einige Legacy-Systeme unterstützen keine asynchrone Integration. Planen Sie dies ein, sonst funktioniert Ihr Design nicht.
+Protokoll-Mismatches sind häufig und werden spät entdeckt. Sie entwerfen einen Flow mit OAuth2 und REST; das Legacy-System spricht SOAP mit einem hart codierten Timeout von 30 Sekunden. Ältere Systeme unterstützen manchmal auch die Token-Refresh-Logik nicht sauber.
 
-8.  Überspringen Sie die Dokumentation nicht. [Verwenden Sie geeignete SAP-Dokumentationstools](https://noeldcosta.com/de/best-sap-documentation-tools-2024-guide/) früh.
+In einem europäischen Handelsprogramm 2023 fiel ein Middleware-Flow jeden Freitag aus, weil ein OAuth-Token eines Payroll-Drittsystems wöchentlich ablief. Bemerkt hat das niemand bis zum zweiten UAT-Zyklus. Das ist eine Woche Verzögerung wegen einer Lücke, deren Identifikation im Design eine Stunde gekostet hätte.
 
-9.  Integration Advisor ist nicht so freihändig, wie es klingt. Es erfordert oft einen erheblichen manuellen Regelaufbau.
+| Risikobereich | Häufige Herausforderung | Planungsmaßnahme |
+|---|---|---|
+| Synchrone Grenzen | Legacy-Systeme blockieren bei parallelen Aufrufen | Asynchrone Nachrichtenübermittlung nutzen; Aufrufe über Event Mesh oder CPI staffeln |
+| Protokoll-Mismatches | Legacy lehnt REST oder OAuth ab; läuft bei SOAP in Timeouts | Protokollkompatibilität bestätigen, bevor das Design startet |
+| API-Rate-Limits | Batch-Jobs überschreiten die Drosselung externer APIs | Aufrufe über API Management drosseln; Wait-Logik in CPI ergänzen |
+| Token-Ablauf | Flows scheitern still in Nebenzeiten | Token-Refresh-Zyklen einplanen; Ablauf proaktiv überwachen |
+| Starre Datenformate | Legacy verlangt starre Formate; dynamische Payloads brechen das Parsing | Vor dem Design-Freeze mit echten Produktionsbeispieldaten validieren |
+| Kein Fallback bei Fehlern | Dateiübertragungen scheitern ohne Retry; Daten bleiben hängen | In der Middleware puffern; Retry- und Alert-Logik in iFlows einbauen |
 
-10.  Wenn zwei Programme parallel laufen, überprüfen Sie die Governance. Konflikte in Schnittstellen können plötzlich und ohne Vorwarnung auftreten.
+## Teststrategie für Schnittstellen
 
-## Schlüsselkomponenten, die die Architektur der SAP Integration Suite prägen
+Integration bricht nicht so, wie funktionale Tests prüfen. Sie scheitert unter Zeitdruck, wenn sich Hintergrundjobs überlappen, wenn Eingaben in großem Maßstab statt einzeln eintreffen.
 
+Funktionale Tests zeigen, dass eine Transaktion gebucht wird und eine Nachricht im Log erscheint. Sie testen nicht, was passiert, wenn beim ersten Payroll-Lauf 200.000 IDoc-Datensätze eintreffen. In einem Projekt brachte ein IDoc, das in SIT sauber aussah, die Queue zum Stillstand, als das echte Payroll-Datenvolumen durchlief. Das fiel in Unit-Tests nicht auf. Dafür brauchte es Lasttests.
 
-Bitte nicht anschauen [SAP-Integrationssuite](https://noeldcosta.com/de/sap-integration-suite-delivery-delays/) als ein Tool. Es handelt sich um ein Bündel von Diensten. Wenn Sie wissen, welches Teil wann und warum verwendet werden soll, kann dies entscheidend dazu beitragen, wie gut Ihre Integrationslandschaft langfristig funktioniert. 
+Was Integrationstests abdecken müssen, was funktionale Tests übersehen:
 
-Ich habe mit Teams gearbeitet, die sich ausschließlich auf CPI verließen, weil sie damit vertraut waren. Diese Abkürzung funktionierte, bis die Komplexität sie einholte.
+1. Realistische Datenlasten über parallele Benutzer hinweg
+2. Service-Unterbrechungen und Recovery-Verhalten
+3. Timeouts und Retries über Middleware und Backends hinweg
+4. Hintergrund-Batch-Jobs parallel zu Echtzeitaufrufen
+5. Monatsende- und Peak-Load-Szenarien
 
-*   **Cloud-Integration (CPI)** übernimmt Nachrichtenzuordnung, Routing und Orchestrierung. Es ist die Standardeinstellung für die meisten Flows. Es ist jedoch nicht für die Verwaltung von APIs oder Ereignissen gedacht. Wenn alles in CPI gestopft wird, werden Schnittstellen schwieriger zu unterstützen und zu testen. Ich habe erlebt, dass Logik in mehreren iFlows dupliziert wurde, weil die Teams nicht sauber auf die Architektur zurückgegriffen haben.
-*   **API-Verwaltung** wird oft übersehen. Wenn Sie jedoch Daten extern offenlegen müssen, wie beispielsweise die Preisgestaltung für eine mobile Anwendung, hilft es, Drosselung, Sicherheit und Überwachung durchzusetzen. Sobald Sie es überspringen, wird die spätere Implementierung von Governance zu einem Problem.
-*   **Ereignisnetz** Ermöglicht das asynchrone Auslösen nachgelagerter Aktivitäten. Beispielsweise kann das Erstellen einer Bestellung die Lagersysteme automatisch benachrichtigen. Gut geplant ist das großartig. Wenn Teams es jedoch überall einsetzen, wird die Nachverfolgung des Nachrichtenflusses mühsam.
-*   **Integrationsberater** verspricht automatisches Mapping. Es hilft zwar bei EDI und strukturierten Daten, aber erwarten Sie nicht, dass es sofort die Geschäftslogik beherrscht. Die meisten Mappings erfordern immer noch menschliches Urteilsvermögen.
-*   **Offene Konnektoren** Wrapping von Drittanbieter-APIs wie Salesforce oder Shopify. Sie sind zwar nützlich, aber die Teams vergessen, dass externe Updates sie unbemerkt beschädigen können. Jemand muss diese Endpunkte überwachen.
+Auch die Umgebungen sind wichtig. Entwicklung ist sauber: keine echte Last, keine überlappenden Zeitpläne. Wenn UAT und Pre-Production erreicht sind, sind andere Systeme aktiv, Batch-Jobs laufen, und Nachtfenster sind live. Deadlocks, Race Conditions und API-Throttle-Limits tauchen hier auf, nicht im Unit-Testing.
 
-Kurz gesagt: Nicht jeder Flow gehört in CPI. Wenn Sie die Komponenten gezielt mischen, erhalten Sie eine sauberere, besser testbare Architektur, die ohne Überraschungen skaliert.
+Die Testverantwortung ist genauso wichtig wie die Testabdeckung. Fachliche Teams validieren End-to-End-Ergebnisse. Integrationsteams kümmern sich um Logs, Retries und Exception-Flows. Projektleitungen bestätigen die Abdeckung über Umgebungen und Lastbedingungen hinweg.
 
-Architekturkomponenten der SAP Integration Suite Eine Aufschlüsselung der wichtigsten Komponenten der SAP Integration Suite, einschließlich Cloud-Integration, API-Management, Event Mesh und Open Connectors mit Rollen und Wartungsaspekten.
+## Grenzen des Integration Advisor
 
-### Schlüsselkomponenten der SAP Integration Suite-Architektur
+Integration Advisor schlägt Mappings für strukturierte Formate vor: EDIFACT, ANSI X12, IDoc-basiertes EDI. Für B2B-Formate mit strengen Konventionen spart das Einrichtungszeit. Für Enterprise-Integrationen mit Legacy-Systemen, kundenspezifischen Feldern, bedingter Logik und nicht dokumentierten Business-Regeln ist es nur ein Ausgangspunkt.
 
-Komponente
+Ein Team, mit dem ich gearbeitet habe, erwartete 80% Mapping-Abdeckung vom Advisor. Tatsächlich lag sie bei rund 40%. Der Rest erforderte kundenspezifisches Mapping, fachliche Validierung und manuelle Tests. Wenn das Projektbudget das nicht berücksichtigt, passiert die Bereinigung unter Go-live-Druck.
 
-Rolle bei der Integration
+Die konkreten Lücken, die Integration Advisor nicht schließt:
 
-Cloud-Integration (CPI)
+1. Business-Logik, die sich über Jahre informell angesammelt hat (Zahlungsbedingungen, Preiskategorien, Mengeneinheiten-Konventionen)
+2. Bedingte Transformationsregeln auf Basis des Geschäftskontexts
+3. Exception Handling für Sonderfälle, die nicht ins Standardformat passen
 
-Verwaltet Nachrichtenflüsse, Routing und Transformationen. Wird häufig für die Benutzeroberfläche im Backend und für Batch-Jobs verwendet. Bei Überlastung mit APIs wird die Wartung schwierig.
+Um diese Lücken zu schließen, braucht es Input aus den Fachbereichen. Integration Advisor ohne diesen Input erzeugt Schnittstellen, die technisch gemappt, aber in bestimmten Szenarien fachlich falsch sind.
 
-API-Verwaltung
+## Dokumentation und Governance nach dem Go-live
 
-Steuert externe APIs mit Ratenbegrenzung, Sicherheit und Analyse. Es ist wichtig, dies frühzeitig zu tun. Wenn dies später geschieht, wird die Bereinigung von Punkt-zu-Punkt-Anrufen schwieriger.
+Integration endet nicht mit dem Go-live. Sie verschlechtert sich mit der Zeit, wenn Dokumentation auseinanderläuft, Zuständigkeiten nicht formalisiert sind und der Support nach Hypercare nicht strukturiert ist.
 
-Ereignisnetz
+Was Integrationsdokumentation enthalten muss, damit sie nützlich ist:
 
-Ermöglicht asynchrone Nachrichtenübermittlung zwischen Systemen. Nützlich für entkoppelte Ereignisse. Ohne Nachverfolgung können Nachrichtenwarteschlangen jedoch wachsen, ohne dass jemand davon Kenntnis erhält.
+1. Feldmappings und Transformationslogik
+2. Authentifizierungsdetails (Endpunkte, Token-Refresh-Zyklen, Zeitplan für Credential-Rotation)
+3. Fehlerbehandlungspfade und Fallback-Regeln
+4. Volumenerwartungen und kritische Zeitfenster (Monatsende, Payroll-Läufe, Overnight-Batches)
 
-Integrationsberater
+Wenn nächste Woche jemand Neues ins Support-Team käme: Könnte diese Person eine fehlschlagende Schnittstelle allein mit der vorhandenen Dokumentation analysieren? Wenn die Antwort nein ist, reicht die Dokumentation für den Produktionsbetrieb nicht aus.
 
-Schlägt Zuordnungen für strukturierte Formate wie EDI und IDoc vor. Hilfreich für den schnellen Einstieg, erfordert aber dennoch menschliches Urteilsvermögen für echte Geschäftsregeln.
+Benannte Schnittstellenverantwortung ist nicht optional. Jede Schnittstelle (auch volumenarme) braucht eine benannte Person oder ein Team, das für Monitoring, Eskalation und Lifecycle-Updates verantwortlich ist. Ohne das springen Fehler zwischen Basis, Middleware und Fachteams hin und her, während das Business wartet.
 
-Offene Konnektoren
+Nach Hypercare: Sobald die erste intensive Supportphase endet, lässt das Integrations-Monitoring meist nach. Bauen Sie ein Supportmodell auf, das regelmäßige Reviews der Error-Logs, die Übergabe der Verantwortung vom Projekt an die Support-Teams und eine SLA-Abstimmung zwischen Business und IT umfasst. Integration, die unsichtbar wird, wird vernachlässigt. Vernachlässigte Integration ist oft die eigentliche Ursache für verspätete Buchungen, fehlende Rechnungen und nicht abgestimmte Finanzberichte, die erst Wochen nach dem Go-live sichtbar werden.
 
-Umschließt APIs von Drittanbietern wie Salesforce oder Shopify. Dies verkürzt die Einrichtungszeit, ist aber von der Stabilität der externen Plattform abhängig. Änderungen müssen aktiv überwacht werden.
+## Häufig gestellte Fragen
 
+<details>
+<summary>Was ist SAP Integration Suite und worin unterscheidet sie sich von CPI?</summary>
 
-### Sehen Sie, wie ich Ihr ERP und AI Die richtige Systemauswahl oder Implementierung für Sie.
+SAP Integration Suite ist die Weiterentwicklung von SAP Cloud Platform Integration (CPI), aber der Umfang ist größer. CPI ist eine Komponente innerhalb der Integration Suite (Cloud Integration), die Nachrichtenflüsse, Routing und Transformationen abdeckt.
 
-**ERP- und KI-Systemauswahl** – Identifizieren und wählen Sie die richtige ERP- oder KI-fähige Plattform, die Ihren Geschäftsanforderungen entspricht.
+Integration Suite ergänzt vier weitere Services: API Management steuert die externe API-Bereitstellung mit Rate Limiting, Sicherheit und Analytics; Event Mesh ermöglicht asynchrone Nachrichtenübermittlung für entkoppelte nachgelagerte Trigger; Integration Advisor liefert Mapping-Vorschläge für strukturierte Datenformate wie EDI und IDoc; Open Connectors kapselt Drittanbieter-APIs wie Salesforce oder Shopify.
 
-**Projektunterstützung und -wiederherstellung** – Halten Sie Ihr Projekt auf Kurs oder bringen Sie fehlgeschlagene Implementierungen wieder unter Kontrolle.
+Teams, die Integration Suite als „nur CPI mit neuem Namen“ behandeln, lassen API Management und Event Mesh oft komplett weg. Das funktioniert in einfachen Landschaften. In komplexen systemübergreifenden Umgebungen erzeugen diese Auslassungen Governance-Lücken, die unter Produktionslast sichtbar werden.
 
-**ERP-Modernisierung** – Verwandeln Sie vorhandene ERP-Systeme in moderne, effiziente und skalierbare ERP-Umgebungen.
+</details>
 
-[Kontakt](mailto:so*******@********ta.com "Dieser Kontakt wurde durch Anti-Spam von CleanTalk kodiert. Klicken Sie zum Dekodieren. Um die Dekodierung abzuschließen, stellen Sie sicher, dass JavaScript in Ihrem Browser aktiviert ist.")
+<details>
+<summary>Wann sollte SAP-Integration Standard-Content statt kundenspezifischer Entwicklung nutzen?</summary>
 
-## Wann Standardinhalte und wann benutzerdefinierte Entwicklungen verwendet werden sollten
+Standard-Content ist sinnvoll, wenn der Prozess nah am Best-Practice-Modell von SAP bleibt, die Schnittstelle SAP-zu-SAP ist (zum Beispiel S/4HANA zu Ariba oder SuccessFactors) und die Datenlogik relativ geradlinig ist.
 
+Kundenspezifische Entwicklung ist die bessere Wahl, wenn der Geschäftsprozess durch Jahre interner Entscheidungen von der SAP-Referenz abgewichen ist, wenn Eigenheiten von Legacy-Systemen eine spezifische Behandlung erfordern oder wenn bedingtes Routing und mehrstufige Logik Standard-Flows schwer wartbar machen.
 
-In SAP-Projekten geht man oft davon aus, dass die Verwendung der vorgefertigten iFlows aus der SAP Integration Suite der sichere und effiziente Weg ist. Auf dem Papier sind sie getestet, dokumentiert und auf die gesamte Produkt-Roadmap abgestimmt. 
+Die Entscheidung sollte in der Blueprint-Phase fallen, nicht erst nachdem die Konfiguration begonnen hat. Das Risiko beim Aufschieben: Teams verändern Standard-Content so stark, dass er nicht mehr mit dem SAP-Supportmodell kompatibel ist, und bauen ihn dann unter Go-live-Druck neu. Dieser Neuaufbau kostet mehr, als ein sauberer kundenspezifischer Build zu Beginn gekostet hätte.
 
-Und wenn Sie SAP S/4HANA mit anderen SAP-Lösungen verbinden, wie [SAP-Ariba](https://noeldcosta.com/de/sap-ariba-your-2025-guide-to-sourcing-supplier-management/) or [Erfolgsfaktoren](https://noeldcosta.com/de/sap-conversational-ai-and-successfactors-for-hr-in-2025/), die Passform ist oft sauber.
+</details>
 
-Geschäftsprozesse bleiben jedoch selten innerhalb der SAP-Referenzlinien. Benutzerdefinierte Felder, Eigenheiten älterer Plattformen und Sicherheitsprotokolle führen in Grauzonen. Sobald die Standardinhalte so weit verändert werden, dass sie diesen Anforderungen entsprechen, gehen die Supportvorteile verloren. Ich habe dies selbst in Projekten erlebt, in denen Wochen mit dem Versuch verloren gingen, grundlegend unpassende „Standard“-Abläufe zu optimieren.
+<details>
+<summary>Was verursacht Ausfälle bei SAP-Integrationen in komplexen Programmen?</summary>
 
-### Wenn Standard gut funktioniert
+Die häufigsten Ursachen, die ich gesehen habe, sind strukturell, nicht technisch.
 
-Standardinhalte sind sinnvoll, wenn:
+Zuständigkeitslücken: Keine benannte Person ist für Monitoring, Retries und Fehlerbehebung bei einer bestimmten Schnittstelle verantwortlich. Wenn etwas ausfällt, springt es zwischen Teams hin und her.
 
-*   Ihr Prozess bleibt nah an den Best Practices von SAP
+Konflikte bei parallelen Deployments: Zwei Projekt-Workstreams bauen unabhängig voneinander Integrationen, die denselben Endpunkt oder dieselbe Message Queue nutzen, ohne voneinander zu wissen. Entdeckt wird das erst im UAT.
 
-*   Sie haben Zeitdruck und benötigen eine Startvorlage
+Spät erkannte Grenzen von Legacy-Systemen: Legacy-ERPs können unter Last keine parallelen synchronen Aufrufe verarbeiten. Das wird im Lasttest entdeckt, wenn Lasttests stattfinden, und im Go-live, wenn nicht.
 
-*   Schnittstellen sind unidirektional und die Datenlogik ist einfach
+Tests, die nichts finden: Funktionale Tests laufen isoliert sauber durch, simulieren aber weder überlappende Batch-Jobs noch Peak-Volumen oder Timing-Konflikte zwischen parallelen Hintergrundprozessen. Die Produktion findet diese Probleme.
 
-*   Die Systemlandschaft ist größtenteils SAP-gesteuert
+</details>
 
-Wenn das Projekt diesem Profil entspricht, machen Sie weiter. Validieren Sie es jedoch frühzeitig.
+<details>
+<summary>Wie sollte Integrationstesting für SAP Integration Suite aufgebaut sein?</summary>
 
-### Wenn sich Maßarbeit auszahlt
+Integrationstests müssen Szenarien abdecken, die funktionale Tests nicht abdecken: realistische Datenvolumina, parallele Benutzer, überlappende Batch-Jobs und Lastbedingungen in Spitzenzeiten.
 
-Kundenspezifische Entwicklung gibt Ihnen Flexibilität:
+Konkrete Szenarien, die enthalten sein sollten:
 
-*   Die Logik ist auf Ihren tatsächlichen Prozess zugeschnitten, nicht auf die Annahmen von SAP
+- Große Datenvolumina: mit Volumina testen, die dem ersten Monatsende oder Payroll-Lauf entsprechen, nicht nur mit einzelnen Transaktionen
+- Parallele Hintergrundjobs: mit geplanten Nacht-Batches und gleichzeitig laufenden Echtzeit-Schnittstellen testen
+- Service-Unterbrechung und Recovery: testen, was passiert, wenn ein nachgelagertes System vorübergehend nicht verfügbar ist; Retry-Logik und Alerting verifizieren
+- API-Throttle-Limits: testen, was passiert, wenn bei einem Massenjob das Rate Limit einer externen API erreicht wird
 
-*   Sie besitzen den Code und sein Verhalten unter Last
+Die Umgebung ist wichtig. Entwicklungsumgebungen sind sauber und unterlastet. In UAT und Pre-Production sind andere Systeme aktiv und Batch-Jobs laufen. Lasttests und Performance-Validierung müssen in Umgebungen stattfinden, die die Produktionsbedingungen widerspiegeln.
 
-*   Das Testen ist einfacher, weil Sie wissen, was in jedem Schritt passiert
+</details>
 
-Wir haben diese Kompromisse weiter diskutiert in [dieses SAP-Integrationsstück](https://noeldcosta.com/de/sap-implementation/sap-integration-platforms/) und in [der Beitrag zum SAP-Projektrisiko](https://noeldcosta.com/de/sap-project-risk-assessment-matrix-and-mitigation-strategies/)Teams, die die Analysephase überspringen, stellen letztendlich fest, dass „Standard“-Inhalte nicht auf Systeme wie Salesforce oder proprietäre Datenbanken skalierbar sind.
+<details>
+<summary>Was sind die häufigsten Probleme bei der Integration von Legacy-Systemen in SAP?</summary>
 
-### Überspringen Sie die Entscheidung nicht
+Drei Muster erklären die meisten spät entdeckten Probleme.
 
-Fragen Sie Ihren Architekten frühzeitig:
+Grenzen bei synchroner Last: Legacy-ERPs können oft keine mehreren parallelen API-Aufrufe verarbeiten. Das System wird langsam oder verliert still Daten. Asynchrone Nachrichtenübermittlung kann helfen, aber nur wenn das Legacy-System für die Verarbeitung von Queues gebaut ist; viele sind es nicht.
 
-*   Ist der Prozess ausgereift oder befindet er sich noch in der Entwicklung?
+Protokoll-Mismatches: Moderne SAP-Flows nutzen OAuth2 und REST. Legacy-Systeme sprechen möglicherweise nur SOAP mit hart codierten Timeouts. Diese Mismatches müssen im Design bestätigt werden, nicht erst im Test auffallen.
 
-*   Führen wir eine Zuordnung zu SAP-Stammdaten durch oder handelt es sich um etwas Benutzerdefiniertes?
+Ablauf von Authentifizierungs-Tokens: OAuth-Tokens von Drittsystemen laufen nach Zeitplänen ab, die nicht zu den Laufzeiten der Schnittstellen passen. In einem Projekt fiel deshalb jeden Freitag eine Payroll-Integration aus; entdeckt wurde das erst im zweiten UAT-Zyklus. Ein im Design verifizierter Token-Refresh-Zyklus hätte eine Stunde gekostet. Die Entdeckung im UAT kostete eine Woche.
 
-*   Verfügen wir über Fachkräfte im CPI- und API-Management?
+</details>
 
-Manchmal funktionieren Hybridmodelle am besten. Beginnen Sie mit dem Standard, aber erweitern Sie die Logik nach Bedarf. Wie in [unser Leitfaden zur Projektplanung](https://noeldcosta.com/de/sap-project-scope-template-management-and-control/), der Schlüssel liegt in der Absicht.
+<details>
+<summary>Wie sollte SAP-Integration nach dem Go-live gesteuert werden?</summary>
 
-Wenn Sie diese Entscheidung hinauszögern, riskieren Sie Produktionsausfälle während der Umstellung, die fast immer zu spät auftreten.
+Integrations-Governance nach dem Go-live hat drei Komponenten.
 
-SAP-Integration: Standardinhalte vs. kundenspezifische Entwicklung Ein Vergleichsdatensatz, der die wichtigsten Entscheidungsfaktoren für die Wahl zwischen den standardmäßig vorgefertigten Integrationsinhalten von SAP und der benutzerdefinierten iFlow-Entwicklung auf der Grundlage von Geschäftskomplexität, Kosten, Flexibilität und langfristiger Wartung darstellt.
+Benannte Verantwortung: Jede Schnittstelle braucht eine benannte Person oder ein Team, das für Monitoring, Eskalation von Fehlern und Lifecycle-Updates verantwortlich ist. Ohne das springen Fehler zwischen Teams hin und her und die Lösungszeit verlängert sich unnötig.
 
-### Wann Standardinhalte und wann benutzerdefinierte Entwicklungen verwendet werden sollten
+Lebende Dokumentation: Integrationsdokumentation sollte Feldmappings, Authentifizierungsdetails mit Zeitplänen für Credential-Rotation, Fehlerbehandlungspfade und Volumenerwartungen enthalten. Wenn die Dokumentation bei Änderungen nicht aktualisiert wird, wird sie irreführend statt hilfreich.
 
-Eigenschaften
+Strukturierter Support nach Hypercare: Das intensive Monitoring während Hypercare lässt nach. Bauen Sie ein langfristiges Modell mit regelmäßigen Reviews der Error-Logs, formaler Übergabe der Verantwortung vom Projekt an die Support-Teams und SLA-Abstimmung zwischen Business und IT. Integration, die unsichtbar wird, wird vernachlässigt, und vernachlässigte Integration ist eine häufige Ursache für verspätete Finanzbuchungen und Abstimmungslücken.
 
-Standard-Integrationsinhalte
-
-Benutzerdefinierte Entwicklungen
-
-Prozessausrichtung
-
-Am besten geeignet für standardmäßige SAP-zu-SAP-Szenarien, die den Referenzprozessen von SAP genau folgen.
-
-Wenn Ihr Unternehmen erheblich von SAP-Vorlagen abweicht oder benutzerdefinierte Logik verwendet.
-
-Zeit- und Budgetbeschränkungen
-
-Schnellere Erstbereitstellung, vorausgesetzt, es sind nur minimale Anpassungen erforderlich.
-
-Nimmt im Vorfeld mehr Zeit in Anspruch, vermeidet aber versteckte Nacharbeiten, wenn die Standardabläufe zu starr sind.
-
-Veränderbarkeit
-
-Eine umfassende Anpassung kann schwierig sein, ohne die Unterstützungsausrichtung zu beeinträchtigen.
-
-Genau auf Ihre Bedürfnisse zugeschnitten, sodass Aktualisierungen und Änderungsanforderungen einfacher umzusetzen sind.
-
-Support und Updates
-
-Wird durch SAP-Updates unterstützt, wenn auch größtenteils unverändert.
-
-Sie besitzen den Code und die Verantwortung, erhalten dafür aber Flexibilität.
-
-Schnittstellenkomplexität
-
-Am besten für einfache Einbahnstraßenflüsse mit vorhersehbaren Strukturen.
-
-Wird für mehrstufige Logik, bedingtes Routing oder Eigenheiten älterer Systeme benötigt.
-
-Langfristige Wartbarkeit
-
-Risiko technischer Schulden, wenn das Team Standardinhalte über seine Absicht hinaus ändert.
-
-Sauberer für langfristigen Support, wenn mit klarer Architektur und Eigentumsverhältnissen erstellt.
-
-Beispielanwendungsfall
-
-Verbinden von SAP S/4HANA mit SAP SuccessFactors mithilfe des vorgefertigten iFlow-Pakets.
-
-Benutzerdefinierte Integration zwischen SAP S/4HANA und einem älteren WMS mit proprietären Dateiformaten und Authentifizierungsmodellen.
-
-## Integration in komplexe Projektumgebungen
-
-
-Bei komplexen SAP-Programmen fällt die Integrationsplanung oft als Erstes ins Auge. Jeder Arbeitsablauf hat seine eigenen Prioritäten, Zeitpläne und Annahmen. 
-
-Schnittstellen bleiben jedoch selten sauber innerhalb dieser Grenzen. Die Finanzabteilung benötigt Daten vom Vertrieb. Die Beschaffung leitet Daten an die Lieferanten weiter. Plötzlich arbeitet jeder nach seinem eigenen Zeitplan, und niemand ist für die Koordination verantwortlich.
-
-Wenn mehrere Programme dieselbe Middleware oder API-Plattform nutzen, vervielfacht sich das Risiko. Teams können überlappende Abläufe entwickeln, ohne es zu merken. Es ist möglich, dass einige der Geschäftsfunktionen (wie das Bauprojektmanagement) auf [Oracle](https://noeldcosta.com/de/oracle-erp-vs-sap/) (Primavera Unifier). 
-
-Ich habe zwei Projektteams erlebt, die separate Integrationen für denselben Geschäftspartner implementierten und dabei denselben Endpunkt nutzten. Keines der Teams wusste vom anderen, bis es während des UAT zu einem Ausfall kam. Solche Probleme sind nicht immer technischer, sondern struktureller Natur.
-
-Um dies zu vermeiden, benötigen Programme frühzeitig ein zentrales Integrations-Governance-Modell. Dieses umfasst:
-
-*   Ein gemeinsamer Integrationsrückstand, der nicht in einzelnen Streams vergraben ist
-
-*   Klare Eigentümerschaft für jede Schnittstelle, nachverfolgbar bis zur Lieferung
-
-*   Koordinations-Checkpoints vor jedem größeren Einsatz
-
-Sie können erkunden, wie dies zusammenhängt mit [Abstimmung des SAP-Projektumfangs](https://noeldcosta.com/de/sap-project-scope-template-management-and-control/) oder wie schwache Governance zu Risiken führt in [diesen Artikel zum Thema SAP-Projektrisiken](https://noeldcosta.com/de/sap-project-risk-assessment-matrix-and-mitigation-strategies/). Diese Rahmenbedingungen werden selten vollständig befolgt, aber selbst eine teilweise Übernahme reduziert das Chaos erheblich.
-
-Die Integration ist das Bindeglied zwischen allen anderen Prozessen. Überlässt man sie dem Zufall oder, schlimmer noch, delegiert man sie unkoordiniert, muss man am Ende Wochen vor der Inbetriebnahme Kernschnittstellen überarbeiten.
-
-Sie können sehen, wie strukturiertes Denken die Ergebnisse in SAP-Programmen verbessert in [dem Leitfaden](https://noeldcosta.com/de/structured-thinking-problem-solving/). Denn in komplexen Landschaften ist Klarheit wichtiger als Werkzeuge.
-
-Integration in komplexe SAP-Projekte Dieser Datensatz beschreibt häufige Integrationsprobleme bei umfangreichen SAP-Implementierungen und zeigt, wie diese vermieden werden können. Er enthält Einblicke in Koordination, Verantwortung, Umgebungskonsistenz und Schnittstellendesign über alle Arbeitsabläufe hinweg.
-
-### Integration in komplexe Projektumgebungen
-
-Herausforderungsbereich
-
-Was oft schief geht
-
-Was tun?
-
-Koordination der Arbeitsabläufe
-
-Jeder Stream erstellt Schnittstellen isoliert und ohne Kenntnis gemeinsamer Abhängigkeiten oder Überschneidungen.
-
-Richten Sie von Anfang an einen zentralen Integrations-Backlog und übergreifende Design-Checkpoints ein.
-
-Wiederverwendung von Middleware
-
-Mehrere Programme überlasten den CPI mit nicht zusammenhängender Logik, duplizieren Flüsse und erhöhen das Risiko.
-
-Entwerfen Sie gemeinsam genutzte Dienste mit Versionskontrolle. Dokumentieren Sie, welche Flows global und welche streamspezifisch sind.
-
-Eigentumsverwirrung
-
-Wenn Fehler auftreten, weiß niemand, wem die Schnittstelle gehört oder wer für die Wiederherstellung zuständig ist.
-
-Weisen Sie jedem iFlow oder jeder API benannte Eigentümer zu, die für die Geschäfts- und IT-Supportteams sichtbar sind.
-
-Gleichzeitige Bereitstellungen
-
-Schnittstellen brechen ab, wenn zwei Go-Lives gleichzeitig über gemeinsame Endpunkte oder Nachrichtenwarteschlangen erfolgen.
-
-Gehen Sie bei der Reihenfolge abhängiger Releases sorgfältig vor. Beziehen Sie Integrationsabhängigkeiten in die Umstellungspläne ein.
-
-Umgebungskonflikte
-
-Entwicklungs-, Test- und Produktionsumgebungen spiegeln sich nicht gegenseitig wider. Endpunkt-URLs und Authentifizierungstoken unterscheiden sich stillschweigend.
-
-Sorgen Sie für die Konsistenz der Umgebungsvariablen. Verwenden Sie automatisierte Bereitstellungsskripte mit dokumentierten Anmeldeinformationen pro Landschaft.
-
-Überarbeitung der Benutzeroberfläche aufgrund später Änderungen
-
-Geschäftsregeln ändern sich im UAT und erfordern in letzter Minute Änderungen über mehrere Integrationen hinweg.
-
-Überprüfen Sie Mapping-Annahmen frühzeitig. Beziehen Sie Funktionsverantwortliche in jede Iteration des Schnittstellendesigns ein.
-
-### ERP-Modernisierungsstrategie
-
-[
-
-Architektur
-
-### SAP Clean Core-Strategie
-
-Vereinfachen Sie Anpassungen und ermöglichen Sie eine langfristige Modernisierung durch Clean-Core-Prinzipien.
-
-](https://noeldcosta.com/de/sap-clean-core-strategy-what-it-means-for-your-business/)[
-
-Migration
-
-### Migration von ECC zu S/4HANA
-
-Wechseln Sie vom alten ERP-System zu S/4HANA mit Anleitung zu Risiken, Vorbereitung und Projektphasen.
-
-](https://noeldcosta.com/de/ecc-to-s4hana-migration/)[
-
-Einsatz
-
-### Implementierung vs. Rollout
-
-Vergleichen Sie zentralisierte ERP-Builds mit schrittweisen Rollout-Ansätzen an globalen Standorten.
-
-](https://noeldcosta.com/de/sap-implementation-vs-rollout-differences-challenges-best-practices/)[
-
-Kosten
-
-### ERP-Budgetaufschlüsselungen
-
-Warum die Kosten für die ERP-Modernisierung überzogen werden und wie Sie Ihr Budget stabilisieren können.
-
-](https://noeldcosta.com/de/sap-implementation-cost-breakdown-why-budgets-explode-50/)
-
-## Leistung, Überwachung und Ausfallsicherheit in der SAP Integration Suite
-
-
-### Die Leistung wird oft ignoriert, bis Probleme auftreten
-
-Bei SAP-Integrationsprojekten wird die Leistung meist zweitrangig behandelt. Was in der Entwicklung funktioniert, sollte auch in der Produktion funktionieren, oder? Testumgebungen sind jedoch oft zu klein, unzuverlässig und ohne reale Datenmengen. 
-
-Dies führt dazu, dass Belastungstests entweder übersprungen oder isoliert durchgeführt werden. Was fehlt, ist die Koordination mit vor- und nachgelagerten Prozessen, insbesondere in Spitzenzeiten wie zum Monatsende oder bei Gehaltsabrechnungen.
-
-Manche Teams testen zwar die Schnittstellenlogik, vergessen aber, was passiert, wenn mehrere Transaktionen innerhalb von Sekunden denselben Dienst erreichen. Dies wird bei ereignisgesteuerten Modellen noch schlimmer, da Fiori-Apps oder Middleware-Ereignisse das Backend mit gleichzeitigen Aufrufen überfluten können.
-
-Wir sind tiefer in diese Denkweisenlücke eingestiegen in SAP-Leistungstests für IT-Leiter, wo das Überspringen von Lasttest-Baselines zu unerwarteten Fehlern nach der Inbetriebnahme führte.
-
-### Was passiert, wenn es fehlschlägt?
-
-Integrationsfehler sind keine Seltenheit. Entscheidend ist, wie schnell sie erkannt werden und wie gut die Wiederherstellungslogik funktioniert. Dennoch werden viele Flows ohne geeignete Wiederholungslogik, Fallback-Mechanismen oder Eskalationsauslöser erstellt. Die Nachricht schlägt einfach fehl.
-
-Wenn Warnmeldungen nicht in Systeme wie SAP Solution Manager oder Dynatrace integriert sind und niemand die Middleware-Protokolle überwacht, können Stunden vergehen, bevor jemand etwas bemerkt. Dieses Schweigen ist gefährlich. Wir haben dies bereits in [SAP-Stakeholder-Strategie](https://noeldcosta.com/de/sap-stakeholder-management-strategy/), wo die Reaktionszeit bei Ausfällen eine direkte Auswirkung auf das Geschäftsvertrauen hat.
-
-Grundlegende Wiederherstellungsstrategien, die immer berücksichtigt werden sollten:
-
-*   Wiederholungslogik bei vorübergehenden Netzwerk- oder Dienstausfällen
-
-*   Warnschwellenwerte, die an die Auswirkungen auf das Geschäft und nicht nur an Fehlercodes gebunden sind
-
-*   Strukturierte Fehlermeldungen werden an Geschäftsbenutzer weitergeleitet, nicht nur an die IT
-
-### Überwachung geht alle an
-
-Die meisten Integrationsteams behandeln die Überwachung immer noch als interne IT-Aufgabe. Doch wenn Rechnungsbuchungen fehlschlagen oder Bestellungen nicht synchronisiert werden, ist das Fachteam die Hauptlast. Doch selten erhält es Einblick in die Ursachen.
-
-Funktionale Teams benötigen einfache Dashboards oder sogar gefilterte E-Mail-Benachrichtigungen, die ihnen mitteilen, was fehlgeschlagen ist, warum und was sie tun können. Sie brauchen keine ausgefallenen Tools. Nur Konsistenz. Das haben wir in [SAP QA-Governance-Praktiken](https://noeldcosta.com/de/sap-quality-gates-implementation/), gemeinsame Verantwortung beginnt mit gemeinsamer Sichtbarkeit.
-
-Letztendlich geht es bei der Resilienz der SAP-Integration nicht nur um die Systemverfügbarkeit. Es geht darum, dass Mitarbeiter in der Lage sind, zu handeln, bevor Probleme eskalieren. Dies gelingt nur, wenn Leistung, Überwachung und Verantwortung fester Bestandteil des Konzepts sind und nicht erst nachträglich hinzugefügt werden.
-
-## Planung unter Berücksichtigung von Altsystemen und Drittanbietern mithilfe der SAP Integration Suite
-
-
-### Legacy-Systeme sind nicht nur alt, sie sind auch starr
-
-Eine der größten Herausforderungen bei SAP-Integrationsprojekten ist nicht die moderne Technologie. Es sind die älteren Systeme, die immer noch in kritischen Prozessen stecken. Dabei kann es sich um veraltete ERP-Systeme, lokale CRM-Systeme oder selbst entwickelte Datenbanken handeln – immer noch in Betrieb, aber immer noch anfällig. Der Fehler vieler Teams besteht darin, anzunehmen, dass sich diese Systeme wie neuere Plattformen verhalten. Das tun sie jedoch nicht.
-
-Ältere ERP-Systeme haben beispielsweise oft Probleme mit synchronen Aufrufen unter hoher Last. Sie sind möglicherweise nicht gut skalierbar oder verarbeiten gleichzeitige Sitzungen nicht effizient. Sie stellen fünf parallele API-Aufrufe in die Warteschlange, und der Server friert ein oder, schlimmer noch, Daten werden unbemerkt gelöscht. Asynchrone Integration kann Abhilfe schaffen, aber nur, wenn das empfangende System für die Verarbeitung von Warteschlangen ausgelegt ist. Viele sind dies nicht.
-
-Wir haben ähnliche Lücken geschlossen in [SAP-Migrationsbereitschaft](https://noeldcosta.com/de/ecc-to-s4hana-migration/) wo veraltetes Verhalten selbst in sauberen Migrationsszenarien Reibung verursacht.
-
-### Achten Sie auf Kompatibilitätslücken
-
-Das eigentliche Problem liegt in Protokollkonflikten. Sie entwerfen einen modernen Ablauf mit OAuth2-Token und REST-Mustern, aber das Legacy-System spricht nur SOAP. Oder es kommt aufgrund fest codierter Einstellungen nach 30 Sekunden zu einer Zeitüberschreitung. Manche Systeme unterstützen die Token-Aktualisierungslogik nicht einmal richtig.
-
-In einem Kundenfall brach ein Middleware-Flow jeden Freitag ab, weil das von einem externen Gehaltsabrechnungssystem ausgegebene Token wöchentlich ablief … was bis zum zweiten UAT-Zyklus niemandem auffiel. Solche Macken sind keine Seltenheit. Sie kommen häufig vor und belasten die Zeitpläne.
-
-Dinge, die Sie frühzeitig überprüfen sollten:
-
-*   Unterstützt das Legacy-System die asynchrone Verarbeitung oder nur synchrone Aufrufe?
-
-*   Gibt es Drosselungsregeln für die APIs von Drittanbietern?
-
-*   Kann das System moderne Authentifizierungsprotokolle wie OAuth verarbeiten oder verwendet es immer noch statische Anmeldeinformationen?
-
-Sie vermeiden spätere Nacharbeiten, wenn diese Fragen bereits während des Entwurfs und nicht schon beim Testen geklärt werden.
-
-### Überschätzen Sie nicht die Leistungsfähigkeit von Legacy
-
-Ein sauber gestalteter SAP iFlow ist nur die halbe Miete. Wenn das empfangende System nicht mithalten kann, wird der gesamte Ablauf instabil. Dies ist besonders wichtig bei Massenladungen, geplanten Jobs oder dateibasierten Übertragungen über Nacht.
-
-Es ist außerdem ratsam, die Fallback-Logik im Vorfeld zu dokumentieren. Was passiert, wenn das Altsystem ausfällt? Gibt es Pufferung in der Middleware? Werden Wiederholungsversuche zu doppelten Buchungen führen? Solche Sonderfälle können nach der Inbetriebnahme zu großen Problemen führen.
-
-Wir haben dies weiter ausgeführt in [Diskussion über SAP Clean Core](https://noeldcosta.com/de/sap-clean-core-strategy-what-it-means-for-your-business/), wo die Minimierung von Annahmen dazu beiträgt, Integrationen auch bei älteren Stacks stabil zu halten.
-
-Kurz gesagt: Die Legacy- und Third-Party-Planung bildet die Grundlage. Behandeln Sie sie also auch so!
-
-Planung der Legacy- und Drittanbieterintegration in SAP Der Datensatz beleuchtet Herausforderungen und Planungsstrategien für die Integration von SAP-Systemen in bestehende ERP-Systeme und Plattformen von Drittanbietern. Der Schwerpunkt liegt auf Middleware-Pufferung, Protokollkompatibilität, API-Limits und Nachrichtenwiederholungslogik.
-
-### Planung unter Berücksichtigung von Altsystemen und Drittanbietern
-
-Planungsbereich
-
-Gemeinsame Herausforderung
-
-Planungsempfehlung
-
-Synchronisationsgrenzen in älteren ERP-Systemen
-
-Ältere Systeme blockieren oder frieren bei parallelen API-Aufrufen ein. Die Belastung führt zu Datenverlust oder Sitzungsabbrüchen.
-
-Verwenden Sie nach Möglichkeit asynchrone Nachrichtenübermittlung. Puffern Sie über Event Mesh oder staffeln Sie Aufrufe über CPI.
-
-Protokollkonflikte (z. B. REST vs. SOAP)
-
-Legacy-Systeme lehnen moderne Protokolle häufig ab oder haben feste Timeouts in SOAP-Endpunkte eingebaut.
-
-Stellen Sie frühzeitig fest, ob das ERP-System eines Drittanbieters oder ein älteres ERP-System REST, OAuth oder tokenbasierte Authentifizierung unterstützen kann.
-
-Ratenbegrenzungen für APIs von Drittanbietern
-
-Schnittstellen brechen während Batch-Jobs ab, weil externe APIs große Mengen oder wiederholte Zugriffe drosseln.
-
-Drosseln Sie Aufrufe mithilfe von SAP API Management oder fügen Sie in CPI eine benutzerdefinierte Wartelogik hinzu, um Ablehnungsfehler zu vermeiden.
-
-Ablauf des Authentifizierungstokens
-
-OAuth-Token verfallen mitten im Datenfluss, insbesondere außerhalb der Spitzenzeiten. Fehler bleiben unbemerkt, bis Benutzer sie melden.
-
-Planen Sie Token-Aktualisierungszyklen. Überwachen Sie das Ablaufdatum und speichern Sie zuletzt verwendete Anmeldeinformationen sicher im iFlow.
-
-Annahmen zur Datenstruktur
-
-Legacy-Systeme erfordern starre Datenformate. Dynamische Nutzdaten verletzen die Analyselogik oder Validierungsregeln.
-
-Verwenden Sie Integration Advisor für Zuordnungshinweise, validieren Sie diese jedoch vor dem Einfrieren des Designs mit Beispielproduktionsdaten.
-
-Kein Fallback bei Endpunktausfall
-
-Dateiübertragungen oder synchrone Aufrufe schlagen ohne Wiederholungsversuche fehl. Daten bleiben hängen oder gehen ganz verloren.
-
-Fügen Sie Pufferung oder Warteschlangen in der Middleware hinzu. Erstellen Sie Wiederholungs- und Warnlogik im CPI- oder Event Mesh-Routing.
-
-## Reale Teststrategie für Schnittstellen mit der SAP Integration Suite
-
-
-### Funktionale Tests verfehlen den Sinn von Schnittstellen
-
-Die meisten SAP-Testzyklen konzentrieren sich stark darauf, ob die Transaktion funktioniert. Das Feld wird ausgefüllt, das Dokument gebucht, die Meldung erscheint im Protokoll. Fertig. Allerdings bricht die Integration in der Produktion nicht so ab. Sie scheitert unter Zeitdruck, wenn sich Hintergrundjobs überschneiden oder unerwartete Eingaben in großem Umfang eingehen.
-
-Funktionstests simulieren normalerweise nicht:
-
-*   Realistische Datenlasten über mehrere Benutzer hinweg
-
-*   Ausfallzeiten oder Dienstunterbrechungen
-
-*   Timeouts oder Wiederholungsversuche über Middleware und Backends hinweg
-
-In einem Projekt sah das IDoc während des SIT einwandfrei aus. Doch als im ersten Gehaltsabrechnungslauf die tatsächlichen Daten eintrafen, überlasteten zwei Millionen Datensätze die Warteschlange, da niemand dieses Volumen getestet hatte. Solche Probleme werden durch Unit-Tests nicht erfasst. Sie erfordern Last- und Verhaltenstests.
-
-Wenn du gelesen hast dieser Leitfaden zum Leistungstest, werden Sie sehen, wie unterschiedlich die Ergebnisse sind, wenn diese Testebene ernst genommen wird.
-
-### Denken Sie wie ein System, nicht wie ein Tester
-
-Schnittstellen verhalten sich in verschiedenen Umgebungen unterschiedlich. Die Entwicklung ist sauber. Keine reale Belastung, keine überlappenden Zeitpläne. Bis Sie UAT oder Pre-Prod erreichen, sind andere Systeme aktiv, Hintergrundjobs werden geplant und nächtliche Batches ausgeführt.
-
-In diesen Zeitfenstern, oft außerhalb der Arbeitszeiten, beginnen die Probleme aufzutauchen:
-
-*   Deadlocks aufgrund gleichzeitiger Batch-Aktivität
-
-*   Verpasste Trigger aufgrund von Race Conditions
-
-*   API-Grenzwerte aufgrund von Konflikten zu Spitzenzeiten überschritten
-
-Das lässt sich nicht isoliert testen. Sie benötigen einen integrierten Testplan, der Folgendes berücksichtigt:
-
-*   Stapelverarbeitungen (z. B. nächtliche Uploads, HR-Läufe)
-
-*   Geplante Jobs kollidieren mit Middleware-Flows
-
-*   Zeitabhängige Spitzenlasten wie zum Beispiel am Monatsende oder am Wochenende
-
-### Beziehen Sie die Funktionsteams in Testszenarien ein
-
-Viele Integrationsfehler erscheinen technisch bedingt, doch die eigentliche Ursache liegt oft in einer fehlenden Geschäftsregel, einer Datenabweichung oder einer unzureichenden Stammdatenausrichtung. Ohne die Beteiligung des Funktionsteams werden diese Fehler erst bei der Umstellung sichtbar.
-
-Ein guter Testplan weist die Verantwortung zu:
-
-*   Funktionale Teams validieren End-to-End-Ergebnisse
-
-*   Integrationsteams kümmern sich um Wiederholungsversuche, Protokolle und Ausnahmeabläufe
-
-*   Projektleiter gewährleisten die Abdeckung aller Umgebungen und Lastbedingungen
-
-Es geht nicht um ausgefallene Werkzeuge. Es geht darum, Lücken zu schließen.
-
-Wenn Sie Ihr Test-Framework entwerfen, richten Sie es aus mit [Prinzipien des strukturierten Denkens](https://noeldcosta.com/de/structured-thinking-problem-solving/) und die Governance-Disziplin in [dieser Qualitätsleitfaden](https://noeldcosta.com/de/sap-quality-gates-implementation/). Denn Tests funktionieren nur, wenn sie so aufgebaut sind, dass sie widerspiegeln, wie die Dinge kaputtgehen, und nicht nur, wie sie funktionieren sollen.
-
-## Was der SAP Integration Advisor in der SAP Integration Suite leistet und was nicht
-
-
-### Das Versprechen des Integrationsberaters und die Realität, die ich gesehen habe
-
-Der SAP Integration Advisor klingt hilfreich. Er bietet vordefinierte Mapping-Vorschläge, Accelerator-Inhalte und unterstützt branchenübliche Formate wie EDIFACT und ANSI X12. Das spart auf dem Papier Zeit. Und bis zu einem gewissen Grad ist es das auch. Insbesondere, wenn Sie mit gängigen B2B-Formaten oder APIs arbeiten, die strengen Konventionen folgen.
-
-Doch reale Schnittstellen folgen diesen Regeln nicht immer. Tatsächlich beinhalten die meisten Unternehmensintegrationen mehrere Legacy-Systeme, benutzerdefinierte Felder, bedingte Logik und Geschäftsregeln, die schlecht oder gar nicht dokumentiert sind. Integration Advisor kann das nicht für Sie herausfinden.
-
-Diese Lücke zwischen vorgeschlagenen Zuordnungen und produktionsreifer Logik ist oft viel größer als erwartet.
-
-Wir untersuchten ähnliche Annahmen in [Unser Leitfaden zu Fehlern bei der SAP-Datenmigration](https://noeldcosta.com/de/why-sap-data-migration-fails-and-how-to-fix-it/). Die Integration hängt stark von klaren Entscheidungen auf Feldebene ab, und wenn diese überstürzt oder delegiert werden, treten Probleme auf, die die gesamte Kette verlangsamen.
-
-### Sie benötigen weiterhin manuelles Mapping und Testen
-
-Auch wenn Sie mit Integration Advisor den Einstieg erleichtern, werden Sie viel Zeit damit verbringen:
-
-*   Anpassen der Feldzuordnungen basierend auf den tatsächlichen Strukturen des Quellsystems
-
-*   Hinzufügen von Regeln für bedingte Logik, z. B. währungsspezifische Formatierung
-
-*   Umgang mit Ausnahmen, Standardwerten und Transformationslogik
-
-Ein Team, mit dem ich zusammengearbeitet habe, ging davon aus, dass Advisor eine Abdeckung von 80 Prozent bieten würde. Am Ende waren es eher 40 Prozent. Der Rest musste angepasst, mit dem Unternehmen validiert und manuell getestet werden.
-
-Das bedeutet, dass Sie Zeit einplanen müssen. Nicht für die anfängliche Mapping-Erstellung, sondern für die anschließende Bereinigung und Ausrichtung.
-
-### Übersehen Sie nicht die Geschäftslogik und den Input der Stakeholder
-
-Eine weitere Herausforderung ist meiner Meinung nach die Geschäftslogik, die außerhalb des Integrationsteams existiert. Felder wie Zahlungsbedingungen, Preiskategorien oder sogar Maßeinheiten mögen zwar Standard sein, doch das Unternehmen hat im Laufe der Jahre informelle Änderungen vorgenommen. Integration Advisor erkennt dies nicht, es sei denn, jemand weist manuell darauf hin.
-
-Um diese Lücken zu schließen, benötigen Sie funktionale Eingaben. Andernfalls erhalten Sie Schnittstellen, die zwar technisch vollständig, aber logisch falsch sind.
-
-Hier ist ein fester [Stakeholder-Engagement-Modell](https://noeldcosta.com/de/sap-stakeholder-management-strategy/) hilft, Überraschungen während des UAT oder nach der Inbetriebnahme zu vermeiden.
-
-### Integration Advisor ist ein Tool, keine Strategie
-
-Kurz gesagt: Betrachten Sie Integration Advisor als Ausgangspunkt, nicht als Abkürzung. Es beschleunigt zwar einige Schritte der Einrichtung, kann aber Erfahrung, detaillierte Überprüfung oder geschäftsspezifische Regeln nicht ersetzen. Planen Sie die Lücken ein, sonst verbringen Sie diese Zeit später unter Druck.
-
-## Dokumentation, Eigentum und langfristige Governance für die SAP Integration Suite
-
-
-### Die Integration endet nicht mit dem Go-Live
-
-Meiner Meinung nach behandeln viele SAP-Programme die Integration wie einen Checklistenpunkt, und das passiert ständig. Sobald die iFlows implementiert sind und die Tests erfolgreich sind, verblasst das Thema. Bis um 2 Uhr morgens etwas fehlschlägt, ohne Dokumentation, ohne bekannten Verantwortlichen und ohne klaren Supportpfad.
-
-Ich habe erlebt, dass die Regierungsführung dort versagt.
-
-Die Zuweisung eines Integrationsverantwortlichen ist nicht optional. Jede Schnittstelle, auch solche mit geringem Volumen, muss eine benannte Person oder ein Team haben, das für Überwachung, Eskalationen und Lebenszyklus-Updates verantwortlich ist. Dies sollte formalisiert werden, idealerweise im gleichen Rahmen wie für [Qualitätstore und Freigabekontrolle](https://noeldcosta.com/de/sap-quality-gates-implementation/).
-
-Ohne Verantwortung werden Probleme zwischen Basis-, Middleware- und Funktionsteams hin- und hergeschoben. Das kostet Zeit und untergräbt das Vertrauen.
-
-### Die Dokumentation muss lebendig und aktuell bleiben!
-
-Die Integrationsdokumentation sollte mehr als nur eine technische Designspezifikation sein. Sie sollte Folgendes enthalten:
-
-*   Feldzuordnungen und Transformationslogik
-
-*   Authentifizierungsdetails (Token, Endpunkte, Schlüssel)
-
-*   Fehlerbehandlungspfade und Fallbackregeln
-
-*   Volumenerwartungen und kritische Zeitfenster
-
-Zu oft bleiben diese Informationen aus der Entwicklungsphase in E-Mails oder SharePoint-Ordnern verborgen. Sie veralten, und wenn jemand das Projekt verlässt, ist das Wissen verloren.
-
-Zu den bewährten Verfahren gehört es, die Dokumentation zentral zu speichern, sie versionieren und sie den Support-Teams zugänglich zu machen. Wenn Sie bereits dokumentieren [Umfang und Eigentumsverhältnisse klar](https://noeldcosta.com/de/sap-project-scope-template-management-and-control/), wenden Sie hier die gleiche Strenge an.
-
-Eine Grundregel: Wenn nächste Woche jemand Neues zu Ihrem Team käme, könnte er Probleme mit dieser Schnittstelle nur mithilfe der Dokumentation beheben?
-
-### Die Unterstützung nach der Hypercare-Behandlung darf nicht nachträglich erfolgen
-
-Nach dem Go-Live treten die meisten Projekte in eine Hypercare-Phase ein, die aus intensivem Support, täglicher Überwachung und schneller Reaktion besteht. Doch dann lässt diese Phase nach. Sofern keine langfristige Struktur vorhanden ist, werden die Schnittstellen „dunkel“. Keine Warnmeldungen, keine Check-ins, keine Updates.
-
-Erstellen Sie einen Supportplan, der Folgendes umfasst:
-
-*   Regelmäßige Überprüfung der Fehlerprotokolle und Wiederholungsversuche
-
-*   Übergabe der Verantwortung vom Projekt an die Supportteams
-
-*   SLA-Abstimmung zwischen Business und IT
-
-Wir haben dieses Problem in [Ressourcenplanungsszenarien](https://noeldcosta.com/de/resource-allocation-planning-for-sap-projects/), wo Rollen verschwinden, sobald das Projektbudget erreicht ist.
-
-Wenn die Integration unsichtbar wird, wird sie vernachlässigt. Und vernachlässigte Integrationen sind oft die Ursache für verspätete Buchungen, fehlende Rechnungen oder falsch ausgerichtete Berichte.
-
-Governance funktioniert, wenn sie praktikabel und sichtbar ist und jemand klar verantwortlich ist. Nicht erst nach einem Problem, sondern von Anfang an. Integration verdient diese Struktur. Sonst wird das, was heute stabil aussieht, morgen brüchig.
-
-### Planung und Durchführung der ERP-Modernisierung
-
-[
-
-Ausführung
-
-### Projektplanung und -steuerung
-
-Strategien, um SAP-Projekte auf Kurs zu halten, Abweichungen im Umfang zu vermeiden und die Lieferdisziplin aufrechtzuerhalten.
-
-](https://noeldcosta.com/de/project-planning-and-control-get-sap-projects-back-on-track/)[
-
-Governance
-
-### Effektive Lenkungsausschüsse
-
-Richten Sie die richtige Entscheidungsstruktur ein, um die ERP-Modernisierung unter Berücksichtigung der Geschäftsverantwortung voranzutreiben.
-
-](https://noeldcosta.com/de/creating-an-effective-sap-project-steering-committee/)[
-
-Geschichte
-
-### SAP-Zeitplanplanungshandbuch 2025
-
-Planen Sie Ihren Zeitplan für die ERP-Modernisierung mit realistischen Meilensteinen, Abhängigkeiten und Risikopuffern.
-
-](https://noeldcosta.com/de/2024-sap-timeline-planning-implementation-guide-essentials/)[
-
-Budget
-
-### Kosten- und Budgetaufschlüsselung
-
-Ein genauerer Blick darauf, wo ERP-Budgets scheitern und wie Sie sich auf versteckte Kosten nach der Inbetriebnahme vorbereiten können.
-
-](https://noeldcosta.com/de/sap-implementation-cost-and-budget-breakdown/)
-
-## Meine letzten Gedanken
-
-
-Ich habe zu viele Programme gesehen, die die letzten Wochen überstürzt haben. Es wird zu einem Checklisten-Sprint mit Transportgenehmigungen, Rollenzuordnung und Bereitstellungsfenstern. Die Stabilität der Integration sollte man jedoch nicht auf Annahmen beruhen lassen.
-
-*   **Beginnen Sie mit der Leistungsabnahme.** Es geht nicht nur darum, ob es funktioniert hat, sondern auch, ob es unter Druck standhält. Schnittstellen werden oft mit kleinen Datensätzen getestet, aber Monatsendläufe oder Massenbuchungen können sich deutlich anders verhalten. Stellen Sie sicher, dass Batch-Jobs und Middleware-Flows im großen Maßstab getestet wurden.
-*   **Als nächstes folgt die Überwachung der Bereitschaft.** Es klingt banal, aber viele SAP-Projekte werden ohne aktive Überwachung in Betrieb genommen. Ohne Warnmeldungen – sei es über den SAP Solution Manager, Middleware-Dashboards oder gefilterte Postfächer – bleiben Fehler unbemerkt, bis das Unternehmen Tickets erstellt. Dann ist es zu spät.
-*   **Richten Sie klare Kommunikationskanäle ein.** Wer kümmert sich um was, wenn etwas schiefgeht? Wenn beispielsweise eine API abläuft oder ein iFlow mittendrin anhält, reagiert dann Basis oder geht die Sache zuerst an das Fachteam? Um Schuldzuweisungen zu vermeiden, ist Klarheit unerlässlich.
-
-Einige häufige Risiken werden immer noch übersehen:
-
-*   Token-Ablauf in Drittanbieter-Integrationen
-
-*   Zeitzonen-Diskrepanzen zwischen Regionen
-
-*   Für Entwickler-URLs fest codierte Schnittstellen
-
-*   Dateipfad- oder SFTP-Berechtigungen sind nicht umgebungsübergreifend abgestimmt
-
-Möglicherweise ist es hilfreich, diese mit Ihrem Release-Plan abzugleichen oder die Anleitung von [unsere SAP-Umstellungscheckliste](https://noeldcosta.com/de/start-your-sap-implementation-project-right/).
-
-Bei der Vorbereitung auf die letzte Meile geht es nicht um Perfektion. Es geht darum, bekannte Lücken zu schließen, bevor sie zu echten Problemen werden. Es ist besser, den Go-Live um zwei Tage zu verschieben, als zwei Stunden nach dem Start einem stillen Schnittstellenfehler hinterherzujagen.
-
-### Wenn Sie Fragen haben oder Ihre Bedenken bezüglich der SAP Integration Suite besprechen möchten, zögern Sie bitte nicht, sich an uns zu wenden!
-
-## FAQs zur SAP Integration Suite
-
-### 1\. Was genau ist die SAP Integration Suite und wie ist sie aufgebaut?
-
-Die SAP Integration Suite ist die hybride Integrationsplattform von SAP, die mehrere Dienste unter einem Dach vereint. Sie umfasst Cloud Integration (ehemals CPI), API Management, Event Mesh, Integration Advisor und Open Connectors. 
-
-Meiner Meinung nach dient jede einem bestimmten Zweck … manche für strukturierte APIs, andere für ereignisbasiertes Messaging oder Plattformen von Drittanbietern. Viele Teams konzentrieren sich nur auf die Cloud-Integration, doch ein fehlendes Verständnis des gesamten Umfangs führt später zu Architekturlücken.
-
-### 2\. Ist es notwendig, in jedem Projekt alle Komponenten zu verwenden?
-
-Nein, aber Sie müssen fundierte Entscheidungen treffen. Zum Beispiel:
-
-*   Arbeiten jederzeit weiterbearbeiten können. Jede Präsentation und jeder KI-Avatar, den Sie von Grund auf neu erstellen oder hochladen, **API-Verwaltung** wenn Dienste Partnern oder externen Apps zugänglich gemacht werden.
-
-*   Arbeiten jederzeit weiterbearbeiten können. Jede Präsentation und jeder KI-Avatar, den Sie von Grund auf neu erstellen oder hochladen, **Ereignisnetz** beim Aufbau einer entkoppelten Echtzeitkommunikation zwischen Systemen.
-
-*   Arbeiten jederzeit weiterbearbeiten können. Jede Präsentation und jeder KI-Avatar, den Sie von Grund auf neu erstellen oder hochladen, **Integrationsberater** wo strukturiertes B2B-Mapping erforderlich ist.  
-    Viele Teams nutzen die Cloud-Integration für alles übermäßig, selbst wenn es innerhalb der Suite bessere Alternativen gibt.
-
-### 3\. Können wir uns auf vorab bereitgestellte Inhalte von SAP oder Partnern verlassen?
-
-Nicht ohne Validierung. Vorgefertigte Inhalte beschleunigen den Einstieg, aber nur wenige sind sofort einsatzbereit. Sie müssen oft:
-
-*   Fehlende Logik hinzufügen
-
-*   Anpassen von Zuordnungen auf Feldebene
-
-*   Partnerspezifische Endpunkte neu konfigurieren  
-    Wenn Sie dies überspringen, kann es später zu fehlerhaften Integrationen und Produktionsproblemen kommen.
-
-### 4\. Was sind häufige Fehler beim Integrationsdesign?
-
-*   Hardcoding-Logik in iFlows
-
-*   Erstellen langer Synchronisierungsketten zwischen Systemen ohne Wiederholungsversuche
-
-*   Unterschiede in Nutzlastgröße oder Datenformat ignorieren
-
-*   Fehler beim Versionieren von Schnittstellen oder Nachverfolgen des Eigentums  
-    Viele Teams berücksichtigen zukünftige Änderungen nicht, was die Wartung oder Erweiterung von Schnittstellen erschwert.
-
-### 5\. Wie sollte die Governance für die Integration gehandhabt werden?
-
-Weisen Sie jeder Schnittstelle eindeutige Verantwortlichkeiten zu. Verfolgen Sie alle Schnittstellen zentral. Nehmen Sie die Dokumentation auf Schnittstellenebene in Ihre Bereitstellungscheckliste auf. Bei schwacher Governance verlangsamt sich die Problemlösung, und nach der Inbetriebnahme kommt es häufiger zu Schuldzuweisungen.
-
-### 6\. Welche Überwachung sollte vor der Inbetriebnahme vorhanden sein?
-
-Nicht nur Entwickler, sondern auch funktionale Teams müssen den Schnittstellenstatus einsehen können. Integrieren Sie Warnregeln, Wiederholungsbedingungen und SLAs. Stellen Sie sicher, dass SolMan, SAP Alert Notification oder andere Tools eingerichtet sind, um Fehler mit geschäftlichen Auswirkungen zu eskalieren.
-
-### 7\. Macht Integration Advisor Workshops zur Funktionszuordnung überflüssig?
-
-Nicht einmal annähernd. Es bietet zwar Vorschläge, aber die Geschäftslogik, die Ausnahmebehandlung und die Validierungen erfordern weiterhin funktionalen Input und manuelle Entwicklung. Es hilft, ersetzt aber keine Workshops mit Fachteams.
-
-### 8\. Welche Herausforderungen bringen Legacy-Systeme mit sich?
-
-Ältere ERPs oder Tools von Drittanbietern bieten häufig keine Unterstützung für:
-
-*   OAuth2 oder tokenbasierte Authentifizierung
-
-*   Asynchrone Kommunikation
-
-*   JSON- oder REST-Nutzdaten  
-    Dies führt dazu, dass benutzerdefinierte Adapter oder Staging-Ebenen erforderlich sind, um moderne Middleware mit alten Systemen zu verbinden.
-
-### 9\. Welche Dokumentation ist für eine langfristige Nachhaltigkeit unerlässlich?
-
-*   Zuordnungen auf Feldebene mit Versionsverlauf
-
-*   Authentifizierungsmethode und Rotationsplan für Anmeldeinformationen
-
-*   Fehlermeldungen und erwartete Lösungen
-
-*   Abhängigkeiten zwischen Schnittstellen und Modulen  
-    Viele Teams überspringen dies während der Vorbereitungen für die Produktivsetzung und geraten dann ins Schlingern, wenn nach dem Start Änderungen auftreten.
-
-### 10\. Wie sollten wir beim Testen von Integrationsflüssen vorgehen?
-
-Testen Sie nicht nur in Entwicklungs- oder Testumgebungen mit Dummy-Daten. Beziehen Sie Folgendes ein:
-
-*   Realistische Batch-Jobs
-
-*   Spitzenverbrauchssimulationen
-
-*   Failover- und Timeout-Behandlung
-
-*   Regressionstests während Releases  
-    Das Überspringen einer End-to-End-Validierung über alle Systeme hinweg (einschließlich Partner- und Legacy-Systeme) ist eine der häufigsten Ursachen für Schnittstellenprobleme nach der Inbetriebnahme.
+</details>
