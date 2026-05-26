@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Epilogue, Sora, JetBrains_Mono } from "next/font/google";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
-import { personJsonLd, websiteJsonLd } from "@/lib/seo";
+import RootLayoutShell from "@/components/RootLayoutShell";
 import "../globals.css";
 
 const epilogue = Epilogue({
@@ -68,7 +67,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function SiteRootLayout({
+// Root layout for the (site-en) route group — the English public site at
+// flat WordPress URLs. Companion to (site-intl)/intl/[lang]/layout.tsx,
+// which is the root layout for the /<lang>/ rewrite subtree and emits
+// the lang/dir attributes from its [lang] param. Splitting the public
+// site into two route-group root layouts lets the SSR'd <html> ship with
+// the correct locale attributes without proxy- or middleware-induced
+// dynamic rendering — see Block 6a's reverted commit for the regression
+// the multi-root-layout pattern avoids.
+//
+// Body chrome (fonts, JSON-LD, LanguageSwitcher) is shared with the intl
+// layout via RootLayoutShell. Only the <html> element differs.
+export default function SiteRootLayoutEn({
   children,
 }: {
   children: React.ReactNode;
@@ -79,29 +89,7 @@ export default function SiteRootLayout({
       dir="ltr"
       className={`${epilogue.variable} ${sora.variable} ${jetbrainsMono.variable}`}
     >
-      <body>
-        {/* Site-wide WebSite + Person JSON-LD — emitted on every page so
-            branded search picks up the entity graph and the about-the-author
-            authority signal travels with every URL, not just the post page. */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(websiteJsonLd()),
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(personJsonLd()),
-          }}
-        />
-        {children}
-        {/* Mounted at the layout level so the floating widget appears on
-            every page across both the English root and the /[lang]/
-            rewrite subtree. The switcher itself is a client component;
-            the layout stays server-rendered. */}
-        <LanguageSwitcher />
-      </body>
+      <RootLayoutShell>{children}</RootLayoutShell>
     </html>
   );
 }
