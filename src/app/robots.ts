@@ -51,12 +51,21 @@ export default function robots(): MetadataRoute.Robots {
 
   const blocked = ["Bytespider", "ImagesiftBot"];
 
+  // /intl/ is the internal rewrite target for /[lang]/ URLs (see
+  // next.config.ts rewrites). The public-facing URLs are /[lang]/...; the
+  // /intl/... shape is an implementation detail and should never be
+  // crawled or indexed. The rel=canonical on /intl/* responses already
+  // points at /[lang]/* — disallow here belts-and-braces the dedup.
   return {
     rules: [
       // Default allow — covers Googlebot, Bingbot, DuckDuckBot, Ahrefs, etc.
-      { userAgent: "*", allow: "/" },
+      { userAgent: "*", allow: "/", disallow: "/intl/" },
       // Explicit AI crawler allowlist (signals opt-in for training + citations)
-      ...aiCrawlers.map((ua) => ({ userAgent: ua, allow: "/" })),
+      ...aiCrawlers.map((ua) => ({
+        userAgent: ua,
+        allow: "/",
+        disallow: "/intl/",
+      })),
       // Explicit blocks for known bad actors
       ...blocked.map((ua) => ({ userAgent: ua, disallow: "/" })),
     ],

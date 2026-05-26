@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import type { Locale, PostRecord, PageRecord } from "./content";
 import { LOCALES, CATEGORIES } from "./content";
+import {
+  HREFLANG_LOCALES,
+  OG_LOCALE_MAP,
+  localizedPath,
+} from "./locales";
 
 export const SITE_URL = "https://noeldcosta.com";
 export const SITE_NAME = "Noel D'Costa";
@@ -17,35 +22,92 @@ export const AUTHOR = {
   ],
 };
 
-// English-only flat URL with a trailing slash, matching the WordPress URL
-// contract (every legacy URL ends in `/`) and Next.js's `trailingSlash: true`
-// config. Locale parameter retained for call-site compatibility — GTranslate
-// handles all non-English variants externally on its proxy. See CLAUDE.md.
-function flatPath(_locale: Locale, slug: string): string {
+// Trailing-slash URL path for a content slug. The path returned is the
+// English/canonical shape (no locale prefix); call sites that need a
+// locale variant compose `localizedPath(locale, ...)` on top. Matches the
+// WordPress URL contract (every legacy URL ends in `/`) and Next.js's
+// `trailingSlash: true` config.
+function flatPath(slug: string): string {
   return `/${slug}/`;
 }
 
-// Resolve the canonical URL for an MDX page. Pages whose WordPress origin
-// was at a nested path (e.g. /sap-implementation/for-manufacturing/) carry
-// that path in `frontmatter.originalUrl`; the catch-all route serves them
-// at the nested URL but `slug` is only the last segment, so naively
-// building the canonical from `flatPath(slug)` yields a wrong canonical
-// pointing at a flat URL that isn't the WordPress canonical. Use the
-// originalUrl pathname when present so the canonical matches the URL
-// indexed on WordPress.
-function canonicalUrlForPage(page: PageRecord): string {
+/**
+ * The English/canonical URL path for an MDX page. Pages whose WordPress
+ * origin was at a nested path (e.g. /sap-implementation/for-manufacturing/)
+ * expose that path via `frontmatter.originalUrl`; we use it so the canonical
+ * matches the URL indexed on WordPress. Falls back to the flat slug path
+ * when originalUrl is missing or unparseable.
+ *
+ * Returned path is always locale-agnostic — no `/<lang>/` prefix. The
+ * caller composes the locale prefix via `localizedPath`.
+ */
+function englishPathForPage(page: PageRecord): string {
   const fm = page.frontmatter;
-  if (fm.canonical) return fm.canonical;
   if (fm.originalUrl) {
     try {
       const u = new URL(fm.originalUrl);
-      const path = u.pathname.endsWith("/") ? u.pathname : `${u.pathname}/`;
-      return `${SITE_URL}${path}`;
+      return u.pathname.endsWith("/") ? u.pathname : `${u.pathname}/`;
     } catch {
       // Fall through to flat-slug path if originalUrl is malformed.
     }
   }
-  return `${SITE_URL}${flatPath(page.locale, fm.slug)}`;
+  return flatPath(fm.slug);
+}
+
+/** English/canonical URL path for an MDX post (no locale prefix). */
+function englishPathForPost(post: PostRecord): string {
+  return flatPath(post.frontmatter.slug);
+}
+
+/**
+ * Re-localize an explicit canonical override for a given locale. Used when
+ * a post or page sets `frontmatter.canonical` — the override carries the
+ * URL shape but not the locale, so for translated routes we splice in the
+ * locale prefix. External (non-noeldcosta.com) canonicals are returned as-is.
+ */
+function localizeCanonicalOverride(canonical: string, locale: Locale): string {
+  if (locale === "en") return canonical;
+  try {
+    const u = new URL(canonical);
+    if (`${u.protocol}//${u.host}` !== SITE_URL) return canonical;
+    const path = u.pathname.endsWith("/") ? u.pathname : `${u.pathname}/`;
+    return `${SITE_URL}${localizedPath(locale, path)}`;
+  } catch {
+    return canonical;
+  }
+}
+
+/**
+ * Resolve the canonical URL for an MDX page in its served locale. For
+ * English pages this is the flat WordPress URL; for translated pages it's
+ * the same path with `/<locale>/` spliced in. Honours frontmatter.canonical
+ * as an explicit override.
+ */
+function canonicalUrlForPage(page: PageRecord): string {
+  const fm = page.frontmatter;
+  if (fm.canonical) return localizeCanonicalOverride(fm.canonical, page.locale);
+  const englishPath = englishPathForPage(page);
+  return `${SITE_URL}${localizedPath(page.locale, englishPath)}`;
+}
+
+/**
+ * Build the `alternates.languages` map used in route metadata. Emits one
+ * entry per supported locale (en + the 10 TARGET_LANGUAGES) plus x-default
+ * pointing at the English URL. Use this on every URL that has translated
+ * variants — Google requires reciprocal hreflang on every alternate to
+ * accept the cluster as a valid translation set.
+ *
+ * `englishPath` is the unprefixed canonical path (starts and ends with `/`).
+ */
+export function buildLanguageAlternates(
+  englishPath: string,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const loc of HREFLANG_LOCALES) {
+    out[loc] = `${SITE_URL}${localizedPath(loc, englishPath)}`;
+  }
+  out["x-default"] = `${SITE_URL}${englishPath}`;
+  return out;
 }
 
 /**
@@ -95,13 +157,18 @@ export function buildPostMetadata(post: PostRecord): Metadata {
   const title = fm.metaTitle || fm.title;
   const description =
     fm.metaDescription || fm.excerpt || `${fm.title} — by Noel D'Costa.`;
-  const canonical =
-    fm.canonical || `${SITE_URL}${flatPath(post.locale, fm.slug)}`;
+  const englishPath = englishPathForPost(post);
+  const canonical = fm.canonical
+    ? localizeCanonicalOverride(fm.canonical, post.locale)
+    : `${SITE_URL}${localizedPath(post.locale, englishPath)}`;
 
   return {
     title,
     description,
-    alternates: { canonical },
+    alternates: {
+      canonical,
+      languages: buildLanguageAlternates(englishPath),
+    },
     // Only override the layout's default robots config when the post is
     // explicitly noindex; otherwise let the parent indexing directives flow
     // through (omitting the field — passing `undefined` would shadow it).
@@ -112,7 +179,7 @@ export function buildPostMetadata(post: PostRecord): Metadata {
       url: canonical,
       siteName: SITE_NAME,
       type: "article",
-      locale: "en",
+      locale: OG_LOCALE_MAP[post.locale] ?? "en_US",
       publishedTime: toIso(fm.date),
       modifiedTime: toIso(fm.updated),
       authors: [AUTHOR.name],
@@ -134,12 +201,16 @@ export function buildPageMetadata(page: PageRecord): Metadata {
   const title = fm.metaTitle || fm.title;
   const description =
     fm.metaDescription || fm.excerpt || `${fm.title} — Noel D'Costa.`;
+  const englishPath = englishPathForPage(page);
   const canonical = canonicalUrlForPage(page);
 
   return {
     title,
     description,
-    alternates: { canonical },
+    alternates: {
+      canonical,
+      languages: buildLanguageAlternates(englishPath),
+    },
     // Only override the layout's default robots config when the post is
     // explicitly noindex; otherwise let the parent indexing directives flow
     // through (omitting the field — passing `undefined` would shadow it).
@@ -150,7 +221,7 @@ export function buildPageMetadata(page: PageRecord): Metadata {
       url: canonical,
       siteName: SITE_NAME,
       type: "website",
-      locale: "en",
+      locale: OG_LOCALE_MAP[page.locale] ?? "en_US",
       images: fm.hero ? [{ url: fm.hero }] : undefined,
     },
     twitter: {
@@ -353,7 +424,10 @@ function authorPerson() {
  */
 export function articleJsonLd(post: PostRecord) {
   const fm = post.frontmatter;
-  const url = `${SITE_URL}${flatPath(post.locale, fm.slug)}`;
+  const englishPath = englishPathForPost(post);
+  const url = fm.canonical
+    ? localizeCanonicalOverride(fm.canonical, post.locale)
+    : `${SITE_URL}${localizedPath(post.locale, englishPath)}`;
   const heroAbsolute = fm.hero
     ? fm.hero.startsWith("http")
       ? fm.hero
@@ -409,7 +483,7 @@ export function articleJsonLd(post: PostRecord) {
     },
     articleSection: cat?.label,
     wordCount: countWords(post.body),
-    inLanguage: "en",
+    inLanguage: post.locale,
     speakable: {
       "@type": "SpeakableSpecification",
       cssSelector: ["h1", "header p"],
@@ -488,7 +562,7 @@ export function pageWebPageJsonLd(page: PageRecord) {
     url,
     name: fm.title,
     description,
-    inLanguage: "en",
+    inLanguage: page.locale,
     isPartOf: { "@id": `${SITE_URL}/#website` },
     author: { "@id": `${SITE_URL}/#noel-dcosta` },
     ...(heroAbsolute
@@ -530,7 +604,7 @@ export function pageArticleJsonLd(page: PageRecord) {
     publisher: personRef,
     mainEntityOfPage: { "@type": "WebPage", "@id": `${url}#webpage` },
     wordCount: countWords(page.body),
-    inLanguage: "en",
+    inLanguage: page.locale,
   };
 }
 
@@ -584,6 +658,7 @@ export function collectionPageJsonLd(args: {
   name: string;
   description: string;
   posts: { slug: string; title: string; locale: Locale }[];
+  inLanguage?: Locale;
 }) {
   return {
     "@context": "https://schema.org",
@@ -593,11 +668,11 @@ export function collectionPageJsonLd(args: {
     description: args.description,
     isPartOf: { "@id": `${SITE_URL}/#website` },
     publisher: { "@id": `${SITE_URL}/#noel-dcosta` },
-    inLanguage: "en",
+    inLanguage: args.inLanguage ?? "en",
     hasPart: args.posts.slice(0, 50).map((p) => ({
       "@type": "BlogPosting",
       headline: p.title,
-      url: `${SITE_URL}${flatPath(p.locale, p.slug)}`,
+      url: `${SITE_URL}${localizedPath(p.locale, flatPath(p.slug))}`,
     })),
   };
 }

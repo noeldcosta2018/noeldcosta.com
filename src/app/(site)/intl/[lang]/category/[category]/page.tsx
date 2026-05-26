@@ -2,19 +2,20 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import CategoryPage from "@/components/CategoryPage";
 import { CATEGORIES } from "@/lib/content";
-import { SITE_URL } from "@/lib/seo";
+import { SITE_URL, buildLanguageAlternates } from "@/lib/seo";
 import {
+  OG_LOCALE_MAP,
   TARGET_LANGUAGES,
   isTargetLanguage,
+  localizedPath,
+  type TargetLanguage,
 } from "@/lib/locales";
 
 // Locale-scoped category index. Mirrors (site)/category/[category]/page.tsx
 // but parameterised by `lang`. The CategoryPage component reads posts in
 // the requested locale (falling back to en per resolveWithFallback).
-//
-// Block 3 scope: routing only. canonical still points at the flat English
-// /category/<slug>/ URL via the existing CATEGORIES metadata. Per-locale
-// canonical + hreflang land in Block 4.
+// Canonical points at the locale-prefixed URL; hreflang covers all 11
+// variants + x-default.
 
 export function generateStaticParams() {
   const params: { lang: string; category: string }[] = [];
@@ -35,10 +36,24 @@ export async function generateMetadata(
   if (!isTargetLanguage(lang)) return {};
   const meta = CATEGORIES[category as keyof typeof CATEGORIES];
   if (!meta) return {};
+  const locale = lang as TargetLanguage;
+  const englishPath = `/category/${meta.slug}/`;
+  const canonical = `${SITE_URL}${localizedPath(locale, englishPath)}`;
   return {
     title: `${meta.label} | Noel D'Costa`,
     description: meta.description,
-    alternates: { canonical: `${SITE_URL}/category/${meta.slug}/` },
+    alternates: {
+      canonical,
+      languages: buildLanguageAlternates(englishPath),
+    },
+    openGraph: {
+      title: `${meta.label} | Noel D'Costa`,
+      description: meta.description,
+      url: canonical,
+      siteName: "Noel D'Costa",
+      type: "website",
+      locale: OG_LOCALE_MAP[locale] ?? "en_US",
+    },
   };
 }
 

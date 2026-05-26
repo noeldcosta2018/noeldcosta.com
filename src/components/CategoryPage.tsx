@@ -25,6 +25,7 @@ import {
   type PostRecord,
 } from "@/lib/content";
 import { breadcrumbJsonLd, collectionPageJsonLd, SITE_URL } from "@/lib/seo";
+import { localePathPrefix } from "@/lib/locales";
 import { TAG_META, tagLabel } from "@/components/tagMeta";
 
 // ─── Per-category taglines for the hero H1 italic emphasis ──────────────────
@@ -172,22 +173,26 @@ export default function CategoryPage({
   const meta = CATEGORIES[category as keyof typeof CATEGORIES];
   const posts = getPostsByCategory(category as Category, locale);
 
-  const categoryUrl = `${SITE_URL}/category/${meta.slug}`;
+  const langPrefix = localePathPrefix(locale);
+  const categoryUrl = `${SITE_URL}${langPrefix}/category/${meta.slug}/`;
   const crumbs = [
-    { name: "Home", url: `${SITE_URL}/` },
+    { name: "Home", url: `${SITE_URL}${langPrefix}/` },
     { name: meta.label, url: categoryUrl },
   ];
 
   // CollectionPage JSON-LD — declares this URL as a category index that
-  // contains the listed posts. Helps Google understand the taxonomy.
+  // contains the listed posts. Helps Google understand the taxonomy. Post
+  // URLs in hasPart inherit the current locale so they point at the
+  // translated post pages, not the English ones.
   const collectionLd = collectionPageJsonLd({
     url: categoryUrl,
     name: meta.label,
     description: meta.description,
+    inLanguage: locale,
     posts: posts.map((p) => ({
       slug: p.frontmatter.slug,
       title: p.frontmatter.title,
-      locale: "en",
+      locale,
     })),
   });
 

@@ -26,6 +26,7 @@ import {
   breadcrumbJsonLd,
   SITE_URL,
 } from "@/lib/seo";
+import { localePathPrefix } from "@/lib/locales";
 import { extractHeadings } from "@/lib/article-headings";
 import { splitAtMidH2 } from "@/lib/article-split";
 
@@ -79,15 +80,16 @@ export default function PostPage({
   const endRelated = pickRelated(post, pool, 4);
   const faqItems = extractFaqItems(post.body);
 
+  const langPrefix = localePathPrefix(locale);
   const breadcrumbs = [
-    { name: "Home", url: `${SITE_URL}/` },
+    { name: "Home", url: `${SITE_URL}${langPrefix}/` },
     catMeta
       ? {
           name: catMeta.label,
-          url: `${SITE_URL}/category/${catMeta.slug}`,
+          url: `${SITE_URL}${langPrefix}/category/${catMeta.slug}/`,
         }
       : null,
-    { name: fm.title, url: `${SITE_URL}/${fm.slug}` },
+    { name: fm.title, url: `${SITE_URL}${langPrefix}/${fm.slug}/` },
   ].filter(Boolean) as { name: string; url: string }[];
 
   const deck = fm.deck || fm.excerpt;

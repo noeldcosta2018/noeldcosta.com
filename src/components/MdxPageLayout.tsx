@@ -15,6 +15,7 @@ import {
   pageArticleJsonLd,
   pageWebPageJsonLd,
 } from "@/lib/seo";
+import { localePathPrefix } from "@/lib/locales";
 
 export default function MdxPageLayout({
   slug,
@@ -27,9 +28,14 @@ export default function MdxPageLayout({
   if (!page) notFound();
   const fm = page.frontmatter;
 
-  const pageUrl = `${SITE_URL}/${fm.slug}`;
+  // pageWebPageJsonLd already produces the locale-prefixed canonical (using
+  // originalUrl when nested). Reuse that here for breadcrumb parity so the
+  // crumb URL agrees with the canonical/@id. Schema for ContactPage etc.
+  // also wants the locale-prefixed URL.
+  const langPrefix = localePathPrefix(locale);
+  const pageUrl = `${SITE_URL}${langPrefix}/${fm.slug}/`;
   const breadcrumbs = [
-    { name: "Home", url: `${SITE_URL}/` },
+    { name: "Home", url: `${SITE_URL}${langPrefix}/` },
     { name: fm.title, url: pageUrl },
   ];
 

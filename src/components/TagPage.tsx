@@ -20,6 +20,7 @@ import {
   type PostRecord,
 } from "@/lib/content";
 import { breadcrumbJsonLd, collectionPageJsonLd, SITE_URL } from "@/lib/seo";
+import { localePathPrefix } from "@/lib/locales";
 import {
   tagInfo,
   tagLabel,
@@ -114,9 +115,10 @@ export default function TagPage({
   const Icon = info.icon;
   const posts = getPostsByAnyTag(tagSynonyms(tag), locale);
 
-  const tagUrl = `${SITE_URL}/tag/${tag}`;
+  const langPrefix = localePathPrefix(locale);
+  const tagUrl = `${SITE_URL}${langPrefix}/tag/${tag}/`;
   const crumbs = [
-    { name: "Home", url: `${SITE_URL}/` },
+    { name: "Home", url: `${SITE_URL}${langPrefix}/` },
     { name: info.label, url: tagUrl },
   ];
 
@@ -125,10 +127,11 @@ export default function TagPage({
     name: info.label,
     description:
       info.description || `Articles tagged ${info.label} by Noel D'Costa.`,
+    inLanguage: locale,
     posts: posts.map((p) => ({
       slug: p.frontmatter.slug,
       title: p.frontmatter.title,
-      locale: "en",
+      locale,
     })),
   });
 

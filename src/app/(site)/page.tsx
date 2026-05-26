@@ -16,7 +16,12 @@ import Testimonials from "@/components/Testimonials";
 import FAQ from "@/components/FAQ";
 import CTABanner from "@/components/CTABanner";
 import Footer from "@/components/Footer";
-import { SITE_URL, blogJsonLd, professionalServiceJsonLd } from "@/lib/seo";
+import {
+  SITE_URL,
+  blogJsonLd,
+  buildLanguageAlternates,
+  professionalServiceJsonLd,
+} from "@/lib/seo";
 
 const TITLE = "Noel D'Costa | ERP, AI & S/4HANA Advisor";
 const DESCRIPTION =
@@ -29,13 +34,14 @@ export async function generateMetadata(): Promise<Metadata> {
     robots: "index, follow",
     alternates: {
       canonical: `${SITE_URL}/`,
+      languages: buildLanguageAlternates("/"),
     },
     openGraph: {
       title: TITLE,
       description: DESCRIPTION,
       type: "profile",
       url: SITE_URL,
-      locale: "en",
+      locale: "en_US",
       siteName: "Noel D'Costa",
       images: [{ url: "/og-image.png", width: 1200, height: 630, alt: TITLE }],
     },

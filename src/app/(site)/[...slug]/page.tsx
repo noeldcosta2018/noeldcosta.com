@@ -18,6 +18,7 @@ import {
   SITE_URL,
   buildPostMetadata,
   buildPageMetadata,
+  buildLanguageAlternates,
 } from "@/lib/seo";
 
 // Reserved single-segment slugs handled by dedicated routes
@@ -127,13 +128,20 @@ export async function generateMetadata(
   const { slug } = await props.params;
   const lastSlug = slug[slug.length - 1];
 
-  // Category metadata wins for slugs that match a known category id.
+  // Category metadata wins for slugs that match a known category id. The
+  // canonical points at the /category/<slug>/ form (the catch-all also
+  // serves /<slug>/ as a WordPress-parity shortcut). hreflang covers
+  // every translated /<lang>/category/<slug>/ variant.
   if (slug.length === 1 && isCategorySlug(lastSlug)) {
     const meta = CATEGORIES[lastSlug];
+    const englishPath = `/category/${meta.slug}/`;
     return {
       title: `${meta.label} | Noel D'Costa`,
       description: meta.description,
-      alternates: { canonical: `${SITE_URL}/category/${meta.slug}/` },
+      alternates: {
+        canonical: `${SITE_URL}${englishPath}`,
+        languages: buildLanguageAlternates(englishPath),
+      },
     };
   }
 
@@ -141,10 +149,14 @@ export async function generateMetadata(
   // metadata since both URLs render the same portfolio page.
   if (slug.length === 1 && lastSlug === CASE_STUDIES_INDEX_SLUG) {
     const meta = CATEGORIES["sap-case-studies"];
+    const englishPath = `/${CASE_STUDIES_INDEX_SLUG}/`;
     return {
       title: `${meta.label} | Noel D'Costa`,
       description: meta.description,
-      alternates: { canonical: `${SITE_URL}/${CASE_STUDIES_INDEX_SLUG}/` },
+      alternates: {
+        canonical: `${SITE_URL}${englishPath}`,
+        languages: buildLanguageAlternates(englishPath),
+      },
     };
   }
 

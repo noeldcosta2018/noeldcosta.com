@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import TagPage from "@/components/TagPage";
 import { getAllTagSlugs } from "@/lib/content";
-import { SITE_URL } from "@/lib/seo";
+import { SITE_URL, buildLanguageAlternates } from "@/lib/seo";
 import { tagInfo, WORDPRESS_TAG_SLUGS } from "@/components/tagMeta";
 
 function allTagSlugs(): string[] {
@@ -24,11 +24,21 @@ export async function generateMetadata(
   const description =
     info.description ||
     `Articles tagged ${info.label} from Noel D'Costa — field-tested ERP and AI advisory.`;
+  const englishPath = `/tag/${tag}/`;
   return {
     title: `${info.label} | Noel D'Costa`,
     description,
     alternates: {
-      canonical: `${SITE_URL}/tag/${tag}/`,
+      canonical: `${SITE_URL}${englishPath}`,
+      languages: buildLanguageAlternates(englishPath),
+    },
+    openGraph: {
+      title: `${info.label} | Noel D'Costa`,
+      description,
+      url: `${SITE_URL}${englishPath}`,
+      siteName: "Noel D'Costa",
+      type: "website",
+      locale: "en_US",
     },
   };
 }
