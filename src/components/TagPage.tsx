@@ -16,6 +16,7 @@ import CTABanner from "@/components/CTABanner";
 import {
   getPostsByAnyTag,
   readingTime,
+  type Locale,
   type PostRecord,
 } from "@/lib/content";
 import { breadcrumbJsonLd, collectionPageJsonLd, SITE_URL } from "@/lib/seo";
@@ -104,12 +105,14 @@ function PostCard({
 
 export default function TagPage({
   tag,
+  locale = "en",
 }: {
   tag: string;
+  locale?: Locale;
 }) {
   const info = tagInfo(tag);
   const Icon = info.icon;
-  const posts = getPostsByAnyTag(tagSynonyms(tag), "en");
+  const posts = getPostsByAnyTag(tagSynonyms(tag), locale);
 
   const tagUrl = `${SITE_URL}/tag/${tag}`;
   const crumbs = [

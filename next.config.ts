@@ -57,6 +57,31 @@ const nextConfig: NextConfig = {
       "node_modules/@anthropic-ai/sdk/**/*.md",
     ],
   },
+  // Locale prefix rewrites. The 10 translated locales are served from a
+  // route subtree at (site)/intl/[lang]/ so the [lang] dynamic segment
+  // does not collide with the top-level (site)/[...slug] catch-all (an App
+  // Router routing tie that Next.js resolves toward the more-specific
+  // [lang], with `dynamicParams: false` then 404ing every English path
+  // whose first segment isn't a known locale).
+  //
+  // The "intl" segment must be a literal, routable folder — Next.js excludes
+  // any folder whose name starts with "_" from routing (private folder
+  // convention), which rules out underscore-prefixed names like "__locale".
+  //
+  // The regex constrains :lang to exactly the TARGET_LANGUAGES list, so
+  // any other /xx/... path falls through to the (site)/[...slug] catch-all
+  // (where it 404s if the slug isn't an English path either). Keep this
+  // list in sync with src/lib/locales.ts TARGET_LANGUAGES.
+  rewrites: async () => {
+    const LOCALE_GROUP = "ar|de|el|es|fr|it|ja|nl|pt|ru";
+    return [
+      { source: `/:lang(${LOCALE_GROUP})`, destination: "/intl/:lang" },
+      {
+        source: `/:lang(${LOCALE_GROUP})/:path*`,
+        destination: "/intl/:lang/:path*",
+      },
+    ];
+  },
   // Security headers — applied globally. CSP intentionally omitted because
   // the site loads external resources (Calendly embed, Google Fonts, OG
   // image previews) that need a careful per-resource allowlist; doing it

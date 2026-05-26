@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import MdxBody from "@/components/mdx/MdxBody";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
-import { getPage } from "@/lib/content";
+import { getPage, type Locale } from "@/lib/content";
 import {
   PAGE_ARTICLE_WORDCOUNT_THRESHOLD,
   SITE_URL,
@@ -16,8 +16,14 @@ import {
   pageWebPageJsonLd,
 } from "@/lib/seo";
 
-export default function MdxPageLayout({ slug }: { slug: string }) {
-  const page = getPage(slug, "en");
+export default function MdxPageLayout({
+  slug,
+  locale = "en",
+}: {
+  slug: string;
+  locale?: Locale;
+}) {
+  const page = getPage(slug, locale);
   if (!page) notFound();
   const fm = page.frontmatter;
 

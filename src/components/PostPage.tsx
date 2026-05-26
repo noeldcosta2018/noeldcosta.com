@@ -19,6 +19,7 @@ import {
   getAllPosts,
   getPost,
   readingTime,
+  type Locale,
 } from "@/lib/content";
 import {
   articleJsonLd,
@@ -57,10 +58,12 @@ function extractFaqItems(body: string): { question: string; answer: string }[] {
  */
 export default function PostPage({
   slug,
+  locale = "en",
 }: {
   slug: string;
+  locale?: Locale;
 }) {
-  const post = getPost(slug, "en");
+  const post = getPost(slug, locale);
   if (!post) notFound();
 
   const fm = post.frontmatter;
@@ -72,7 +75,7 @@ export default function PostPage({
   const hasSplit = bodyBottom.length > 0;
   const hasToc = headings.length >= 3;
 
-  const pool = getAllPosts("en");
+  const pool = getAllPosts(locale);
   const endRelated = pickRelated(post, pool, 4);
   const faqItems = extractFaqItems(post.body);
 

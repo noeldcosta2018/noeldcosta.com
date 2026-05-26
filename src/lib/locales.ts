@@ -13,6 +13,7 @@ export type Locale =
   | "pt"
   | "de"
   | "ar"
+  | "el"
   | "zh"
   | "ko"
   | "hi"
@@ -29,6 +30,7 @@ export const LOCALES: Locale[] = [
   "pt",
   "de",
   "ar",
+  "el",
   "zh",
   "ko",
   "hi",
@@ -38,3 +40,27 @@ export const LOCALES: Locale[] = [
 
 export const TIER_1_LOCALES: Locale[] = ["en", "ja", "es", "fr", "ru", "it", "pt"];
 export const RTL_LOCALES: Locale[] = ["ar"];
+
+// The 10 non-English locales that get a routed [lang] segment and translated
+// MDX content. Mirrors the TARGET_LANGUAGES list in scripts/translate-content.mjs
+// — the script writes ${slug}/${lang}.mdx for every entry here. The [lang]
+// route's generateStaticParams enumerates exactly these codes; any other
+// /xx/ path 404s.
+export const TARGET_LANGUAGES = [
+  "ar",
+  "de",
+  "el",
+  "es",
+  "fr",
+  "it",
+  "ja",
+  "nl",
+  "pt",
+  "ru",
+] as const satisfies readonly Locale[];
+
+export type TargetLanguage = (typeof TARGET_LANGUAGES)[number];
+
+export function isTargetLanguage(value: string): value is TargetLanguage {
+  return (TARGET_LANGUAGES as readonly string[]).includes(value);
+}

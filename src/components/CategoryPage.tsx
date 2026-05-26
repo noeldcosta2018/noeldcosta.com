@@ -21,6 +21,7 @@ import {
   getPostsByCategory,
   readingTime,
   type Category,
+  type Locale,
   type PostRecord,
 } from "@/lib/content";
 import { breadcrumbJsonLd, collectionPageJsonLd, SITE_URL } from "@/lib/seo";
@@ -161,13 +162,15 @@ function StartHereRow({ post }: { post: PostRecord }) {
 
 export default function CategoryPage({
   category,
+  locale = "en",
 }: {
   category: string;
+  locale?: Locale;
 }) {
   if (!(category in CATEGORIES)) notFound();
 
   const meta = CATEGORIES[category as keyof typeof CATEGORIES];
-  const posts = getPostsByCategory(category as Category, "en");
+  const posts = getPostsByCategory(category as Category, locale);
 
   const categoryUrl = `${SITE_URL}/category/${meta.slug}`;
   const crumbs = [
