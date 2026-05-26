@@ -24,20 +24,49 @@ Better design. Built for a buyer who scans for under 90 seconds.
 
 ## Translation architecture
 
-The WordPress site uses GTranslate as a Translation Delivery Network.
-GTranslate is an external proxy that serves all `/{lang}/` URLs
-(Spanish, Japanese, French, Russian, Italian, German, Portuguese,
-Greek, Arabic, Dutch, Chinese, etc.) by fetching the English version
-from the origin and translating it.
+The WordPress origin uses GTranslate as a Translation Delivery Network
+for the 10 non-English locales. Search Console data shows 64.5% of clicks
+come from these translated URLs, so any replacement must serve all 11
+language variants natively to preserve that traffic on cutover.
 
-Search Console data shows 64.5% of clicks come from these translated
-URLs. GTranslate is not optional. It stays in place after migration.
+The Next.js replacement uses **self-hosted i18n** — no GTranslate, no
+external proxy. Architecture:
 
-The Next.js site serves English only at flat URLs. No language prefix
-in the URL. No `[lang]` segment. GTranslate handles all translation
-externally after the request reaches its proxy.
+- **URL contract.** English at flat URLs (`/sap-implementation/`);
+  translated routes at `/<lang>/<slug>/` for each of the 10 routed
+  locales: `ar, de, el, es, fr, it, ja, nl, pt, ru`. Internally,
+  `next.config.ts` rewrites `/<lang>/*` to `/intl/<lang>/*` so the
+  route group split (`(site-en)/` vs `(site-intl)/intl/[lang]/`) can
+  emit a different `<html lang>` / `<html dir>` per route group while
+  preserving the public URL shape.
+- **Translation pipeline.** English MDX at
+  `content/<type>/<slug>/en.mdx` is the source of truth.
+  `scripts/translate-content.mjs` translates it into 10 target locales
+  using OpenAI's GPT-5.4 API, writes
+  `content/<type>/<slug>/<lang>.mdx`, and preserves branded terms
+  (SAP, S/4HANA, Joule, etc.) via a glossary. Verbatim content
+  (testimonial quotes, proper-noun client names) is wrapped in
+  `<noTranslate>...</noTranslate>` and survives across all locales.
+- **Routing.** Two root layouts via route groups:
+  `(site-en)/layout.tsx` (English, hardcoded en/ltr) and
+  `(site-intl)/intl/[lang]/layout.tsx` (translated, lang+dir derived
+  from `params.lang` and `RTL_LOCALES`). Both share body chrome via
+  `src/components/RootLayoutShell.tsx`. Statically prerendered via
+  `generateStaticParams` + `dynamicParams: false`.
+- **Build characteristics.** 2,769 static pages on Vercel. All
+  translated routes serve from edge cache (`X-Vercel-Cache: HIT`).
+  No runtime translation lookup, no dynamic SSR.
+- **SEO.** Per-locale canonical, full reciprocal hreflang map
+  (en + 10 + `x-default`), and `og:locale` per `OG_LOCALE_MAP`.
+  Sitemap emits one entry per locale per URL.
+- **GTranslate.** Stays in place on the WordPress origin until DNS
+  cutover. Cancelled after 30 days of stable self-hosted i18n in
+  production.
 
-See `_docs/references/search-console-findings.md` for the traffic data.
+See `_docs/references/search-console-findings.md` for the traffic data,
+`_docs/audits/i18n-strings-audit-2026-05-26.md` for the UI strings audit,
+and `_docs/audits/phase-4-comprehensive-review-2026-05-26.md` for the
+end-to-end migration review.
 
 ---
 
@@ -72,9 +101,11 @@ Measurement method: Google Search Console + Google Analytics
 (or Plausible). Capture WordPress baseline for the 90 days
 before cutover. Compare against the same 90-day window post-cutover.
 
-Critical context. 64.5% of organic traffic comes via GTranslate-served
-translated URLs. Both English URL preservation AND GTranslate continuity
-must work for this metric to hold.
+Critical context. 64.5% of organic traffic comes via translated URLs.
+The Next.js replacement serves all 11 language variants natively via the
+self-hosted i18n pipeline (see Translation architecture above), so
+GTranslate is no longer in the critical path post-cutover. English URL
+preservation AND per-locale URL preservation both matter.
 
 This metric forces the zero-redirect URL contract. Every WordPress
 URL maps 1:1 to a Next.js route. See `_docs/references/wordpress-urls.md`.
@@ -103,9 +134,6 @@ working on one of these, stop and ask.
 - A newsletter platform integration (deferred to phase 2 of the
   for-consultants page only).
 - Live chat or chatbot widgets.
-- Replacing GTranslate or building native translation in Next.js.
-  GTranslate stays. The Next.js site serves English only. GTranslate
-  proxies everything else externally.
 - Migration of every WordPress post. Top 20-30 only in this build.
 - A redesign of erpcv.com or commandcc.io. Those sites stay as-is.
 - Custom analytics or A/B testing infrastructure.
@@ -334,26 +362,56 @@ are currently nested under `[lang]`, they need to move as part of M-02.
 
 ---
 
-## Phase 4 — Content migration
+## Phase 4 — Content migration + self-hosted i18n
 
-Goal: port priority blog content from WordPress to Next.js MDX
-without losing SEO equity.
+Goal: port priority blog content from WordPress to Next.js MDX, and
+ship native translations for all 10 routed locales, without losing SEO
+equity.
+
+The phase pivoted mid-flight: the original plan (P-01..P-10 below) was
+WordPress→MDX in English only, with GTranslate continuing to handle
+translation externally after cutover. The current plan keeps the
+content migration but adds self-hosted i18n on top (Blocks 1-8), so the
+Next.js replacement serves all 11 language variants natively at DNS
+cutover and GTranslate can be decommissioned afterwards.
+
+### Content migration (original P-series, mostly done in commits prior to this PRD revision)
 
 | ID | Task | Status | Depends on | Acceptance criteria |
 |---|---|---|---|---|
-| P-01 | MDX content infrastructure verified | pending | F-01 | `mdx-components.tsx`, `content/`, PostPage.tsx all working. Build succeeds with at least one test post. |
-| P-02 | Identify top 20 priority articles | done | — | Done. See `_docs/references/priority-urls.md`. Top 50 URLs documented with traffic data. Top 20 for migration are the highest-traffic entries. |
-| P-03 | Create voice memo / source process | pending | F-05 | Document workflow in `_docs/blog/CONTEXT.md`: voice memo → transcript → MDX draft. |
-| P-04 | Migrate priority post 1 (proof) | pending | P-01, P-02, P-03 | First post live at `/{wordpress-slug}/`. Same URL, same metadata, rewritten copy per VOICE.md. SEO score >= WordPress equivalent. |
-| P-05 | Migrate posts 2-10 | pending | P-04 | Each post follows the same pattern. Frontmatter complete with experience_source field. |
-| P-06 | Migrate posts 11-20 | pending | P-05 | As above. |
-| P-07 | Set up category pages | pending | P-04 | All 4 category pages render with correct posts: ai-governance, erp-consulting-guide, sap-case-studies, sap-modules. |
-| P-08 | Configure sitemap.xml output | pending | P-06, P-07, M-03 | Next.js sitemap matches WordPress sitemap structure. All migrated URLs included. English only (no language prefixes). |
-| P-09 | robots.txt configured | pending | P-08 | robots.txt exists, allows search engines, references sitemap. |
-| P-10 | Long-tail post strategy | pending | P-06 | Decision documented: archive un-migrated posts on WordPress until migration, OR redirect to a coming-soon page, OR full migration timeline. |
+| P-01 | MDX content infrastructure verified | done | F-01 | `mdx-components.tsx`, `content/`, PostPage.tsx all working. Build succeeds with at least one test post. |
+| P-02 | Identify top 20 priority articles | done | — | See `_docs/references/priority-urls.md`. |
+| P-03 | Create voice memo / source process | done | F-05 | Workflow documented in `blog-editor.md`. |
+| P-04 | Migrate priority post 1 (proof) | done | P-01, P-02, P-03 | First post live; SEO score ≥ WordPress equivalent. |
+| P-05 | Migrate posts 2-10 | done | P-04 | All posts carry experience_source field. |
+| P-06 | Migrate posts 11-20+ | done | P-05 | ~117 slugs total under `content/posts/` and `content/pages/`. |
+| P-07 | Category pages | done | P-04 | 6 category indexes render. |
+| P-08 | Sitemap output | done | P-06, P-07, M-03 | Sitemap emits one entry per locale per URL via `emitWithLocales`. |
+| P-09 | robots.txt | done | P-08 | Allows crawlers; disallows `/intl/` (internal rewrite target). |
+| P-10 | Long-tail post strategy | deferred | P-06 | Defer until post-cutover; un-migrated WordPress posts stay on origin during overlap window. |
 
-Note. Translated versions of migrated posts are handled by GTranslate
-automatically after launch. No per-language MDX files needed.
+### Self-hosted i18n (Blocks 1-8 — added after the strategy pivot)
+
+| ID | Task | Status | Depends on | Acceptance criteria |
+|---|---|---|---|---|
+| B-1 | Locale infrastructure (`src/lib/locales.ts`) | done | — | LOCALES, TARGET_LANGUAGES, RTL_LOCALES, LOCALE_NATIVE_NAMES, OG_LOCALE_MAP, localizedPath helpers. |
+| B-2 | Locale-prefix rewrites in `next.config.ts` | done | — | `/<lang>/*` → `/intl/<lang>/*` for 10 routed locales. |
+| B-3 | Routed `/intl/[lang]/` content (catch-all + dedicated routes) | done | B-1, B-2 | PostPage, MdxPageLayout, CategoryPage, TagPage all accept `locale` prop. |
+| B-4 | Per-locale SEO (canonical, hreflang, og:locale) | done | B-3 | `buildLanguageAlternates(englishPath)` + `OG_LOCALE_MAP` per page. |
+| B-5 | Language switcher widget | done | B-3 | `src/components/LanguageSwitcher.tsx` floating widget; ARIA + keyboard; mobile-drawer interaction. |
+| B-6 | Translation pipeline (`scripts/translate-content.mjs`, OpenAI GPT-5.4) | done | — | 1,170 translated MDX files generated (117 slugs × 10 langs); glossary preserves brand terms. |
+| B-6a | Locale-aware `<html lang/dir>` — v1 (proxy.ts, reverted) | reverted | — | Caused production 404s on catch-all routes via outputFileTracingExcludes interaction. Reverted in commit `857e89c`. |
+| B-6a.2 | Locale-aware `<html lang/dir>` — multi-root-layout architecture | done | B-6a (lessons) | Two route groups `(site-en)` and `(site-intl)/intl/[lang]/`. Both statically prerendered. `/ar/` correctly emits `dir="rtl"`. |
+| B-6a.3 | Critical fixes from `/superpowers` review | done | B-6a.2 | Locale-aware breadcrumb URLs; docs rewritten for current architecture; `<noTranslate>` marker added to translate pipeline. |
+| B-6b | Source-of-truth consolidation | pending | B-6a.3 | Dedup Nav PILLARS / Footer solutions / lib/content CATEGORIES. Dedup WhatIBelieve vs article/beliefs. |
+| B-6c | UI string translation (~680 strings) | pending | B-6b | Externalize all hardcoded English UI copy; translate via the pipeline; verify visual regressions on string-length deltas. |
+| B-7 | RTL CSS audit + fixes | pending | B-6c | Replace physical-property CSS (`right:`, `pl-`, `pr-`) with logical properties (`insetInlineEnd`, `ps-`, `pe-`). LanguageSwitcher positions correctly on Arabic. |
+| B-8 | Final verification | pending | B-7 | Lighthouse mobile + desktop, cross-browser, mobile real-device, native-speaker spot-check on top 3 markets (ar, ja, de). |
+
+Note. The English MDX at `content/<type>/<slug>/en.mdx` is the source
+of truth. To re-translate a post after editing the English version,
+run `npm run translate -- --slug <slug>`. Verbatim content (testimonial
+quotes) wrapped in `<noTranslate>...</noTranslate>` survives the pipeline.
 
 ---
 
@@ -361,23 +419,22 @@ automatically after launch. No per-language MDX files needed.
 
 Goal: launch without dropping traffic. Ship it.
 
-See `playbook.md` steps 8-12 for the detailed launch sequence including
-GTranslate cutover.
+See `playbook.md` steps 8-12 for the detailed launch sequence.
 
 | ID | Task | Status | Depends on | Acceptance criteria |
 |---|---|---|---|---|
-| L-01 | Lighthouse audit (mobile + desktop) | pending | Phase 2 + 3 done | Performance >= 90, Accessibility >= 95, Best Practices >= 95, SEO 100. Both mobile and desktop. |
+| L-01 | Lighthouse audit (mobile + desktop) | pending | Phase 2 + 3 + 4 done | Performance >= 90, Accessibility >= 95, Best Practices >= 95, SEO 100. Both mobile and desktop. |
 | L-02 | Mobile review (real devices) | pending | L-01 | Tested on actual iOS Safari (iPhone) and Android Chrome (mid-range device). All sections render correctly. |
-| L-03 | Accessibility audit (WCAG AA) | pending | L-01 | All interactive elements keyboard-accessible. Color contrast meets AA. Screen reader test on hero and forms. |
-| L-04 | Cross-browser test | pending | L-02 | Chrome, Safari, Firefox, Edge all render correctly on desktop and mobile. |
+| L-03 | Accessibility audit (WCAG AA) | pending | L-01 | All interactive elements keyboard-accessible. Color contrast meets AA. Screen reader test on hero and forms. RTL Arabic rendering verified. |
+| L-04 | Cross-browser test | pending | L-02 | Chrome, Safari, Firefox, Edge all render correctly on desktop and mobile. Translated routes (`/ja/`, `/ar/`, `/de/`) covered. |
 | L-05 | WordPress baseline captured | done | — | 16-month Search Console export saved to `_docs/references/search-console-export.xlsx`. Analysis in `_docs/references/search-console-findings.md`. |
 | L-06 | Set up Google Search Console for Vercel domain | pending | — | New property added. Verified. Ready to receive traffic. |
 | L-07 | Set up Calendly source tracking | pending | — | Calendly URL on the new site has UTM parameters or unique slug to attribute bookings. |
 | L-08 | Set up LinkedIn DM tracking spreadsheet | pending | — | Simple Notion or sheet for Noel to log inbound DMs with date, company, title, source. |
-| L-09 | Phase 3 GTranslate setup audit | pending | Phase 2 + 3 + 4 done | Run `_docs/audits/_prompts/phase-3-gtranslate.md`. Findings saved. Compatibility issues addressed. |
-| L-10 | DNS cutover plan documented | pending | L-09 | Step-by-step in `_docs/launch/dns-cutover.md`. Includes rollback plan and GTranslate origin switch. |
-| L-11 | Staging test with GTranslate | pending | L-09 | Point GTranslate at staging Next.js. Test 10 priority URLs in 5 languages. Document failures. |
-| L-12 | DNS cutover (the launch) | pending | L-01 through L-11 | noeldcosta.com points at Vercel. GTranslate origin updated. WordPress disabled or set to readonly. New site live. |
+| L-09 | Native-speaker quality spot-check (top 3 markets) | pending | Phase 4 done | 3-5 representative URLs reviewed by a native speaker each for Arabic, Japanese, German. Blocking issues only; document findings. |
+| L-10 | DNS cutover plan documented | pending | L-01..L-09 | Step-by-step in `_docs/launch/dns-cutover.md`. Includes rollback plan, monitoring schedule, and GTranslate decommission timeline. |
+| L-11 | Staging smoke test (full URL set) | pending | L-10 | Run the 10-URL regression check from `_docs/audits/phase-4-comprehensive-review-2026-05-26.md` against the latest Vercel preview. All 200s, html lang/dir correct, X-Vercel-Cache: HIT. |
+| L-12 | DNS cutover (the launch) | pending | L-01..L-11 | noeldcosta.com points at Vercel. WordPress origin set readonly. GTranslate kept active as fallback until the 30-day-stable mark (L-15). |
 | L-13 | Submit new sitemap to Search Console | pending | L-12 | Sitemap submitted. No errors. Crawl status confirmed. |
 | L-14 | Monitor weeks 1-4 post-launch | pending | L-12 | Daily check Search Console for crawl errors, indexing issues, traffic drops. Watch both English and translated URL performance. Log issues in `_docs/launch/post-launch-log.md`. |
 | L-15 | 30-day post-launch review | pending | L-14 | Compare to baseline. Document traffic changes, ranking changes, conversion changes. Update PRD with phase 6 if needed. |

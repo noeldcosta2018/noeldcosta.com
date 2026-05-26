@@ -22,22 +22,51 @@ changes from the WordPress version. Better copy, same paths.
 
 ## Critical context for any code changes
 
-The current WordPress site uses GTranslate as a Translation Delivery Network.
-GTranslate is an external proxy. It serves all `/{lang}/` URLs (Spanish,
-Japanese, French, Russian, Italian, German, Portuguese, Greek, Arabic, Dutch,
-Chinese, etc.) by fetching the English version from the origin and translating
-it on the fly.
+The WordPress origin uses GTranslate as a Translation Delivery Network for
+the 10 non-English locales. Search Console data shows 64.5% of clicks come
+from these translated URLs, so the Next.js replacement must serve all 11
+language variants natively to preserve that traffic on cutover.
 
-Search Console data shows 64.5% of clicks come from these translated URLs.
-GTranslate is not optional. It stays in place after migration.
+The Next.js site implements **self-hosted i18n** — no GTranslate, no
+client-side translation, no external proxy. Architecture:
 
-The Next.js site serves English only at flat URLs. No language prefix in
-the URL. No `[lang]` segment. GTranslate handles all translation externally
-after the request reaches its proxy.
+* **URL contract:** English is flat (`/sap-implementation/`); translated
+  routes carry a locale prefix (`/ja/sap-implementation/`, `/ar/...`, etc.).
+  Every WordPress URL is preserved 1:1 at both the English path and at the
+  prefixed path for each of the 10 routed locales.
+* **Routed locales** (10 + English): ar, de, el, es, fr, it, ja, nl, pt, ru.
+  Single source of truth in `src/lib/locales.ts` (`TARGET_LANGUAGES`,
+  `RTL_LOCALES`, `LOCALE_NATIVE_NAMES`, `OG_LOCALE_MAP`).
+* **Routing:** `next.config.ts` rewrites `/<lang>/*` to `/intl/<lang>/*`
+  internally. Two route groups split the public site:
+  - `src/app/(site-en)/` — root layout for English routes, hardcoded
+    `<html lang="en" dir="ltr">`.
+  - `src/app/(site-intl)/intl/[lang]/` — root layout for translated routes
+    under the `[lang]` dynamic segment, with `<html lang={params.lang}`
+    `dir={RTL_LOCALES.includes(lang) ? "rtl" : "ltr"}>`. Statically
+    prerendered via `generateStaticParams` + `dynamicParams: false`.
+  - Body chrome (fonts, JSON-LD, LanguageSwitcher) is shared via
+    `src/components/RootLayoutShell.tsx`.
+* **Translation pipeline:** `scripts/translate-content.mjs` re-translates
+  the English MDX sources into the 10 target locales using OpenAI's
+  GPT-5.4 API. Output lives at `content/{posts,pages}/<slug>/<lang>.mdx`.
+  Branded terms (SAP, S/4HANA, Joule, ERP, etc.) are preserved via a
+  glossary; the script supports `--dry-run`, chunking for large files
+  (>40KB), and a `<noTranslate>...</noTranslate>` marker for verbatim
+  content (testimonial quotes, proper-noun client names).
+* **Build characteristics:** 2,769 statically prerendered pages
+  (every English path × 11 locales). All translated routes serve from
+  Vercel's edge cache (`X-Vercel-Cache: HIT`); no runtime translation
+  lookup, no dynamic SSR.
+* **SEO:** every page emits per-locale canonical, full reciprocal
+  hreflang map (en + 10 + `x-default`), and `og:locale` per `OG_LOCALE_MAP`.
+  Sitemap emits one entry per locale per URL.
 
-See `_docs/references/wordpress-urls.md` for the canonical URL list to preserve.
-See `_docs/references/search-console-findings.md` for the traffic data behind
-this architecture decision.
+See `_docs/references/wordpress-urls.md` for the canonical URL list,
+`_docs/references/search-console-findings.md` for the traffic data,
+`_docs/audits/i18n-strings-audit-2026-05-26.md` for the UI strings audit,
+and `_docs/audits/phase-4-comprehensive-review-2026-05-26.md` for the
+end-to-end review of the i18n migration.
 
 ## Stack notes
 
@@ -45,7 +74,9 @@ this architecture decision.
 * TypeScript everywhere.
 * MDX for blog content (mdx-components.tsx at root, content/ folder for posts).
 * Tailwind (postcss.config.mjs).
-* English only. No `[lang]` segment in routes.
+* Self-hosted i18n. 11 locales (en + 10 routed). English at flat URLs;
+  translated at `/<lang>/...` via the `(site-intl)/intl/[lang]/` route
+  group. See "Critical context" above.
 * Design system tokens in src/app/globals.css (Command Center system).
 
 ## Routing table
@@ -68,20 +99,23 @@ this architecture decision.
 | Nav (global) | src/components/Nav.tsx | _docs/homepage/14-nav.md, BRAND.md |
 | Footer (global) | src/components/Footer.tsx | _docs/homepage/15-footer.md, BRAND.md |
 | Brand wordmark (Nav + Footer) | src/components/BrandWordmark.tsx | public/brand/noeldcosta-on-{light,dark}.svg |
-| Homepage assembly | src/app/page.tsx | PRD.md (H-16) |
-| For-consultants page | src/app/for-consultants/ | _docs/for-consultants/CONTEXT.md |
-| About page | src/app/about/ | _docs/about/CONTEXT.md |
-| Case study page | src/app/case-studies/[slug]/ | _docs/case-studies/CONTEXT.md |
-| Tool page | src/app/tools/[slug]/ | _docs/tools/CONTEXT.md |
+| Homepage assembly | src/app/(site-en)/page.tsx | PRD.md (H-16) |
+| For-consultants page | src/app/(site-en)/for-consultants/ | _docs/for-consultants/CONTEXT.md |
+| About page | src/app/(site-en)/about/ | _docs/about/CONTEXT.md |
+| Case study page | src/app/(site-en)/[...slug]/ (English) | _docs/case-studies/CONTEXT.md |
+| Tool page | src/app/(site-en)/<tool-slug>/ | _docs/tools/CONTEXT.md |
 | Blog post layout | src/components/PostPage.tsx | _docs/blog/CONTEXT.md |
 | Category page layout | src/components/CategoryPage.tsx | _docs/blog/CONTEXT.md |
-| MDX content | content/ | _docs/blog/CONTEXT.md |
-| SEO, sitemap, robots | src/lib/seo.ts, sitemap.ts, robots.ts | BRAND.md, _docs/references/wordpress-urls.md |
-
-Note. The routing table above describes the target state. The current
-codebase may still have routes nested under `src/app/[lang]/`. Removing the
-`[lang]` segment is a migration task tracked in the playbook (see
-`_docs/audits/_prompts/audit-2-seo.md`).
+| MDX content (English source) | content/posts/<slug>/en.mdx, content/pages/<slug>/en.mdx | _docs/blog/CONTEXT.md |
+| Translated MDX content | content/{posts,pages}/<slug>/<lang>.mdx (generated by scripts/translate-content.mjs) | scripts/translate-content.mjs |
+| English root layout | src/app/(site-en)/layout.tsx | — |
+| Intl root layout (per-locale `<html lang/dir>`) | src/app/(site-intl)/intl/[lang]/layout.tsx | — |
+| Shared body chrome (fonts, JSON-LD, LanguageSwitcher) | src/components/RootLayoutShell.tsx | — |
+| Locale constants (LOCALES, TARGET_LANGUAGES, RTL_LOCALES, OG_LOCALE_MAP) | src/lib/locales.ts | — |
+| Locale-prefix rewrites (`/<lang>/* → /intl/<lang>/*`) | next.config.ts | — |
+| Language switcher (floating widget) | src/components/LanguageSwitcher.tsx | — |
+| Translation script (OpenAI GPT-5.4) | scripts/translate-content.mjs | — |
+| SEO, sitemap, robots | src/lib/seo.ts, src/app/sitemap.ts, src/app/robots.ts | BRAND.md, _docs/references/wordpress-urls.md |
 
 ## Rules
 
@@ -91,7 +125,10 @@ codebase may still have routes nested under `src/app/[lang]/`. Removing the
 * Sentence-case headings everywhere. No title case marketing copy.
 * No em-dash sentence patterns ("X — Y" structures). See VOICE.md.
 * Use design tokens from DESIGN_SYSTEM.md / globals.css. No new colors.
-* English only. GTranslate handles other languages externally.
+* Components that render content must accept and use a `locale` prop. URL
+  construction (Link hrefs, JSON-LD URLs, canonical) must use
+  `localizedPath(locale, path)` from `src/lib/locales.ts` so translated
+  pages don't leak users back to English.
 * When unsure, ask before generating files.
 
 ## Naming conventions
@@ -108,30 +145,41 @@ codebase may still have routes nested under `src/app/[lang]/`. Removing the
 * DO NOT change any existing URL slug from noeldcosta.com. Every WordPress
 URL maps 1:1 to a Next.js route. Rewriting copy is fine. Renaming slugs
 is not. 64.5% of traffic depends on URL preservation.
-* DO NOT add a language prefix to any URL. Do not nest routes under `[lang]`.
-English at root only. GTranslate handles `/es/`, `/ja/`, `/fr/`, etc.
-externally on their proxy.
+* DO NOT change the locale-prefix shape. English stays flat; translated
+routes stay at `/<lang>/<slug>/` with the trailing slash. The
+`/intl/<lang>/...` shape is an internal rewrite target — never link to it
+directly, and never expose it in canonicals or sitemap entries.
 * DO NOT add new URL patterns without checking the existing site first.
 If a similar page exists at noeldcosta.com, use that slug.
 * DO NOT remove or modify src/lib/seo.ts, src/app/sitemap.ts, src/app/robots.ts
 without flagging it explicitly. SEO infrastructure is migration-critical.
 * DO NOT introduce 301 redirects unless I explicitly ask. The plan is
 zero redirects.
-* DO NOT add hreflang tags. GTranslate handles hreflang on its proxy.
+* DO NOT hand-roll hreflang tags. Use `buildLanguageAlternates(englishPath)`
+from `src/lib/seo.ts` — it emits the full reciprocal map (en + 10 routed
+locales + `x-default`) that Google requires for cluster recognition.
 * DO NOT generate sitemap entries for non-existent pages.
-* DO NOT generate sitemap entries with language prefixes. The Next.js
-sitemap is English only.
+* DO NOT emit only English entries in the sitemap. Every URL must appear
+once per locale via the `emitWithLocales` helper in `src/app/sitemap.ts`.
 
-### GTranslate compatibility
+### i18n compatibility
 
-* DO NOT render critical content client-side only. GTranslate proxies the
-initial HTML response. Content that only appears after JavaScript runs may
-not get translated.
-* DO NOT load content via fetch after page load if it's user-facing copy.
-Same reason. GTranslate sees the initial HTML.
-* DO NOT put English text inside inline SVGs without also providing it in
-accessible text. GTranslate may not translate text inside SVG.
-* DO NOT use custom fonts that block on CORS for GTranslate's cached pages.
+* DO NOT render user-facing copy client-side only. Initial SSR HTML is what
+search engines (and the `getStaticParams` prerender) see — anything that
+only appears after JavaScript runs misses the build-time translation pass.
+* DO NOT introduce `proxy.ts` / middleware that modifies request headers
+on translated routes. The Block 6a v1 attempt (commit `d5fcdd9`, reverted
+in `857e89c`) forced dynamic SSR on the `[...slug]` catch-all routes,
+which then 404'd because `outputFileTracingExcludes` strips `content/`
+from the function bundle. The multi-root-layout pattern (Block 6a.2) is
+the canonical fix.
+* DO NOT hardcode `lang="en"` or `dir="ltr"` on the `<html>` element.
+Use the route group: English route group hardcodes en/ltr; intl route
+group derives from `params.lang` + `RTL_LOCALES`.
+* DO NOT hardcode `href="/"` or `href="/category/X"` etc. in visible
+breadcrumbs or any cross-page link inside a component that accepts a
+`locale` prop. Use `localizedPath(locale, "/...")` so translated users
+stay in their locale when clicking back.
 
 ### Voice and copy
 
@@ -153,11 +201,15 @@ If a number isn't in _docs/references/client-list.md, ask before using it.
 version has breaking changes. See AGENTS.md.
 * DO NOT introduce new heavy dependencies (animation libs, UI kits,
 CSS-in-JS) without asking. Stack is Next.js + Tailwind. Keep it that way.
-* DO NOT add i18n libraries (next-intl, next-i18next, react-intl). Translation
-is handled externally by GTranslate.
+* DO NOT add i18n libraries (next-intl, next-i18next, react-intl, lingui)
+without explicit discussion. The codebase uses an in-house pattern: a
+`locale` prop threaded through components plus `localizedPath()` helpers.
+If a future use case (plurals, ICU message format, datetime localisation
+beyond `Intl.DateTimeFormat`) genuinely needs library support, flag it.
 * DO NOT use 'use client' on the homepage components unless they
 genuinely need client-side interactivity. SEO and performance suffer.
-GTranslate compatibility also suffers (see above).
+Initial-paint translation correctness also suffers — client-only copy
+misses the build-time per-locale prerender.
 * DO NOT add tracking scripts, pixels, or analytics without asking.
 * DO NOT generate placeholder content (Lorem ipsum, fake names,
 stock testimonials). If real content is missing, leave a clear
@@ -244,8 +296,14 @@ asides, or specific moments that a generator wouldn't naturally include.
 The experience_source field is internal. It's a forcing function. If
 it's empty, the post isn't ready to publish.
 
-Note. The `lang` frontmatter field is no longer required. All MDX content
-is English. GTranslate handles translation externally.
+Note on translation. The English MDX at `content/<type>/<slug>/en.mdx` is
+the source of truth. Translated variants are generated by
+`scripts/translate-content.mjs` and committed under
+`content/<type>/<slug>/<lang>.mdx`. To re-translate a post after editing
+the English version, run `npm run translate -- --slug <slug>` (use
+`--dry-run` first to estimate cost). Wrap verbatim content (testimonial
+quotes, proper-noun client names) in `<noTranslate>...</noTranslate>` so
+the pipeline preserves it across all locales.
 
 ## Reference files
 
@@ -257,5 +315,7 @@ is English. GTranslate handles translation externally.
 | `_docs/references/search-console-export.xlsx` | Raw Search Console data. |
 | `_docs/audits/_prompts/audit-1-mobile.md` | Mobile responsiveness audit prompt. |
 | `_docs/audits/_prompts/audit-2-seo.md` | SEO audit prompt. |
-| `_docs/audits/_prompts/phase-3-gtranslate.md` | GTranslate setup prompt. |
+| `_docs/audits/_prompts/phase-3-gtranslate.md` | Historical — pre-pivot GTranslate setup prompt (kept for context, no longer applicable). |
+| `_docs/audits/i18n-strings-audit-2026-05-26.md` | Audit of ~680 hardcoded UI strings; input to Block 6c. |
+| `_docs/audits/phase-4-comprehensive-review-2026-05-26.md` | End-to-end review of the self-hosted i18n migration. |
 | `playbook.md` (repo root or _docs/) | Step-by-step migration plan. |

@@ -26,7 +26,7 @@ import {
   breadcrumbJsonLd,
   SITE_URL,
 } from "@/lib/seo";
-import { localePathPrefix } from "@/lib/locales";
+import { localePathPrefix, localizedPath } from "@/lib/locales";
 import { extractHeadings } from "@/lib/article-headings";
 import { splitAtMidH2 } from "@/lib/article-split";
 
@@ -106,7 +106,7 @@ export default function PostPage({
             <ol className="flex flex-wrap gap-x-2 gap-y-1 items-center font-mono text-[0.72rem] font-medium tracking-[2px] uppercase">
               <li>
                 <Link
-                  href="/"
+                  href={localizedPath(locale, "/")}
                   className="text-eyebrow hover:text-papaya transition-colors"
                 >
                   Home
@@ -117,7 +117,7 @@ export default function PostPage({
                   <li aria-hidden className="text-eyebrow/40">/</li>
                   <li>
                     <Link
-                      href={`/category/${catMeta.slug}`}
+                      href={localizedPath(locale, `/category/${catMeta.slug}/`)}
                       className="text-eyebrow hover:text-papaya transition-colors"
                     >
                       {catMeta.label}

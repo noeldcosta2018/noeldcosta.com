@@ -25,7 +25,7 @@ import {
   type PostRecord,
 } from "@/lib/content";
 import { breadcrumbJsonLd, collectionPageJsonLd, SITE_URL } from "@/lib/seo";
-import { localePathPrefix } from "@/lib/locales";
+import { localePathPrefix, localizedPath } from "@/lib/locales";
 import { TAG_META, tagLabel } from "@/components/tagMeta";
 
 // ─── Per-category taglines for the hero H1 italic emphasis ──────────────────
@@ -249,7 +249,7 @@ export default function CategoryPage({
             {/* Breadcrumb */}
             <nav className="flex items-center gap-2 mb-6">
               <Link
-                href="/"
+                href={localizedPath(locale, "/")}
                 className="font-mono text-[0.72rem] tracking-widest uppercase text-eyebrow hover:text-papaya transition-colors"
               >
                 Home

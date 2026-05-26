@@ -209,6 +209,15 @@ Authentication:
   ${OPENAI_KEY_PATH}
   Never logs, prints, or persists the key.
 
+Do-not-translate marker:
+  Wrap verbatim content in <noTranslate>...</noTranslate> tags in the
+  English MDX source. The wrapped content is preserved byte-for-byte
+  across all target locales — use for attributed testimonial quotes,
+  proper-noun client names, and any copyrighted content that must not
+  be machine-translated. Re-running the script on a translated file is
+  idempotent; the wrapper tags survive in the output so the marker is
+  visible to future contributors and to subsequent re-translation runs.
+
 Target languages: ${TARGET_LANGUAGES.join(', ')}
 `);
 }
@@ -243,7 +252,36 @@ function createStore() {
     codeBlocks: [],
     components: [],          // { tag, original, rendered }
     componentStrings: [],    // { compIdx, propName, segIdx, segCount, original, translated }
+    noTranslate: [],         // verbatim content from <noTranslate>...</noTranslate>
   };
+}
+
+// Extract <noTranslate>...</noTranslate> blocks first, before any other
+// pass, so verbatim content (real attributed testimonial quotes, proper-
+// noun client names, copyrighted material) survives translation untouched
+// regardless of target locale. The inner content is stored verbatim and
+// the wrapper is replaced with a sentinel comment; postprocess re-injects
+// the original text — including the original wrapper tags themselves —
+// so re-running the translation pipeline on a translated MDX file does
+// not double-process the marker.
+//
+// Block 6c will route hardcoded UI string externalization through this
+// mechanism for testimonial bodies and case-study quotes. See
+// _docs/audits/i18n-strings-audit-2026-05-26.md for the list of files
+// whose attributed-quote sections must use this marker.
+const NO_TRANSLATE_RE = /<noTranslate>([\s\S]*?)<\/noTranslate>/g;
+
+function extractNoTranslate(body, store) {
+  return body.replace(NO_TRANSLATE_RE, (match) => {
+    const idx = store.noTranslate.length;
+    store.noTranslate.push(match);
+    return `<!--NO_TRANSLATE_${idx}-->`;
+  });
+}
+
+function restoreNoTranslate(body, store) {
+  return body.replace(/<!--NO_TRANSLATE_(\d+)-->/g,
+    (_m, idx) => store.noTranslate[Number(idx)] ?? _m);
 }
 
 function extractCodeBlocks(body, store) {
@@ -396,6 +434,10 @@ function wrapGlossary(body) {
 function preprocessBody(body) {
   const store = createStore();
   let s = body;
+  // noTranslate runs FIRST so any code blocks, MDX components, or
+  // glossary terms inside the wrapped region are protected as one
+  // opaque unit rather than re-extracted and processed individually.
+  s = extractNoTranslate(s, store);
   s = extractCodeBlocks(s, store);
   s = extractMdxComponents(s, store);
   s = convertMarkdownHeadingsToHtml(s);  // before links so heading text with [link](url) works
@@ -543,6 +585,13 @@ function postprocessBody(translated, store) {
   s = convertHtmlHeadingsToMarkdown(s);
   s = restoreMdxComponents(s, store);
   s = restoreCodeBlocks(s, store);
+  // noTranslate restoration runs LAST so the verbatim block (which may
+  // itself contain code blocks or MDX components) re-enters the body
+  // unchanged. The wrapper tags `<noTranslate>...</noTranslate>` are
+  // preserved in the translated file — they're harmless to MDX rendering
+  // (the parser treats unknown tags as native HTML) and they make the
+  // file idempotent under repeated translation runs.
+  s = restoreNoTranslate(s, store);
   return s;
 }
 

@@ -15,7 +15,7 @@ import {
   pageArticleJsonLd,
   pageWebPageJsonLd,
 } from "@/lib/seo";
-import { localePathPrefix } from "@/lib/locales";
+import { localePathPrefix, localizedPath } from "@/lib/locales";
 
 export default function MdxPageLayout({
   slug,
@@ -57,7 +57,7 @@ export default function MdxPageLayout({
           <nav aria-label="Breadcrumb" className="mb-6">
             <ol className="flex flex-wrap gap-1.5 items-center font-mono text-[0.68rem] tracking-[1.5px] uppercase text-night/70">
               <li>
-                <Link href="/" className="hover:text-papaya">Home</Link>
+                <Link href={localizedPath(locale, "/")} className="hover:text-papaya">Home</Link>
               </li>
             </ol>
           </nav>

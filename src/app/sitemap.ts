@@ -49,7 +49,7 @@ const SHORT_URL_SLUGS = new Set<string>([
  * Parse an `originalUrl` like
  * `https://noeldcosta.com/sap-implementation/sap-modules/` into
  * `["sap-implementation", "sap-modules"]`. Mirrors the static-params logic
- * in src/app/(site)/[...slug]/page.tsx so the sitemap stays in lockstep
+ * in src/app/(site-en)/[...slug]/page.tsx so the sitemap stays in lockstep
  * with the routes the catch-all actually serves.
  */
 function pathSegmentsFromOriginalUrl(
@@ -184,7 +184,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   // Pages. Emit at the flat slug AND at the multi-segment WordPress URL
   // when `originalUrl` reveals one — the catch-all in
-  // src/app/(site)/[...slug]/page.tsx serves both, and Google sees them as
+  // src/app/(site-en)/[...slug]/page.tsx serves both, and Google sees them as
   // distinct URLs unless they're listed here.
   for (const slug of getAllPageSlugs()) {
     if (SHORT_URL_SLUGS.has(slug)) continue;
