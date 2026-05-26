@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { Epilogue, Sora, JetBrains_Mono } from "next/font/google";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { personJsonLd, websiteJsonLd } from "@/lib/seo";
@@ -69,24 +68,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function SiteRootLayout({
+export default function SiteRootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Locale is set by src/proxy.ts (Next.js 16's renamed middleware) on the
-  // request headers. Reading it here means the SSR'd <html> ships with the
-  // correct lang/dir for the active route — search engines and screen
-  // readers see the right values on first paint, not after a client-side
-  // reconciliation.
-  const h = await headers();
-  const lang = h.get("x-locale") ?? "en";
-  const dir = h.get("x-dir") ?? "ltr";
-
   return (
     <html
-      lang={lang}
-      dir={dir}
+      lang="en"
+      dir="ltr"
       className={`${epilogue.variable} ${sora.variable} ${jetbrainsMono.variable}`}
     >
       <body>
