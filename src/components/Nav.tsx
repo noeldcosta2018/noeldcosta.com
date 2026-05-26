@@ -4,6 +4,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import BrandWordmark from "./BrandWordmark";
+import { CATEGORIES } from "@/lib/categories";
+import { TOOLS } from "@/lib/tools";
+
+// Pillars derived from the canonical CATEGORIES record in src/lib/categories.ts
+// (kept standalone from src/lib/content.ts so this client component does
+// not transitively import node:fs from the content-tree scanner).
+// Insertion order in the Record matches the dropdown display order. Nav and
+// Footer both consume CATEGORIES; CategoryPage uses it for hero metadata.
+// Block 6c will translate labels and blurbs against this single source.
+const PILLARS = Object.values(CATEGORIES).map((c) => ({
+  label: c.label,
+  slug: c.slug,
+  blurb: c.navBlurb,
+}));
 
 /**
  * Body scroll lock side-effect. Mounted only when the mobile drawer is
@@ -20,70 +34,6 @@ function MobileDrawerScrollLock() {
   }, []);
   return null;
 }
-
-// 6 content pillars. Slugs match WordPress Yoast category slugs 1:1
-// (CATEGORIES keys in src/lib/content.ts). The former "Consulting
-// Career" category is now merged into "ERP Consulting Guide".
-const PILLARS: { label: string; slug: string; blurb: string }[] = [
-  {
-    label: "ERP Consulting Guide",
-    slug: "erp-consulting-guide",
-    blurb: "Delivery playbooks, programme recovery, go-live readiness.",
-  },
-  {
-    label: "SAP Modules",
-    slug: "sap-modules",
-    blurb: "SAP S/4HANA, Oracle, Dynamics. Module-level deep dives.",
-  },
-  {
-    label: "ERP Strategy",
-    slug: "erp-strategy",
-    blurb: "Roadmaps, TCO, vendor selection, transformation design.",
-  },
-  {
-    label: "AI Governance",
-    slug: "ai-governance",
-    blurb: "Policy, risk, controls, model oversight on ERP data.",
-  },
-  {
-    label: "Agentic AI",
-    slug: "agentic-ai",
-    blurb: "Autonomous agents in the ERP stack. What actually works.",
-  },
-  {
-    label: "SAP Case Studies",
-    slug: "sap-case-studies",
-    blurb: "Real programme outcomes from aviation, government, and retail.",
-  },
-];
-
-const TOOLS: { label: string; slug: string; blurb: string }[] = [
-  {
-    label: "ERP Cost Calculator",
-    slug: "erp-implementation-cost-calculator",
-    blurb: "LLM-estimated cost band for any ERP programme.",
-  },
-  {
-    label: "SAP Cost Calculator",
-    slug: "sap-implementation-cost-calculator",
-    blurb: "SAP-specific cost, licence, and resourcing estimate.",
-  },
-  {
-    label: "Migration Estimator",
-    slug: "free-data-migration-estimator-sap-oracle-microsoft",
-    blurb: "Data migration effort across SAP, Oracle, and Microsoft.",
-  },
-  {
-    label: "JD Generator",
-    slug: "sap-job-description-generator",
-    blurb: "Role-accurate SAP job descriptions in seconds.",
-  },
-  {
-    label: "Solution Builder",
-    slug: "sap-solution-builder",
-    blurb: "Sketch a solution architecture from a plain-English brief.",
-  },
-];
 
 type OpenMenu = "solutions" | "tools" | null;
 

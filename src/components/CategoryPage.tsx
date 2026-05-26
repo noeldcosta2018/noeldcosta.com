@@ -28,27 +28,11 @@ import { breadcrumbJsonLd, collectionPageJsonLd, SITE_URL } from "@/lib/seo";
 import { localePathPrefix, localizedPath } from "@/lib/locales";
 import { TAG_META, tagLabel } from "@/components/tagMeta";
 
-// ─── Per-category taglines for the hero H1 italic emphasis ──────────────────
-
-const CATEGORY_TAGLINES: Record<string, string> = {
-  "erp-consulting-guide": "From the field, not the slides.",
-  "sap-modules":          "Deep technical. Real projects.",
-  "erp-strategy":         "Real numbers. Not estimates.",
-  "ai-governance":        "Grounded. Not hype.",
-  "agentic-ai":           "What works now.",
-  "sap-case-studies":     "Named clients. Real outcomes.",
-};
-
-// ─── Other categories for navigation ────────────────────────────────────────
-
-const ALL_CATEGORIES = [
-  { slug: "erp-consulting-guide", label: "ERP Consulting Guide" },
-  { slug: "sap-modules", label: "SAP Modules" },
-  { slug: "erp-strategy", label: "ERP Strategy & Cost" },
-  { slug: "ai-governance", label: "AI Governance" },
-  { slug: "agentic-ai", label: "Agentic AI" },
-  { slug: "sap-case-studies", label: "SAP Case Studies" },
-];
+// Per-category taglines (italic emphasis line) and the full list of
+// categories for in-page navigation both derive from CATEGORIES in
+// src/lib/content.ts — the single source of truth. Nav.tsx and
+// Footer.tsx consume the same record, so a label/tagline change in
+// content.ts propagates to all four places consistently.
 
 // ─── PostCard ────────────────────────────────────────────────────────────────
 
@@ -217,8 +201,10 @@ export default function CategoryPage({
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
 
-  const otherCategories = ALL_CATEGORIES.filter((c) => c.slug !== category);
-  const heroTagline = CATEGORY_TAGLINES[category] ?? "Practical. Not theoretical.";
+  const otherCategories = Object.values(CATEGORIES)
+    .filter((c) => c.slug !== category)
+    .map((c) => ({ slug: c.slug, label: c.label }));
+  const heroTagline = meta.tagline;
 
   return (
     <>

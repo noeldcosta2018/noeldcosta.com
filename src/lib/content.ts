@@ -10,46 +10,13 @@ import matter from "gray-matter";
 import { LOCALES, TIER_1_LOCALES, RTL_LOCALES, type Locale } from "./locales";
 export { LOCALES, TIER_1_LOCALES, RTL_LOCALES, type Locale };
 
-export type Category =
-  | "erp-consulting-guide"
-  | "sap-modules"
-  | "erp-strategy"
-  | "ai-governance"
-  | "agentic-ai"
-  | "sap-case-studies";
-
-export const CATEGORIES: Record<Category, { label: string; slug: string; description: string }> = {
-  "erp-consulting-guide": {
-    label: "ERP Consulting Guide",
-    slug: "erp-consulting-guide",
-    description: "Planning, cost, risk, and delivery of ERP implementations, plus career frameworks and thinking tools for ERP consultants.",
-  },
-  "sap-modules": {
-    label: "SAP Modules",
-    slug: "sap-modules",
-    description: "Deep technical coverage of SAP and ERP modules.",
-  },
-  "erp-strategy": {
-    label: "ERP Strategy & Cost",
-    slug: "erp-strategy",
-    description: "Vendor selection, licensing, modernization, and ERP economics.",
-  },
-  "ai-governance": {
-    label: "AI Governance",
-    slug: "ai-governance",
-    description: "Responsible AI frameworks, risk management, and compliance.",
-  },
-  "agentic-ai": {
-    label: "Agentic AI",
-    slug: "agentic-ai",
-    description: "Generative and agentic AI in enterprise ERP contexts.",
-  },
-  "sap-case-studies": {
-    label: "SAP Case Studies",
-    slug: "sap-case-studies",
-    description: "Real programmes, outcomes, and lessons.",
-  },
-};
+// Category type, CategoryMeta interface, and CATEGORIES constant live in
+// src/lib/categories.ts so client components (Nav.tsx, etc.) can import
+// the data without pulling node:fs (used below for the MDX content tree)
+// into the browser bundle. Re-exported here for backwards compatibility
+// with the rest of content.ts which uses `Category` locally.
+import { CATEGORIES, type Category, type CategoryMeta } from "./categories";
+export { CATEGORIES, type Category, type CategoryMeta };
 
 export interface PostFrontmatter {
   title: string;

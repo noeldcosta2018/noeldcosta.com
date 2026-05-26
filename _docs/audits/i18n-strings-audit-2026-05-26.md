@@ -8,6 +8,69 @@ Scope: user-facing strings rendered in components, layouts, and config.
 Excluded: MDX article content, internal docs, scripts, test fixtures,
 dev-only logs, and admin pages. ARIA labels and SR-only text included.
 
+## Source consolidation (Block 6b — added 2026-05-26)
+
+Prerequisite for Block 6c (UI string translation): every duplicated UI
+string source has been collapsed to a single canonical location.
+Future translation runs translate one source, not multiple drifting
+copies. New categories / tools / beliefs / book-accordion questions
+should be added to the canonical source only.
+
+| Concept | Canonical source | Consumers |
+|---|---|---|
+| 6 content pillars (label, slug, description, navBlurb, tagline) | `src/lib/categories.ts` — `CATEGORIES` record | `src/components/Nav.tsx` (desktop dropdown + mobile drawer, via `navBlurb`); `src/components/Footer.tsx` (Solutions column); `src/components/CategoryPage.tsx` (hero `label` + `description` + `tagline`, "other categories" list); `src/app/sitemap.ts` (sitemap entries via `slug`); `src/lib/content.ts` (re-exports for backwards compatibility) |
+| 5 free tools (label, slug, blurb) | `src/lib/tools.ts` — `TOOLS` array | `src/components/Nav.tsx` (desktop dropdown + mobile drawer); `src/components/Footer.tsx` (Free Tools column) |
+| 5 "What I believe" opinions (num, title, body) | `src/components/article/beliefs/data.ts` — `BELIEFS` array | `src/components/WhatIBelieve.tsx` (homepage section); `src/components/article/beliefs/BeliefsGrid.tsx` (about-page MDX include via `<beliefs-grid />`) |
+| 3 book-page accordion questions | `src/components/books/accordion-questions.ts` — `BOOK_ACCORDION_QUESTIONS` tuple | `src/components/books/BookCard.tsx` (per-book accordion display); `src/app/(site-en)/books/page.tsx` (FAQPage JSON-LD emission) |
+
+### Visible text changes from consolidation
+
+Two strings shipped slightly different copies in the duplicated arrays;
+consolidation picked the canonical version of each. The other version
+no longer renders:
+
+1. **`erp-strategy` category label**: Nav + Footer previously rendered
+   the abbreviated `"ERP Strategy"`. `CATEGORIES` (which CategoryPage
+   has always used) renders `"ERP Strategy & Cost"`. The long version
+   is now used everywhere — Nav dropdown, mobile drawer, Footer
+   Solutions column, category hero. Two places (Nav dropdown trigger
+   label, Footer link) now show `"ERP Strategy & Cost"` instead of
+   `"ERP Strategy"`.
+2. **Homepage `WhatIBelieve` body copy**: previously avoided
+   contractions (`"what is broken"`, `"shouldn't" → "should not"`,
+   `"$2,500 per day"`, `"3-year roadmap"`). `article/beliefs/data.ts`
+   uses contractions, `/day`, `three-year`. The article/beliefs voice
+   matches BRAND.md more closely, so it's now the canonical text on
+   both the homepage and the about-page. Specific phrases that
+   changed:
+   - `"what is broken"` → `"what's broken"`
+   - `"greenfield-vs-brownfield"` → `"greenfield-versus-brownfield"`
+   - `"Your SI should not be the one"` → `"Your SI shouldn't be the one"`
+   - `"it is moving fast"` → `"it's moving fast"`
+   - `"The agentic use cases on BTP"` → `"Agentic use cases on BTP"`
+   - `"$2,500 per day"` / `"$900 per day"` → `"$2,500/day"` / `"$900/day"`
+   - `"a six-month overrun is cheaper than ... that does not"` →
+     `"... that doesn't"`
+   - `"3-year roadmap"` → `"three-year roadmap"`
+   - `"your finance close"` (belief 05 H3) → `"your close"`
+     (still says "finance close" in the body line)
+   - `"The close is where"` (belief 05 body) → `"The finance close is where"`
+
+The other duplicates (tools array, book accordion questions) had
+identical text in both copies, so no visible text changed for those.
+
+### Pattern for new consolidated content
+
+When adding a new pillar, tool, belief, or book-accordion question:
+
+1. Add it to the canonical source (the file in the table above).
+2. Type-check (`npx tsc --noEmit`) — the typed shape will catch
+   missing fields.
+3. No component code changes needed; Nav / Footer / CategoryPage /
+   homepage automatically pick up the addition.
+4. For Block 6c translation: the dictionary will translate against
+   the canonical source's keys, not against the consumer components.
+
 ## Do-not-translate policy (Block 6a.3 — added 2026-05-26)
 
 The following content MUST be preserved verbatim across all 10 target

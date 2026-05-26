@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import CTABanner from "@/components/CTABanner";
 import BookSection from "@/components/books/BookSection";
 import BooksHeroIntro from "@/components/books/BooksHeroIntro";
+import { BOOK_ACCORDION_QUESTIONS } from "@/components/books/accordion-questions";
 import { getAllBooks, coverExists } from "@/lib/books";
 import { SITE_URL, SITE_NAME, AUTHOR } from "@/lib/seo";
 
@@ -62,12 +63,6 @@ const PRESS: { name: string; src: string }[] = [
   { name: "IPS", src: "/press/ips.webp" },
   { name: "Techbullion", src: "/press/techbullion.webp" },
 ];
-
-const ACCORDION_QUESTIONS = [
-  "Who is this for?",
-  "What will you get from this book?",
-  "How do I access this?",
-] as const;
 
 export default async function BooksPage() {
   const pageUrl = `${SITE_URL}/books`;
@@ -128,7 +123,7 @@ export default async function BooksPage() {
     .flatMap((fm) => {
       const d = fm.details!;
       const answers = [d.whoFor, d.whatYouGet, d.howToAccess];
-      return ACCORDION_QUESTIONS.map((q, i) => ({
+      return BOOK_ACCORDION_QUESTIONS.map((q, i) => ({
         "@type": "Question",
         name: `${fm.title}: ${q}`,
         acceptedAnswer: { "@type": "Answer", text: answers[i] },

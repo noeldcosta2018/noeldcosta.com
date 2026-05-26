@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import BookThumbnail from "./BookThumbnail";
 import BookAccordion, { type AccordionItem } from "./BookAccordion";
+import { BOOK_ACCORDION_QUESTIONS } from "./accordion-questions";
 import type { BookFrontmatter } from "@/types/book";
 
 /**
@@ -38,11 +39,14 @@ export default function BookCard({ book, hasCoverImage, onRequest }: Props) {
   const isPaid = book.kind === "paid";
   const price = book.price;
 
+  // Pair the three canonical questions with this book's answers. Both
+  // BookCard (visible accordion) and the books page (FAQPage JSON-LD)
+  // consume BOOK_ACCORDION_QUESTIONS — order and wording stay in lockstep.
   const items: AccordionItem[] = book.details
     ? [
-        { q: "Who is this for?", a: book.details.whoFor },
-        { q: "What will you get from this book?", a: book.details.whatYouGet },
-        { q: "How do I access this?", a: book.details.howToAccess },
+        { q: BOOK_ACCORDION_QUESTIONS[0], a: book.details.whoFor },
+        { q: BOOK_ACCORDION_QUESTIONS[1], a: book.details.whatYouGet },
+        { q: BOOK_ACCORDION_QUESTIONS[2], a: book.details.howToAccess },
       ]
     : [];
 

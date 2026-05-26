@@ -1,22 +1,22 @@
 import Link from "next/link";
 import BrandWordmark from "./BrandWordmark";
+import { CATEGORIES } from "@/lib/categories";
+import { TOOLS } from "@/lib/tools";
 
 export default function Footer() {
-  const solutions: { label: string; href: string }[] = [
-    { label: "ERP Consulting Guide", href: "/category/erp-consulting-guide" },
-    { label: "SAP Modules", href: "/category/sap-modules" },
-    { label: "ERP Strategy", href: "/category/erp-strategy" },
-    { label: "AI Governance", href: "/category/ai-governance" },
-    { label: "Agentic AI", href: "/category/agentic-ai" },
-    { label: "SAP Case Studies", href: "/category/sap-case-studies" },
-  ];
-  const tools: { label: string; href: string }[] = [
-    { label: "ERP Cost Calculator", href: "/erp-implementation-cost-calculator" },
-    { label: "SAP Cost Calculator", href: "/sap-implementation-cost-calculator" },
-    { label: "Migration Estimator", href: "/free-data-migration-estimator-sap-oracle-microsoft" },
-    { label: "JD Generator", href: "/sap-job-description-generator" },
-    { label: "Solution Builder", href: "/sap-solution-builder" },
-  ];
+  // Categories + tools derive from the single sources of truth in
+  // src/lib/content.ts and src/lib/tools.ts. Nav.tsx consumes the same
+  // arrays, so a label or slug change in one place updates both the
+  // header dropdowns and the footer columns. Block 6c will translate
+  // the labels against those single sources.
+  const solutions = Object.values(CATEGORIES).map((c) => ({
+    label: c.label,
+    href: `/category/${c.slug}`,
+  }));
+  const tools = TOOLS.map((t) => ({
+    label: t.label,
+    href: `/${t.slug}`,
+  }));
   const company: { label: string; href: string; external?: boolean }[] = [
     { label: "About", href: "/about" },
     { label: "Books", href: "/books" },
