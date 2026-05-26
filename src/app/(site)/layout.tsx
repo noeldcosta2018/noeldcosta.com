@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Epilogue, Sora, JetBrains_Mono } from "next/font/google";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { personJsonLd, websiteJsonLd } from "@/lib/seo";
 import "../globals.css";
 
@@ -95,6 +96,11 @@ export default function SiteRootLayout({
           }}
         />
         {children}
+        {/* Mounted at the layout level so the floating widget appears on
+            every page across both the English root and the /[lang]/
+            rewrite subtree. The switcher itself is a client component;
+            the layout stays server-rendered. */}
+        <LanguageSwitcher />
       </body>
     </html>
   );

@@ -72,6 +72,28 @@ export const HREFLANG_LOCALES: readonly Locale[] = [
   ...TARGET_LANGUAGES,
 ];
 
+// Native-language self-labels for any UI that lists locales by their own
+// name. Each value is written in its own script so a Japanese reader sees
+// "日本語" and an Arabic reader sees "العربية". Keep in sync with the
+// `Locale` union above if locales are added.
+export const LOCALE_NATIVE_NAMES: Record<Locale, string> = {
+  en: "English",
+  ja: "日本語",
+  es: "Español",
+  fr: "Français",
+  ru: "Русский",
+  it: "Italiano",
+  pt: "Português",
+  de: "Deutsch",
+  ar: "العربية",
+  el: "Ελληνικά",
+  zh: "中文",
+  ko: "한국어",
+  hi: "हिन्दी",
+  tr: "Türkçe",
+  nl: "Nederlands",
+};
+
 // og:locale values per ISO 639-1 + ISO 3166-1 alpha-2 region. Choices:
 //   - ar_AE: Noel works primarily in the GCC; the UAE locale is the most
 //     representative Arabic market for this site's content.
