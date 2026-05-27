@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from "react";
 import BrandWordmark from "./BrandWordmark";
 import { CATEGORIES } from "@/lib/categories";
 import { TOOLS } from "@/lib/tools";
+import { isTargetLanguage, type Locale } from "@/lib/locales";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 // Pillars derived from the canonical CATEGORIES record in src/lib/categories.ts
 // (kept standalone from src/lib/content.ts so this client component does
@@ -18,6 +20,18 @@ const PILLARS = Object.values(CATEGORIES).map((c) => ({
   slug: c.slug,
   blurb: c.navBlurb,
 }));
+
+// Detect the served locale from the URL. Block 6c relies on this to look
+// up translated nav chrome without forcing every Nav callsite to thread
+// `locale` through as a prop. Mirrors the pattern in
+// src/components/LanguageSwitcher.tsx — same matcher logic, same fallback.
+function detectLocale(pathname: string | null): Locale {
+  if (!pathname) return "en";
+  const path = pathname.startsWith("/intl/") ? pathname.slice(5) : pathname;
+  const first = path.split("/").filter(Boolean)[0];
+  if (first && isTargetLanguage(first)) return first;
+  return "en";
+}
 
 /**
  * Body scroll lock side-effect. Mounted only when the mobile drawer is
@@ -39,6 +53,7 @@ type OpenMenu = "solutions" | "tools" | null;
 
 export default function Nav() {
   const pathname = usePathname();
+  const { messages: m } = useTranslation(detectLocale(pathname));
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<OpenMenu>(null);
@@ -91,7 +106,7 @@ export default function Nav() {
         {/* Brand */}
         <Link
           href="/"
-          aria-label="noeldcosta — home"
+          aria-label={m.nav.brandHomeAria}
           className="no-underline inline-flex items-center"
         >
           <BrandWordmark variant="on-light" height={28} />
@@ -101,7 +116,7 @@ export default function Nav() {
         <button
           className="md:hidden bg-transparent border-none text-[1.3rem] cursor-pointer text-corbeau inline-flex items-center justify-center min-w-[44px] min-h-[44px] -mr-2"
           onClick={() => setMobileOpen((o) => !o)}
-          aria-label={mobileOpen ? "Close menu" : "Open menu"}
+          aria-label={mobileOpen ? m.nav.closeMenu : m.nav.openMenu}
           aria-expanded={mobileOpen}
           aria-controls="mobile-menu"
         >
@@ -135,7 +150,7 @@ export default function Nav() {
               }}
               aria-expanded={openMenu === "solutions"}
             >
-              Solutions
+              {m.nav.solutionsDropdown}
               <span style={{ fontSize: 10 }}>▾</span>
             </button>
             {openMenu === "solutions" && (
@@ -183,7 +198,7 @@ export default function Nav() {
               }}
               aria-expanded={openMenu === "tools"}
             >
-              Tools
+              {m.nav.toolsDropdown}
               <span style={{ fontSize: 10 }}>▾</span>
             </button>
             {openMenu === "tools" && (
@@ -221,7 +236,7 @@ export default function Nav() {
                 padding: '12px 0'
               }}
             >
-              Case Studies
+              {m.nav.caseStudies}
             </Link>
           </li>
 
@@ -240,7 +255,7 @@ export default function Nav() {
                 padding: '12px 0'
               }}
             >
-              Books
+              {m.nav.books}
             </Link>
           </li>
 
@@ -259,7 +274,7 @@ export default function Nav() {
                 padding: '12px 0'
               }}
             >
-              About
+              {m.nav.about}
             </Link>
           </li>
 
@@ -279,7 +294,7 @@ export default function Nav() {
                 minHeight: 44
               }}
             >
-              Contact
+              {m.nav.contact}
             </Link>
           </li>
         </ul>
@@ -317,14 +332,14 @@ export default function Nav() {
               | { type: "heading"; label: string }
               | { type: "link"; label: string; href: string };
             const items: Item[] = [
-              { type: "heading", label: "Solutions" },
+              { type: "heading", label: m.nav.solutionsDropdown },
               ...PILLARS.map((p) => ({ type: "link" as const, label: p.label, href: `/category/${p.slug}` })),
-              { type: "heading", label: "Tools" },
+              { type: "heading", label: m.nav.toolsDropdown },
               ...TOOLS.map((t) => ({ type: "link" as const, label: t.label, href: `/${t.slug}` })),
-              { type: "heading", label: "Company" },
-              { type: "link", label: "Books", href: "/books" },
-              { type: "link", label: "About", href: "/about" },
-              { type: "link", label: "Contact", href: "/contact-noel-erp-support" },
+              { type: "heading", label: m.nav.company },
+              { type: "link", label: m.nav.books, href: "/books" },
+              { type: "link", label: m.nav.about, href: "/about" },
+              { type: "link", label: m.nav.contact, href: "/contact-noel-erp-support" },
             ];
             return items.map((item, i) => {
               const baseDelay = mobileOpen ? i * 60 : 0;

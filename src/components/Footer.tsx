@@ -2,13 +2,23 @@ import Link from "next/link";
 import BrandWordmark from "./BrandWordmark";
 import { CATEGORIES } from "@/lib/categories";
 import { TOOLS } from "@/lib/tools";
+import { type Locale } from "@/lib/locales";
+import { getMessages } from "@/lib/i18n/useTranslation";
 
-export default function Footer() {
+// Footer is a server component. The active locale flows in as a prop
+// from the page-level server components (PostPage, CategoryPage, etc.)
+// that already receive it from Block 3 work. Defaults to "en" so legacy
+// English-only callsites continue to compile without modification.
+// Translated routes (anything served from (site-intl)/intl/[lang]/)
+// pass the lang param down.
+export default function Footer({ locale = "en" }: { locale?: Locale }) {
+  const m = getMessages(locale);
+
   // Categories + tools derive from the single sources of truth in
-  // src/lib/content.ts and src/lib/tools.ts. Nav.tsx consumes the same
-  // arrays, so a label or slug change in one place updates both the
-  // header dropdowns and the footer columns. Block 6c will translate
-  // the labels against those single sources.
+  // src/lib/categories.ts and src/lib/tools.ts. Nav.tsx consumes the
+  // same arrays, so a label or slug change in one place updates both
+  // the header dropdowns and the footer columns. Block 6c-final will
+  // wire per-locale getters for CATEGORIES.label and TOOLS.label.
   const solutions = Object.values(CATEGORIES).map((c) => ({
     label: c.label,
     href: `/category/${c.slug}`,
@@ -18,11 +28,11 @@ export default function Footer() {
     href: `/${t.slug}`,
   }));
   const company: { label: string; href: string; external?: boolean }[] = [
-    { label: "About", href: "/about" },
-    { label: "Books", href: "/books" },
-    { label: "Case Studies", href: "/case-studies" },
-    { label: "YouTube", href: "https://www.youtube.com/@NoelDCostaERPAI", external: true },
-    { label: "Contact", href: "/contact-noel-erp-support" },
+    { label: m.nav.about, href: "/about" },
+    { label: m.nav.books, href: "/books" },
+    { label: m.nav.caseStudies, href: "/case-studies" },
+    { label: m.footer.youtubeLink, href: "https://www.youtube.com/@NoelDCostaERPAI", external: true },
+    { label: m.nav.contact, href: "/contact-noel-erp-support" },
   ];
   return (
     <footer
@@ -36,14 +46,13 @@ export default function Footer() {
           <div>
             <Link
               href="/"
-              aria-label="noeldcosta — home"
+              aria-label={m.nav.brandHomeAria}
               className="no-underline inline-flex items-center mb-3"
             >
               <BrandWordmark variant="on-dark" height={32} />
             </Link>
             <p className="text-[0.85rem] text-silver leading-[1.6] max-w-[280px]">
-              ERP, Data & AI consulting. 25+ years helping companies get real
-              value from SAP, Oracle, and AI systems.
+              {m.footer.tagline}
             </p>
             <div className="flex gap-2 mt-4">
               {/* LinkedIn */}
@@ -87,7 +96,7 @@ export default function Footer() {
           {/* Solutions (includes Consulting Career — footer only) */}
           <div>
             <h5 className="font-mono text-[0.68rem] font-semibold tracking-[2px] uppercase text-silver mb-4">
-              Solutions
+              {m.footer.solutionsHeading}
             </h5>
             {solutions.map((l) => (
               <Link
@@ -103,7 +112,7 @@ export default function Footer() {
           {/* Free Tools */}
           <div>
             <h5 className="font-mono text-[0.68rem] font-semibold tracking-[2px] uppercase text-silver mb-4">
-              Free Tools
+              {m.footer.freeToolsHeading}
             </h5>
             {tools.map((l) => (
               <Link
@@ -119,7 +128,7 @@ export default function Footer() {
           {/* Company */}
           <div>
             <h5 className="font-mono text-[0.68rem] font-semibold tracking-[2px] uppercase text-silver mb-4">
-              Company
+              {m.footer.companyHeading}
             </h5>
             {company.map((l) =>
               l.external ? (
@@ -152,13 +161,13 @@ export default function Footer() {
           </span>
           <div className="flex gap-6">
             <Link href="/privacy-policy-noeldcosta" className="text-[0.8rem] text-silver no-underline transition-colors hover:text-moon">
-              Privacy
+              {m.footer.privacyLink}
             </Link>
             {/* Terms-of-service page does not yet exist as MDX content
                 (no WordPress equivalent in PRD). Removed the link rather
                 than ship a 404. Re-add when content lands. */}
             <Link href="/contact-noel-erp-support" className="text-[0.8rem] text-silver no-underline transition-colors hover:text-moon">
-              Support
+              {m.footer.supportLink}
             </Link>
           </div>
         </div>
