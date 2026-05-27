@@ -20,8 +20,15 @@
  */
 
 import { BELIEFS } from "@/components/article/beliefs/data";
+import { type Locale } from "@/lib/locales";
+import { getMessages } from "@/lib/i18n/useTranslation";
 
-export default function WhatIBelieve() {
+export default function WhatIBelieve({
+  locale = "en",
+}: {
+  locale?: Locale;
+}) {
+  const m = getMessages(locale);
   return (
     <section
       id="what-i-believe"
@@ -30,21 +37,19 @@ export default function WhatIBelieve() {
     >
       <div className="max-w-[1200px] mx-auto">
         <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
-          [ 05 · What I believe ]
+          {m.whatIBelieve.eyebrow}
         </p>
         <h2
           className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
-          Five positions.{" "}
+          {m.whatIBelieve.h2Lead}{" "}
           <em className="not-italic text-papaya font-extrabold">
-            All defensible in print.
+            {m.whatIBelieve.h2Emphasis}
           </em>
         </h2>
         <p className="text-night text-[1rem] max-w-[640px] leading-[1.7] mb-12">
-          These are the opinions I will hold in a SteerCo. If one of them
-          matches something you have already thought but could not say out
-          loud, we should talk.
+          {m.whatIBelieve.intro}
         </p>
 
         <ol className="flex flex-col gap-5 list-none p-0 m-0">
@@ -78,11 +83,11 @@ export default function WhatIBelieve() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 bg-papaya text-corbeau font-semibold text-[0.95rem] no-underline px-6 py-3 rounded-lg transition-colors hover:bg-[#fdaa78] min-h-[44px]"
           >
-            Book a 30-min call
+            {m.whatIBelieve.primaryCta}
             <span aria-hidden>→</span>
           </a>
           <span className="font-mono text-[0.78rem] text-eyebrow tracking-[1px]">
-            Direct with me. No SDR layer.
+            {m.whatIBelieve.ctaTagline}
           </span>
         </div>
       </div>

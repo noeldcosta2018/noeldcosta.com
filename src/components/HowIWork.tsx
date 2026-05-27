@@ -19,49 +19,12 @@
  * Server component. No interactivity needed.
  */
 
-const STEPS: {
-  num: string;
-  title: string;
-  duration: string;
-  who: string;
-  body: string;
-  output: string;
-}[] = [
-  {
-    num: "01",
-    title: "Discovery call",
-    duration: "30 minutes · free",
-    who: "Direct with me",
-    body: "We talk about your programme. The state it is in, the decisions on your desk, the things keeping you up. I tell you whether I can actually help and where I would start. No deck, no pre-read, no follow-up sales loop.",
-    output: "Output: clear yes or no on whether to scope a paid engagement.",
-  },
-  {
-    num: "02",
-    title: "Scoping engagement",
-    duration: "1 to 2 weeks · day rate or fixed",
-    who: "Direct with me plus your nominated lead",
-    body: "I review your current state. Existing artefacts, recent SteerCo reports, the SI's plan, your finance close cycle, the risk log. I run targeted conversations with the people who actually do the work. The output is a written diagnostic and a recommended engagement shape.",
-    output: "Output: diagnostic report and engagement proposal. You can take both elsewhere.",
-  },
-  {
-    num: "03",
-    title: "Delivery engagement",
-    duration: "3 to 12 months · fee structure varies",
-    who: "Direct involvement throughout",
-    body: "I work alongside your team and the SI on the agreed scope. Programme recovery, S/4HANA migration oversight, AI on SAP design, vendor governance, business case validation. No junior team learning on your budget. I limit client load on purpose, so the senior in the pitch is the senior in the room.",
-    output: "Output: programme that lands. Weekly written updates. Honest escalation when something is off.",
-  },
-  {
-    num: "04",
-    title: "Hypercare or advisory retainer",
-    duration: "Optional · monthly",
-    who: "Lighter touch, named contact",
-    body: "Post-go-live stabilisation, or ongoing board-level advisory for the next phase. Most clients take this for the first three months after a major go-live. Some keep it as standing capacity for the next big decision.",
-    output: "Output: documented stabilisation actions or quarterly advisory notes to the SteerCo.",
-  },
-];
+import { type Locale } from "@/lib/locales";
+import { getMessages } from "@/lib/i18n/useTranslation";
 
-export default function HowIWork() {
+export default function HowIWork({ locale = "en" }: { locale?: Locale }) {
+  const m = getMessages(locale);
+  const STEPS = m.howIWork.steps;
   return (
     <section
       id="how-i-work"
@@ -70,20 +33,19 @@ export default function HowIWork() {
     >
       <div className="max-w-[1200px] mx-auto">
         <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
-          [ 04 · How I work ]
+          {m.howIWork.eyebrow}
         </p>
         <h2
           className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
-          Four steps.{" "}
+          {m.howIWork.h2Lead}{" "}
           <em className="not-italic text-papaya font-extrabold">
-            No opaque engagement model.
+            {m.howIWork.h2Emphasis}
           </em>
         </h2>
         <p className="text-night text-[1rem] max-w-[560px] leading-[1.7] mb-12">
-          Each step has a clear output. You can stop after any of them. The
-          first one is free.
+          {m.howIWork.intro}
         </p>
 
         <div className="grid grid-cols-2 gap-6 max-lg:grid-cols-1">

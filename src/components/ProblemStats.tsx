@@ -1,28 +1,36 @@
-const STATS = [
-  {
-    num: "70",
-    unit: "%",
-    color: "text-papaya",
-    text: "of ERP projects go over budget or miss their deadline.",
-    src: "Panorama Consulting, 2024",
-  },
-  {
-    num: "$4.5",
-    unit: "M",
-    color: "text-corbeau",
-    text: "average cost overrun on mid-market S/4HANA migrations.",
-    src: "Resulting IT, 2024",
-  },
-  {
-    num: "53",
-    unit: "%",
-    color: "text-canyon",
-    text: "of companies say ERP failed to deliver expected business value.",
-    src: "Gartner Research, 2023",
-  },
-];
+import { type Locale } from "@/lib/locales";
+import { getMessages } from "@/lib/i18n/useTranslation";
 
-export default function ProblemStats() {
+export default function ProblemStats({ locale = "en" }: { locale?: Locale }) {
+  const m = getMessages(locale);
+  // Numeric values stay inline — locale-agnostic numerals + units.
+  // Body text + citation come from MESSAGES; the citation strings are
+  // research-house names (proper nouns) but stay in MESSAGES because the
+  // year suffix ("2024", "2023") is the only locale-variable part.
+  const STATS = [
+    {
+      num: "70",
+      unit: "%",
+      color: "text-papaya",
+      text: m.problemStats.stat1Body,
+      src: m.problemStats.stat1Source,
+    },
+    {
+      num: "$4.5",
+      unit: "M",
+      color: "text-corbeau",
+      text: m.problemStats.stat2Body,
+      src: m.problemStats.stat2Source,
+    },
+    {
+      num: "53",
+      unit: "%",
+      color: "text-canyon",
+      text: m.problemStats.stat3Body,
+      src: m.problemStats.stat3Source,
+    },
+  ];
+
   return (
     <section
       className="bg-bone"
@@ -30,22 +38,22 @@ export default function ProblemStats() {
     >
       <div className="max-w-[1200px] mx-auto">
         <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
-          [ The problem ]
+          {m.problemStats.eyebrow}
         </p>
         <h2
-          aria-label="Most ERP projects fail. Yours doesn't have to."
+          aria-label={`${m.problemStats.h2Lead} ${m.problemStats.h2Emphasis}`}
           className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
           <span aria-hidden>
-            {"Most ERP projects fail. "}
+            {`${m.problemStats.h2Lead} `}
             <span className="cc-emphasis-italic">
-              Yours doesn&apos;t have to.
+              {m.problemStats.h2Emphasis}
             </span>
           </span>
         </h2>
         <p className="text-night text-[1rem] max-w-[520px] leading-[1.7]">
-          You already know this. The numbers just confirm it.
+          {m.problemStats.intro}
         </p>
 
         <div className="grid grid-cols-3 mt-14 max-md:grid-cols-1 max-md:gap-8">

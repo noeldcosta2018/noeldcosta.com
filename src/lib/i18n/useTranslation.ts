@@ -101,6 +101,28 @@ function resolveDotPath(obj: unknown, path: string): string {
   return typeof current === "string" ? current : path;
 }
 
+// ── Render-time marker stripper ────────────────────────────────────────
+//
+// Some MESSAGES strings contain `<noTranslate>...</noTranslate>` markers
+// inline — they wrap proper nouns and brand-specific tokens (client
+// names, non-glossary acronyms, etc.) so the translation pipeline in
+// scripts/translate-content.mjs preserves the wrapped content byte-for-
+// byte when generating non-English variants. See
+// _docs/audits/i18n-strings-audit-2026-05-26.md "Do-not-translate
+// policy" and scripts/test-no-translate.mjs for the policy + smoke test.
+//
+// The wrapper tags survive in the translated source files (idempotency)
+// but should NOT render in the final DOM — they are author-only
+// metadata. Strip them at render time when interpolating these strings
+// into JSX.
+//
+// Usage:
+//   <p>{stripMarkers(m.trackRecord.project1Desc)}</p>
+const NO_TRANSLATE_TAG_RE = /<\/?noTranslate>/g;
+export function stripMarkers(s: string): string {
+  return s.replace(NO_TRANSLATE_TAG_RE, "");
+}
+
 // ── Locale guard ──────────────────────────────────────────────────────
 //
 // Re-export for components that need to narrow a `string` URL segment

@@ -1,4 +1,6 @@
 import Image from "next/image";
+import { type Locale } from "@/lib/locales";
+import { getMessages } from "@/lib/i18n/useTranslation";
 
 /**
  * Homepage H-10 — Testimonials.
@@ -6,6 +8,11 @@ import Image from "next/image";
  * Real, attributed quotes only — per BRAND.md, made-up testimonials are
  * an instant fail. Each card carries a portrait photo from /public/people/
  * for CEO buyers who scan for real faces before reading words.
+ *
+ * Quote bodies, names, and roles are do-not-translate per
+ * _docs/audits/i18n-strings-audit-2026-05-26.md "Do-not-translate
+ * policy" — they are verbatim attributed statements from real people.
+ * Only the section eyebrow + h2 chrome flows through MESSAGES.
  */
 const TESTIMONIALS = [
   {
@@ -31,7 +38,12 @@ const TESTIMONIALS = [
   },
 ];
 
-export default function Testimonials() {
+export default function Testimonials({
+  locale = "en",
+}: {
+  locale?: Locale;
+}) {
+  const m = getMessages(locale);
   return (
     <section
       className="bg-cream"
@@ -39,16 +51,16 @@ export default function Testimonials() {
     >
       <div className="max-w-[1200px] mx-auto">
         <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
-          [ 09 · From people I&apos;ve worked with ]
+          {m.testimonials.eyebrow}
         </p>
         <h2
-          aria-label="Don't take my word for it. Read theirs."
+          aria-label={`${m.testimonials.h2Lead} ${m.testimonials.h2Emphasis}`}
           className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-10 text-corbeau"
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
           <span aria-hidden>
-            {"Don't take my word for it. "}
-            <span className="cc-emphasis-italic">Read theirs.</span>
+            {`${m.testimonials.h2Lead} `}
+            <span className="cc-emphasis-italic">{m.testimonials.h2Emphasis}</span>
           </span>
         </h2>
 

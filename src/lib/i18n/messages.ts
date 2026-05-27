@@ -131,7 +131,12 @@ export interface Messages {
     subheadlineTail: string;       // "CIMA-qualified. I lead the engagement. I don't subcontract."
     primaryCta: string;            // "Book a 30-min call"
     secondaryCta: string;          // "See case studies"
-    credentialsLine: string;       // "CIMA · AICPA · Masters in Accounting …"
+    // Credibility line — rendered as:
+    //   CIMA · AICPA · {credMasters} · {credYearsAndClients}
+    // with papaya-coloured "·" separators between segments. CIMA + AICPA
+    // stay inline as do-not-translate proper-noun credentials.
+    credMasters: string;           // "Masters in Accounting"
+    credYearsAndClients: string;   // "25+ years across EDGE Group, Etihad, ADNOC, PIF entities, DXC, and the UAE Government" — client names protected by glossary in the translation pipeline.
     linkedinAria: string;          // "Noel D'Costa on LinkedIn"
     headshotAlt: string;           // "Noel D'Costa" — image alt text (proper noun — DO NOT translate)
   };
@@ -167,15 +172,29 @@ export interface Messages {
     intro: string;
     liveBadge: string;             // "LIVE" — dashboard live indicator
     programmePhasesLabel: string;  // "Programme Phases"
-    // Project rows (5 projects with title/desc/metric labels) — Pass 2
-    // will model these. Client/project names themselves are do-not-translate.
+    // 5 project rows. Per project, `title` and `desc` are translatable
+    // (proper nouns and non-glossary acronyms inside them are wrapped in
+    // `<noTranslate>...</noTranslate>` markers so the translation
+    // pipeline preserves them verbatim; stripMarkers() strips the
+    // wrapper tags at render time). `metric{N}Lbl` keys are translatable
+    // descriptive labels; metric VALUES stay inline in TrackRecord.tsx
+    // (numerics + glossary-protected acronyms like S/4HANA). Tag arrays
+    // stay inline — heavy on subsidiary proper nouns and visually
+    // compact badge UI; deferred.
+    projects: [
+      TrackRecordProject,
+      TrackRecordProject,
+      TrackRecordProject,
+      TrackRecordProject,
+      TrackRecordProject,
+    ];
   };
   howIWork: {
     eyebrow: string;
     h2Lead: string;
     h2Emphasis: string;
     intro: string;
-    // 4 steps with title, time, mode, body, output — Pass 2 will model.
+    steps: [HowIWorkStep, HowIWorkStep, HowIWorkStep, HowIWorkStep];
   };
   whatIBelieve: {
     eyebrow: string;               // "[ 05 · What I believe ]"
@@ -196,15 +215,41 @@ export interface Messages {
     terminalLabel: string;         // "agent.erp — agentic pipeline"
     terminalLiveBadge: string;     // "LIVE"
     stackHeading: string;          // "AI Stack"
-    // Per-feature title + body and terminal lines — Pass 2.
+    feature1Title: string;
+    feature1Body: string;
+    feature2Title: string;
+    feature2Body: string;
+    feature3Title: string;
+    feature3Body: string;
+    feature4Title: string;
+    feature4Body: string;
+    // Terminal demo lines (Anomaly detected: PO-4891 …, Cash flow forecast: Q3 …)
+    // stay inline in AICapabilities.tsx. They are heavy on proper nouns
+    // (PO-4891, MX-220, Q3, Aug 15) and embedded JSX styling that
+    // doesn't fit cleanly through the translation pipeline. The
+    // surrounding chrome (terminalLabel, terminalLiveBadge, stackHeading)
+    // IS translated.
+    // STACK_TAGS labels (SAP Business AI, Joule, SAP BTP, Datasphere,
+    // Analytics Cloud, Custom Agents) stay inline — SAP product names
+    // are proper nouns; "Custom Agents" is the only descriptive label
+    // and translates as part of any future Block 6c pass.
   };
   tools: {
     eyebrow: string;
     h2Lead: string;
     h2Emphasis: string;
     intro: string;
-    // 2 product cards (Command Central, ERPCV). Product names are
-    // do-not-translate. Card titles/bodies/CTAs — Pass 2.
+    // Product names "Command Central" and "ERPCV" are proper nouns —
+    // do-not-translate, kept inline in Tools.tsx. The descriptive
+    // fields below ARE translatable.
+    card1Type: string;             // "Implementation"
+    card1Title: string;            // "Track your ERP implementation in one place."
+    card1Body: string;
+    card1Cta: string;              // "Explore Command Central →" — contains proper noun
+    card2Type: string;             // "Career"
+    card2Title: string;            // "Stop losing interviews you should be winning."
+    card2Body: string;
+    card2Cta: string;              // "Try ERPCV free →" — contains proper noun
   };
   testimonials: {
     eyebrow: string;
@@ -220,8 +265,15 @@ export interface Messages {
     intro: string;
     featuredOnLabel: string;       // "Featured on"
     alsoPublishedInLabel: string;  // "Also published in:"
-    // Credential labels (CIMA & AICPA, Masters in Accounting, …) and
-    // press names are do-not-translate (proper nouns / credentials).
+    // Credential LABELS (CIMA & AICPA, Masters in Accounting, SAP
+    // Certified PM, Solution Architect) and press names are
+    // do-not-translate (proper nouns / credential names). They stay
+    // inline in Credentials.tsx. The descriptive SUBS below ARE
+    // translatable.
+    cred1Sub: string;              // "Management accounting"
+    cred2Sub: string;              // "Finance depth, not surface"
+    cred3Sub: string;              // "Activate · SAFe · ITIL" — three certification names, all proper nouns; the value is unchanged across locales but lives in MESSAGES for shape consistency
+    cred4Sub: string;              // "Architecture across the stack"
   };
   youtube: {
     eyebrow: string;
@@ -233,7 +285,9 @@ export interface Messages {
   faq: {
     eyebrow: string;               // "[ Frequently asked questions ]"
     h2: string;                    // "What CFOs ask me first."
-    // 7 Q+A pairs — Pass 2.
+    items: [
+      FaqItem, FaqItem, FaqItem, FaqItem, FaqItem, FaqItem, FaqItem,
+    ];
   };
   ctaBanner: {
     eyebrow: string;               // "READY WHEN YOU ARE"
@@ -527,6 +581,35 @@ export interface ServiceCard {
   cta: string;                     // "Talk about your project →"
 }
 
+export interface HowIWorkStep {
+  num: string;                     // "01"
+  title: string;                   // "Discovery call"
+  duration: string;                // "30 minutes · free"
+  who: string;                     // "Direct with me"
+  body: string;
+  output: string;                  // "Output: clear yes or no on whether to scope a paid engagement."
+}
+
+export interface FaqItem {
+  q: string;
+  a: string;
+}
+
+// Project row in the homepage TrackRecord sticky-panel section. Client
+// names, badge values, dashboard labels, tags, and metric values stay
+// inline in TrackRecord.tsx — proper nouns, numerics, and identifier-
+// shaped strings. Title + desc + metric labels flow through this
+// interface; inline `<noTranslate>...</noTranslate>` markers preserve
+// non-glossary proper nouns within otherwise-translatable text.
+export interface TrackRecordProject {
+  title: string;
+  desc: string;
+  metric1Lbl: string;
+  metric2Lbl: string;
+  metric3Lbl: string;
+  metric4Lbl: string;
+}
+
 // ── Locale records ────────────────────────────────────────────────────
 //
 // Pass 1 (this file) defines the type. The English exemplar values below
@@ -586,8 +669,9 @@ const EN: Messages = {
       "CIMA-qualified. I lead the engagement. I don't subcontract.",
     primaryCta: "Book a 30-min call",
     secondaryCta: "See case studies",
-    credentialsLine:
-      "CIMA · AICPA · Masters in Accounting · 25+ years across EDGE Group, Etihad, ADNOC, PIF entities, DXC, and the UAE Government",
+    credMasters: "Masters in Accounting",
+    credYearsAndClients:
+      "25+ years across EDGE Group, Etihad, ADNOC, PIF entities, DXC, and the UAE Government",
     linkedinAria: "Noel D'Costa on LinkedIn",
     headshotAlt: "Noel D'Costa",
   },
@@ -621,15 +705,15 @@ const EN: Messages = {
       title: "Company Executives & Sponsors",
       who: "CIOs · CFOs · Programme Directors",
       paragraphs: [
-        "TODO: Pass 2 — pull the actual paragraph 1 from Services.tsx.",
-        "TODO: Pass 2 — pull the actual paragraph 2 from Services.tsx.",
+        "You have an ECC to S/4HANA migration coming up. Or you're mid-implementation and things aren't going well. Maybe you want AI on top of your ERP but nobody's giving you a straight answer.",
+        "I step in and get things moving. Direct involvement. No junior team learning on your budget.",
       ],
       bullets: [
-        "TODO: Pass 2 — bullet 1",
-        "TODO: Pass 2 — bullet 2",
-        "TODO: Pass 2 — bullet 3",
-        "TODO: Pass 2 — bullet 4",
-        "TODO: Pass 2 — bullet 5",
+        "ECC to S/4HANA migration planning and delivery",
+        "AI and Agentic AI strategy on SAP BTP",
+        "Programme recovery when things go sideways",
+        "Vendor selection and contract negotiation",
+        "Solution architecture with finance depth",
       ],
       cta: "Talk about your project →",
     },
@@ -637,8 +721,17 @@ const EN: Messages = {
       numberEyebrow: "CLIENT · 02",
       title: "ERP & SAP Consultants",
       who: "Independent Consultants · Career Changers",
-      paragraphs: ["TODO: Pass 2", "TODO: Pass 2"],
-      bullets: ["TODO", "TODO", "TODO", "TODO", "TODO"],
+      paragraphs: [
+        "You're trying to break into ERP consulting. Or you're already in the game and need guidance. Which certifications matter. How to position yourself. What clients actually want.",
+        "25 years of experience. Happy to share what I know.",
+      ],
+      bullets: [
+        "Career path guidance for ERP consulting",
+        "Which certifications actually get you hired",
+        "How to build your personal brand",
+        "Use ERPCV to build recruiter-ready CVs",
+        "Real talk on the consulting business",
+      ],
       cta: "Check out my tools →",
     },
   },
@@ -649,6 +742,65 @@ const EN: Messages = {
     intro: "Real companies. Real numbers. I was in the room running these.",
     liveBadge: "LIVE",
     programmePhasesLabel: "Programme Phases",
+    projects: [
+      // EDGE Group — defence consolidation. S/4HANA is glossary-protected;
+      // the numerals 8, 126, 81% are durable across locales; no markers
+      // needed here.
+      {
+        title: "25 Defense Entities → One S/4HANA",
+        desc: "Consolidated 8 legacy ERPs onto single S/4HANA core. 126-member team. 81% process automation across the entire defence group.",
+        metric1Lbl: "Cost Reduction",
+        metric2Lbl: "Automation",
+        metric3Lbl: "Team Size",
+        metric4Lbl: "Legacy Systems",
+      },
+      // Etihad — SAP CoE. "P&L" is a finance acronym kept in markers so
+      // it stays "P&L" in every locale rather than being expanded; SAP
+      // is glossary-protected; numerals durable.
+      {
+        title: "SAP Centre of Excellence — 8 Years",
+        desc: "Built route profitability on SAP. Flight-level <noTranslate>P&L</noTranslate> across 100+ aircraft and 1,000+ weekly flights. $36M in direct benefits.",
+        metric1Lbl: "Total Impact",
+        metric2Lbl: "Direct Benefit",
+        metric3Lbl: "Aircraft",
+        metric4Lbl: "Weekly Flights",
+      },
+      // TII — IPSAS, Azure, AWS are non-glossary proper nouns/acronyms;
+      // wrap so the translation pipeline preserves them verbatim.
+      {
+        title: "S/4HANA Greenfield — 5 Research Entities",
+        desc: "Dual-ledger Finance (cash + accrual, <noTranslate>IPSAS</noTranslate>). Cloud on <noTranslate>Azure</noTranslate> and <noTranslate>AWS</noTranslate>. Full lifecycle from blueprint through hypercare.",
+        metric1Lbl: "Entities",
+        metric2Lbl: "Architecture",
+        metric3Lbl: "Ledger",
+        metric4Lbl: "Reporting",
+      },
+      // DXC — Microsoft, MEA, PIF are non-glossary proper nouns. SAP +
+      // Oracle are glossary-protected. PIF is the Saudi Public
+      // Investment Fund — a proper-noun acronym that should NOT
+      // translate.
+      {
+        title: "Managing Partner — 800+ Consultants",
+        desc: "SAP, Oracle, <noTranslate>Microsoft</noTranslate> practices across <noTranslate>MEA</noTranslate>. <noTranslate>PIF</noTranslate> entities, banking, public sector.",
+        metric1Lbl: "Pipeline",
+        metric2Lbl: "Consultants",
+        metric3Lbl: "Practices",
+        metric4Lbl: "Region",
+      },
+      // Govt. Enablement — EBS, Fusion Cloud, TOGAF are non-glossary.
+      // SAP + Oracle are glossary-protected. EBS = E-Business Suite, a
+      // specific Oracle product name; Fusion Cloud = Oracle Fusion
+      // Cloud, also a product name; TOGAF = enterprise-architecture
+      // framework — all should not translate.
+      {
+        title: "Digital Executive Advisor",
+        desc: "SAP and Oracle landscape strategy. Oracle <noTranslate>EBS</noTranslate> to <noTranslate>Fusion Cloud</noTranslate> migration. Enterprise Architecture (<noTranslate>TOGAF</noTranslate>).",
+        metric1Lbl: "Entities",
+        metric2Lbl: "Migration",
+        metric3Lbl: "Framework",
+        metric4Lbl: "Role",
+      },
+    ],
   },
   howIWork: {
     eyebrow: "[ 04 · How I work ]",
@@ -656,6 +808,40 @@ const EN: Messages = {
     h2Emphasis: "No opaque engagement model.",
     intro:
       "Each step has a clear output. You can stop after any of them. The first one is free.",
+    steps: [
+      {
+        num: "01",
+        title: "Discovery call",
+        duration: "30 minutes · free",
+        who: "Direct with me",
+        body: "We talk about your programme. The state it is in, the decisions on your desk, the things keeping you up. I tell you whether I can actually help and where I would start. No deck, no pre-read, no follow-up sales loop.",
+        output: "Output: clear yes or no on whether to scope a paid engagement.",
+      },
+      {
+        num: "02",
+        title: "Scoping engagement",
+        duration: "1 to 2 weeks · day rate or fixed",
+        who: "Direct with me plus your nominated lead",
+        body: "I review your current state. Existing artefacts, recent SteerCo reports, the SI's plan, your finance close cycle, the risk log. I run targeted conversations with the people who actually do the work. The output is a written diagnostic and a recommended engagement shape.",
+        output: "Output: diagnostic report and engagement proposal. You can take both elsewhere.",
+      },
+      {
+        num: "03",
+        title: "Delivery engagement",
+        duration: "3 to 12 months · fee structure varies",
+        who: "Direct involvement throughout",
+        body: "I work alongside your team and the SI on the agreed scope. Programme recovery, S/4HANA migration oversight, AI on SAP design, vendor governance, business case validation. No junior team learning on your budget. I limit client load on purpose, so the senior in the pitch is the senior in the room.",
+        output: "Output: programme that lands. Weekly written updates. Honest escalation when something is off.",
+      },
+      {
+        num: "04",
+        title: "Hypercare or advisory retainer",
+        duration: "Optional · monthly",
+        who: "Lighter touch, named contact",
+        body: "Post-go-live stabilisation, or ongoing board-level advisory for the next phase. Most clients take this for the first three months after a major go-live. Some keep it as standing capacity for the next big decision.",
+        output: "Output: documented stabilisation actions or quarterly advisory notes to the SteerCo.",
+      },
+    ],
   },
   whatIBelieve: {
     eyebrow: "[ 05 · What I believe ]",
@@ -675,6 +861,18 @@ const EN: Messages = {
     terminalLabel: "agent.erp — agentic pipeline",
     terminalLiveBadge: "LIVE",
     stackHeading: "AI Stack",
+    feature1Title: "Agentic AI on SAP BTP",
+    feature1Body:
+      "Autonomous AI agents that work inside your SAP landscape. Handle approvals, flag anomalies, route decisions. Not chatbots. Agents that take action.",
+    feature2Title: "Predictive Analytics",
+    feature2Body:
+      "Forecast demand, cash flow, maintenance schedules from your ERP data. Built on SAP Datasphere and Analytics Cloud. Real models, not dashboards.",
+    feature3Title: "Intelligent Automation",
+    feature3Body:
+      "Invoice matching, PO creation, journal entries. AI handles the repetitive work. Your team handles exceptions. 81% automation at EDGE Group.",
+    feature4Title: "AI Governance & Risk",
+    feature4Body:
+      "Policies, oversight frameworks, compliance processes. Deploy AI without the legal risk. Satisfy regulators and stakeholders.",
   },
   tools: {
     eyebrow: "[ 06 · Built by me ]",
@@ -682,6 +880,16 @@ const EN: Messages = {
     h2Emphasis: "for the ERP world.",
     intro:
       "Advice is half the job. The other half is building the tools the work actually needs. Used by consultants and companies across 130+ regions.",
+    card1Type: "Implementation",
+    card1Title: "Track your ERP implementation in one place.",
+    card1Body:
+      "Progress, risks, milestones, team performance. Built because every project I walked into had tracking spread across 15 different spreadsheets. Real-time dashboards. Not another status deck.",
+    card1Cta: "Explore Command Central →",
+    card2Type: "Career",
+    card2Title: "Stop losing interviews you should be winning.",
+    card2Body:
+      "6-document career pack. Executive CV, project portfolio, cover letter, interview prep, LinkedIn messages, reference sheet. 1,200+ packs delivered. 89% more interviews. $19.99 one-time.",
+    card2Cta: "Try ERPCV free →",
   },
   testimonials: {
     eyebrow: "[ 09 · From people I've worked with ]",
@@ -696,6 +904,10 @@ const EN: Messages = {
       "Most SAP consultants understand the system. Few understand the business. I have both.",
     featuredOnLabel: "Featured on",
     alsoPublishedInLabel: "Also published in:",
+    cred1Sub: "Management accounting",
+    cred2Sub: "Finance depth, not surface",
+    cred3Sub: "Activate · SAFe · ITIL",
+    cred4Sub: "Architecture across the stack",
   },
   youtube: {
     eyebrow: "[ 07 · Watch & learn ]",
@@ -708,6 +920,36 @@ const EN: Messages = {
   faq: {
     eyebrow: "[ Frequently asked questions ]",
     h2: "What CFOs ask me first.",
+    items: [
+      {
+        q: "What does an engagement actually look like?",
+        a: "Depends on what you need. If you're pre-implementation, I run a 4 to 6 week diagnostic. Current state, vendor selection, business case, programme structure. If you're mid-implementation and things are off, I step in for 90 days as Programme Director or Senior Advisor to the CIO. If you're post-go-live and AI is the next wave, I scope and lead 8 to 16 week AI builds on SAP BTP. Always direct involvement. I don't disappear after the kickoff.",
+      },
+      {
+        q: "Are you available right now?",
+        a: "Usually 4 to 8 weeks out. I take on two or three programmes at a time, max. If you have a hard deadline I can't meet, I'll tell you on the first call and either point you to someone else or we plan for the next window.",
+      },
+      {
+        q: "How do you charge?",
+        a: "Day rate or fixed-fee programme. Day rate for advisory and diagnostics. Fixed-fee for delivery work where the scope is clear. Numbers depend on the engagement. We discuss it on the first call. No surprises in writing later.",
+      },
+      {
+        q: "Do you replace my SI partner or work alongside them?",
+        a: "Either. Most often I sit on the client side as Programme Director and hold the SI accountable. Sometimes I replace a struggling SI mid-stream. Sometimes I'm there to make sure the SI doesn't oversell what they can deliver. Depends on what's already in place.",
+      },
+      {
+        q: "Will you sign an NDA?",
+        a: "Yes. Standard practice on day one. I work with regulated entities and government clients regularly. Confidentiality isn't a line item, it's the default.",
+      },
+      {
+        q: "How is this different from McKinsey, BCG, or the Big 4?",
+        a: "I'm one person, not a pyramid. The senior partner you meet is the senior partner who runs your programme. I have CIMA and AICPA, so I read your finances the same way your CFO does. And I've actually delivered the systems, not just produced slide decks about them. Big firms have their place. For ERP and AI delivery, you usually want the human who's done it before.",
+      },
+      {
+        q: "Why personal brand and not a firm?",
+        a: "I run Quantinoid LLC as the trading entity. The personal brand is intentional. My value is judgement and direct involvement, not a logo on a deck. If you hire a firm, you get whoever they assign. If you hire me, you get me.",
+      },
+    ],
   },
   ctaBanner: {
     eyebrow: "READY WHEN YOU ARE",

@@ -1,7 +1,33 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { isTargetLanguage, type Locale } from "@/lib/locales";
+import { stripMarkers, useTranslation } from "@/lib/i18n/useTranslation";
+
+function detectLocale(pathname: string | null): Locale {
+  if (!pathname) return "en";
+  const path = pathname.startsWith("/intl/") ? pathname.slice(5) : pathname;
+  const first = path.split("/").filter(Boolean)[0];
+  if (first && isTargetLanguage(first)) return first;
+  return "en";
+}
+
+// Project rows split between static (client names, numeric metrics,
+// terminal-style dashboard labels, badge type, active phase, tag
+// arrays) and translated (title, desc, metric labels) — see
+// MESSAGES.trackRecord.projects in src/lib/i18n/messages.ts. The
+// translated fields contain `<noTranslate>...</noTranslate>` wrappers
+// around non-glossary proper nouns (IPSAS, Azure, AWS, Microsoft, MEA,
+// PIF, EBS, Fusion Cloud, TOGAF, P&L); stripMarkers() removes the
+// wrappers at render time so they don't show up in the DOM.
+//
+// Tag arrays stay inline — heavy on subsidiary proper nouns (NIMR,
+// HALCON, SIGN4L) and visually compact badge UI; the translation
+// pipeline's glossary handles SAP/Oracle/S-4HANA-family names that
+// appear inside tag arrays, but the per-project mix isn't worth
+// modelling in MESSAGES until the badge UI itself is reconsidered.
 
 /**
  * Track-record section with sticky right-panel content swap.
@@ -34,20 +60,35 @@ type ProjectData = {
   tags: string[];
 };
 
-const PROJECTS: ProjectData[] = [
+// Static parts of each project — client names (proper nouns), badge
+// text (numeric + proper-noun mix), dashboard labels (terminal-style
+// identifiers), metric values (numerics + glossary-protected acronyms),
+// metric colors (visual classes), active phase, tag arrays. None of
+// these translate.
+type ProjectStatic = {
+  company: string;
+  badge: string;
+  badgeType: "p" | "g" | "c";
+  dashboardLabel: string;
+  metricVals: [string, string, string, string];
+  metricColors: [
+    "text-papaya" | "text-brand-green" | "text-corbeau",
+    "text-papaya" | "text-brand-green" | "text-corbeau",
+    "text-papaya" | "text-brand-green" | "text-corbeau",
+    "text-papaya" | "text-brand-green" | "text-corbeau",
+  ];
+  activePhase: Phase;
+  tags: string[];
+};
+
+const PROJECTS_STATIC: ProjectStatic[] = [
   {
     company: "EDGE Group",
     badge: "$60M saved",
     badgeType: "p",
-    title: "25 Defense Entities → One S/4HANA",
-    desc: "Consolidated 8 legacy ERPs onto single S/4HANA core. 126-member team. 81% process automation across the entire defence group.",
     dashboardLabel: "edge.dashboard",
-    metrics: [
-      { lbl: "Cost Reduction", val: "$60M", color: "text-papaya" },
-      { lbl: "Automation", val: "81%", color: "text-brand-green" },
-      { lbl: "Team Size", val: "126", color: "text-corbeau" },
-      { lbl: "Legacy Systems", val: "8 → 1", color: "text-papaya" },
-    ],
+    metricVals: ["$60M", "81%", "126", "8 → 1"],
+    metricColors: ["text-papaya", "text-brand-green", "text-corbeau", "text-papaya"],
     activePhase: "REALIZE",
     tags: ["EDGE HQ", "NIMR", "HALCON", "SIGN4L", "AL TARIQ", "+20 more"],
   },
@@ -55,15 +96,9 @@ const PROJECTS: ProjectData[] = [
     company: "Etihad Airways",
     badge: "$400M+ impact",
     badgeType: "g",
-    title: "SAP Centre of Excellence — 8 Years",
-    desc: "Built route profitability on SAP. Flight-level P&L across 100+ aircraft and 1,000+ weekly flights. $36M in direct benefits.",
     dashboardLabel: "etihad.dashboard",
-    metrics: [
-      { lbl: "Total Impact", val: "$400M+", color: "text-papaya" },
-      { lbl: "Direct Benefit", val: "$36M", color: "text-brand-green" },
-      { lbl: "Aircraft", val: "100+", color: "text-corbeau" },
-      { lbl: "Weekly Flights", val: "1,000+", color: "text-papaya" },
-    ],
+    metricVals: ["$400M+", "$36M", "100+", "1,000+"],
+    metricColors: ["text-papaya", "text-brand-green", "text-corbeau", "text-papaya"],
     activePhase: "DEPLOY",
     tags: ["Finance", "SAP COE", "Route P&L", "8 years"],
   },
@@ -71,15 +106,9 @@ const PROJECTS: ProjectData[] = [
     company: "TII",
     badge: "Greenfield",
     badgeType: "c",
-    title: "S/4HANA Greenfield — 5 Research Entities",
-    desc: "Dual-ledger Finance (cash + accrual, IPSAS). Cloud on Azure and AWS. Full lifecycle from blueprint through hypercare.",
     dashboardLabel: "tii.dashboard",
-    metrics: [
-      { lbl: "Entities", val: "5", color: "text-papaya" },
-      { lbl: "Architecture", val: "Greenfield", color: "text-brand-green" },
-      { lbl: "Ledger", val: "Dual", color: "text-corbeau" },
-      { lbl: "Reporting", val: "IPSAS", color: "text-papaya" },
-    ],
+    metricVals: ["5", "Greenfield", "Dual", "IPSAS"],
+    metricColors: ["text-papaya", "text-brand-green", "text-corbeau", "text-papaya"],
     activePhase: "DEPLOY",
     tags: ["S/4HANA", "Azure", "AWS", "Cash + Accrual", "Hypercare"],
   },
@@ -87,15 +116,9 @@ const PROJECTS: ProjectData[] = [
     company: "DXC Technology",
     badge: "$300M pipeline",
     badgeType: "p",
-    title: "Managing Partner — 800+ Consultants",
-    desc: "SAP, Oracle, Microsoft practices across MEA. PIF entities, banking, public sector.",
     dashboardLabel: "mea.practice",
-    metrics: [
-      { lbl: "Pipeline", val: "$300M", color: "text-papaya" },
-      { lbl: "Consultants", val: "800+", color: "text-brand-green" },
-      { lbl: "Practices", val: "3", color: "text-corbeau" },
-      { lbl: "Region", val: "MEA", color: "text-papaya" },
-    ],
+    metricVals: ["$300M", "800+", "3", "MEA"],
+    metricColors: ["text-papaya", "text-brand-green", "text-corbeau", "text-papaya"],
     activePhase: "DEPLOY",
     tags: ["SAP", "Oracle", "Microsoft", "PIF", "Banking", "Public Sector"],
   },
@@ -103,15 +126,9 @@ const PROJECTS: ProjectData[] = [
     company: "Govt. Enablement",
     badge: "84 entities",
     badgeType: "c",
-    title: "Digital Executive Advisor",
-    desc: "SAP and Oracle landscape strategy. Oracle EBS to Fusion Cloud migration. Enterprise Architecture (TOGAF).",
     dashboardLabel: "govt.dashboard",
-    metrics: [
-      { lbl: "Entities", val: "84", color: "text-papaya" },
-      { lbl: "Migration", val: "EBS → Fusion", color: "text-brand-green" },
-      { lbl: "Framework", val: "TOGAF", color: "text-corbeau" },
-      { lbl: "Role", val: "Advisor", color: "text-papaya" },
-    ],
+    metricVals: ["84", "EBS → Fusion", "TOGAF", "Advisor"],
+    metricColors: ["text-papaya", "text-brand-green", "text-corbeau", "text-papaya"],
     activePhase: "REALIZE",
     tags: ["Oracle EBS", "Oracle Fusion", "Enterprise Arch", "Strategy"],
   },
@@ -126,9 +143,37 @@ function badgeStyle(type: "p" | "g" | "c") {
 }
 
 export default function TrackRecord() {
+  const pathname = usePathname();
+  const { messages: m } = useTranslation(detectLocale(pathname));
   const [activeIdx, setActiveIdx] = useState(0);
   const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
   const reduced = useReducedMotion();
+
+  // Build the per-project view-model by merging the static fields with
+  // the translated title/desc/metric labels from MESSAGES. stripMarkers
+  // removes the `<noTranslate>...</noTranslate>` wrappers around proper
+  // nouns and non-glossary acronyms (the wrappers survive in the
+  // translated MDX/TS files for idempotency, but they're authoring
+  // metadata only — never rendered to the DOM).
+  const PROJECTS: ProjectData[] = PROJECTS_STATIC.map((p, i) => {
+    const t = m.trackRecord.projects[i];
+    return {
+      company: p.company,
+      badge: p.badge,
+      badgeType: p.badgeType,
+      title: stripMarkers(t.title),
+      desc: stripMarkers(t.desc),
+      dashboardLabel: p.dashboardLabel,
+      metrics: [
+        { lbl: stripMarkers(t.metric1Lbl), val: p.metricVals[0], color: p.metricColors[0] },
+        { lbl: stripMarkers(t.metric2Lbl), val: p.metricVals[1], color: p.metricColors[1] },
+        { lbl: stripMarkers(t.metric3Lbl), val: p.metricVals[2], color: p.metricColors[2] },
+        { lbl: stripMarkers(t.metric4Lbl), val: p.metricVals[3], color: p.metricColors[3] },
+      ],
+      activePhase: p.activePhase,
+      tags: p.tags,
+    };
+  });
 
   useEffect(() => {
     // Pick the row whose intersection ratio is highest. Threshold 0.5 so
@@ -170,20 +215,20 @@ export default function TrackRecord() {
     >
       <div className="max-w-[1200px] mx-auto">
         <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
-          [ 03 · Track record ]
+          {m.trackRecord.eyebrow}
         </p>
         <h2
-          aria-label="Programmes I've led. Not advised on. Led."
+          aria-label={`${m.trackRecord.h2Lead} ${m.trackRecord.h2Emphasis}`}
           className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
           <span aria-hidden>
-            {"Programmes I've led. "}
-            <span className="cc-emphasis-italic">Not advised on. Led.</span>
+            {`${m.trackRecord.h2Lead} `}
+            <span className="cc-emphasis-italic">{m.trackRecord.h2Emphasis}</span>
           </span>
         </h2>
         <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-12">
-          Real companies. Real numbers. I was in the room running these.
+          {m.trackRecord.intro}
         </p>
 
         <div className="grid grid-cols-2 gap-14 items-start max-lg:grid-cols-1 max-lg:gap-8">
@@ -248,7 +293,7 @@ export default function TrackRecord() {
               </div>
               <span className="inline-flex items-center gap-1.5 font-mono text-[0.62rem] text-brand-green font-semibold">
                 <span className="w-[5px] h-[5px] rounded-full bg-brand-green animate-pulse-dot" />
-                LIVE
+                {m.trackRecord.liveBadge}
               </span>
             </div>
 
@@ -266,10 +311,10 @@ export default function TrackRecord() {
                   transition={{ duration: fadeDur, ease: [0.22, 1, 0.36, 1] }}
                   className="grid grid-cols-2 gap-2.5 mb-2.5"
                 >
-                  {active.metrics.map((m) => (
-                    <div key={m.lbl} className="bg-cream border border-corbeau/[0.04] rounded-[10px] p-4">
-                      <p className="font-mono text-[0.6rem] text-silver uppercase tracking-[1.5px] mb-1">{m.lbl}</p>
-                      <p className={`font-display font-black text-2xl tracking-[-0.03em] tabular-nums ${m.color}`}>{m.val}</p>
+                  {active.metrics.map((metric) => (
+                    <div key={metric.lbl} className="bg-cream border border-corbeau/[0.04] rounded-[10px] p-4">
+                      <p className="font-mono text-[0.6rem] text-silver uppercase tracking-[1.5px] mb-1">{metric.lbl}</p>
+                      <p className={`font-display font-black text-2xl tracking-[-0.03em] tabular-nums ${metric.color}`}>{metric.val}</p>
                     </div>
                   ))}
                 </motion.div>
@@ -277,7 +322,7 @@ export default function TrackRecord() {
 
               {/* Phase bar — same shape always, just the active position changes */}
               <div>
-                <p className="font-mono text-[0.6rem] text-silver uppercase tracking-[1.5px] mb-2">Programme Phases</p>
+                <p className="font-mono text-[0.6rem] text-silver uppercase tracking-[1.5px] mb-2">{m.trackRecord.programmePhasesLabel}</p>
                 <div className="flex gap-1 h-[30px] rounded-lg overflow-hidden">
                   {ALL_PHASES.map((label) => {
                     const isActive = label === active.activePhase;

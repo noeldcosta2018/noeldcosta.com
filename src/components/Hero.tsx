@@ -1,6 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowUpRight, ArrowRight } from 'lucide-react';
+import { type Locale } from "@/lib/locales";
+import { getMessages } from "@/lib/i18n/useTranslation";
 
 /**
  * Hero entrance choreography (CSS keyframes).
@@ -22,17 +24,16 @@ import { ArrowUpRight, ArrowRight } from 'lucide-react';
  * No "use client" needed — pure CSS animation runs on the compositor.
  */
 
-const HEADLINE = 'I run ERP transformations';
-const EMPHASIS = 'the board can defend.';
-
-const STATS = [
-  { num: '$700M+', label: 'delivered' },
-  { num: '84', label: 'entities migrated' },
-  { num: '25 yrs', label: 'in ERP & AI' },
-  { num: '5', label: 'continents' },
-] as const;
-
-export default function Hero() {
+export default function Hero({ locale = "en" }: { locale?: Locale }) {
+  const m = getMessages(locale);
+  // Stat figures stay inline — locale-agnostic numerals. Labels come
+  // from MESSAGES.hero.stat*Label.
+  const STATS = [
+    { num: '$700M+', label: m.hero.statDeliveredLabel },
+    { num: '84', label: m.hero.statEntitiesLabel },
+    { num: '25 yrs', label: m.hero.statYearsLabel },
+    { num: '5', label: m.hero.statContinentsLabel },
+  ] as const;
   return (
     <section style={{ position: 'relative', overflow: 'hidden' }}>
       {/* Warm glow */}
@@ -65,7 +66,7 @@ export default function Hero() {
               >
                 <Image
                   src="/images/headshot.png"
-                  alt="Noel D'Costa"
+                  alt={m.hero.headshotAlt}
                   width={192}
                   height={192}
                   priority
@@ -83,7 +84,7 @@ export default function Hero() {
             >
               <span className="cc-pulse-dot" style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--cc-papaya)' }} />
               <span className="cc-mono" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'var(--cc-night)', textTransform: 'uppercase' }}>
-                ERP · AI · 25 years
+                {m.hero.eyebrow}
               </span>
             </div>
 
@@ -106,7 +107,7 @@ export default function Hero() {
                 animationDelay: '100ms',
               }}
             >
-              {HEADLINE}{' '}
+              {m.hero.headline}{' '}
               <span
                 style={{
                   fontStyle: 'italic',
@@ -114,7 +115,7 @@ export default function Hero() {
                   color: 'var(--cc-canyon)',
                 }}
               >
-                {EMPHASIS}
+                {m.hero.emphasis}
               </span>
             </h1>
 
@@ -125,11 +126,10 @@ export default function Hero() {
               className="cc-enter-up"
               style={{ marginTop: 24, fontSize: 16, color: 'var(--cc-text-body)', maxWidth: 500, lineHeight: 1.65, animationDelay: '900ms' }}
             >
-              ECC to S/4HANA. AI on SAP. 25 years delivering enterprise
-              transformations across{' '}
-              <strong className="font-semibold" style={{ color: 'var(--cc-text-primary)' }}>defence, aviation, energy, financial services, and the public sector</strong>.{' '}
-              <strong className="font-semibold" style={{ color: 'var(--cc-text-primary)' }}>$700M+ in total impact</strong>.{' '}
-              CIMA-qualified. I lead the engagement. I don&apos;t subcontract.
+              {m.hero.subheadlineLead}{' '}
+              <strong className="font-semibold" style={{ color: 'var(--cc-text-primary)' }}>{m.hero.subheadlineIndustries}</strong>.{' '}
+              <strong className="font-semibold" style={{ color: 'var(--cc-text-primary)' }}>{m.hero.subheadlineImpact}</strong>.{' '}
+              {m.hero.subheadlineTail}
             </p>
 
             {/* CTAs */}
@@ -154,7 +154,7 @@ export default function Hero() {
                   gap: 8,
                 }}
               >
-                Book a 30-min call <ArrowUpRight size={16} />
+                {m.hero.primaryCta} <ArrowUpRight size={16} />
               </a>
               <Link
                 href="/case-studies"
@@ -171,7 +171,7 @@ export default function Hero() {
                   borderRadius: 999,
                 }}
               >
-                See case studies <ArrowRight size={16} />
+                {m.hero.secondaryCta} <ArrowRight size={16} />
               </Link>
             </div>
 
@@ -185,15 +185,15 @@ export default function Hero() {
                 <span style={{ color: 'var(--cc-accent)' }}>·</span>{' '}
                 AICPA{' '}
                 <span style={{ color: 'var(--cc-accent)' }}>·</span>{' '}
-                Masters in Accounting{' '}
+                {m.hero.credMasters}{' '}
                 <span style={{ color: 'var(--cc-accent)' }}>·</span>{' '}
-                25+ years across EDGE Group, Etihad, ADNOC, PIF entities, DXC, and the UAE Government
+                {m.hero.credYearsAndClients}
               </p>
               <a
                 href="https://www.linkedin.com/in/noeldcosta/"
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Noel D'Costa on LinkedIn"
+                aria-label={m.hero.linkedinAria}
                 className="cc-linkedin-icon flex-shrink-0 rounded inline-flex items-center justify-center min-w-[44px] min-h-[44px] -my-2 -mx-2"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -245,7 +245,7 @@ export default function Hero() {
               >
                 <Image
                   src="/images/headshot.png"
-                  alt="Noel D'Costa"
+                  alt={m.hero.headshotAlt}
                   width={480}
                   height={600}
                   priority

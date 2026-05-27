@@ -1,47 +1,57 @@
 "use client";
 
-// TODO: update Tools.tsx hrefs — this component currently showcases commercial products (Command Central, ERPCV),
-// not the 5 LLM tool slugs. When this section is repurposed to list the free tools, replace with:
-//   { name: "ERP Cost Calculator", href: "/erp-implementation-cost-calculator", ... }
-//   { name: "SAP Cost Calculator", href: "/sap-implementation-cost-calculator", ... }
-//   { name: "Migration Estimator", href: "/free-data-migration-estimator-sap-oracle-microsoft", ... }
-//   { name: "JD Generator", href: "/sap-job-description-generator", ... }
-//   { name: "Solution Builder", href: "/sap-solution-builder", ... }
-const TOOLS = [
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-        <path d="M3 9h18M9 21V9"/>
-      </svg>
-    ),
-    name: "Command Central",
-    type: "Implementation",
-    title: "Track your ERP implementation in one place.",
-    body: "Progress, risks, milestones, team performance. Built because every project I walked into had tracking spread across 15 different spreadsheets. Real-time dashboards. Not another status deck.",
-    cta: "Explore Command Central →",
-    href: "https://commandcc.io",
-  },
-  {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-        <polyline points="14 2 14 8 20 8"/>
-        <line x1="16" y1="13" x2="8" y2="13"/>
-        <line x1="16" y1="17" x2="8" y2="17"/>
-        <polyline points="10 9 9 9 8 9"/>
-      </svg>
-    ),
-    name: "ERPCV",
-    type: "Career",
-    title: "Stop losing interviews you should be winning.",
-    body: "6-document career pack. Executive CV, project portfolio, cover letter, interview prep, LinkedIn messages, reference sheet. 1,200+ packs delivered. 89% more interviews. $19.99 one-time.",
-    cta: "Try ERPCV free →",
-    href: "https://erpcv3.vercel.app/",
-  },
-];
+import { usePathname } from "next/navigation";
+import { isTargetLanguage, type Locale } from "@/lib/locales";
+import { useTranslation } from "@/lib/i18n/useTranslation";
+
+function detectLocale(pathname: string | null): Locale {
+  if (!pathname) return "en";
+  const path = pathname.startsWith("/intl/") ? pathname.slice(5) : pathname;
+  const first = path.split("/").filter(Boolean)[0];
+  if (first && isTargetLanguage(first)) return first;
+  return "en";
+}
+
+// Product names "Command Central" and "ERPCV" are proper nouns — do-not-
+// translate. Stay inline. Icons stay inline (SVG). The rest of each card
+// flows through MESSAGES via the two cardN* fields.
 
 export default function Tools() {
+  const pathname = usePathname();
+  const { messages: m } = useTranslation(detectLocale(pathname));
+  const TOOLS = [
+    {
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <path d="M3 9h18M9 21V9"/>
+        </svg>
+      ),
+      name: "Command Central",
+      type: m.tools.card1Type,
+      title: m.tools.card1Title,
+      body: m.tools.card1Body,
+      cta: m.tools.card1Cta,
+      href: "https://commandcc.io",
+    },
+    {
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+      ),
+      name: "ERPCV",
+      type: m.tools.card2Type,
+      title: m.tools.card2Title,
+      body: m.tools.card2Body,
+      cta: m.tools.card2Cta,
+      href: "https://erpcv3.vercel.app/",
+    },
+  ];
   return (
     <section
       id="tools"
@@ -50,21 +60,20 @@ export default function Tools() {
     >
       <div className="max-w-[1200px] mx-auto">
         <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
-          [ 06 · Built by me ]
+          {m.tools.eyebrow}
         </p>
         <h2
-          aria-label="Tools I build for the ERP world."
+          aria-label={`${m.tools.h2Lead} ${m.tools.h2Emphasis}`}
           className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-bone"
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
           <span aria-hidden>
-            {"Tools I build "}
-            <span className="cc-emphasis-italic">for the ERP world.</span>
+            {`${m.tools.h2Lead} `}
+            <span className="cc-emphasis-italic">{m.tools.h2Emphasis}</span>
           </span>
         </h2>
         <p className="text-moon text-[1rem] max-w-[520px] leading-[1.7] mb-12">
-          Advice is half the job. The other half is building the tools the work
-          actually needs. Used by consultants and companies across 130+ regions.
+          {m.tools.intro}
         </p>
 
         <div className="grid grid-cols-2 gap-6 max-lg:grid-cols-1">

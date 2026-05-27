@@ -1,4 +1,6 @@
 import Image from "next/image";
+import { type Locale } from "@/lib/locales";
+import { getMessages } from "@/lib/i18n/useTranslation";
 
 /**
  * Homepage H-11 — Credentials + Featured On press strip.
@@ -15,45 +17,31 @@ import Image from "next/image";
  * the logos (avoids the broken text-among-logos look).
  */
 
-const CREDS: { label: string; sub: string; icon: React.ReactNode }[] = [
-  {
-    label: "CIMA & AICPA",
-    sub: "Management accounting",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
-        <path d="M12 20V10M18 20V4M6 20v-4" />
-      </svg>
-    ),
-  },
-  {
-    label: "Masters in Accounting",
-    sub: "Finance depth, not surface",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
-        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-        <path d="M6 12v5c0 1 4 3 6 3s6-2 6-3v-5" />
-      </svg>
-    ),
-  },
-  {
-    label: "SAP Certified PM",
-    sub: "Activate · SAFe · ITIL",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
-        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10" />
-      </svg>
-    ),
-  },
-  {
-    label: "Solution Architect",
-    sub: "Architecture across the stack",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
-        <rect x="2" y="6" width="20" height="12" rx="2" />
-        <path d="M12 12h.01M17 12h.01M7 12h.01" />
-      </svg>
-    ),
-  },
+// Credential LABELS (CIMA & AICPA, Masters in Accounting, SAP Certified
+// PM, Solution Architect) are proper nouns / credential names — do-not-
+// translate. They stay inline. The descriptive SUBS come from MESSAGES.
+const CRED_LABELS = [
+  "CIMA & AICPA",
+  "Masters in Accounting",
+  "SAP Certified PM",
+  "Solution Architect",
+] as const;
+
+const CRED_ICONS = [
+  <svg key="cred1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
+    <path d="M12 20V10M18 20V4M6 20v-4" />
+  </svg>,
+  <svg key="cred2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
+    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+    <path d="M6 12v5c0 1 4 3 6 3s6-2 6-3v-5" />
+  </svg>,
+  <svg key="cred3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10" />
+  </svg>,
+  <svg key="cred4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7">
+    <rect x="2" y="6" width="20" height="12" rx="2" />
+    <path d="M12 12h.01M17 12h.01M7 12h.01" />
+  </svg>,
 ];
 
 const PRESS: { name: string; src: string }[] = [
@@ -64,7 +52,18 @@ const PRESS: { name: string; src: string }[] = [
   { name: "Techbullion", src: "/press/techbullion.webp" },
 ];
 
-export default function Credentials() {
+export default function Credentials({
+  locale = "en",
+}: {
+  locale?: Locale;
+}) {
+  const m = getMessages(locale);
+  const credSubs = [
+    m.credentials.cred1Sub,
+    m.credentials.cred2Sub,
+    m.credentials.cred3Sub,
+    m.credentials.cred4Sub,
+  ];
   return (
     <section
       className="bg-bone"
@@ -72,30 +71,29 @@ export default function Credentials() {
     >
       <div className="max-w-[1200px] mx-auto">
         <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
-          [ 08 · Why this works ]
+          {m.credentials.eyebrow}
         </p>
         <h2
-          aria-label="Senior on the system. Senior on the close."
+          aria-label={`${m.credentials.h2Lead} ${m.credentials.h2Emphasis}`}
           className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
           <span aria-hidden>
-            {"Senior on the system. "}
-            <span className="cc-emphasis-italic">Senior on the close.</span>
+            {`${m.credentials.h2Lead} `}
+            <span className="cc-emphasis-italic">{m.credentials.h2Emphasis}</span>
           </span>
         </h2>
         <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-14">
-          Most SAP consultants understand the system. Few understand the
-          business. I have both.
+          {m.credentials.intro}
         </p>
 
         {/* Editorial credential row — no cards, vertical dividers, large icons.
             Same composition rhythm as ProblemStats so the page reads as one
             continuous editorial sheet rather than a deck of marketing cards. */}
         <div className="grid grid-cols-4 max-md:grid-cols-2 max-md:gap-y-10">
-          {CREDS.map((c, i) => (
+          {CRED_LABELS.map((label, i) => (
             <div
-              key={c.label}
+              key={label}
               className={`
                 ${i === 0 ? "pl-0" : "pl-[clamp(1rem,2.5vw,2.5rem)] border-l border-corbeau/[0.1]"}
                 max-md:pl-0 max-md:border-l-0
@@ -103,13 +101,13 @@ export default function Credentials() {
               `}
             >
               <span className="text-papaya block mb-4" aria-hidden>
-                {c.icon}
+                {CRED_ICONS[i]}
               </span>
               <h4 className="font-display font-extrabold text-corbeau text-[1.1rem] tracking-[-0.02em] leading-[1.2] mb-1.5">
-                {c.label}
+                {label}
               </h4>
               <p className="font-mono text-[0.78rem] text-eyebrow tracking-[0.5px] leading-[1.4]">
-                {c.sub}
+                {credSubs[i]}
               </p>
             </div>
           ))}
@@ -119,10 +117,11 @@ export default function Credentials() {
             even spacing. Each logo sits inside a cream tile so multi-colour
             marks (LinkedIn blue, MSN butterfly) read against a consistent
             surface. "The Next Disruption" lives below as a separate line so
-            we don't mix logo+text in the same row. */}
+            we don't mix logo+text in the same row. Press names + "The Next
+            Disruption" are proper nouns — do-not-translate. */}
         <div className="mt-20 pt-10 border-t border-corbeau/[0.1]">
           <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-eyebrow mb-6">
-            Featured on
+            {m.credentials.featuredOnLabel}
           </p>
           <ul className="flex flex-wrap items-center gap-3 list-none p-0 m-0">
             {PRESS.map((p) => (
@@ -142,7 +141,7 @@ export default function Credentials() {
             ))}
           </ul>
           <p className="font-mono text-[0.72rem] text-eyebrow tracking-[0.5px] mt-5">
-            Also published in:{" "}
+            {m.credentials.alsoPublishedInLabel}{" "}
             <span className="text-corbeau/80 font-medium">
               The Next Disruption
             </span>

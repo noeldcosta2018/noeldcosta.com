@@ -1,43 +1,21 @@
 import TerminalFeed from "./TerminalFeed";
+import { type Locale } from "@/lib/locales";
+import { getMessages } from "@/lib/i18n/useTranslation";
 
-const FEATURES = [
-  {
-    title: "Agentic AI on SAP BTP",
-    body: "Autonomous AI agents that work inside your SAP landscape. Handle approvals, flag anomalies, route decisions. Not chatbots. Agents that take action.",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/>
-        <path d="M16 12h2a2 2 0 0 1 2 2v2a6 6 0 0 1-12 0v-2a2 2 0 0 1 2-2h2"/>
-      </svg>
-    ),
-  },
-  {
-    title: "Predictive Analytics",
-    body: "Forecast demand, cash flow, maintenance schedules from your ERP data. Built on SAP Datasphere and Analytics Cloud. Real models, not dashboards.",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 20V10M18 20V4M6 20v-4"/>
-      </svg>
-    ),
-  },
-  {
-    title: "Intelligent Automation",
-    body: "Invoice matching, PO creation, journal entries. AI handles the repetitive work. Your team handles exceptions. 81% automation at EDGE Group.",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-      </svg>
-    ),
-  },
-  {
-    title: "AI Governance & Risk",
-    body: "Policies, oversight frameworks, compliance processes. Deploy AI without the legal risk. Satisfy regulators and stakeholders.",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-      </svg>
-    ),
-  },
+const FEATURE_ICONS = [
+  <svg key="f1" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/>
+    <path d="M16 12h2a2 2 0 0 1 2 2v2a6 6 0 0 1-12 0v-2a2 2 0 0 1 2-2h2"/>
+  </svg>,
+  <svg key="f2" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 20V10M18 20V4M6 20v-4"/>
+  </svg>,
+  <svg key="f3" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+  </svg>,
+  <svg key="f4" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+  </svg>,
 ];
 
 const TERMINAL_LINES = [
@@ -63,7 +41,18 @@ function tagStyle(type: string) {
   return { background: "rgba(252,152,90,0.1)", color: "#fc985a" };
 }
 
-export default function AICapabilities() {
+export default function AICapabilities({
+  locale = "en",
+}: {
+  locale?: Locale;
+}) {
+  const m = getMessages(locale);
+  const FEATURES = [
+    { title: m.aiCapabilities.feature1Title, body: m.aiCapabilities.feature1Body, icon: FEATURE_ICONS[0] },
+    { title: m.aiCapabilities.feature2Title, body: m.aiCapabilities.feature2Body, icon: FEATURE_ICONS[1] },
+    { title: m.aiCapabilities.feature3Title, body: m.aiCapabilities.feature3Body, icon: FEATURE_ICONS[2] },
+    { title: m.aiCapabilities.feature4Title, body: m.aiCapabilities.feature4Body, icon: FEATURE_ICONS[3] },
+  ];
   return (
     <section
       id="ai"
@@ -72,24 +61,22 @@ export default function AICapabilities() {
     >
       <div className="max-w-[1200px] mx-auto">
         <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
-          [ 02 · AI capabilities ]
+          {m.aiCapabilities.eyebrow}
         </p>
         <h2
-          aria-label="AI on top of your ERP. Not buzzwords. Real systems."
+          aria-label={`${m.aiCapabilities.h2Lead} ${m.aiCapabilities.h2Emphasis}`}
           className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
           <span aria-hidden>
-            {"AI on top of your ERP. "}
+            {`${m.aiCapabilities.h2Lead} `}
             <span className="cc-emphasis-italic">
-              Not buzzwords. Real systems.
+              {m.aiCapabilities.h2Emphasis}
             </span>
           </span>
         </h2>
         <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-12">
-          I build practical AI that works with your SAP data. Agentic AI,
-          predictive models, intelligent automation. Things that actually move
-          the needle.
+          {m.aiCapabilities.intro}
         </p>
 
         <div className="grid grid-cols-2 gap-14 items-start max-lg:grid-cols-1">
@@ -121,17 +108,17 @@ export default function AICapabilities() {
                   <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
                   <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
                 </div>
-                <span className="font-mono text-[0.7rem] text-silver ml-2.5">agent.erp — agentic pipeline</span>
+                <span className="font-mono text-[0.7rem] text-silver ml-2.5">{m.aiCapabilities.terminalLabel}</span>
               </div>
               <span className="inline-flex items-center gap-1.5 font-mono text-[0.62rem] text-brand-green font-semibold">
                 <span className="w-[5px] h-[5px] rounded-full bg-brand-green animate-pulse-dot" />
-                LIVE
+                {m.aiCapabilities.terminalLiveBadge}
               </span>
             </div>
             <div className="p-5 font-mono text-[0.78rem] leading-[1.7]">
               <TerminalFeed lines={TERMINAL_LINES.map((l) => l.content)} />
               <hr className="border-t border-corbeau/[0.06] my-3" />
-              <p className="font-mono text-[0.6rem] text-silver uppercase tracking-[1.5px] mb-2 cc-cursor">AI Stack</p>
+              <p className="font-mono text-[0.6rem] text-silver uppercase tracking-[1.5px] mb-2 cc-cursor">{m.aiCapabilities.stackHeading}</p>
               <div className="flex flex-wrap gap-1.5">
                 {STACK_TAGS.map((t) => (
                   <span

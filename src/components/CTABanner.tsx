@@ -1,4 +1,8 @@
-export default function CTABanner() {
+import { type Locale } from "@/lib/locales";
+import { getMessages } from "@/lib/i18n/useTranslation";
+
+export default function CTABanner({ locale = "en" }: { locale?: Locale }) {
+  const m = getMessages(locale);
   return (
     <section
       id="cta"
@@ -26,17 +30,16 @@ export default function CTABanner() {
         <div className="relative">
           <p className="font-mono text-[0.72rem] font-semibold tracking-[2.5px] uppercase text-corbeau mb-3.5 flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-corbeau" />
-            READY WHEN YOU ARE
+            {m.ctaBanner.eyebrow}
           </p>
           <h2
             className="font-display font-black tracking-[-0.04em] leading-[1.06] text-corbeau mb-3.5 max-w-[600px]"
             style={{ fontSize: "clamp(2.2rem,4.5vw,3.5rem)" }}
           >
-            Your next programme starts with a conversation.
+            {m.ctaBanner.h2}
           </h2>
           <p className="text-corbeau/70 text-[1rem] max-w-[480px] leading-[1.65] mb-8">
-            30 minutes. No sales pitch. Tell me what&apos;s going on with your ERP or
-            AI programme. I&apos;ll tell you straight if I can help.
+            {m.ctaBanner.body}
           </p>
           <div className="flex gap-3 flex-wrap max-sm:flex-col">
             <a
@@ -45,13 +48,13 @@ export default function CTABanner() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 bg-corbeau text-bone px-7 py-3.5 rounded-[10px] no-underline font-bold text-[0.92rem] transition-all hover:bg-haiti hover:-translate-y-px"
             >
-              Book a 30-min call ↗
+              {m.ctaBanner.primaryCta}
             </a>
             <a
               href="mailto:solutions@noeldcosta.com"
               className="inline-flex items-center text-corbeau px-7 py-3.5 no-underline font-semibold text-[0.92rem] border-b-2 border-corbeau transition-opacity hover:opacity-70"
             >
-              Email me directly
+              {m.ctaBanner.secondaryCta}
             </a>
           </div>
         </div>

@@ -1,5 +1,18 @@
 "use client";
 
+import { usePathname } from "next/navigation";
+import { isTargetLanguage, type Locale } from "@/lib/locales";
+import { useTranslation } from "@/lib/i18n/useTranslation";
+
+// Auto-detect locale from URL — same pattern as Nav and LanguageSwitcher.
+function detectLocale(pathname: string | null): Locale {
+  if (!pathname) return "en";
+  const path = pathname.startsWith("/intl/") ? pathname.slice(5) : pathname;
+  const first = path.split("/").filter(Boolean)[0];
+  if (first && isTargetLanguage(first)) return first;
+  return "en";
+}
+
 function ServiceCard({
   num,
   title,
@@ -68,6 +81,8 @@ function ServiceCard({
 }
 
 export default function Services() {
+  const pathname = usePathname();
+  const { messages: m } = useTranslation(detectLocale(pathname));
   return (
     <section
       id="services"
@@ -76,58 +91,39 @@ export default function Services() {
     >
       <div className="max-w-[1200px] mx-auto">
         <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
-          [ 01 · Who I help ]
+          {m.services.eyebrow}
         </p>
         <h2
           className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-bone"
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
-          Two types of people find me useful.{" "}
+          {m.services.h2Lead}{" "}
           <em className="not-italic text-papaya font-extrabold">
-            Maybe you&apos;re one.
+            {m.services.h2Emphasis}
           </em>
         </h2>
         <p className="text-moon text-[1rem] max-w-[520px] leading-[1.7] mb-12">
-          Companies that need ERP and AI done right. Consultants who need
-          straight advice on their career.
+          {m.services.intro}
         </p>
 
         <div className="grid grid-cols-2 gap-6 max-lg:grid-cols-1">
           <ServiceCard
-            num="CLIENT · 01"
-            title="Company Executives & Sponsors"
-            who="CIOs · CFOs · Programme Directors"
-            paras={[
-              "You have an ECC to S/4HANA migration coming up. Or you're mid-implementation and things aren't going well. Maybe you want AI on top of your ERP but nobody's giving you a straight answer.",
-              "I step in and get things moving. Direct involvement. No junior team learning on your budget.",
-            ]}
-            list={[
-              "ECC to S/4HANA migration planning and delivery",
-              "AI and Agentic AI strategy on SAP BTP",
-              "Programme recovery when things go sideways",
-              "Vendor selection and contract negotiation",
-              "Solution architecture with finance depth",
-            ]}
-            cta="Talk about your project →"
+            num={m.services.card1.numberEyebrow}
+            title={m.services.card1.title}
+            who={m.services.card1.who}
+            paras={[...m.services.card1.paragraphs]}
+            list={[...m.services.card1.bullets]}
+            cta={m.services.card1.cta}
             ctaHref="#cta"
             gradient="from-papaya to-canyon"
           />
           <ServiceCard
-            num="CLIENT · 02"
-            title="ERP & SAP Consultants"
-            who="Independent Consultants · Career Changers"
-            paras={[
-              "You're trying to break into ERP consulting. Or you're already in the game and need guidance. Which certifications matter. How to position yourself. What clients actually want.",
-              "25 years of experience. Happy to share what I know.",
-            ]}
-            list={[
-              "Career path guidance for ERP consulting",
-              "Which certifications actually get you hired",
-              "How to build your personal brand",
-              "Use ERPCV to build recruiter-ready CVs",
-              "Real talk on the consulting business",
-            ]}
-            cta="Check out my tools →"
+            num={m.services.card2.numberEyebrow}
+            title={m.services.card2.title}
+            who={m.services.card2.who}
+            paras={[...m.services.card2.paragraphs]}
+            list={[...m.services.card2.bullets]}
+            cta={m.services.card2.cta}
             ctaHref="#tools"
             gradient="from-canyon to-papaya"
           />

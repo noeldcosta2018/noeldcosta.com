@@ -1,7 +1,14 @@
 import { getYouTubeVideos } from "@/lib/youtube";
 import VideoCarousel from "./VideoCarousel";
+import { type Locale } from "@/lib/locales";
+import { getMessages } from "@/lib/i18n/useTranslation";
 
-export default async function YouTubeSection() {
+export default async function YouTubeSection({
+  locale = "en",
+}: {
+  locale?: Locale;
+}) {
+  const m = getMessages(locale);
   // RSS returns up to 15 videos by default; the carousel scrolls
   // horizontally so all of them can fit without crowding the page.
   const videos = await getYouTubeVideos(15);
@@ -13,21 +20,20 @@ export default async function YouTubeSection() {
     >
       <div className="max-w-[1200px] mx-auto">
         <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
-          [ 07 · Watch &amp; learn ]
+          {m.youtube.eyebrow}
         </p>
         <h2
-          aria-label="Videos from the field. Not theory. Real projects."
+          aria-label={`${m.youtube.h2Lead} ${m.youtube.h2Emphasis}`}
           className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
           style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
         >
           <span aria-hidden>
-            {"Videos from the field. "}
-            <span className="cc-emphasis-italic">Not theory. Real projects.</span>
+            {`${m.youtube.h2Lead} `}
+            <span className="cc-emphasis-italic">{m.youtube.h2Emphasis}</span>
           </span>
         </h2>
         <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-12">
-          I share what I&apos;ve learned from 25 years of ERP and AI implementations.
-          The stuff nobody tells you.
+          {m.youtube.intro}
         </p>
 
         <VideoCarousel videos={videos} />
@@ -43,7 +49,7 @@ export default async function YouTubeSection() {
               <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8z"/>
               <polygon points="9.75,15.02 15.5,12 9.75,8.98" fill="#0e1020"/>
             </svg>
-            Subscribe on YouTube
+            {m.youtube.cta}
           </a>
         </div>
       </div>
