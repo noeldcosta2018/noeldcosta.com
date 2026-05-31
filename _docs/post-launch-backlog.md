@@ -69,6 +69,20 @@ surrounding section chrome (which is already done).
 **Priority:** Low. Terminal demo is a stylized tech showcase, not core
 marketing copy.
 
+### Consolidate `bcp47()` and `detectLocale()` helpers
+**Source:** Pass 2b-1a.
+**What:** `detectLocale(pathname)` is now duplicated in 9 client components
+(Nav, Footer, Services, Tools, TrackRecord, StickyCTA, LanguageSwitcher,
+BookCard, BooksHeroIntro, plus ErpCostClient added in 2b-1a). `bcp47(locale)`
+is duplicated in 2 places (ArticleHero, ErpCostClient). Same code, copy-
+pasted. Each new client component refactor adds another copy.
+**Fix:** Extract both to `src/lib/i18n/locale-helpers.ts` as named exports.
+Update every duplication site to import from the shared module. Delete the
+local definitions. Zero behaviour change.
+**Estimate:** 30 min.
+**Priority:** Low. Pure refactor; pre-existing pattern. Worth doing before
+the next big i18n pass to prevent further drift.
+
 ### Tool ARIA labels and `usePathname` switcher positioning
 **Source:** Pass 2a-4 LanguageSwitcher review.
 **What:** LanguageSwitcher's `aria-label="Select language"` is wired

@@ -514,12 +514,437 @@ export interface Messages {
     moduleClear: string;           // "Clear"
   };
 
-  // The ErpCostClient calculator — biggest single chunk (~160 strings).
-  // Pass 2 will model the full step/option/label/hint surface. Listed
-  // here as a top-level namespace to reserve the slot.
+  // The ErpCostClient calculator. Pass 2b-1a populated the component body
+  // (wizard + result panels + chrome). Pass 2b-1b will add the lib
+  // surfaces (calc-engine warnings, scenarios presets, countries
+  // REGIONS) under nested sub-objects below as they're refactored.
   calculator: {
-    // ~160 strings — see audit doc.
-    _todo: string;
+    // Wizard chrome — navigation, step indicator, live estimate badge.
+    wizardStepIndicatorAria: string;
+    wizardNavBack: string;
+    wizardNavContinue: string;
+    wizardNavCalculate: string;
+    wizardStepOfLabel: string;            // "Step {step} of {total}"
+    wizardToggleLiveAria: string;
+    wizardLiveEstimateLabel: string;      // "Live estimate"
+    wizardLiveEstimatePrefix: string;     // "Live estimate:"
+    wizardLiveEstimateMetricsSuffix: string; // "{months}m · {complexity}/100 complexity"
+
+    // Disclaimer banner.
+    disclaimerPrefix: string;             // "Directional estimate only."
+    disclaimerBody: string;
+
+    // Step labels (icons stay inline).
+    stepCompanyLabel: string;             // "Company"
+    stepScopeLabel: string;               // "Scope"
+    stepCountriesLabel: string;           // "Countries"
+    stepDeliveryLabel: string;            // "Delivery"
+    stepFinancialsLabel: string;          // "Financials"
+
+    // Section titles (inside each step).
+    section: {
+      companyProfile: string;
+      programScope: string;
+      complexityLevels: string;
+      complexityIntro: string;
+      countryRollout: string;
+      deliveryModel: string;
+      financialAssumptions: string;
+    };
+
+    // Preset picker.
+    presetEyebrow: string;                // "Load a preset scenario"
+
+    // Module options + categories.
+    modules: {
+      categoryCore: string;
+      categoryOperations: string;
+      categoryExtended: string;
+      finance: string;
+      procurement: string;
+      sales: string;
+      hr: string;
+      payroll: string;
+      manufacturing: string;
+      supplyChain: string;
+      warehouse: string;
+      quality: string;
+      projectSystems: string;
+      crm: string;
+      analytics: string;
+      epm: string;
+    };
+
+    // Chart category labels — same keys as the breakdown object.
+    chart: {
+      software: string;
+      siServices: string;
+      internalTeam: string;
+      dataMigration: string;
+      integration: string;
+      changeAndTraining: string;
+      testingAndCutover: string;
+      infrastructure: string;
+      localization: string;
+      pmo: string;
+      contingency: string;
+    };
+
+    // Step 1 — Company profile.
+    step1: {
+      companyNameLabel: string;
+      companyNameOptional: string;        // "(optional)"
+      companyNamePlaceholder: string;
+      revenueLabel: string;
+      revenueHint: string;
+      revenueUnder10m: string;
+      revenue10m50m: string;
+      revenue50m250m: string;
+      revenue250m1b: string;
+      revenue1b5b: string;
+      revenueOver5b: string;
+      employeesLabel: string;
+      employeesUnder100: string;
+      employees100to500: string;
+      employees500to1000: string;
+      employees1000to3000: string;
+      employees3000to10000: string;
+      employeesOver10000: string;
+      userCountLabel: string;
+      userCountHint: string;
+      userCountPlaceholder: string;
+      legalEntitiesLabel: string;
+      legalEntitiesHint: string;
+      businessUnitsLabel: string;
+      businessUnitsHint: string;
+      industryLabel: string;
+      industryManufacturing: string;
+      industryRetail: string;
+      industryFinancial: string;
+      industryAviation: string;
+      industryGovernment: string;
+      industryUtilities: string;
+      industryOilGas: string;
+      industryHealthcare: string;
+      industryTelecom: string;
+      industryConstruction: string;
+      industryProfessional: string;
+      industryOther: string;
+      maturityLabel: string;
+      maturityHint: string;
+      maturitySpreadsheetsLabel: string;
+      maturitySpreadsheetsDetail: string;
+      maturityLegacyLabel: string;
+      maturityLegacyDetail: string;
+      maturityMixedLabel: string;
+      maturityMixedDetail: string;
+      maturityModernLabel: string;
+      maturityModernDetail: string;
+      implTypeLabel: string;
+      implTypeFirstLabel: string;
+      implTypeFirstDetail: string;
+      implTypeReimplLabel: string;
+      implTypeReimplDetail: string;
+      implTypeConsolLabel: string;
+      implTypeConsolDetail: string;
+      implTypeCarveLabel: string;
+      implTypeCarveDetail: string;
+      implTypePostMergerLabel: string;
+      implTypePostMergerDetail: string;
+    };
+
+    // Step 2 — Program scope.
+    step2: {
+      erpApproachLabel: string;
+      erpApproachSapLabel: string;
+      erpApproachSapDetail: string;
+      erpApproachOracleLabel: string;
+      erpApproachOracleDetail: string;
+      erpApproachMicrosoftLabel: string;
+      erpApproachMicrosoftDetail: string;
+      erpApproachInforLabel: string;
+      erpApproachInforDetail: string;
+      erpApproachOtherLabel: string;
+      erpApproachOtherDetail: string;
+      erpApproachAgnosticLabel: string;
+      erpApproachAgnosticDetail: string;
+      deploymentLabel: string;
+      deploymentHint: string;
+      deploymentCloudLabel: string;
+      deploymentCloudDetail: string;
+      deploymentPrivateLabel: string;
+      deploymentPrivateDetail: string;
+      deploymentOnPremLabel: string;
+      deploymentOnPremDetail: string;
+      deploymentHybridLabel: string;
+      deploymentHybridDetail: string;
+      modulesLabel: string;
+      modulesHint: string;
+      customizationLevelLabel: string;
+      customizationLevelHint: string;
+      integrationLabel: string;
+      integrationHint: string;
+      dataMigrationLabel: string;
+      dataMigrationHint: string;
+      reportingLabel: string;
+      reportingHint: string;
+      complexityLow: string;
+      complexityLowDetail: string;
+      complexityMedium: string;
+      complexityMediumDetail: string;
+      complexityHigh: string;
+      complexityHighDetail: string;
+      timelineLabel: string;
+      timelineHint: string;
+      timeline6m: string;
+      timeline9m: string;
+      timeline12m: string;
+      timeline15m: string;
+      timeline18m: string;
+      timeline24m: string;
+      timeline30m: string;
+      timeline36m: string;
+    };
+
+    // Step 3 — Country rollout.
+    step3: {
+      hqCountryLabel: string;
+      hqCountryAria: string;
+      hqCountryHint: string;
+      additionalCountries: string;
+      addCountryCta: string;
+      emptyTitle: string;
+      emptyHint: string;
+      multiDetectedTitle: string;
+      multiDetectedBody: string;
+      rowCountryAria: string;
+      rowRemoveAria: string;
+      rowUsersLabel: string;
+      rowEntitiesLabel: string;
+      rowLocalComplexityLabel: string;
+      rowWaveLabel: string;
+      rowComplexityLow: string;
+      rowComplexityMedium: string;
+      rowComplexityHigh: string;
+    };
+
+    // Step 4 — Delivery model.
+    step4: {
+      siTierLabel: string;
+      siTierHint: string;
+      siTierBoutiqueLabel: string;
+      siTierBoutiqueDetail: string;
+      siTierMidLabel: string;
+      siTierMidDetail: string;
+      siTierGlobalLabel: string;
+      siTierGlobalDetail: string;
+      deliveryLabel: string;
+      deliveryHint: string;
+      deliveryOnshoreLabel: string;
+      deliveryOnshoreDetail: string;
+      deliveryOffshoreLabel: string;
+      deliveryOffshoreDetail: string;
+      deliveryHybridLabel: string;
+      deliveryHybridDetail: string;
+      internalTeamLabel: string;
+      internalTeamHint: string;
+      internalTeamPlaceholder: string;
+      changeMgmtLabel: string;
+      changeMgmtHint: string;
+      changeMgmtLightLabel: string;
+      changeMgmtLightDetail: string;
+      changeMgmtStandardLabel: string;
+      changeMgmtStandardDetail: string;
+      changeMgmtHeavyLabel: string;
+      changeMgmtHeavyDetail: string;
+      trainingLabel: string;
+      trainingT3Label: string;
+      trainingT3Detail: string;
+      trainingRoleLabel: string;
+      trainingRoleDetail: string;
+      trainingIntensiveLabel: string;
+      trainingIntensiveDetail: string;
+    };
+
+    // Step 5 — Financial assumptions.
+    step5: {
+      horizonLabel: string;
+      horizonHint: string;
+      horizon1Label: string;
+      horizon1Detail: string;
+      horizon3Label: string;
+      horizon3Detail: string;
+      horizon5Label: string;
+      horizon5Detail: string;
+      contingencyLabel: string;
+      contingencyHint: string;
+      inflationLabel: string;
+      inflationHint: string;
+      discountLabel: string;
+      discountHint: string;
+      reportingCurrencyLabel: string;
+      reportingCurrencyHint: string;
+      currencyUsd: string;
+      currencyEur: string;
+      currencyGbp: string;
+      currencyAed: string;
+      currencySar: string;
+      currencyInr: string;
+      currencyAud: string;
+      currencyCad: string;
+      currencySgd: string;
+    };
+
+    // Executive summary card.
+    exec: {
+      estimatedCostEyebrow: string;
+      expectedPrefix: string;             // "Expected:"
+      year1TotalSuffix: string;           // "· Year 1 total"
+      complexityEyebrow: string;          // "Complexity"
+      scoreSuffix: string;                // "/100"
+      statTimeline: string;
+      statTimelineSubMonths: string;      // "{months} months"
+      statTimelineSubRange: string;       // "{min}–{max} range"
+      statCostPerUser: string;
+      statPctOfRevenue: string;
+      statPctOfRevenueSub: string;
+      statCountryScope: string;
+      statCountryScopeSingle: string;     // "1 country"
+      statCountryScopePlural: string;     // "{n} countries"
+      multiCountryLow: string;            // "Single country"
+      multiCountryModerate: string;
+      multiCountryHigh: string;
+      multiCountryVeryHigh: string;
+    };
+
+    // CFO view.
+    cfo: {
+      tileY1: string;                     // "Year 1 total"
+      tileTco3yr: string;                 // "3-year TCO"
+      tileTco5yr: string;                 // "5-year TCO"
+      rangeLabel: string;                 // "Range"
+      annualSpendTitle: string;           // "Annual spend profile"
+      annualSpendNote: string;
+      budgetAllocationY1: string;
+      tableCategory: string;
+      tableLow: string;
+      tableExpected: string;
+      tableHigh: string;
+    };
+
+    // CIO view.
+    cio: {
+      complexityScoreLabel: string;       // "Complexity score: {score}/100"
+      interpretationLow: string;
+      interpretationMedium: string;
+      interpretationHigh: string;
+      timelinePrefix: string;             // "Timeline:"
+      timelineRangeSuffix: string;        // "{min}–{max} months"
+      timelineExpectedSuffix: string;     // "(expected {n} months)"
+      riskIndicatorsHeading: string;
+      deliveryPhasesHeading: string;
+      keyDriversHeading: string;
+      riskLevelLow: string;
+      riskLevelMedium: string;
+      riskLevelHigh: string;
+      riskDataMigration: string;
+      riskIntegration: string;
+      riskChangeManagement: string;
+      riskLocalisation: string;
+      riskCustomDevelopment: string;
+      riskTesting: string;
+      driverWideModule: string;
+      driverHighIntegration: string;
+      driverHighDataComplexity: string;
+      driverHighCustomisation: string;
+      driverManyCountries: string;        // "{n} countries — wave planning..."
+      driverSpreadsheetsStart: string;
+      driverPostMerger: string;
+    };
+
+    // Country breakdown table.
+    countryTable: {
+      country: string;
+      users: string;
+      entities: string;
+      wave: string;
+      localComplexity: string;
+      costShare: string;
+      expectedCost: string;
+    };
+
+    // Assumptions panel.
+    assumptions: {
+      introBody: string;
+      softwareLabel: string;
+      softwareValueTemplate: string;       // "~{rate} ({approach}, {deployment})"
+      siBaseLabel: string;
+      siBaseValueTemplate: string;
+      contingencyLabel: string;
+      contingencyValueTemplate: string;    // "{pct}%"
+      totalModulesLabel: string;
+      countriesLabel: string;
+      horizonLabel: string;
+      horizonValueTemplate: string;        // "{n} years"
+      inflationLabel: string;
+      inflationValueTemplate: string;
+      internalTeamRateLabel: string;
+      internalTeamRateValueTemplate: string;  // "${rate}/day (fully loaded)"
+      pmoLabel: string;
+      pmoValue: string;
+      amsLabel: string;
+      amsValue: string;
+    };
+
+    // Saved scenario compare card.
+    scenario: {
+      emptyTitle: string;
+      emptyBody: string;
+      removeCta: string;
+      statY1: string;
+      statTco3yr: string;
+      statTimeline: string;
+    };
+
+    // Result panel tabs.
+    tabs: {
+      breakdown: string;
+      cfo: string;
+      cio: string;
+      countries: string;
+      scenarios: string;
+      assumptions: string;
+    };
+
+    // Result panel action buttons.
+    actions: {
+      saveScenario: string;
+      saveScenarioCountTemplate: string;   // "({n}/3)"
+      copySummary: string;
+      printExport: string;
+      startOver: string;
+    };
+
+    // Copy-summary email template.
+    email: {
+      titlePrefix: string;                 // "ERP Programme Estimate"
+      companyPrefix: string;
+      companyDefault: string;              // "—"
+      erpApproachPrefix: string;
+      deploymentLabel: string;
+      countriesPrefix: string;
+      usersLabel: string;
+      modulesPrefix: string;
+      y1EstimatePrefix: string;
+      expectedInlineTemplate: string;      // "(expected: {value})"
+      tco3yrPrefix: string;
+      tco5yrPrefix: string;
+      timelinePrefix: string;
+      monthsSuffix: string;
+      complexityPrefix: string;
+      disclaimerLine: string;
+      generatedPrefix: string;
+    };
   };
 
   // Other tool clients (~40 + 35 + 50 + 80 strings respectively).
@@ -1195,7 +1620,481 @@ const EN: Messages = {
     moduleAddCoreFinanceLabel: "+ Add core finance",
     moduleClear: "Clear",
   },
-  calculator: { _todo: "Pass 2: ~160 strings from ErpCostClient.tsx" },
+  calculator: {
+    // Wizard chrome.
+    wizardStepIndicatorAria: "Calculator steps",
+    wizardNavBack: "← Back",
+    wizardNavContinue: "Continue →",
+    wizardNavCalculate: "Calculate →",
+    wizardStepOfLabel: "Step {step} of {total}",
+    wizardToggleLiveAria: "Toggle live estimate",
+    wizardLiveEstimateLabel: "Live estimate",
+    wizardLiveEstimatePrefix: "Live estimate:",
+    wizardLiveEstimateMetricsSuffix: "{months}m · {complexity}/100 complexity",
+
+    // Disclaimer banner.
+    disclaimerPrefix: "Directional estimate only.",
+    disclaimerBody:
+      "This tool produces budget ranges based on multiplier-based assumptions, not vendor quotes. Use it to frame early business-case conversations. Engage your SI and software vendor for programme-specific pricing before committing budget.",
+
+    // Step labels.
+    stepCompanyLabel: "Company",
+    stepScopeLabel: "Scope",
+    stepCountriesLabel: "Countries",
+    stepDeliveryLabel: "Delivery",
+    stepFinancialsLabel: "Financials",
+
+    // Section titles.
+    section: {
+      companyProfile: "Company profile",
+      programScope: "Program scope",
+      complexityLevels: "Complexity levels",
+      complexityIntro:
+        "These four axes are the biggest cost drivers after module count. Be honest — under-scoping complexity is the most common cause of overruns.",
+      countryRollout: "Country rollout",
+      deliveryModel: "Delivery model",
+      financialAssumptions: "Financial assumptions",
+    },
+
+    presetEyebrow: "Load a preset scenario",
+
+    // Modules.
+    modules: {
+      categoryCore: "Core",
+      categoryOperations: "Operations",
+      categoryExtended: "Extended",
+      finance: "Finance & Accounting",
+      procurement: "Procurement",
+      sales: "Sales & Distribution",
+      hr: "Human Resources",
+      payroll: "Payroll",
+      manufacturing: "Manufacturing / <noTranslate>PP</noTranslate>",
+      supplyChain: "Supply Chain",
+      warehouse: "Warehouse Management",
+      quality: "Quality Management",
+      projectSystems: "Project Systems",
+      crm: "<noTranslate>CRM</noTranslate>",
+      analytics: "Analytics & <noTranslate>BI</noTranslate>",
+      epm: "<noTranslate>EPM</noTranslate> / Advanced Finance",
+    },
+
+    // Chart category labels.
+    chart: {
+      software: "Software",
+      siServices: "<noTranslate>SI</noTranslate> Services",
+      internalTeam: "Internal Team",
+      dataMigration: "Data Migration",
+      integration: "Integration",
+      changeAndTraining: "Change & Training",
+      testingAndCutover: "Testing & Cutover",
+      infrastructure: "Infrastructure",
+      localization: "Localization",
+      pmo: "<noTranslate>PMO</noTranslate> & Governance",
+      contingency: "Contingency",
+    },
+
+    // Step 1.
+    step1: {
+      companyNameLabel: "Company name",
+      companyNameOptional: "(optional)",
+      companyNamePlaceholder: "e.g. Acme Industries",
+      revenueLabel: "Annual revenue",
+      revenueHint:
+        "Used to calculate cost as % of revenue — a common board-level metric.",
+      revenueUnder10m: "Under $10M",
+      revenue10m50m: "$10M – $50M",
+      revenue50m250m: "$50M – $250M",
+      revenue250m1b: "$250M – $1B",
+      revenue1b5b: "$1B – $5B",
+      revenueOver5b: "Over $5B",
+      employeesLabel: "Total employees",
+      employeesUnder100: "Under 100",
+      employees100to500: "100 – 500",
+      employees500to1000: "500 – 1,000",
+      employees1000to3000: "1,000 – 3,000",
+      employees3000to10000: "3,000 – 10,000",
+      employeesOver10000: "10,000+",
+      userCountLabel: "ERP user count",
+      userCountHint: "Named users who will access the system.",
+      userCountPlaceholder: "e.g. 250",
+      legalEntitiesLabel: "Legal entities",
+      legalEntitiesHint: "Separate statutory companies, subsidiaries, or JVs.",
+      businessUnitsLabel: "Business units",
+      businessUnitsHint:
+        "Divisions or segments needing separate cost centre / P&L views.",
+      industryLabel: "Industry",
+      industryManufacturing: "Manufacturing",
+      industryRetail: "Retail & Distribution",
+      industryFinancial: "Financial Services",
+      industryAviation: "Aviation & Transport",
+      industryGovernment: "Government & Public Sector",
+      industryUtilities: "Utilities & Energy",
+      industryOilGas: "Oil & Gas",
+      industryHealthcare: "Healthcare",
+      industryTelecom: "Telecom",
+      industryConstruction: "Construction & Real Estate",
+      industryProfessional: "Professional Services",
+      industryOther: "Other",
+      maturityLabel: "Current ERP maturity",
+      maturityHint:
+        "Starting from spreadsheets increases data migration effort significantly.",
+      maturitySpreadsheetsLabel: "Spreadsheets",
+      maturitySpreadsheetsDetail:
+        "No ERP. Data in Excel / Access.",
+      maturityLegacyLabel: "Legacy ERP",
+      maturityLegacyDetail:
+        "<noTranslate>ECC</noTranslate>, <noTranslate>EBS R12</noTranslate>, <noTranslate>Axapta</noTranslate>, etc.",
+      maturityMixedLabel: "Mixed landscape",
+      maturityMixedDetail: "Multiple systems in parallel.",
+      maturityModernLabel: "Modern cloud ERP",
+      maturityModernDetail:
+        "<noTranslate>S/4HANA</noTranslate>, <noTranslate>D365</noTranslate>, <noTranslate>Fusion</noTranslate>, etc.",
+      implTypeLabel: "Implementation type",
+      implTypeFirstLabel: "First ERP",
+      implTypeFirstDetail: "No ERP in place.",
+      implTypeReimplLabel: "Reimplementation",
+      implTypeReimplDetail: "Replace existing ERP.",
+      implTypeConsolLabel: "Consolidation",
+      implTypeConsolDetail: "Merge multiple ERPs.",
+      implTypeCarveLabel: "Carve-out",
+      implTypeCarveDetail: "Separate a division.",
+      implTypePostMergerLabel: "Post-merger",
+      implTypePostMergerDetail: "Harmonise after M&A.",
+    },
+
+    // Step 2.
+    step2: {
+      erpApproachLabel: "ERP approach",
+      erpApproachSapLabel: "<noTranslate>SAP</noTranslate>",
+      erpApproachSapDetail:
+        "<noTranslate>S/4HANA</noTranslate> or <noTranslate>RISE</noTranslate>/<noTranslate>GROW</noTranslate>",
+      erpApproachOracleLabel: "<noTranslate>Oracle</noTranslate>",
+      erpApproachOracleDetail:
+        "<noTranslate>Fusion Cloud</noTranslate> / <noTranslate>EBS</noTranslate>",
+      erpApproachMicrosoftLabel: "<noTranslate>Microsoft</noTranslate>",
+      erpApproachMicrosoftDetail: "<noTranslate>Dynamics 365</noTranslate>",
+      erpApproachInforLabel: "<noTranslate>Infor</noTranslate>",
+      erpApproachInforDetail:
+        "<noTranslate>CloudSuite</noTranslate> / <noTranslate>M3</noTranslate>",
+      erpApproachOtherLabel: "Other",
+      erpApproachOtherDetail:
+        "<noTranslate>IFS</noTranslate>, <noTranslate>NetSuite</noTranslate>, etc.",
+      erpApproachAgnosticLabel: "Not decided",
+      erpApproachAgnosticDetail: "Evaluating options",
+      deploymentLabel: "Deployment model",
+      deploymentHint:
+        "Cloud SaaS typically has lower upfront cost but higher ongoing fees. On-premise flips that ratio over 5+ years.",
+      deploymentCloudLabel: "Cloud SaaS",
+      deploymentCloudDetail: "Multi-tenant. Low infra.",
+      deploymentPrivateLabel: "Private cloud",
+      deploymentPrivateDetail: "Dedicated, managed cloud.",
+      deploymentOnPremLabel: "On-premise",
+      deploymentOnPremDetail: "Own data centre.",
+      deploymentHybridLabel: "Hybrid",
+      deploymentHybridDetail: "Mix of above.",
+      modulesLabel: "Modules in scope",
+      modulesHint:
+        "Select all modules you expect to implement. More modules = longer timeline and higher cost, but not linearly.",
+      customizationLevelLabel: "Custom development",
+      customizationLevelHint:
+        "Low = standard config only. High = significant <noTranslate>ABAP</noTranslate> / extensions / custom <noTranslate>Fiori</noTranslate>.",
+      integrationLabel: "Integration complexity",
+      integrationHint:
+        "Low = few simple integrations. High = 20+ interfaces, legacy systems, B2B partners.",
+      dataMigrationLabel: "Data migration complexity",
+      dataMigrationHint:
+        "Low = clean master data from one source. High = multiple legacy systems, poor data quality.",
+      reportingLabel: "Reporting & compliance complexity",
+      reportingHint:
+        "Low = standard reports suffice. High = complex statutory reporting, multi-GAAP, group consolidation.",
+      complexityLow: "Low",
+      complexityLowDetail: "Standard scope",
+      complexityMedium: "Medium",
+      complexityMediumDetail: "Some deviations",
+      complexityHigh: "High",
+      complexityHighDetail: "Significant complexity",
+      timelineLabel: "Target go-live timeline",
+      timelineHint:
+        "This is your target — the calculator will tell you if it's realistic given your scope.",
+      timeline6m: "6 months",
+      timeline9m: "9 months",
+      timeline12m: "12 months",
+      timeline15m: "15 months",
+      timeline18m: "18 months",
+      timeline24m: "24 months",
+      timeline30m: "30 months",
+      timeline36m: "36 months",
+    },
+
+    // Step 3.
+    step3: {
+      hqCountryLabel: "Headquarters country",
+      hqCountryAria: "HQ country",
+      hqCountryHint:
+        "The HQ country is your primary go-live location (wave 1). Add rollout countries below.",
+      additionalCountries: "Additional rollout countries",
+      addCountryCta: "+ Add country",
+      emptyTitle: "Single-country rollout",
+      emptyHint: "Add countries for a multi-country estimate.",
+      multiDetectedTitle: "Multi-country rollout detected",
+      multiDetectedBody:
+        "Country cost indices, localisation complexity, and language requirements are all factored into the estimate. Consider wave sequencing — the most complex countries should not all be in wave 1.",
+      rowCountryAria: "Country",
+      rowRemoveAria: "Remove country",
+      rowUsersLabel: "Users",
+      rowEntitiesLabel: "Entities",
+      rowLocalComplexityLabel: "Local complexity",
+      rowWaveLabel: "Wave",
+      rowComplexityLow: "Low",
+      rowComplexityMedium: "Medium",
+      rowComplexityHigh: "High",
+    },
+
+    // Step 4.
+    step4: {
+      siTierLabel: "SI partner tier",
+      siTierHint:
+        "Day rate is not the biggest variable — team quality and methodology are. But partner tier has a direct multiplier on SI fees.",
+      siTierBoutiqueLabel: "Boutique <noTranslate>SI</noTranslate>",
+      siTierBoutiqueDetail:
+        "Specialised, lower day rate, less process overhead.",
+      siTierMidLabel: "Mid-tier <noTranslate>SI</noTranslate>",
+      siTierMidDetail: "Good depth, reasonable structure.",
+      siTierGlobalLabel: "Global <noTranslate>SI</noTranslate>",
+      siTierGlobalDetail:
+        "Big 4 / Tier 1. Highest rate, maximum coverage.",
+      deliveryLabel: "Delivery model",
+      deliveryHint:
+        "Offshore delivery significantly reduces day rates but adds coordination overhead. Not recommended for high customisation or complex integrations.",
+      deliveryOnshoreLabel: "Onshore",
+      deliveryOnshoreDetail: "All consultants co-located.",
+      deliveryOffshoreLabel: "Offshore",
+      deliveryOffshoreDetail: "Primarily low-cost delivery centre.",
+      deliveryHybridLabel: "Hybrid",
+      deliveryHybridDetail: "Mix of onshore & offshore.",
+      internalTeamLabel: "Internal project team size",
+      internalTeamHint:
+        "Number of full-time internal staff allocated to the programme (not the SI team). Include project managers, process leads, data owners, and change champions.",
+      internalTeamPlaceholder: "e.g. 10",
+      changeMgmtLabel: "Change management intensity",
+      changeMgmtHint:
+        "Post-go-live adoption failure is the most common cause of extended hypercare. Under-investing in change management consistently costs more than the investment would have.",
+      changeMgmtLightLabel: "Light",
+      changeMgmtLightDetail: "Comms and basic training.",
+      changeMgmtStandardLabel: "Standard",
+      changeMgmtStandardDetail:
+        "Change network, role-based training, exec sponsorship.",
+      changeMgmtHeavyLabel: "Heavy",
+      changeMgmtHeavyDetail:
+        "Full <noTranslate>OCM</noTranslate>: impact assessment, readiness surveys, change agents.",
+      trainingLabel: "Training model",
+      trainingT3Label: "Train-the-trainer",
+      trainingT3Detail: "Lowest cost. Internal trainers cascade.",
+      trainingRoleLabel: "Role-based",
+      trainingRoleDetail: "All users trained by role.",
+      trainingIntensiveLabel: "Intensive",
+      trainingIntensiveDetail:
+        "Multiple sessions, simulations, job aids.",
+    },
+
+    // Step 5.
+    step5: {
+      horizonLabel: "Planning horizon",
+      horizonHint:
+        "Board-level ERP business cases typically use a 5-year TCO horizon. For budget approval, 3 years is common.",
+      horizon1Label: "1 year",
+      horizon1Detail: "Year 1 only.",
+      horizon3Label: "3 years",
+      horizon3Detail: "Typical TCO view.",
+      horizon5Label: "5 years",
+      horizon5Detail: "Full payback horizon.",
+      contingencyLabel: "Contingency budget",
+      contingencyHint:
+        "15–20% is standard for well-managed programmes. Under 10% is high risk. Over 25% may indicate scope uncertainty that should be resolved before budgeting.",
+      inflationLabel: "Annual inflation assumption",
+      inflationHint:
+        "Applied to ongoing support costs in years 2+. Typical range: 2–4% in stable markets, higher in emerging markets.",
+      discountLabel: "Discount rate (for NPV)",
+      discountHint:
+        "Used if you want to calculate net present value of the programme. Typical corporate hurdle rate: 8–12%.",
+      reportingCurrencyLabel: "Reporting currency",
+      reportingCurrencyHint:
+        "The primary model calculates in USD. Country-level results also show local currency amounts. Exchange rates used are approximate fixed rates from the config.",
+      currencyUsd: "<noTranslate>USD</noTranslate> — US Dollar",
+      currencyEur: "<noTranslate>EUR</noTranslate> — Euro",
+      currencyGbp: "<noTranslate>GBP</noTranslate> — British Pound",
+      currencyAed: "<noTranslate>AED</noTranslate> — UAE Dirham",
+      currencySar: "<noTranslate>SAR</noTranslate> — Saudi Riyal",
+      currencyInr: "<noTranslate>INR</noTranslate> — Indian Rupee",
+      currencyAud: "<noTranslate>AUD</noTranslate> — Australian Dollar",
+      currencyCad: "<noTranslate>CAD</noTranslate> — Canadian Dollar",
+      currencySgd: "<noTranslate>SGD</noTranslate> — Singapore Dollar",
+    },
+
+    // Exec summary.
+    exec: {
+      estimatedCostEyebrow: "Estimated programme cost",
+      expectedPrefix: "Expected:",
+      year1TotalSuffix: "· Year 1 total",
+      complexityEyebrow: "Complexity",
+      scoreSuffix: "/100",
+      statTimeline: "Timeline (expected)",
+      statTimelineSubMonths: "{months} months",
+      statTimelineSubRange: "{min}–{max} range",
+      statCostPerUser: "Cost per user",
+      statPctOfRevenue: "% of revenue",
+      statPctOfRevenueSub: "year 1 programme cost",
+      statCountryScope: "Country scope",
+      statCountryScopeSingle: "{n} country",
+      statCountryScopePlural: "{n} countries",
+      multiCountryLow: "Single country",
+      multiCountryModerate: "2–3 countries",
+      multiCountryHigh: "4–7 countries",
+      multiCountryVeryHigh: "8+ countries",
+    },
+
+    // CFO view.
+    cfo: {
+      tileY1: "Year 1 total",
+      tileTco3yr: "3-year TCO",
+      tileTco5yr: "5-year TCO",
+      rangeLabel: "Range",
+      annualSpendTitle: "Annual spend profile",
+      annualSpendNote:
+        "Y1 covers implementation plus software. Y2 onward is AMS support plus software subscription. Figures are directional, not contractual.",
+      budgetAllocationY1: "Budget allocation, year 1",
+      tableCategory: "Category",
+      tableLow: "Low",
+      tableExpected: "Expected",
+      tableHigh: "High",
+    },
+
+    // CIO view.
+    cio: {
+      complexityScoreLabel: "Complexity score: {score}/100",
+      interpretationLow: "Manageable. Standard delivery model should work.",
+      interpretationMedium:
+        "Moderate. Requires experienced SI and clear programme governance.",
+      interpretationHigh:
+        "High. Needs dedicated programme management and phased delivery.",
+      timelinePrefix: "Timeline:",
+      timelineRangeSuffix: "{min}–{max} months",
+      timelineExpectedSuffix: "(expected {n} months)",
+      riskIndicatorsHeading: "Workstream risk indicators",
+      deliveryPhasesHeading: "Estimated delivery phases",
+      keyDriversHeading: "Key delivery drivers",
+      riskLevelLow: "Low",
+      riskLevelMedium: "Medium",
+      riskLevelHigh: "High",
+      riskDataMigration: "Data migration",
+      riskIntegration: "Integration",
+      riskChangeManagement: "Change management",
+      riskLocalisation: "Localisation",
+      riskCustomDevelopment: "Custom development",
+      riskTesting: "Testing",
+      driverWideModule:
+        "Wide module scope (6+ modules) increases test surface",
+      driverHighIntegration:
+        "High integration complexity — legacy system audit recommended",
+      driverHighDataComplexity:
+        "High data complexity — data profiling should start in phase 1",
+      driverHighCustomisation:
+        "High customisation — clean-core strategy review advised",
+      driverManyCountries:
+        "{n} countries — wave planning and central governance are critical",
+      driverSpreadsheetsStart:
+        "Starting from spreadsheets — process definition effort underestimated in most programmes",
+      driverPostMerger:
+        "Post-merger scope — entity harmonisation is typically the longest workstream",
+    },
+
+    // Country table.
+    countryTable: {
+      country: "Country",
+      users: "Users",
+      entities: "Entities",
+      wave: "Wave",
+      localComplexity: "Local complexity",
+      costShare: "Cost share",
+      expectedCost: "Expected cost",
+    },
+
+    // Assumptions panel.
+    assumptions: {
+      introBody:
+        "All values below are the directional assumptions used in this estimate. They are calibrated to typical market rates — not specific vendor quotes. Edit the assumptions source file to adjust the model.",
+      softwareLabel: "Software cost / user / year",
+      softwareValueTemplate: "~{rate} ({approach}, {deployment})",
+      siBaseLabel: "SI base rate / user",
+      siBaseValueTemplate: "~{rate} ({tier}, {model})",
+      contingencyLabel: "Contingency",
+      contingencyValueTemplate: "{pct}%",
+      totalModulesLabel: "Total modules in scope",
+      countriesLabel: "Countries",
+      horizonLabel: "Planning horizon",
+      horizonValueTemplate: "{n} years",
+      inflationLabel: "Inflation assumption",
+      inflationValueTemplate: "{pct}%",
+      internalTeamRateLabel: "Internal team rate",
+      internalTeamRateValueTemplate: "${rate}/day (fully loaded)",
+      pmoLabel: "PMO / governance",
+      pmoValue: "7% of pre-contingency total",
+      amsLabel: "Ongoing AMS support",
+      amsValue: "15% of implementation cost in Y2, 12% Y3+",
+    },
+
+    // Scenario compare.
+    scenario: {
+      emptyTitle: "No saved scenarios yet.",
+      emptyBody:
+        'Run a calculation and click "Save scenario" to compare.',
+      removeCta: "Remove",
+      statY1: "Year 1",
+      statTco3yr: "3-yr TCO",
+      statTimeline: "Timeline",
+    },
+
+    // Tabs.
+    tabs: {
+      breakdown: "Cost breakdown",
+      cfo: "CFO view",
+      cio: "CIO view",
+      countries: "Countries",
+      scenarios: "Scenarios",
+      assumptions: "Assumptions",
+    },
+
+    // Actions.
+    actions: {
+      saveScenario: "Save scenario",
+      saveScenarioCountTemplate: "({n}/3)",
+      copySummary: "Copy summary",
+      printExport: "Print / export",
+      startOver: "← Start over",
+    },
+
+    // Copy-summary email template.
+    email: {
+      titlePrefix: "ERP Programme Estimate",
+      companyPrefix: "Company:",
+      companyDefault: "—",
+      erpApproachPrefix: "ERP approach:",
+      deploymentLabel: "Deployment:",
+      countriesPrefix: "Countries:",
+      usersLabel: "Users:",
+      modulesPrefix: "Modules:",
+      y1EstimatePrefix: "Year 1 estimate:",
+      expectedInlineTemplate: "(expected: {value})",
+      tco3yrPrefix: "3-year TCO:",
+      tco5yrPrefix: "5-year TCO:",
+      timelinePrefix: "Implementation timeline:",
+      monthsSuffix: "months",
+      complexityPrefix: "Complexity score:",
+      disclaimerLine:
+        "These are directional budget estimates for early business-case planning. Not a vendor quote.",
+      generatedPrefix: "Generated:",
+    },
+  },
   sapCostCalculator: { _todo: "Pass 2: ~40 strings from SapCostClient.tsx" },
   migrationEstimator: { _todo: "Pass 2: ~35 strings from MigrationClient.tsx" },
   jdGenerator: { _todo: "Pass 2: ~50 strings from JdClient.tsx" },

@@ -4,10 +4,13 @@
 // Vendor-agnostic. CFO + CIO views. Multi-country. Fully client-side.
 
 import { useState, useCallback, useId, useMemo, useRef } from "react";
+import { usePathname } from "next/navigation";
 import FadeUp from "@/components/article/FadeUp";
 import { calculate, formatCurrency, formatBand } from "@/lib/erp-calculator/calc-engine";
 import { COUNTRIES, REGIONS, getCountriesByRegion } from "@/lib/erp-calculator/countries";
 import { PRESET_SCENARIOS } from "@/lib/erp-calculator/scenarios";
+import { isTargetLanguage, type Locale } from "@/lib/locales";
+import { useTranslation, stripMarkers } from "@/lib/i18n/useTranslation";
 import type {
   CalculatorInputs,
   CalculationResult,
@@ -27,6 +30,74 @@ import type {
   PlanningHorizon,
   SavedScenario,
 } from "@/lib/erp-calculator/types";
+
+// Messages type — local alias for the calculator namespace. Avoids re-declaring
+// the whole interface on every prop signature.
+type Msgs = ReturnType<typeof useTranslation>["messages"];
+type CalcMsgs = Msgs["calculator"];
+
+// Auto-detect locale from the current URL. Same pattern as Pass 2a-1 onward —
+// the calculator route is English-only today, but the helper future-proofs
+// the component for /<lang>/erp-implementation-cost-calculator/ should the
+// route be translated in a later pass.
+function detectLocale(pathname: string | null): Locale {
+  if (!pathname) return "en";
+  const path = pathname.startsWith("/intl/") ? pathname.slice(5) : pathname;
+  const first = path.split("/").filter(Boolean)[0];
+  if (first && isTargetLanguage(first)) return first;
+  return "en";
+}
+
+// Convert our locale codes to BCP-47 tags for Intl.NumberFormat / toLocaleString.
+// Mirrors ArticleHero's helper (see _docs/post-launch-backlog.md for the
+// dedup task). Locale-aware thousand separators ride on this: "1,000" in en-US,
+// "1.000" in de-DE, "١٬٠٠٠" in ar-AE, etc.
+function bcp47(locale: Locale): string {
+  switch (locale) {
+    case "en": return "en-US";
+    case "ja": return "ja-JP";
+    case "ar": return "ar-AE";
+    case "de": return "de-DE";
+    case "es": return "es-ES";
+    case "fr": return "fr-FR";
+    case "it": return "it-IT";
+    case "pt": return "pt-BR";
+    case "nl": return "nl-NL";
+    case "ru": return "ru-RU";
+    case "el": return "el-GR";
+    case "zh": return "zh-CN";
+    case "ko": return "ko-KR";
+    case "hi": return "hi-IN";
+    case "tr": return "tr-TR";
+    default: return "en-US";
+  }
+}
+
+// Recursively strip `<noTranslate>...</noTranslate>` wrapper tags from every
+// string leaf in a typed messages sub-tree. Returns a structurally-identical
+// object so callers can index it the same way. The calculator namespace
+// contains marker-bearing strings (proper nouns like SAP, Oracle, S/4HANA,
+// ECC inside option labels and details); the translation pipeline preserves
+// them in the source, but they must not render in the DOM. See
+// useTranslation.ts `stripMarkers` for the underlying regex + rationale.
+function deepStripMarkers<T>(value: T): T {
+  if (typeof value === "string") return stripMarkers(value) as unknown as T;
+  if (value === null || typeof value !== "object") return value;
+  const out: Record<string, unknown> = {};
+  for (const k of Object.keys(value as Record<string, unknown>)) {
+    out[k] = deepStripMarkers((value as Record<string, unknown>)[k]);
+  }
+  return out as T;
+}
+
+// Tiny token-replacement helper for templated MESSAGES strings.
+// Pattern: "{key} foo {other}" + { key: "X", other: "Y" } → "X foo Y".
+// Used for the few interpolated strings in the calculator namespace
+// (statTimelineSubMonths, driverManyCountries, assumptions value templates,
+// etc.). Pass 2b-1b will move calc-engine warnings to this same pattern.
+function fmt(template: string, vars: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ""));
+}
 
 // ─── Default inputs ───────────────────────────────────────────────────────────
 
@@ -68,14 +139,21 @@ const DEFAULT_INPUTS: CalculatorInputs = {
 };
 
 // ─── Step definitions ─────────────────────────────────────────────────────────
+// Step IDs drive the wizard state. Labels are looked up from MESSAGES at the
+// StepIndicator render site via getStepLabel(). Step icons existed in the
+// pre-refactor STEPS array but were never actually rendered (the indicator
+// shows the step number / a checkmark, not an emoji); removed.
 
-const STEPS = [
-  { id: 1, label: "Company",   icon: "🏢" },
-  { id: 2, label: "Scope",     icon: "⚙️" },
-  { id: 3, label: "Countries", icon: "🌍" },
-  { id: 4, label: "Delivery",  icon: "👥" },
-  { id: 5, label: "Financials", icon: "💰" },
-] as const;
+const STEP_IDS = [1, 2, 3, 4, 5] as const;
+function getStepLabel(m: CalcMsgs, id: (typeof STEP_IDS)[number]): string {
+  switch (id) {
+    case 1: return m.stepCompanyLabel;
+    case 2: return m.stepScopeLabel;
+    case 3: return m.stepCountriesLabel;
+    case 4: return m.stepDeliveryLabel;
+    case 5: return m.stepFinancialsLabel;
+  }
+}
 
 // ─── UI primitives ────────────────────────────────────────────────────────────
 
@@ -348,14 +426,12 @@ function WarningBanner({
 
 // ─── Disclaimer banner ────────────────────────────────────────────────────────
 
-function DisclaimerBanner() {
+function DisclaimerBanner({ m }: { m: CalcMsgs }) {
   return (
     <div className="rounded-lg border border-corbeau/10 bg-cream px-4 py-3 mb-6">
       <p className="text-xs text-night leading-relaxed">
-        <span className="font-semibold text-corbeau">Directional estimate only.</span>{" "}
-        This tool produces budget ranges based on multiplier-based assumptions, not vendor quotes.
-        Use it to frame early business-case conversations. Engage your SI and software vendor for
-        programme-specific pricing before committing budget.
+        <span className="font-semibold text-corbeau">{m.disclaimerPrefix}</span>{" "}
+        {m.disclaimerBody}
       </p>
     </div>
   );
@@ -367,23 +443,25 @@ function StepIndicator({
   current,
   onGo,
   completed,
+  m,
 }: {
   current: number;
   onGo: (n: number) => void;
   completed: Set<number>;
+  m: CalcMsgs;
 }) {
   return (
-    <nav aria-label="Calculator steps" className="mb-8">
+    <nav aria-label={m.wizardStepIndicatorAria} className="mb-8">
       <ol className="flex items-center gap-0">
-        {STEPS.map((step, idx) => {
-          const done   = completed.has(step.id);
-          const active = step.id === current;
-          const canNav = done || step.id < current;
+        {STEP_IDS.map((id, idx) => {
+          const done   = completed.has(id);
+          const active = id === current;
+          const canNav = done || id < current;
           return (
-            <li key={step.id} className="flex items-center flex-1 last:flex-none">
+            <li key={id} className="flex items-center flex-1 last:flex-none">
               <button
                 type="button"
-                onClick={() => canNav && onGo(step.id)}
+                onClick={() => canNav && onGo(id)}
                 disabled={!canNav}
                 aria-current={active ? "step" : undefined}
                 className={`flex flex-col items-center gap-1 focus:outline-none group disabled:cursor-default ${canNav ? "cursor-pointer" : ""}`}
@@ -397,17 +475,17 @@ function StepIndicator({
                       : "border-corbeau/20 bg-bone text-eyebrow"
                   }`}
                 >
-                  {done && !active ? "✓" : step.id}
+                  {done && !active ? "✓" : id}
                 </span>
                 <span
                   className={`text-[10px] font-semibold hidden sm:block ${
                     active ? "text-papaya" : done ? "text-night" : "text-eyebrow"
                   }`}
                 >
-                  {step.label}
+                  {getStepLabel(m, id)}
                 </span>
               </button>
-              {idx < STEPS.length - 1 && (
+              {idx < STEP_IDS.length - 1 && (
                 <div
                   className={`flex-1 h-0.5 mx-1 ${
                     done ? "bg-papaya/40" : "bg-corbeau/10"
@@ -424,55 +502,104 @@ function StepIndicator({
 
 // ─── Module grid ──────────────────────────────────────────────────────────────
 
-const MODULE_OPTIONS: { value: Module; label: string; category: string }[] = [
-  { value: "finance",          label: "Finance & Accounting",    category: "Core" },
-  { value: "procurement",      label: "Procurement",             category: "Core" },
-  { value: "sales",            label: "Sales & Distribution",    category: "Core" },
-  { value: "hr",               label: "Human Resources",         category: "Core" },
-  { value: "payroll",          label: "Payroll",                 category: "Core" },
-  { value: "manufacturing",    label: "Manufacturing / PP",      category: "Operations" },
-  { value: "supply-chain",     label: "Supply Chain",            category: "Operations" },
-  { value: "warehouse",        label: "Warehouse Management",    category: "Operations" },
-  { value: "quality",          label: "Quality Management",      category: "Operations" },
-  { value: "project-systems",  label: "Project Systems",         category: "Operations" },
-  { value: "crm",              label: "CRM",                     category: "Extended" },
-  { value: "analytics",        label: "Analytics & BI",          category: "Extended" },
-  { value: "epm",              label: "EPM / Advanced Finance",  category: "Extended" },
+// Module → category mapping. Labels are looked up from MESSAGES at render time.
+type ModuleCategory = "core" | "operations" | "extended";
+const MODULE_CATEGORY: Record<Module, ModuleCategory> = {
+  "finance":         "core",
+  "procurement":     "core",
+  "sales":           "core",
+  "hr":              "core",
+  "payroll":         "core",
+  "manufacturing":   "operations",
+  "supply-chain":    "operations",
+  "warehouse":       "operations",
+  "quality":         "operations",
+  "project-systems": "operations",
+  "crm":             "extended",
+  "analytics":       "extended",
+  "epm":             "extended",
+};
+const MODULE_ORDER: Module[] = [
+  "finance",
+  "procurement",
+  "sales",
+  "hr",
+  "payroll",
+  "manufacturing",
+  "supply-chain",
+  "warehouse",
+  "quality",
+  "project-systems",
+  "crm",
+  "analytics",
+  "epm",
 ];
+
+// MESSAGES key matching the typed Module union. <noTranslate> markers
+// in the messages (e.g. `m.modules.crm = "<noTranslate>CRM</noTranslate>"`)
+// are stripped at render via stripMarkers in useTranslation.
+function moduleLabel(m: CalcMsgs, mod: Module): string {
+  switch (mod) {
+    case "finance":         return m.modules.finance;
+    case "procurement":     return m.modules.procurement;
+    case "sales":           return m.modules.sales;
+    case "hr":              return m.modules.hr;
+    case "payroll":         return m.modules.payroll;
+    case "manufacturing":   return m.modules.manufacturing;
+    case "supply-chain":    return m.modules.supplyChain;
+    case "warehouse":       return m.modules.warehouse;
+    case "quality":         return m.modules.quality;
+    case "project-systems": return m.modules.projectSystems;
+    case "crm":             return m.modules.crm;
+    case "analytics":       return m.modules.analytics;
+    case "epm":             return m.modules.epm;
+  }
+}
+function moduleCategoryLabel(m: CalcMsgs, cat: ModuleCategory): string {
+  switch (cat) {
+    case "core":       return m.modules.categoryCore;
+    case "operations": return m.modules.categoryOperations;
+    case "extended":   return m.modules.categoryExtended;
+  }
+}
 
 function ModuleGrid({
   selected,
   onChange,
+  m,
 }: {
   selected: Module[];
   onChange: (v: Module[]) => void;
+  m: CalcMsgs;
 }) {
-  const toggle = (m: Module) => {
+  const toggle = (mod: Module) => {
     onChange(
-      selected.includes(m) ? selected.filter((x) => x !== m) : [...selected, m]
+      selected.includes(mod) ? selected.filter((x) => x !== mod) : [...selected, mod]
     );
   };
-  const categories = ["Core", "Operations", "Extended"] as const;
+  const categories: ModuleCategory[] = ["core", "operations", "extended"];
   return (
     <div className="space-y-4">
       {categories.map((cat) => (
         <div key={cat}>
-          <p className="text-xs font-semibold text-eyebrow uppercase tracking-wide mb-2">{cat}</p>
+          <p className="text-xs font-semibold text-eyebrow uppercase tracking-wide mb-2">
+            {moduleCategoryLabel(m, cat)}
+          </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {MODULE_OPTIONS.filter((m) => m.category === cat).map((m) => {
-              const on = selected.includes(m.value);
+            {MODULE_ORDER.filter((mod) => MODULE_CATEGORY[mod] === cat).map((mod) => {
+              const on = selected.includes(mod);
               return (
                 <button
-                  key={m.value}
+                  key={mod}
                   type="button"
-                  onClick={() => toggle(m.value)}
+                  onClick={() => toggle(mod)}
                   className={`text-left rounded border px-3 py-2 text-xs font-medium transition-all ${
                     on
                       ? "border-papaya bg-papaya/10 text-papaya"
                       : "border-corbeau/12 text-night hover:border-papaya/40 hover:bg-papaya/4"
                   }`}
                 >
-                  {m.label}
+                  {moduleLabel(m, mod)}
                 </button>
               );
             })}
@@ -489,10 +616,12 @@ function CountryRow({
   entry,
   onChange,
   onRemove,
+  m,
 }: {
   entry: CountryEntry;
   onChange: (e: CountryEntry) => void;
   onRemove: () => void;
+  m: CalcMsgs;
 }) {
   return (
     <div className="rounded-lg border border-corbeau/12 bg-cream p-4 space-y-3">
@@ -501,9 +630,13 @@ function CountryRow({
           value={entry.countryCode}
           onChange={(e) => onChange({ ...entry, countryCode: e.target.value })}
           className="flex-1 rounded border border-corbeau/15 bg-paper text-corbeau text-sm px-3 py-2 focus:outline-none focus:border-papaya"
-          aria-label="Country"
+          aria-label={m.step3.rowCountryAria}
         >
           {REGIONS.map((region) => (
+            // REGIONS strings (country region names) stay inline for Pass 2b-1a
+            // — addressed in Pass 2b-1b along with calc-engine warnings and
+            // scenarios.ts preset descriptions. Country names themselves are
+            // proper nouns and stay inline permanently.
             <optgroup key={region} label={region}>
               {getCountriesByRegion(region).map((c) => (
                 <option key={c.code} value={c.code}>
@@ -517,14 +650,14 @@ function CountryRow({
           type="button"
           onClick={onRemove}
           className="text-eyebrow hover:text-canyon text-sm px-2 py-1 shrink-0"
-          aria-label="Remove country"
+          aria-label={m.step3.rowRemoveAria}
         >
           ✕
         </button>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <div>
-          <p className="text-[10px] text-eyebrow mb-1 font-semibold uppercase tracking-wide">Users</p>
+          <p className="text-[10px] text-eyebrow mb-1 font-semibold uppercase tracking-wide">{m.step3.rowUsersLabel}</p>
           <input
             type="number"
             value={entry.users}
@@ -534,7 +667,7 @@ function CountryRow({
           />
         </div>
         <div>
-          <p className="text-[10px] text-eyebrow mb-1 font-semibold uppercase tracking-wide">Entities</p>
+          <p className="text-[10px] text-eyebrow mb-1 font-semibold uppercase tracking-wide">{m.step3.rowEntitiesLabel}</p>
           <input
             type="number"
             value={entry.legalEntities}
@@ -544,19 +677,19 @@ function CountryRow({
           />
         </div>
         <div>
-          <p className="text-[10px] text-eyebrow mb-1 font-semibold uppercase tracking-wide">Local complexity</p>
+          <p className="text-[10px] text-eyebrow mb-1 font-semibold uppercase tracking-wide">{m.step3.rowLocalComplexityLabel}</p>
           <select
             value={entry.localizationComplexity}
             onChange={(e) => onChange({ ...entry, localizationComplexity: e.target.value as ComplexityLevel })}
             className="w-full rounded border border-corbeau/15 bg-paper text-corbeau text-xs px-2 py-1.5 focus:outline-none focus:border-papaya"
           >
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
+            <option value="low">{m.step3.rowComplexityLow}</option>
+            <option value="medium">{m.step3.rowComplexityMedium}</option>
+            <option value="high">{m.step3.rowComplexityHigh}</option>
           </select>
         </div>
         <div>
-          <p className="text-[10px] text-eyebrow mb-1 font-semibold uppercase tracking-wide">Wave</p>
+          <p className="text-[10px] text-eyebrow mb-1 font-semibold uppercase tracking-wide">{m.step3.rowWaveLabel}</p>
           <input
             type="number"
             value={entry.wave}
@@ -587,26 +720,33 @@ const CHART_COLORS = [
   "#ef4444", // red — contingency
 ];
 
-const CHART_LABELS: Record<string, string> = {
-  software:         "Software",
-  siServices:       "SI Services",
-  internalTeam:     "Internal Team",
-  dataMigration:    "Data Migration",
-  integration:      "Integration",
-  changeAndTraining: "Change & Training",
-  testingAndCutover: "Testing & Cutover",
-  infrastructure:   "Infrastructure",
-  localization:     "Localization",
-  pmo:              "PMO & Governance",
-  contingency:      "Contingency",
-};
+// Chart labels — looked up at render time from MESSAGES.calculator.chart.
+// Key set matches the result.breakdown object literally.
+function chartLabel(m: CalcMsgs, key: string): string {
+  const map: Record<string, string> = {
+    software:          m.chart.software,
+    siServices:        m.chart.siServices,
+    internalTeam:      m.chart.internalTeam,
+    dataMigration:     m.chart.dataMigration,
+    integration:       m.chart.integration,
+    changeAndTraining: m.chart.changeAndTraining,
+    testingAndCutover: m.chart.testingAndCutover,
+    infrastructure:    m.chart.infrastructure,
+    localization:      m.chart.localization,
+    pmo:               m.chart.pmo,
+    contingency:       m.chart.contingency,
+  };
+  return map[key] ?? key;
+}
 
 function CostBreakdownChart({
   breakdown,
   currency,
+  m,
 }: {
   breakdown: CalculationResult["breakdown"];
   currency: string;
+  m: CalcMsgs;
 }) {
   const items = Object.entries(breakdown) as [string, { low: number; expected: number; high: number }][];
   const total = items.reduce((s, [, b]) => s + b.expected, 0);
@@ -627,7 +767,7 @@ function CostBreakdownChart({
         return (
           <div key={key}>
             <div className="flex justify-between items-baseline mb-1.5">
-              <span className="text-sm font-semibold text-night">{CHART_LABELS[key] ?? key}</span>
+              <span className="text-sm font-semibold text-night">{chartLabel(m, key)}</span>
               <span className="font-mono font-bold text-corbeau text-sm">
                 {formatCurrency(b.expected, currency, true)}
               </span>
@@ -664,15 +804,17 @@ function RiskMeter({
   label,
   score,
   max = 100,
+  m,
 }: {
   label: string;
   score: number;
   max?: number;
+  m: CalcMsgs;
 }) {
   const pct = Math.min(100, (score / max) * 100);
   const color =
     pct < 35 ? "#22c55e" : pct < 65 ? "#d97706" : "#ef4444";
-  const level = pct < 35 ? "Low" : pct < 65 ? "Medium" : "High";
+  const level = pct < 35 ? m.cio.riskLevelLow : pct < 65 ? m.cio.riskLevelMedium : m.cio.riskLevelHigh;
   return (
     <div className="space-y-1.5">
       <div className="flex justify-between items-baseline">
@@ -693,23 +835,28 @@ function RiskMeter({
 
 // ─── Executive summary card ───────────────────────────────────────────────────
 
-function ExecSummary({ result }: { result: CalculationResult }) {
+function ExecSummary({ result, m }: { result: CalculationResult; m: CalcMsgs }) {
   const { totalY1, tco3yr, costPerUser, costAsRevenuePct, multiCountryRating, timeline, inputs } = result;
   const currency = inputs.reportingCurrency;
 
   const multiLabel = {
-    "low":       "Single country",
-    "moderate":  "2–3 countries",
-    "high":      "4–7 countries",
-    "very-high": "8+ countries",
+    "low":       m.exec.multiCountryLow,
+    "moderate":  m.exec.multiCountryModerate,
+    "high":      m.exec.multiCountryHigh,
+    "very-high": m.exec.multiCountryVeryHigh,
   }[multiCountryRating];
+
+  const nCountries = result.countryResults.length;
+  const countryScopeSub = nCountries === 1
+    ? fmt(m.exec.statCountryScopeSingle, { n: nCountries })
+    : fmt(m.exec.statCountryScopePlural, { n: nCountries });
 
   return (
     <div className="rounded-2xl border border-papaya/30 bg-gradient-to-br from-papaya/6 to-transparent p-6 mb-6">
       <div className="flex items-start justify-between gap-4 mb-5">
         <div>
           <p className="text-xs font-mono font-bold uppercase tracking-widest text-papaya mb-1">
-            Estimated programme cost
+            {m.exec.estimatedCostEyebrow}
           </p>
           <p className="font-display font-black text-corbeau leading-none tracking-tight"
             style={{ fontSize: "clamp(1.8rem, 4vw, 2.6rem)" }}>
@@ -718,27 +865,27 @@ function ExecSummary({ result }: { result: CalculationResult }) {
             {formatCurrency(totalY1.high, currency, true)}
           </p>
           <p className="text-sm text-eyebrow mt-1">
-            Expected: <span className="font-semibold text-night">{formatCurrency(totalY1.expected, currency, true)}</span>
-            {" "}· Year 1 total
+            {m.exec.expectedPrefix} <span className="font-semibold text-night">{formatCurrency(totalY1.expected, currency, true)}</span>
+            {" "}{m.exec.year1TotalSuffix}
           </p>
         </div>
         <div className="shrink-0 text-right">
-          <p className="text-xs font-mono text-eyebrow uppercase tracking-wide mb-1">Complexity</p>
+          <p className="text-xs font-mono text-eyebrow uppercase tracking-wide mb-1">{m.exec.complexityEyebrow}</p>
           <div className="flex items-center gap-1.5 justify-end">
             <div className="w-8 h-8 rounded-full bg-papaya/15 flex items-center justify-center">
               <span className="font-mono font-black text-papaya text-xs">{result.complexityScore}</span>
             </div>
-            <span className="text-xs text-night">/100</span>
+            <span className="text-xs text-night">{m.exec.scoreSuffix}</span>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Timeline (expected)", value: `${timeline.expectedMonths} months`, sub: `${timeline.minimumMonths}–${timeline.maximumMonths} range` },
-          { label: "Cost per user",       value: formatCurrency(costPerUser.expected, currency, true), sub: `${formatCurrency(costPerUser.low, currency, true)} – ${formatCurrency(costPerUser.high, currency, true)}` },
-          { label: "% of revenue",        value: `${costAsRevenuePct}%`, sub: "year 1 programme cost" },
-          { label: "Country scope",       value: multiLabel, sub: `${result.countryResults.length} ${result.countryResults.length === 1 ? "country" : "countries"}` },
+          { label: m.exec.statTimeline, value: fmt(m.exec.statTimelineSubMonths, { months: timeline.expectedMonths }), sub: fmt(m.exec.statTimelineSubRange, { min: timeline.minimumMonths, max: timeline.maximumMonths }) },
+          { label: m.exec.statCostPerUser, value: formatCurrency(costPerUser.expected, currency, true), sub: `${formatCurrency(costPerUser.low, currency, true)} – ${formatCurrency(costPerUser.high, currency, true)}` },
+          { label: m.exec.statPctOfRevenue, value: `${costAsRevenuePct}%`, sub: m.exec.statPctOfRevenueSub },
+          { label: m.exec.statCountryScope, value: multiLabel, sub: countryScopeSub },
         ].map((stat) => (
           <div key={stat.label} className="rounded-lg bg-paper/80 border border-corbeau/8 px-3 py-3">
             <p className="text-[10px] font-semibold text-eyebrow uppercase tracking-wide mb-1">{stat.label}</p>
@@ -753,7 +900,7 @@ function ExecSummary({ result }: { result: CalculationResult }) {
 
 // ─── CFO view ─────────────────────────────────────────────────────────────────
 
-function CFOView({ result }: { result: CalculationResult }) {
+function CFOView({ result, m }: { result: CalculationResult; m: CalcMsgs }) {
   const { tco3yr, tco5yr, yearlySpend, inputs, breakdown } = result;
   const currency = inputs.reportingCurrency;
   const maxSpend = Math.max(...yearlySpend);
@@ -763,9 +910,9 @@ function CFOView({ result }: { result: CalculationResult }) {
       {/* TCO tiles — papaya gradient cards with display-weight numbers */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { label: "Year 1 total",  band: result.totalY1, accent: true },
-          { label: "3-year TCO",    band: tco3yr,         accent: false },
-          { label: "5-year TCO",    band: tco5yr,         accent: false },
+          { label: m.cfo.tileY1,     band: result.totalY1, accent: true },
+          { label: m.cfo.tileTco3yr, band: tco3yr,         accent: false },
+          { label: m.cfo.tileTco5yr, band: tco5yr,         accent: false },
         ].map((item, i) => (
           <FadeUp key={item.label} delay={i * 80} className="">
             <div
@@ -795,7 +942,7 @@ function CFOView({ result }: { result: CalculationResult }) {
                   item.accent ? "text-corbeau/80" : "text-night/70"
                 }`}
               >
-                Range {formatCurrency(item.band.low, currency, true)} – {formatCurrency(item.band.high, currency, true)}
+                {m.cfo.rangeLabel} {formatCurrency(item.band.low, currency, true)} – {formatCurrency(item.band.high, currency, true)}
               </p>
             </div>
           </FadeUp>
@@ -807,7 +954,7 @@ function CFOView({ result }: { result: CalculationResult }) {
         <div className="rounded-2xl bg-paper border border-corbeau/[0.08] p-6 shadow-[0_2px_14px_rgba(14,16,32,0.04)]">
           <div className="flex items-baseline justify-between mb-5">
             <p className="font-display font-bold text-corbeau text-[1.05rem] tracking-[-0.015em]">
-              Annual spend profile
+              {m.cfo.annualSpendTitle}
             </p>
             <p className="font-mono text-[0.62rem] uppercase tracking-[1.6px] text-corbeau/50">
               {currency}
@@ -838,7 +985,7 @@ function CFOView({ result }: { result: CalculationResult }) {
             })}
           </div>
           <p className="mt-5 text-[0.75rem] text-night/65 leading-[1.55]">
-            Y1 covers implementation plus software. Y2 onward is AMS support plus software subscription. Figures are directional, not contractual.
+            {m.cfo.annualSpendNote}
           </p>
         </div>
       </FadeUp>
@@ -847,22 +994,22 @@ function CFOView({ result }: { result: CalculationResult }) {
       <FadeUp>
         <div>
           <p className="font-display font-bold text-corbeau text-[1.05rem] tracking-[-0.015em] mb-4">
-            Budget allocation, year 1
+            {m.cfo.budgetAllocationY1}
           </p>
           <div className="not-prose overflow-x-auto rounded-xl border border-corbeau/[0.08] bg-paper shadow-[0_2px_14px_rgba(14,16,32,0.04)]">
             <table className="min-w-full text-[0.92rem] border-collapse">
               <thead className="bg-papaya">
                 <tr>
-                  <th className="text-left font-display font-black tracking-[-0.01em] text-corbeau text-[0.95rem] py-4 px-5">Category</th>
-                  <th className="text-right font-display font-black tracking-[-0.01em] text-corbeau text-[0.95rem] py-4 px-5">Low</th>
-                  <th className="text-right font-display font-black tracking-[-0.01em] text-corbeau text-[0.95rem] py-4 px-5">Expected</th>
-                  <th className="text-right font-display font-black tracking-[-0.01em] text-corbeau text-[0.95rem] py-4 px-5">High</th>
+                  <th className="text-left font-display font-black tracking-[-0.01em] text-corbeau text-[0.95rem] py-4 px-5">{m.cfo.tableCategory}</th>
+                  <th className="text-right font-display font-black tracking-[-0.01em] text-corbeau text-[0.95rem] py-4 px-5">{m.cfo.tableLow}</th>
+                  <th className="text-right font-display font-black tracking-[-0.01em] text-corbeau text-[0.95rem] py-4 px-5">{m.cfo.tableExpected}</th>
+                  <th className="text-right font-display font-black tracking-[-0.01em] text-corbeau text-[0.95rem] py-4 px-5">{m.cfo.tableHigh}</th>
                 </tr>
               </thead>
               <tbody className="[&>tr:nth-child(even)]:bg-bone/30 [&>tr]:transition-colors [&>tr:hover]:bg-papaya/[0.06]">
                 {(Object.entries(breakdown) as [string, { low: number; expected: number; high: number }][]).map(([key, b]) => (
                   <tr key={key}>
-                    <td className="py-3.5 px-5 text-corbeau font-semibold text-[0.92rem]">{CHART_LABELS[key] ?? key}</td>
+                    <td className="py-3.5 px-5 text-corbeau font-semibold text-[0.92rem]">{chartLabel(m, key)}</td>
                     <td className="py-3.5 px-5 text-right font-mono tabular-nums text-night/70">{formatCurrency(b.low, currency, true)}</td>
                     <td className="py-3.5 px-5 text-right font-mono tabular-nums font-bold text-corbeau">{formatCurrency(b.expected, currency, true)}</td>
                     <td className="py-3.5 px-5 text-right font-mono tabular-nums text-night/70">{formatCurrency(b.high, currency, true)}</td>
@@ -879,26 +1026,26 @@ function CFOView({ result }: { result: CalculationResult }) {
 
 // ─── CIO view ─────────────────────────────────────────────────────────────────
 
-function CIOView({ result }: { result: CalculationResult }) {
+function CIOView({ result, m }: { result: CalculationResult; m: CalcMsgs }) {
   const { inputs, complexityScore, timeline } = result;
 
   const risks = [
-    { label: "Data migration",      score: { low: 25, medium: 60, high: 90 }[inputs.dataMigrationComplexity] },
-    { label: "Integration",         score: { low: 25, medium: 60, high: 90 }[inputs.integrationComplexity] },
-    { label: "Change management",   score: { light: 20, standard: 50, heavy: 75 }[inputs.changeMgmtIntensity] },
-    { label: "Localisation",        score: result.inputs.countries.length === 0 ? 20 : Math.min(90, result.inputs.countries.length * 18 + 20) },
-    { label: "Custom development",  score: { low: 20, medium: 55, high: 88 }[inputs.customizationLevel] },
-    { label: "Testing",             score: Math.min(90, complexityScore * 0.85) },
+    { label: m.cio.riskDataMigration,    score: { low: 25, medium: 60, high: 90 }[inputs.dataMigrationComplexity] },
+    { label: m.cio.riskIntegration,      score: { low: 25, medium: 60, high: 90 }[inputs.integrationComplexity] },
+    { label: m.cio.riskChangeManagement, score: { light: 20, standard: 50, heavy: 75 }[inputs.changeMgmtIntensity] },
+    { label: m.cio.riskLocalisation,     score: result.inputs.countries.length === 0 ? 20 : Math.min(90, result.inputs.countries.length * 18 + 20) },
+    { label: m.cio.riskCustomDevelopment, score: { low: 20, medium: 55, high: 88 }[inputs.customizationLevel] },
+    { label: m.cio.riskTesting,          score: Math.min(90, complexityScore * 0.85) },
   ];
 
   const drivers = [
-    inputs.modules.length > 6 && "Wide module scope (6+ modules) increases test surface",
-    inputs.integrationComplexity === "high" && "High integration complexity — legacy system audit recommended",
-    inputs.dataMigrationComplexity === "high" && "High data complexity — data profiling should start in phase 1",
-    inputs.customizationLevel === "high" && "High customisation — clean-core strategy review advised",
-    inputs.countries.length > 2 && `${inputs.countries.length + 1} countries — wave planning and central governance are critical`,
-    inputs.erpMaturity === "spreadsheets" && "Starting from spreadsheets — process definition effort underestimated in most programmes",
-    inputs.implementationType === "post-merger" && "Post-merger scope — entity harmonisation is typically the longest workstream",
+    inputs.modules.length > 6 && m.cio.driverWideModule,
+    inputs.integrationComplexity === "high" && m.cio.driverHighIntegration,
+    inputs.dataMigrationComplexity === "high" && m.cio.driverHighDataComplexity,
+    inputs.customizationLevel === "high" && m.cio.driverHighCustomisation,
+    inputs.countries.length > 2 && fmt(m.cio.driverManyCountries, { n: inputs.countries.length + 1 }),
+    inputs.erpMaturity === "spreadsheets" && m.cio.driverSpreadsheetsStart,
+    inputs.implementationType === "post-merger" && m.cio.driverPostMerger,
   ].filter(Boolean) as string[];
 
   return (
@@ -925,17 +1072,17 @@ function CIOView({ result }: { result: CalculationResult }) {
             </svg>
           </div>
           <div>
-            <p className="font-display font-bold text-corbeau text-lg">Complexity score: {complexityScore}/100</p>
+            <p className="font-display font-bold text-corbeau text-lg">{fmt(m.cio.complexityScoreLabel, { score: complexityScore })}</p>
             <p className="text-sm text-night mt-1">
               {complexityScore < 35
-                ? "Manageable. Standard delivery model should work."
+                ? m.cio.interpretationLow
                 : complexityScore < 65
-                ? "Moderate. Requires experienced SI and clear programme governance."
-                : "High. Needs dedicated programme management and phased delivery."}
+                ? m.cio.interpretationMedium
+                : m.cio.interpretationHigh}
             </p>
             <p className="text-xs text-eyebrow mt-1">
-              Timeline: <span className="font-semibold text-night">{timeline.minimumMonths}–{timeline.maximumMonths} months</span>
-              {" "}(expected {timeline.expectedMonths} months)
+              {m.cio.timelinePrefix} <span className="font-semibold text-night">{fmt(m.cio.timelineRangeSuffix, { min: timeline.minimumMonths, max: timeline.maximumMonths })}</span>
+              {" "}{fmt(m.cio.timelineExpectedSuffix, { n: timeline.expectedMonths })}
             </p>
           </div>
         </div>
@@ -943,17 +1090,17 @@ function CIOView({ result }: { result: CalculationResult }) {
 
       {/* Risk heatmap */}
       <div>
-        <p className="text-sm font-semibold text-corbeau mb-3">Workstream risk indicators</p>
+        <p className="text-sm font-semibold text-corbeau mb-3">{m.cio.riskIndicatorsHeading}</p>
         <div className="space-y-3">
           {risks.map((r) => (
-            <RiskMeter key={r.label} label={r.label} score={r.score} />
+            <RiskMeter key={r.label} label={r.label} score={r.score} m={m} />
           ))}
         </div>
       </div>
 
       {/* Timeline phases */}
       <div>
-        <p className="text-sm font-semibold text-corbeau mb-3">Estimated delivery phases</p>
+        <p className="text-sm font-semibold text-corbeau mb-3">{m.cio.deliveryPhasesHeading}</p>
         <div className="space-y-2">
           {timeline.phases.map((phase, i) => (
             <div key={phase.name} className="flex items-center gap-3">
@@ -980,7 +1127,7 @@ function CIOView({ result }: { result: CalculationResult }) {
       {/* Key delivery drivers */}
       {drivers.length > 0 && (
         <div>
-          <p className="text-sm font-semibold text-corbeau mb-2">Key delivery drivers</p>
+          <p className="text-sm font-semibold text-corbeau mb-2">{m.cio.keyDriversHeading}</p>
           <ul className="space-y-1.5">
             {drivers.map((d, i) => (
               <li key={i} className="flex items-start gap-2 text-xs text-night">
@@ -997,16 +1144,41 @@ function CIOView({ result }: { result: CalculationResult }) {
 
 // ─── Country breakdown table ──────────────────────────────────────────────────
 
-function CountryTable({ result }: { result: CalculationResult }) {
+function CountryTable({
+  result,
+  m,
+  locale,
+}: {
+  result: CalculationResult;
+  m: CalcMsgs;
+  locale: Locale;
+}) {
   const { countryResults, inputs } = result;
   const currency = inputs.reportingCurrency;
+  const tag = bcp47(locale);
+
+  // Localised badge labels keyed by ComplexityLevel.
+  const complexityBadge = (c: ComplexityLevel) =>
+    c === "high" ? m.step3.rowComplexityHigh
+      : c === "medium" ? m.step3.rowComplexityMedium
+      : m.step3.rowComplexityLow;
+
+  const headers = [
+    m.countryTable.country,
+    m.countryTable.users,
+    m.countryTable.entities,
+    m.countryTable.wave,
+    m.countryTable.localComplexity,
+    m.countryTable.costShare,
+    m.countryTable.expectedCost,
+  ];
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-corbeau/10">
-            {["Country", "Users", "Entities", "Wave", "Local complexity", "Cost share", "Expected cost"].map((h) => (
+            {headers.map((h) => (
               <th key={h} className="text-left text-xs font-semibold text-eyebrow pb-2 pr-3 whitespace-nowrap">
                 {h}
               </th>
@@ -1020,7 +1192,7 @@ function CountryTable({ result }: { result: CalculationResult }) {
                 <span className="font-semibold text-corbeau text-xs">{r.countryName}</span>
                 <span className="text-[10px] text-moon block">{r.countryCode}</span>
               </td>
-              <td className="py-2.5 pr-3 font-mono text-xs text-night">{r.users.toLocaleString()}</td>
+              <td className="py-2.5 pr-3 font-mono text-xs text-night">{r.users.toLocaleString(tag)}</td>
               <td className="py-2.5 pr-3 font-mono text-xs text-night">{r.legalEntities}</td>
               <td className="py-2.5 pr-3 font-mono text-xs text-night">{r.wave}</td>
               <td className="py-2.5 pr-3">
@@ -1033,7 +1205,7 @@ function CountryTable({ result }: { result: CalculationResult }) {
                       : "bg-green-100 text-green-700"
                   }`}
                 >
-                  {r.localizationComplexity}
+                  {complexityBadge(r.localizationComplexity)}
                 </span>
               </td>
               <td className="py-2.5 pr-3">
@@ -1055,7 +1227,7 @@ function CountryTable({ result }: { result: CalculationResult }) {
                   {r.localCurrencyCode !== currency && (
                     <>
                       ≈{r.localCurrencyCode}{" "}
-                      {new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(
+                      {new Intl.NumberFormat(tag, { maximumFractionDigits: 0 }).format(
                         r.localCurrencyAmount.expected
                       )}
                     </>
@@ -1072,26 +1244,36 @@ function CountryTable({ result }: { result: CalculationResult }) {
 
 // ─── Assumptions panel ────────────────────────────────────────────────────────
 
-function AssumptionsPanel({ result }: { result: CalculationResult }) {
+function AssumptionsPanel({
+  result,
+  m,
+  locale,
+}: {
+  result: CalculationResult;
+  m: CalcMsgs;
+  locale: Locale;
+}) {
   const { assumptionsSummary, inputs } = result;
-  const rows = [
-    ["Software cost / user / year", `~${formatCurrency(assumptionsSummary.softwareCostPerUserPerYear, "USD")} (${inputs.erpApproach}, ${inputs.deploymentModel})`],
-    ["SI base rate / user",          `~${formatCurrency(assumptionsSummary.siBlendedDayRate, "USD")} (${inputs.siPartnerTier}, ${inputs.deliveryModel})`],
-    ["Contingency",                  `${assumptionsSummary.contingencyPct}%`],
-    ["Total modules in scope",       String(assumptionsSummary.totalModules)],
-    ["Countries",                    String(assumptionsSummary.totalCountries)],
-    ["Planning horizon",             `${inputs.planningHorizon} years`],
-    ["Inflation assumption",         `${inputs.inflationPct}%`],
-    ["Internal team rate",           `$${new Intl.NumberFormat("en-US").format(600)}/day (fully loaded)`],
-    ["PMO / governance",             "7% of pre-contingency total"],
-    ["Ongoing AMS support",          "15% of implementation cost in Y2, 12% Y3+"],
+  const tag = bcp47(locale);
+  const rows: [string, string][] = [
+    [m.assumptions.softwareLabel,    fmt(m.assumptions.softwareValueTemplate, { rate: formatCurrency(assumptionsSummary.softwareCostPerUserPerYear, "USD"), approach: inputs.erpApproach, deployment: inputs.deploymentModel })],
+    [m.assumptions.siBaseLabel,      fmt(m.assumptions.siBaseValueTemplate,   { rate: formatCurrency(assumptionsSummary.siBlendedDayRate, "USD"), tier: inputs.siPartnerTier, model: inputs.deliveryModel })],
+    [m.assumptions.contingencyLabel, fmt(m.assumptions.contingencyValueTemplate, { pct: assumptionsSummary.contingencyPct })],
+    [m.assumptions.totalModulesLabel, String(assumptionsSummary.totalModules)],
+    [m.assumptions.countriesLabel,   String(assumptionsSummary.totalCountries)],
+    [m.assumptions.horizonLabel,     fmt(m.assumptions.horizonValueTemplate, { n: inputs.planningHorizon })],
+    [m.assumptions.inflationLabel,   fmt(m.assumptions.inflationValueTemplate, { pct: inputs.inflationPct })],
+    [m.assumptions.internalTeamRateLabel, fmt(m.assumptions.internalTeamRateValueTemplate, { rate: new Intl.NumberFormat(tag).format(600) })],
+    [m.assumptions.pmoLabel,         m.assumptions.pmoValue],
+    [m.assumptions.amsLabel,         m.assumptions.amsValue],
   ];
   return (
     <div className="space-y-4">
+      {/* Intro mentions the source file path inline as code (do-not-translate).
+          Path is appended in parentheses after the translated intro body. */}
       <p className="text-sm text-night leading-relaxed">
-        All values below are the directional assumptions used in this estimate.
-        They are calibrated to typical market rates — not specific vendor quotes.
-        Edit the assumptions source file (<code className="text-xs bg-bone px-1 py-0.5 rounded font-mono">src/lib/erp-calculator/assumptions.ts</code>) to adjust the model.
+        {m.assumptions.introBody}{" "}
+        (<code className="text-xs bg-bone px-1 py-0.5 rounded font-mono">src/lib/erp-calculator/assumptions.ts</code>)
       </p>
       <div className="rounded-xl border border-corbeau/10 overflow-hidden">
         {rows.map(([label, value], i) => (
@@ -1115,15 +1297,20 @@ function AssumptionsPanel({ result }: { result: CalculationResult }) {
 function ScenarioCompare({
   saved,
   onClear,
+  m,
+  locale,
 }: {
   saved: SavedScenario[];
   onClear: (id: string) => void;
+  m: CalcMsgs;
+  locale: Locale;
 }) {
+  const tag = bcp47(locale);
   if (saved.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-corbeau/20 py-12 text-center">
-        <p className="text-eyebrow text-sm">No saved scenarios yet.</p>
-        <p className="text-xs text-moon mt-1">Run a calculation and click "Save scenario" to compare.</p>
+        <p className="text-eyebrow text-sm">{m.scenario.emptyTitle}</p>
+        <p className="text-xs text-moon mt-1">{m.scenario.emptyBody}</p>
       </div>
     );
   }
@@ -1135,21 +1322,21 @@ function ScenarioCompare({
           <div className="flex items-start justify-between gap-3 mb-4">
             <div>
               <p className="font-display font-bold text-corbeau text-sm">{s.label}</p>
-              <p className="text-xs text-eyebrow">{new Date(s.savedAt).toLocaleString()}</p>
+              <p className="text-xs text-eyebrow">{new Date(s.savedAt).toLocaleString(tag)}</p>
             </div>
             <button
               type="button"
               onClick={() => onClear(s.id)}
               className="text-xs text-eyebrow hover:text-canyon"
             >
-              Remove
+              {m.scenario.removeCta}
             </button>
           </div>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: "Year 1",    value: formatCurrency(s.result.totalY1.expected, s.result.inputs.reportingCurrency, true) },
-              { label: "3-yr TCO", value: formatCurrency(s.result.tco3yr.expected, s.result.inputs.reportingCurrency, true) },
-              { label: "Timeline", value: `${s.result.timeline.expectedMonths}m` },
+              { label: m.scenario.statY1,       value: formatCurrency(s.result.totalY1.expected, s.result.inputs.reportingCurrency, true) },
+              { label: m.scenario.statTco3yr,  value: formatCurrency(s.result.tco3yr.expected, s.result.inputs.reportingCurrency, true) },
+              { label: m.scenario.statTimeline, value: `${s.result.timeline.expectedMonths}m` },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
                 <p className="text-[10px] text-eyebrow uppercase tracking-wide">{stat.label}</p>
@@ -1165,16 +1352,19 @@ function ScenarioCompare({
 
 // ─── Results panel ────────────────────────────────────────────────────────────
 
-const RESULT_TABS = [
-  { id: "breakdown",   label: "Cost breakdown" },
-  { id: "cfo",        label: "CFO view" },
-  { id: "cio",        label: "CIO view" },
-  { id: "countries",  label: "Countries" },
-  { id: "scenarios",  label: "Scenarios" },
-  { id: "assumptions", label: "Assumptions" },
-] as const;
-
-type ResultTab = typeof RESULT_TABS[number]["id"];
+// Tab ID stays static (used in state). Labels resolved from MESSAGES at render.
+type ResultTab = "breakdown" | "cfo" | "cio" | "countries" | "scenarios" | "assumptions";
+const RESULT_TAB_IDS: ResultTab[] = ["breakdown", "cfo", "cio", "countries", "scenarios", "assumptions"];
+function resultTabLabel(m: CalcMsgs, id: ResultTab): string {
+  switch (id) {
+    case "breakdown":   return m.tabs.breakdown;
+    case "cfo":         return m.tabs.cfo;
+    case "cio":         return m.tabs.cio;
+    case "countries":   return m.tabs.countries;
+    case "scenarios":   return m.tabs.scenarios;
+    case "assumptions": return m.tabs.assumptions;
+  }
+}
 
 function ResultsPanel({
   result,
@@ -1182,41 +1372,53 @@ function ResultsPanel({
   onSave,
   onClearScenario,
   onReset,
+  m,
+  locale,
 }: {
   result: CalculationResult;
   saved: SavedScenario[];
   onSave: () => void;
   onClearScenario: (id: string) => void;
   onReset: () => void;
+  m: CalcMsgs;
+  locale: Locale;
 }) {
   const [tab, setTab] = useState<ResultTab>("breakdown");
   const printRef = useRef<HTMLDivElement>(null);
   const currency = result.inputs.reportingCurrency;
+  const tag = bcp47(locale);
 
   const handleCopyEmail = useCallback(() => {
-    const text = `ERP Programme Estimate — ${new Date().toLocaleDateString()}
+    // Build the email body from per-locale MESSAGES so the share copy reads
+    // in the user's language. Variables (currency values, counts, dates)
+    // stay numeric / locale-formatted.
+    const userCountFmt = result.inputs.userCount.toLocaleString(tag);
+    const expectedInline = fmt(m.email.expectedInlineTemplate, {
+      value: formatCurrency(result.totalY1.expected, currency, true),
+    });
+    const text = `${m.email.titlePrefix} — ${new Date().toLocaleDateString(tag)}
 
-Company: ${result.inputs.companyName || "—"}
-ERP approach: ${result.inputs.erpApproach} | Deployment: ${result.inputs.deploymentModel}
-Countries: ${result.countryResults.length} | Users: ${result.inputs.userCount.toLocaleString()}
-Modules: ${result.inputs.modules.length}
+${m.email.companyPrefix} ${result.inputs.companyName || m.email.companyDefault}
+${m.email.erpApproachPrefix} ${result.inputs.erpApproach} | ${m.email.deploymentLabel} ${result.inputs.deploymentModel}
+${m.email.countriesPrefix} ${result.countryResults.length} | ${m.email.usersLabel} ${userCountFmt}
+${m.email.modulesPrefix} ${result.inputs.modules.length}
 
-Year 1 estimate: ${formatCurrency(result.totalY1.low, currency, true)}–${formatCurrency(result.totalY1.high, currency, true)} (expected: ${formatCurrency(result.totalY1.expected, currency, true)})
-3-year TCO: ${formatCurrency(result.tco3yr.expected, currency, true)}
-5-year TCO: ${formatCurrency(result.tco5yr.expected, currency, true)}
-Implementation timeline: ${result.timeline.minimumMonths}–${result.timeline.maximumMonths} months
-Complexity score: ${result.complexityScore}/100
+${m.email.y1EstimatePrefix} ${formatCurrency(result.totalY1.low, currency, true)}–${formatCurrency(result.totalY1.high, currency, true)} ${expectedInline}
+${m.email.tco3yrPrefix} ${formatCurrency(result.tco3yr.expected, currency, true)}
+${m.email.tco5yrPrefix} ${formatCurrency(result.tco5yr.expected, currency, true)}
+${m.email.timelinePrefix} ${result.timeline.minimumMonths}–${result.timeline.maximumMonths} ${m.email.monthsSuffix}
+${m.email.complexityPrefix} ${result.complexityScore}${m.exec.scoreSuffix}
 
-These are directional budget estimates for early business-case planning.
-Not a vendor quote. Generated: ${new Date(result.generatedAt).toLocaleString()}`;
+${m.email.disclaimerLine}
+${m.email.generatedPrefix} ${new Date(result.generatedAt).toLocaleString(tag)}`;
     navigator.clipboard.writeText(text).catch(() => {});
-  }, [result, currency]);
+  }, [result, currency, m, tag]);
 
   return (
     <div ref={printRef}>
-      <DisclaimerBanner />
+      <DisclaimerBanner m={m} />
 
-      <ExecSummary result={result} />
+      <ExecSummary result={result} m={m} />
 
       <WarningBanner warnings={result.warnings} />
 
@@ -1228,46 +1430,46 @@ Not a vendor quote. Generated: ${new Date(result.generatedAt).toLocaleString()}`
           disabled={saved.length >= 3}
           className="cc-btn-secondary rounded-md px-4 py-2 text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Save scenario {saved.length > 0 && `(${saved.length}/3)`}
+          {m.actions.saveScenario} {saved.length > 0 && fmt(m.actions.saveScenarioCountTemplate, { n: saved.length })}
         </button>
         <button
           type="button"
           onClick={handleCopyEmail}
           className="cc-btn-secondary rounded-md px-4 py-2 text-xs font-semibold"
         >
-          Copy summary
+          {m.actions.copySummary}
         </button>
         <button
           type="button"
           onClick={() => window.print()}
           className="cc-btn-secondary rounded-md px-4 py-2 text-xs font-semibold"
         >
-          Print / export
+          {m.actions.printExport}
         </button>
         <button
           type="button"
           onClick={onReset}
           className="ml-auto text-xs text-eyebrow hover:text-canyon px-3 py-2"
         >
-          ← Start over
+          {m.actions.startOver}
         </button>
       </div>
 
       {/* Tabs */}
       <div className="border-b border-corbeau/10 mb-6 overflow-x-auto">
         <div className="flex gap-0 min-w-max">
-          {RESULT_TABS.map((t) => (
+          {RESULT_TAB_IDS.map((id) => (
             <button
-              key={t.id}
+              key={id}
               type="button"
-              onClick={() => setTab(t.id)}
+              onClick={() => setTab(id)}
               className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${
-                tab === t.id
+                tab === id
                   ? "border-papaya text-papaya"
                   : "border-transparent text-eyebrow hover:text-night"
               }`}
             >
-              {t.label}
+              {resultTabLabel(m, id)}
             </button>
           ))}
         </div>
@@ -1276,15 +1478,15 @@ Not a vendor quote. Generated: ${new Date(result.generatedAt).toLocaleString()}`
       {/* Tab content */}
       <div>
         {tab === "breakdown" && (
-          <CostBreakdownChart breakdown={result.breakdown} currency={currency} />
+          <CostBreakdownChart breakdown={result.breakdown} currency={currency} m={m} />
         )}
-        {tab === "cfo" && <CFOView result={result} />}
-        {tab === "cio" && <CIOView result={result} />}
-        {tab === "countries" && <CountryTable result={result} />}
+        {tab === "cfo" && <CFOView result={result} m={m} />}
+        {tab === "cio" && <CIOView result={result} m={m} />}
+        {tab === "countries" && <CountryTable result={result} m={m} locale={locale} />}
         {tab === "scenarios" && (
-          <ScenarioCompare saved={saved} onClear={onClearScenario} />
+          <ScenarioCompare saved={saved} onClear={onClearScenario} m={m} locale={locale} />
         )}
-        {tab === "assumptions" && <AssumptionsPanel result={result} />}
+        {tab === "assumptions" && <AssumptionsPanel result={result} m={m} locale={locale} />}
       </div>
     </div>
   );
@@ -1295,122 +1497,125 @@ Not a vendor quote. Generated: ${new Date(result.generatedAt).toLocaleString()}`
 function Step1({
   inputs,
   set,
+  m,
 }: {
   inputs: CalculatorInputs;
   set: (patch: Partial<CalculatorInputs>) => void;
+  m: CalcMsgs;
 }) {
+  const s = m.step1;
   return (
     <div className="space-y-6">
-      <SectionTitle>Company profile</SectionTitle>
+      <SectionTitle>{m.section.companyProfile}</SectionTitle>
 
       <FieldWrap>
-        <Label htmlFor="cname">Company name <span className="text-moon font-normal">(optional)</span></Label>
-        <TextInput id="cname" value={inputs.companyName} onChange={(v) => set({ companyName: v })} placeholder="e.g. Acme Industries" />
+        <Label htmlFor="cname">{s.companyNameLabel} <span className="text-moon font-normal">{s.companyNameOptional}</span></Label>
+        <TextInput id="cname" value={inputs.companyName} onChange={(v) => set({ companyName: v })} placeholder={s.companyNamePlaceholder} />
       </FieldWrap>
 
       <FieldWrap>
-        <Label>Annual revenue</Label>
+        <Label>{s.revenueLabel}</Label>
         <RadioGroup<RevenueRange>
           value={inputs.revenueRange}
           onChange={(v) => set({ revenueRange: v })}
           options={[
-            { value: "under-10m",  label: "Under $10M" },
-            { value: "10m-50m",    label: "$10M – $50M" },
-            { value: "50m-250m",   label: "$50M – $250M" },
-            { value: "250m-1b",    label: "$250M – $1B" },
-            { value: "1b-5b",      label: "$1B – $5B" },
-            { value: "over-5b",    label: "Over $5B" },
+            { value: "under-10m",  label: s.revenueUnder10m },
+            { value: "10m-50m",    label: s.revenue10m50m },
+            { value: "50m-250m",   label: s.revenue50m250m },
+            { value: "250m-1b",    label: s.revenue250m1b },
+            { value: "1b-5b",      label: s.revenue1b5b },
+            { value: "over-5b",    label: s.revenueOver5b },
           ]}
           cols={3}
         />
-        <Hint>Used to calculate cost as % of revenue — a common board-level metric.</Hint>
+        <Hint>{s.revenueHint}</Hint>
       </FieldWrap>
 
       <div className="grid grid-cols-2 gap-4">
         <FieldWrap>
-          <Label>Total employees</Label>
+          <Label>{s.employeesLabel}</Label>
           <Select
             value={String(inputs.employeeCount) as any}
             onChange={(v) => set({ employeeCount: Number(v) })}
             options={[
-              { value: "50",     label: "Under 100" },
-              { value: "250",    label: "100 – 500" },
-              { value: "750",    label: "500 – 1,000" },
-              { value: "2000",   label: "1,000 – 3,000" },
-              { value: "5000",   label: "3,000 – 10,000" },
-              { value: "15000",  label: "10,000+" },
+              { value: "50",     label: s.employeesUnder100 },
+              { value: "250",    label: s.employees100to500 },
+              { value: "750",    label: s.employees500to1000 },
+              { value: "2000",   label: s.employees1000to3000 },
+              { value: "5000",   label: s.employees3000to10000 },
+              { value: "15000",  label: s.employeesOver10000 },
             ]}
           />
         </FieldWrap>
 
         <FieldWrap>
-          <Label htmlFor="users">ERP user count</Label>
-          <NumberInput id="users" value={inputs.userCount} onChange={(v) => set({ userCount: v })} min={5} max={100000} placeholder="e.g. 250" />
-          <Hint>Named users who will access the system.</Hint>
+          <Label htmlFor="users">{s.userCountLabel}</Label>
+          <NumberInput id="users" value={inputs.userCount} onChange={(v) => set({ userCount: v })} min={5} max={100000} placeholder={s.userCountPlaceholder} />
+          <Hint>{s.userCountHint}</Hint>
         </FieldWrap>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <FieldWrap>
-          <Label htmlFor="ents">Legal entities</Label>
+          <Label htmlFor="ents">{s.legalEntitiesLabel}</Label>
           <NumberInput id="ents" value={inputs.legalEntities} onChange={(v) => set({ legalEntities: Math.max(1, v) })} min={1} max={500} />
-          <Hint>Separate statutory companies, subsidiaries, or JVs.</Hint>
+          <Hint>{s.legalEntitiesHint}</Hint>
         </FieldWrap>
         <FieldWrap>
-          <Label htmlFor="bus">Business units</Label>
+          <Label htmlFor="bus">{s.businessUnitsLabel}</Label>
           <NumberInput id="bus" value={inputs.businessUnits} onChange={(v) => set({ businessUnits: Math.max(1, v) })} min={1} max={200} />
-          <Hint>Divisions or segments needing separate cost centre / P&L views.</Hint>
+          <Hint>{s.businessUnitsHint}</Hint>
         </FieldWrap>
       </div>
 
       <FieldWrap>
-        <Label>Industry</Label>
+        <Label>{s.industryLabel}</Label>
         <Select<Industry>
           value={inputs.industry}
           onChange={(v) => set({ industry: v })}
           options={[
-            { value: "manufacturing",       label: "Manufacturing" },
-            { value: "retail",              label: "Retail & Distribution" },
-            { value: "financial-services",  label: "Financial Services" },
-            { value: "aviation-transport",  label: "Aviation & Transport" },
-            { value: "government-public",   label: "Government & Public Sector" },
-            { value: "utilities-energy",    label: "Utilities & Energy" },
-            { value: "oil-gas",             label: "Oil & Gas" },
-            { value: "healthcare",          label: "Healthcare" },
-            { value: "telecom",             label: "Telecom" },
-            { value: "construction",        label: "Construction & Real Estate" },
-            { value: "professional-services", label: "Professional Services" },
-            { value: "other",               label: "Other" },
+            { value: "manufacturing",       label: s.industryManufacturing },
+            { value: "retail",              label: s.industryRetail },
+            { value: "financial-services",  label: s.industryFinancial },
+            { value: "aviation-transport",  label: s.industryAviation },
+            { value: "government-public",   label: s.industryGovernment },
+            { value: "utilities-energy",    label: s.industryUtilities },
+            { value: "oil-gas",             label: s.industryOilGas },
+            { value: "healthcare",          label: s.industryHealthcare },
+            { value: "telecom",             label: s.industryTelecom },
+            { value: "construction",        label: s.industryConstruction },
+            { value: "professional-services", label: s.industryProfessional },
+            { value: "other",               label: s.industryOther },
           ]}
         />
       </FieldWrap>
 
       <FieldWrap>
-        <Label>Current ERP maturity</Label>
+        <Label>{s.maturityLabel}</Label>
         <RadioGroup<ErpMaturity>
           value={inputs.erpMaturity}
           onChange={(v) => set({ erpMaturity: v })}
           options={[
-            { value: "spreadsheets",      label: "Spreadsheets",        detail: "No ERP. Data in Excel / Access." },
-            { value: "legacy-erp",        label: "Legacy ERP",          detail: "ECC, EBS R12, Axapta, etc." },
-            { value: "mixed-landscape",   label: "Mixed landscape",     detail: "Multiple systems in parallel." },
-            { value: "modern-cloud-erp",  label: "Modern cloud ERP",    detail: "S/4HANA, D365, Fusion, etc." },
+            { value: "spreadsheets",      label: s.maturitySpreadsheetsLabel, detail: s.maturitySpreadsheetsDetail },
+            { value: "legacy-erp",        label: s.maturityLegacyLabel,        detail: s.maturityLegacyDetail },
+            { value: "mixed-landscape",   label: s.maturityMixedLabel,         detail: s.maturityMixedDetail },
+            { value: "modern-cloud-erp",  label: s.maturityModernLabel,        detail: s.maturityModernDetail },
           ]}
         />
-        <Hint>Starting from spreadsheets increases data migration effort significantly.</Hint>
+        <Hint>{s.maturityHint}</Hint>
       </FieldWrap>
 
       <FieldWrap>
-        <Label>Implementation type</Label>
+        <Label>{s.implTypeLabel}</Label>
         <RadioGroup<ImplementationType>
           value={inputs.implementationType}
           onChange={(v) => set({ implementationType: v })}
           options={[
-            { value: "first-time",   label: "First ERP",    detail: "No ERP in place." },
-            { value: "reimplementation", label: "Reimplementation", detail: "Replace existing ERP." },
-            { value: "consolidation", label: "Consolidation", detail: "Merge multiple ERPs." },
-            { value: "carve-out",     label: "Carve-out",    detail: "Separate a division." },
-            { value: "post-merger",   label: "Post-merger",  detail: "Harmonise after M&A." },
+            { value: "first-time",       label: s.implTypeFirstLabel,      detail: s.implTypeFirstDetail },
+            { value: "reimplementation", label: s.implTypeReimplLabel,     detail: s.implTypeReimplDetail },
+            { value: "consolidation",    label: s.implTypeConsolLabel,     detail: s.implTypeConsolDetail },
+            { value: "carve-out",        label: s.implTypeCarveLabel,      detail: s.implTypeCarveDetail },
+            { value: "post-merger",      label: s.implTypePostMergerLabel, detail: s.implTypePostMergerDetail },
           ]}
         />
       </FieldWrap>
@@ -1423,78 +1628,65 @@ function Step1({
 function Step2({
   inputs,
   set,
+  m,
 }: {
   inputs: CalculatorInputs;
   set: (patch: Partial<CalculatorInputs>) => void;
+  m: CalcMsgs;
 }) {
+  const s = m.step2;
   return (
     <div className="space-y-6">
-      <SectionTitle>Program scope</SectionTitle>
+      <SectionTitle>{m.section.programScope}</SectionTitle>
 
       <FieldWrap>
-        <Label>ERP approach</Label>
+        <Label>{s.erpApproachLabel}</Label>
         <RadioGroup<ErpApproach>
           value={inputs.erpApproach}
           onChange={(v) => set({ erpApproach: v })}
           options={[
-            { value: "sap",              label: "SAP",              detail: "S/4HANA or RISE/GROW" },
-            { value: "oracle",           label: "Oracle",           detail: "Fusion Cloud / EBS" },
-            { value: "microsoft",        label: "Microsoft",        detail: "Dynamics 365" },
-            { value: "infor",            label: "Infor",            detail: "CloudSuite / M3" },
-            { value: "other",            label: "Other",            detail: "IFS, NetSuite, etc." },
-            { value: "vendor-agnostic",  label: "Not decided",      detail: "Evaluating options" },
+            { value: "sap",              label: s.erpApproachSapLabel,       detail: s.erpApproachSapDetail },
+            { value: "oracle",           label: s.erpApproachOracleLabel,    detail: s.erpApproachOracleDetail },
+            { value: "microsoft",        label: s.erpApproachMicrosoftLabel, detail: s.erpApproachMicrosoftDetail },
+            { value: "infor",            label: s.erpApproachInforLabel,     detail: s.erpApproachInforDetail },
+            { value: "other",            label: s.erpApproachOtherLabel,     detail: s.erpApproachOtherDetail },
+            { value: "vendor-agnostic",  label: s.erpApproachAgnosticLabel,  detail: s.erpApproachAgnosticDetail },
           ]}
         />
       </FieldWrap>
 
       <FieldWrap>
-        <Label>Deployment model</Label>
+        <Label>{s.deploymentLabel}</Label>
         <RadioGroup<DeploymentModel>
           value={inputs.deploymentModel}
           onChange={(v) => set({ deploymentModel: v })}
           options={[
-            { value: "cloud-saas",    label: "Cloud SaaS",      detail: "Multi-tenant. Low infra." },
-            { value: "private-cloud", label: "Private cloud",   detail: "Dedicated, managed cloud." },
-            { value: "on-premise",    label: "On-premise",      detail: "Own data centre." },
-            { value: "hybrid",        label: "Hybrid",          detail: "Mix of above." },
+            { value: "cloud-saas",    label: s.deploymentCloudLabel,   detail: s.deploymentCloudDetail },
+            { value: "private-cloud", label: s.deploymentPrivateLabel, detail: s.deploymentPrivateDetail },
+            { value: "on-premise",    label: s.deploymentOnPremLabel,  detail: s.deploymentOnPremDetail },
+            { value: "hybrid",        label: s.deploymentHybridLabel,  detail: s.deploymentHybridDetail },
           ]}
         />
-        <Hint>Cloud SaaS typically has lower upfront cost but higher ongoing fees. On-premise flips that ratio over 5+ years.</Hint>
+        <Hint>{s.deploymentHint}</Hint>
       </FieldWrap>
 
       <FieldWrap>
-        <Label>Modules in scope</Label>
-        <ModuleGrid selected={inputs.modules} onChange={(v) => set({ modules: v })} />
-        <Hint>Select all modules you expect to implement. More modules = longer timeline and higher cost, but not linearly.</Hint>
+        <Label>{s.modulesLabel}</Label>
+        <ModuleGrid selected={inputs.modules} onChange={(v) => set({ modules: v })} m={m} />
+        <Hint>{s.modulesHint}</Hint>
       </FieldWrap>
 
-      <SectionTitle>Complexity levels</SectionTitle>
+      <SectionTitle>{m.section.complexityLevels}</SectionTitle>
       <p className="text-sm text-eyebrow -mt-3 mb-4">
-        These four axes are the biggest cost drivers after module count. Be honest — under-scoping complexity is the most common cause of overruns.
+        {m.section.complexityIntro}
       </p>
 
       {(
         [
-          {
-            key: "customizationLevel" as const,
-            label: "Custom development",
-            hint: "Low = standard config only. High = significant ABAP / extensions / custom Fiori.",
-          },
-          {
-            key: "integrationComplexity" as const,
-            label: "Integration complexity",
-            hint: "Low = few simple integrations. High = 20+ interfaces, legacy systems, B2B partners.",
-          },
-          {
-            key: "dataMigrationComplexity" as const,
-            label: "Data migration complexity",
-            hint: "Low = clean master data from one source. High = multiple legacy systems, poor data quality.",
-          },
-          {
-            key: "reportingComplexity" as const,
-            label: "Reporting & compliance complexity",
-            hint: "Low = standard reports suffice. High = complex statutory reporting, multi-GAAP, group consolidation.",
-          },
+          { key: "customizationLevel" as const,     label: s.customizationLevelLabel, hint: s.customizationLevelHint },
+          { key: "integrationComplexity" as const,  label: s.integrationLabel,        hint: s.integrationHint },
+          { key: "dataMigrationComplexity" as const, label: s.dataMigrationLabel,     hint: s.dataMigrationHint },
+          { key: "reportingComplexity" as const,    label: s.reportingLabel,          hint: s.reportingHint },
         ] as const
       ).map(({ key, label, hint }) => (
         <FieldWrap key={key}>
@@ -1503,9 +1695,9 @@ function Step2({
             value={inputs[key]}
             onChange={(v) => set({ [key]: v })}
             options={[
-              { value: "low",    label: "Low",    detail: "Standard scope" },
-              { value: "medium", label: "Medium", detail: "Some deviations" },
-              { value: "high",   label: "High",   detail: "Significant complexity" },
+              { value: "low",    label: s.complexityLow,    detail: s.complexityLowDetail },
+              { value: "medium", label: s.complexityMedium, detail: s.complexityMediumDetail },
+              { value: "high",   label: s.complexityHigh,   detail: s.complexityHighDetail },
             ]}
             cols={3}
           />
@@ -1514,22 +1706,22 @@ function Step2({
       ))}
 
       <FieldWrap>
-        <Label>Target go-live timeline</Label>
+        <Label>{s.timelineLabel}</Label>
         <Select
           value={String(inputs.targetTimelineMonths) as any}
           onChange={(v) => set({ targetTimelineMonths: Number(v) })}
           options={[
-            { value: "6",  label: "6 months" },
-            { value: "9",  label: "9 months" },
-            { value: "12", label: "12 months" },
-            { value: "15", label: "15 months" },
-            { value: "18", label: "18 months" },
-            { value: "24", label: "24 months" },
-            { value: "30", label: "30 months" },
-            { value: "36", label: "36 months" },
+            { value: "6",  label: s.timeline6m },
+            { value: "9",  label: s.timeline9m },
+            { value: "12", label: s.timeline12m },
+            { value: "15", label: s.timeline15m },
+            { value: "18", label: s.timeline18m },
+            { value: "24", label: s.timeline24m },
+            { value: "30", label: s.timeline30m },
+            { value: "36", label: s.timeline36m },
           ]}
         />
-        <Hint>This is your target — the calculator will tell you if it's realistic given your scope.</Hint>
+        <Hint>{s.timelineHint}</Hint>
       </FieldWrap>
     </div>
   );
@@ -1540,10 +1732,13 @@ function Step2({
 function Step3({
   inputs,
   set,
+  m,
 }: {
   inputs: CalculatorInputs;
   set: (patch: Partial<CalculatorInputs>) => void;
+  m: CalcMsgs;
 }) {
+  const s = m.step3;
   const addCountry = () => {
     const newEntry: CountryEntry = {
       id:                     Math.random().toString(36).slice(2),
@@ -1567,16 +1762,17 @@ function Step3({
 
   return (
     <div className="space-y-6">
-      <SectionTitle>Country rollout</SectionTitle>
+      <SectionTitle>{m.section.countryRollout}</SectionTitle>
 
       <FieldWrap>
-        <Label>Headquarters country</Label>
+        <Label>{s.hqCountryLabel}</Label>
         <select
           value={inputs.hqCountryCode}
           onChange={(e) => set({ hqCountryCode: e.target.value })}
           className="w-full rounded border border-corbeau/15 bg-paper text-corbeau text-sm px-3 py-2.5 focus:outline-none focus:border-papaya"
-          aria-label="HQ country"
+          aria-label={s.hqCountryAria}
         >
+          {/* REGIONS strings stay inline for Pass 2b-1a (deferred to 2b-1b). */}
           {REGIONS.map((region) => (
             <optgroup key={region} label={region}>
               {getCountriesByRegion(region).map((c) => (
@@ -1587,27 +1783,25 @@ function Step3({
             </optgroup>
           ))}
         </select>
-        <Hint>
-          The HQ country is your primary go-live location (wave 1). Add rollout countries below.
-        </Hint>
+        <Hint>{s.hqCountryHint}</Hint>
       </FieldWrap>
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-corbeau">Additional rollout countries</p>
+          <p className="text-sm font-semibold text-corbeau">{s.additionalCountries}</p>
           <button
             type="button"
             onClick={addCountry}
             className="cc-btn-primary rounded-md px-3 py-1.5 text-xs font-semibold"
           >
-            + Add country
+            {s.addCountryCta}
           </button>
         </div>
 
         {inputs.countries.length === 0 ? (
           <div className="rounded-lg border border-dashed border-corbeau/20 py-8 text-center">
-            <p className="text-sm text-eyebrow">Single-country rollout</p>
-            <p className="text-xs text-moon mt-1">Add countries for a multi-country estimate.</p>
+            <p className="text-sm text-eyebrow">{s.emptyTitle}</p>
+            <p className="text-xs text-moon mt-1">{s.emptyHint}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -1617,6 +1811,7 @@ function Step3({
                 entry={ce}
                 onChange={(e) => updateCountry(ce.id, e)}
                 onRemove={() => removeCountry(ce.id)}
+                m={m}
               />
             ))}
           </div>
@@ -1625,11 +1820,8 @@ function Step3({
 
       {inputs.countries.length > 0 && (
         <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-xs text-blue-700">
-          <p className="font-semibold mb-0.5">Multi-country rollout detected</p>
-          <p>
-            Country cost indices, localisation complexity, and language requirements are all factored into
-            the estimate. Consider wave sequencing — the most complex countries should not all be in wave 1.
-          </p>
+          <p className="font-semibold mb-0.5">{s.multiDetectedTitle}</p>
+          <p>{s.multiDetectedBody}</p>
         </div>
       )}
     </div>
@@ -1641,74 +1833,77 @@ function Step3({
 function Step4({
   inputs,
   set,
+  m,
 }: {
   inputs: CalculatorInputs;
   set: (patch: Partial<CalculatorInputs>) => void;
+  m: CalcMsgs;
 }) {
+  const s = m.step4;
   return (
     <div className="space-y-6">
-      <SectionTitle>Delivery model</SectionTitle>
+      <SectionTitle>{m.section.deliveryModel}</SectionTitle>
 
       <FieldWrap>
-        <Label>SI partner tier</Label>
+        <Label>{s.siTierLabel}</Label>
         <RadioGroup<SIPartnerTier>
           value={inputs.siPartnerTier}
           onChange={(v) => set({ siPartnerTier: v })}
           options={[
-            { value: "boutique",   label: "Boutique SI",   detail: "Specialised, lower day rate, less process overhead." },
-            { value: "mid-tier",   label: "Mid-tier SI",   detail: "Good depth, reasonable structure." },
-            { value: "global-si",  label: "Global SI",     detail: "Big 4 / Tier 1. Highest rate, maximum coverage." },
+            { value: "boutique",   label: s.siTierBoutiqueLabel, detail: s.siTierBoutiqueDetail },
+            { value: "mid-tier",   label: s.siTierMidLabel,      detail: s.siTierMidDetail },
+            { value: "global-si",  label: s.siTierGlobalLabel,   detail: s.siTierGlobalDetail },
           ]}
           cols={3}
         />
-        <Hint>Day rate is not the biggest variable — team quality and methodology are. But partner tier has a direct multiplier on SI fees.</Hint>
+        <Hint>{s.siTierHint}</Hint>
       </FieldWrap>
 
       <FieldWrap>
-        <Label>Delivery model</Label>
+        <Label>{s.deliveryLabel}</Label>
         <RadioGroup<DeliveryModel>
           value={inputs.deliveryModel}
           onChange={(v) => set({ deliveryModel: v })}
           options={[
-            { value: "onshore",   label: "Onshore",  detail: "All consultants co-located." },
-            { value: "offshore",  label: "Offshore", detail: "Primarily low-cost delivery centre." },
-            { value: "hybrid",    label: "Hybrid",   detail: "Mix of onshore & offshore." },
+            { value: "onshore",   label: s.deliveryOnshoreLabel,  detail: s.deliveryOnshoreDetail },
+            { value: "offshore",  label: s.deliveryOffshoreLabel, detail: s.deliveryOffshoreDetail },
+            { value: "hybrid",    label: s.deliveryHybridLabel,   detail: s.deliveryHybridDetail },
           ]}
           cols={3}
         />
-        <Hint>Offshore delivery significantly reduces day rates but adds coordination overhead. Not recommended for high customisation or complex integrations.</Hint>
+        <Hint>{s.deliveryHint}</Hint>
       </FieldWrap>
 
       <FieldWrap>
-        <Label htmlFor="int-team">Internal project team size</Label>
-        <NumberInput id="int-team" value={inputs.internalTeamSize} onChange={(v) => set({ internalTeamSize: Math.max(1, v) })} min={1} max={200} placeholder="e.g. 10" />
-        <Hint>Number of full-time internal staff allocated to the programme (not the SI team). Include project managers, process leads, data owners, and change champions.</Hint>
+        <Label htmlFor="int-team">{s.internalTeamLabel}</Label>
+        <NumberInput id="int-team" value={inputs.internalTeamSize} onChange={(v) => set({ internalTeamSize: Math.max(1, v) })} min={1} max={200} placeholder={s.internalTeamPlaceholder} />
+        <Hint>{s.internalTeamHint}</Hint>
       </FieldWrap>
 
       <FieldWrap>
-        <Label>Change management intensity</Label>
+        <Label>{s.changeMgmtLabel}</Label>
         <RadioGroup<ChangeMgmtIntensity>
           value={inputs.changeMgmtIntensity}
           onChange={(v) => set({ changeMgmtIntensity: v })}
           options={[
-            { value: "light",    label: "Light",    detail: "Comms and basic training." },
-            { value: "standard", label: "Standard", detail: "Change network, role-based training, exec sponsorship." },
-            { value: "heavy",    label: "Heavy",    detail: "Full OCM: impact assessment, readiness surveys, change agents." },
+            { value: "light",    label: s.changeMgmtLightLabel,    detail: s.changeMgmtLightDetail },
+            { value: "standard", label: s.changeMgmtStandardLabel, detail: s.changeMgmtStandardDetail },
+            { value: "heavy",    label: s.changeMgmtHeavyLabel,    detail: s.changeMgmtHeavyDetail },
           ]}
           cols={3}
         />
-        <Hint>Post-go-live adoption failure is the most common cause of extended hypercare. Under-investing in change management consistently costs more than the investment would have.</Hint>
+        <Hint>{s.changeMgmtHint}</Hint>
       </FieldWrap>
 
       <FieldWrap>
-        <Label>Training model</Label>
+        <Label>{s.trainingLabel}</Label>
         <RadioGroup<TrainingModel>
           value={inputs.trainingModel}
           onChange={(v) => set({ trainingModel: v })}
           options={[
-            { value: "train-the-trainer", label: "Train-the-trainer", detail: "Lowest cost. Internal trainers cascade." },
-            { value: "role-based",        label: "Role-based",        detail: "All users trained by role." },
-            { value: "intensive",         label: "Intensive",         detail: "Multiple sessions, simulations, job aids." },
+            { value: "train-the-trainer", label: s.trainingT3Label,        detail: s.trainingT3Detail },
+            { value: "role-based",        label: s.trainingRoleLabel,      detail: s.trainingRoleDetail },
+            { value: "intensive",         label: s.trainingIntensiveLabel, detail: s.trainingIntensiveDetail },
           ]}
           cols={3}
         />
@@ -1722,32 +1917,35 @@ function Step4({
 function Step5({
   inputs,
   set,
+  m,
 }: {
   inputs: CalculatorInputs;
   set: (patch: Partial<CalculatorInputs>) => void;
+  m: CalcMsgs;
 }) {
+  const s = m.step5;
   return (
     <div className="space-y-6">
-      <SectionTitle>Financial assumptions</SectionTitle>
+      <SectionTitle>{m.section.financialAssumptions}</SectionTitle>
 
       <FieldWrap>
-        <Label>Planning horizon</Label>
+        <Label>{s.horizonLabel}</Label>
         <RadioGroup<PlanningHorizon>
           value={inputs.planningHorizon}
           onChange={(v) => set({ planningHorizon: v })}
           options={[
-            { value: 1, label: "1 year",  detail: "Year 1 only." },
-            { value: 3, label: "3 years", detail: "Typical TCO view." },
-            { value: 5, label: "5 years", detail: "Full payback horizon." },
+            { value: 1, label: s.horizon1Label, detail: s.horizon1Detail },
+            { value: 3, label: s.horizon3Label, detail: s.horizon3Detail },
+            { value: 5, label: s.horizon5Label, detail: s.horizon5Detail },
           ]}
           cols={3}
         />
-        <Hint>Board-level ERP business cases typically use a 5-year TCO horizon. For budget approval, 3 years is common.</Hint>
+        <Hint>{s.horizonHint}</Hint>
       </FieldWrap>
 
       <SliderField
-        label="Contingency budget"
-        hint="15–20% is standard for well-managed programmes. Under 10% is high risk. Over 25% may indicate scope uncertainty that should be resolved before budgeting."
+        label={s.contingencyLabel}
+        hint={s.contingencyHint}
         value={inputs.contingencyPct}
         onChange={(v) => set({ contingencyPct: v })}
         min={5}
@@ -1757,8 +1955,8 @@ function Step5({
       />
 
       <SliderField
-        label="Annual inflation assumption"
-        hint="Applied to ongoing support costs in years 2+. Typical range: 2–4% in stable markets, higher in emerging markets."
+        label={s.inflationLabel}
+        hint={s.inflationHint}
         value={inputs.inflationPct}
         onChange={(v) => set({ inflationPct: v })}
         min={0}
@@ -1768,8 +1966,8 @@ function Step5({
       />
 
       <SliderField
-        label="Discount rate (for NPV)"
-        hint="Used if you want to calculate net present value of the programme. Typical corporate hurdle rate: 8–12%."
+        label={s.discountLabel}
+        hint={s.discountHint}
         value={inputs.discountRate}
         onChange={(v) => set({ discountRate: v })}
         min={0}
@@ -1779,26 +1977,23 @@ function Step5({
       />
 
       <FieldWrap>
-        <Label>Reporting currency</Label>
+        <Label>{s.reportingCurrencyLabel}</Label>
         <Select
           value={inputs.reportingCurrency as any}
           onChange={(v) => set({ reportingCurrency: v })}
           options={[
-            { value: "USD", label: "USD — US Dollar" },
-            { value: "EUR", label: "EUR — Euro" },
-            { value: "GBP", label: "GBP — British Pound" },
-            { value: "AED", label: "AED — UAE Dirham" },
-            { value: "SAR", label: "SAR — Saudi Riyal" },
-            { value: "INR", label: "INR — Indian Rupee" },
-            { value: "AUD", label: "AUD — Australian Dollar" },
-            { value: "CAD", label: "CAD — Canadian Dollar" },
-            { value: "SGD", label: "SGD — Singapore Dollar" },
+            { value: "USD", label: s.currencyUsd },
+            { value: "EUR", label: s.currencyEur },
+            { value: "GBP", label: s.currencyGbp },
+            { value: "AED", label: s.currencyAed },
+            { value: "SAR", label: s.currencySar },
+            { value: "INR", label: s.currencyInr },
+            { value: "AUD", label: s.currencyAud },
+            { value: "CAD", label: s.currencyCad },
+            { value: "SGD", label: s.currencySgd },
           ]}
         />
-        <Hint>
-          The primary model calculates in USD. Country-level results also show local currency amounts.
-          Exchange rates used are approximate fixed rates from the config.
-        </Hint>
+        <Hint>{s.reportingCurrencyHint}</Hint>
       </FieldWrap>
     </div>
   );
@@ -1806,10 +2001,10 @@ function Step5({
 
 // ─── Preset scenario picker ───────────────────────────────────────────────────
 
-function PresetPicker({ onLoad }: { onLoad: (inputs: CalculatorInputs) => void }) {
+function PresetPicker({ onLoad, m }: { onLoad: (inputs: CalculatorInputs) => void; m: CalcMsgs }) {
   return (
     <div className="mb-8 p-5 rounded-xl bg-cream border border-corbeau/10">
-      <p className="text-xs font-semibold text-eyebrow uppercase tracking-widest mb-3">Load a preset scenario</p>
+      <p className="text-xs font-semibold text-eyebrow uppercase tracking-widest mb-3">{m.presetEyebrow}</p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {PRESET_SCENARIOS.map((s) => (
           <button
@@ -1835,9 +2030,11 @@ function PresetPicker({ onLoad }: { onLoad: (inputs: CalculatorInputs) => void }
 function LiveEstimateBadge({
   inputs,
   visible,
+  m,
 }: {
   inputs: CalculatorInputs;
   visible: boolean;
+  m: CalcMsgs;
 }) {
   const estimate = useMemo(() => {
     if (!visible || inputs.modules.length === 0 || inputs.userCount < 5) return null;
@@ -1854,7 +2051,7 @@ function LiveEstimateBadge({
     <div className="sticky top-0 z-10 -mx-1 mb-6 px-1">
       <div className="rounded-lg border border-papaya/30 bg-papaya/6 px-4 py-2.5 flex items-center justify-between gap-3 shadow-sm backdrop-blur-sm">
         <p className="text-xs text-night">
-          Live estimate:
+          {m.wizardLiveEstimatePrefix}
         </p>
         <p className="font-mono font-bold text-papaya text-sm">
           {formatCurrency(estimate.totalY1.low, inputs.reportingCurrency, true)}
@@ -1862,7 +2059,7 @@ function LiveEstimateBadge({
           {formatCurrency(estimate.totalY1.high, inputs.reportingCurrency, true)}
         </p>
         <p className="text-[10px] text-eyebrow hidden sm:block">
-          {estimate.timeline.expectedMonths}m · {estimate.complexityScore}/100 complexity
+          {fmt(m.wizardLiveEstimateMetricsSuffix, { months: estimate.timeline.expectedMonths, complexity: estimate.complexityScore })}
         </p>
       </div>
     </div>
@@ -1872,6 +2069,14 @@ function LiveEstimateBadge({
 // ─── Main calculator ──────────────────────────────────────────────────────────
 
 export default function ErpCostClient() {
+  const pathname = usePathname();
+  const locale = detectLocale(pathname);
+  const { messages } = useTranslation(locale);
+  // Strip the inline <noTranslate> wrapper tags once at the top of the
+  // component. Every consumer downstream sees the cleaned strings without
+  // having to remember to call stripMarkers at every render site.
+  const m = useMemo(() => deepStripMarkers(messages.calculator), [messages.calculator]);
+
   const [inputs, setInputsRaw] = useState<CalculatorInputs>(DEFAULT_INPUTS);
   const [step, setStep] = useState(1);
   const [completed, setCompleted] = useState<Set<number>>(new Set());
@@ -1978,6 +2183,8 @@ export default function ErpCostClient() {
           onSave={saveScenario}
           onClearScenario={clearScenario}
           onReset={reset}
+          m={m}
+          locale={locale}
         />
       </div>
     );
@@ -1986,17 +2193,20 @@ export default function ErpCostClient() {
   // Show wizard
   return (
     <div ref={containerRef}>
-      {/* Preset picker — only on step 1 */}
-      {step === 1 && <PresetPicker onLoad={loadPreset} />}
+      {/* Preset picker — only on step 1.
+          Preset scenario name/description/badge strings stay inline for
+          Pass 2b-1a; they live in scenarios.ts and will be externalised
+          in Pass 2b-1b along with calc-engine warnings. */}
+      {step === 1 && <PresetPicker onLoad={loadPreset} m={m} />}
 
       {/* Live estimate toggle */}
       {step > 1 && (
         <div className="flex items-center justify-end gap-2 mb-4">
-          <span className="text-xs text-eyebrow">Live estimate</span>
+          <span className="text-xs text-eyebrow">{m.wizardLiveEstimateLabel}</span>
           <button
             type="button"
             onClick={() => setShowLive(!showLive)}
-            aria-label="Toggle live estimate"
+            aria-label={m.wizardToggleLiveAria}
             className={`relative w-9 h-5 rounded-full transition-colors ${showLive ? "bg-papaya" : "bg-corbeau/20"}`}
           >
             <span
@@ -2006,17 +2216,17 @@ export default function ErpCostClient() {
         </div>
       )}
 
-      {showLive && step > 1 && <LiveEstimateBadge inputs={inputs} visible />}
+      {showLive && step > 1 && <LiveEstimateBadge inputs={inputs} visible m={m} />}
 
-      <StepIndicator current={step} onGo={goToStep} completed={completed} />
+      <StepIndicator current={step} onGo={goToStep} completed={completed} m={m} />
 
       {/* Step content */}
       <div className="bg-white rounded-xl border border-corbeau/10 p-6 md:p-8 shadow-sm">
-        {step === 1 && <Step1 inputs={inputs} set={set} />}
-        {step === 2 && <Step2 inputs={inputs} set={set} />}
-        {step === 3 && <Step3 inputs={inputs} set={set} />}
-        {step === 4 && <Step4 inputs={inputs} set={set} />}
-        {step === 5 && <Step5 inputs={inputs} set={set} />}
+        {step === 1 && <Step1 inputs={inputs} set={set} m={m} />}
+        {step === 2 && <Step2 inputs={inputs} set={set} m={m} />}
+        {step === 3 && <Step3 inputs={inputs} set={set} m={m} />}
+        {step === 4 && <Step4 inputs={inputs} set={set} m={m} />}
+        {step === 5 && <Step5 inputs={inputs} set={set} m={m} />}
 
         {/* Navigation */}
         <div className="flex items-center justify-between pt-6 mt-6 border-t border-corbeau/8">
@@ -2026,11 +2236,11 @@ export default function ErpCostClient() {
             disabled={step === 1}
             className="cc-btn-secondary rounded-md px-5 py-2.5 text-sm font-semibold disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            ← Back
+            {m.wizardNavBack}
           </button>
 
           <p className="text-xs text-eyebrow">
-            Step {step} of {STEPS.length}
+            {fmt(m.wizardStepOfLabel, { step, total: STEP_IDS.length })}
           </p>
 
           <button
@@ -2038,7 +2248,7 @@ export default function ErpCostClient() {
             onClick={goNext}
             className="cc-btn-primary rounded-md px-6 py-2.5 text-sm font-semibold"
           >
-            {step < 5 ? "Continue →" : "Calculate →"}
+            {step < 5 ? m.wizardNavContinue : m.wizardNavCalculate}
           </button>
         </div>
       </div>
