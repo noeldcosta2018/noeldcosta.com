@@ -925,6 +925,117 @@ export interface Messages {
       startOver: string;
     };
 
+    // Lib-side strings (Pass 2b-1b).
+    //
+    // calc-engine.ts warnings — 7 entries, each with workstream label +
+    // human-readable message + detail. Messages support {placeholder}
+    // tokens for runtime interpolation via interpolate(); calc-engine
+    // pre-resolves them per locale before returning WarningFlag[].
+    warnings: {
+      tooManyCountriesShortTimeline: {
+        workstream: string;                // "Timeline"
+        message: string;                   // "{countries} countries in {months} months is high-risk"
+        detail: string;
+      };
+      highCustomShortTimeline: {
+        workstream: string;
+        message: string;
+        detail: string;
+      };
+      lightChangeManyUsers: {
+        workstream: string;
+        message: string;
+        detail: string;
+      };
+      multiCountryPayrollWave1: {
+        workstream: string;
+        message: string;
+        detail: string;
+      };
+      spreadsheetsHighIntegration: {
+        workstream: string;
+        message: string;
+        detail: string;
+      };
+      postMergerShortTimeline: {
+        workstream: string;
+        message: string;
+        detail: string;
+      };
+      offshoreHighComplexity: {
+        workstream: string;
+        message: string;
+        detail: string;
+      };
+    };
+
+    // calc-engine.ts timeline phase names.
+    phases: {
+      prepareExplore: string;
+      designBlueprint: string;
+      buildConfigure: string;
+      test: string;
+      deployCutover: string;
+      hypercareStabilise: string;
+    };
+
+    // scenarios.ts preset descriptions.
+    presets: {
+      midMarketName: string;
+      midMarketDescription: string;
+      midMarketBadge: string;
+      regionalName: string;
+      regionalDescription: string;
+      regionalBadge: string;
+      globalName: string;
+      globalDescription: string;
+      globalBadge: string;
+    };
+
+    // countries.ts REGIONS labels. Keys match the internal English
+    // strings used to join country data — only the display label is
+    // translated. Individual country names stay inline as proper nouns.
+    regions: {
+      northAmerica: string;
+      europe: string;
+      middleEast: string;
+      middleEastAndAfrica: string;
+      asiaPacific: string;
+      africa: string;
+      latinAmerica: string;
+    };
+
+    // Enum-value humanisation for AssumptionsPanel. The panel renders
+    // raw input values ("sap", "cloud-saas") inline today; this provides
+    // short, presentational labels keyed by the same enum strings.
+    // <noTranslate> markers wrap proper-noun values.
+    enumLabels: {
+      erpApproach: {
+        sap: string;
+        oracle: string;
+        microsoft: string;
+        infor: string;
+        other: string;
+        "vendor-agnostic": string;
+      };
+      deploymentModel: {
+        "cloud-saas": string;
+        "private-cloud": string;
+        "on-premise": string;
+        hybrid: string;
+      };
+      siPartnerTier: {
+        boutique: string;
+        "mid-tier": string;
+        "global-si": string;
+      };
+      deliveryModel: {
+        onshore: string;
+        offshore: string;
+        hybrid: string;
+      };
+    };
+
     // Copy-summary email template.
     email: {
       titlePrefix: string;                 // "ERP Programme Estimate"
@@ -2071,6 +2182,126 @@ const EN: Messages = {
       copySummary: "Copy summary",
       printExport: "Print / export",
       startOver: "← Start over",
+    },
+
+    // Lib-side strings (Pass 2b-1b).
+    warnings: {
+      tooManyCountriesShortTimeline: {
+        workstream: "Timeline",
+        message: "{countries} countries in {months} months is high-risk",
+        detail:
+          "Multi-country rollouts typically require 18+ months for each wave of 2–3 countries. Compressing this timeline increases cutover risk significantly.",
+      },
+      highCustomShortTimeline: {
+        workstream: "Scope & Customisation",
+        message:
+          "High customisation with a sub-15-month timeline rarely delivers",
+        detail:
+          "Extensive custom development requires design, build, unit test, regression, and integration test cycles that don't compress well. Consider phasing customisation into a post-go-live release.",
+      },
+      lightChangeManyUsers: {
+        workstream: "Change Management",
+        message: "Light change management for 500+ users is under-resourced",
+        detail:
+          "Programmes with 500+ users need structured change networks, role-based training, and sustained executive sponsorship. Light-touch approaches typically extend post-go-live stabilisation by 2–3 months.",
+      },
+      multiCountryPayrollWave1: {
+        workstream: "Payroll & HR",
+        message:
+          "Multi-country payroll in wave 1 adds significant delivery risk",
+        detail:
+          "Payroll is legally and operationally critical. Implementing it in multiple countries simultaneously in the first wave is a known failure pattern. Phase payroll per country or use local payroll integration in wave 1.",
+      },
+      spreadsheetsHighIntegration: {
+        workstream: "Data & Integration",
+        message:
+          "High integration complexity from a spreadsheet baseline is high-risk",
+        detail:
+          "Migrating from spreadsheets while managing complex integrations means building data structures and connecting them simultaneously. Data quality work often takes longer than planned.",
+      },
+      postMergerShortTimeline: {
+        workstream: "Programme Scope",
+        message: "Post-merger harmonisation typically requires 24+ months",
+        detail:
+          "Aligning charts of accounts, legal entity structures, and business processes across merged entities is a significant programme. Sub-24-month targets are achievable but require tightly scoped phases.",
+      },
+      offshoreHighComplexity: {
+        workstream: "Delivery Model",
+        message:
+          "Offshore delivery works best with well-defined, stable scope",
+        detail:
+          "High customisation or integration complexity with a fully offshore team increases coordination overhead and rework. Consider a hybrid model with onshore architects and functional leads.",
+      },
+    },
+
+    // Timeline phase names.
+    phases: {
+      prepareExplore: "Prepare & explore",
+      designBlueprint: "Design & blueprint",
+      buildConfigure: "Build & configure",
+      test: "Test",
+      deployCutover: "Deploy & cutover",
+      hypercareStabilise: "Hypercare & stabilise",
+    },
+
+    // Preset scenarios (scenarios.ts).
+    // Company names ("Orion Manufacturing", "Meridian Capital Group",
+    // "Stratton Global Industries") are fictional example labels — kept
+    // inline in scenarios.ts as part of the scenario inputs (not in
+    // MESSAGES). The translatable parts are the scenario name,
+    // description, and badge below.
+    presets: {
+      midMarketName: "Mid-market single-country rollout",
+      midMarketDescription:
+        "A 400-person manufacturer moving from legacy ERP to <noTranslate>SAP S/4HANA Cloud</noTranslate>. UK-based, 4 modules, 14-month target.",
+      midMarketBadge: "Mid-market",
+      regionalName: "Regional 3-country rollout",
+      regionalDescription:
+        "A financial services group consolidating ERP across UAE, Saudi Arabia, and Qatar on <noTranslate>Oracle Cloud</noTranslate>. Complex tax and reporting scope.",
+      regionalBadge: "Regional",
+      globalName: "Global 8-country phased rollout",
+      globalDescription:
+        "A large manufacturing enterprise deploying <noTranslate>SAP S/4HANA</noTranslate> across North America, Europe, Middle East, and APAC in three delivery waves.",
+      globalBadge: "Global",
+    },
+
+    // Region labels (countries.ts).
+    regions: {
+      northAmerica: "North America",
+      europe: "Europe",
+      middleEast: "Middle East",
+      middleEastAndAfrica: "Middle East & Africa",
+      asiaPacific: "Asia-Pacific",
+      africa: "Africa",
+      latinAmerica: "Latin America",
+    },
+
+    // Enum value humanisation for AssumptionsPanel.
+    enumLabels: {
+      erpApproach: {
+        sap: "<noTranslate>SAP</noTranslate>",
+        oracle: "<noTranslate>Oracle</noTranslate>",
+        microsoft: "<noTranslate>Microsoft</noTranslate>",
+        infor: "<noTranslate>Infor</noTranslate>",
+        other: "Other",
+        "vendor-agnostic": "Not decided",
+      },
+      deploymentModel: {
+        "cloud-saas": "Cloud SaaS",
+        "private-cloud": "Private cloud",
+        "on-premise": "On-premise",
+        hybrid: "Hybrid",
+      },
+      siPartnerTier: {
+        boutique: "Boutique <noTranslate>SI</noTranslate>",
+        "mid-tier": "Mid-tier <noTranslate>SI</noTranslate>",
+        "global-si": "Global <noTranslate>SI</noTranslate>",
+      },
+      deliveryModel: {
+        onshore: "Onshore",
+        offshore: "Offshore",
+        hybrid: "Hybrid",
+      },
     },
 
     // Copy-summary email template.

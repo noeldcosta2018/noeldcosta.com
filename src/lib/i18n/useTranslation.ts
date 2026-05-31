@@ -123,6 +123,40 @@ export function stripMarkers(s: string): string {
   return s.replace(NO_TRANSLATE_TAG_RE, "");
 }
 
+// ── Template-string interpolation ─────────────────────────────────────
+//
+// Replaces `{key}` placeholder tokens in a MESSAGES template string with
+// the supplied values. Used for strings that interpolate runtime data —
+// the calculator's warning messages ("{count} countries in {months}
+// months is high-risk"), CIO drivers, assumption value templates, etc.
+// Pass 2b-1a introduced this pattern inline as a local `fmt()` helper in
+// ErpCostClient.tsx; Pass 2b-1b promotes it to a shared export so the
+// lib-side refactors (calc-engine warnings, scenarios.ts, etc.) use the
+// same pattern.
+//
+// Convention:
+//   - Returns the original template if a referenced key is missing from
+//     `values` — leaves the unresolved `{key}` visible in the rendered
+//     UI so the gap is obvious to a reviewer. Mirrors resolveDotPath's
+//     "return-the-key-on-failure" behaviour.
+//   - Number values are coerced to strings via String(). Callers that
+//     need locale-aware number formatting (thousand separators, currency)
+//     should pre-format with Intl.NumberFormat — keep that concern out
+//     of the template engine.
+//   - The regex matches `{wordChars}` only — no nested braces, no
+//     escapes. ICU-style plurals / select are NOT supported. If a future
+//     use case genuinely needs ICU semantics, flag it before adding a
+//     dependency; today every interpolated string in MESSAGES is simple
+//     positional substitution.
+export function interpolate(
+  template: string,
+  values: Record<string, string | number>,
+): string {
+  return template.replace(/\{(\w+)\}/g, (_, key: string) =>
+    key in values ? String(values[key]) : `{${key}}`,
+  );
+}
+
 // ── Locale guard ──────────────────────────────────────────────────────
 //
 // Re-export for components that need to narrow a `string` URL segment

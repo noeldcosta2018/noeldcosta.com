@@ -7,8 +7,9 @@ import { useState, useCallback, useId, useMemo, useRef } from "react";
 import { usePathname } from "next/navigation";
 import FadeUp from "@/components/article/FadeUp";
 import { calculate, formatCurrency, formatBand } from "@/lib/erp-calculator/calc-engine";
-import { COUNTRIES, REGIONS, getCountriesByRegion } from "@/lib/erp-calculator/countries";
-import { PRESET_SCENARIOS } from "@/lib/erp-calculator/scenarios";
+import { COUNTRIES, REGIONS, getCountriesByRegion, getRegionLabels, type Region } from "@/lib/erp-calculator/countries";
+import { getPresetScenarios } from "@/lib/erp-calculator/scenarios";
+import type { PresetScenario } from "@/lib/erp-calculator/types";
 import { isTargetLanguage, type Locale } from "@/lib/locales";
 import { useTranslation, stripMarkers } from "@/lib/i18n/useTranslation";
 import type {
@@ -617,11 +618,13 @@ function CountryRow({
   onChange,
   onRemove,
   m,
+  regionLabels,
 }: {
   entry: CountryEntry;
   onChange: (e: CountryEntry) => void;
   onRemove: () => void;
   m: CalcMsgs;
+  regionLabels: Record<Region, string>;
 }) {
   return (
     <div className="rounded-lg border border-corbeau/12 bg-cream p-4 space-y-3">
@@ -633,11 +636,10 @@ function CountryRow({
           aria-label={m.step3.rowCountryAria}
         >
           {REGIONS.map((region) => (
-            // REGIONS strings (country region names) stay inline for Pass 2b-1a
-            // — addressed in Pass 2b-1b along with calc-engine warnings and
-            // scenarios.ts preset descriptions. Country names themselves are
-            // proper nouns and stay inline permanently.
-            <optgroup key={region} label={region}>
+            // Region label is localised; the underlying join key stays
+            // English (REGIONS literals match c.region on each entry).
+            // Individual country names are proper nouns — kept inline.
+            <optgroup key={region} label={regionLabels[region]}>
               {getCountriesByRegion(region).map((c) => (
                 <option key={c.code} value={c.code}>
                   {c.name}
@@ -1255,9 +1257,16 @@ function AssumptionsPanel({
 }) {
   const { assumptionsSummary, inputs } = result;
   const tag = bcp47(locale);
+  // Humanise enum input values for display. m comes pre-stripped by
+  // deepStripMarkers at the top of ErpCostClient, so SAP / Oracle /
+  // Cloud SaaS / etc. render clean. Pass 2b-1b.
+  const approachLabel = m.enumLabels.erpApproach[inputs.erpApproach];
+  const deploymentLabel = m.enumLabels.deploymentModel[inputs.deploymentModel];
+  const siTierLabel = m.enumLabels.siPartnerTier[inputs.siPartnerTier];
+  const deliveryLabel = m.enumLabels.deliveryModel[inputs.deliveryModel];
   const rows: [string, string][] = [
-    [m.assumptions.softwareLabel,    fmt(m.assumptions.softwareValueTemplate, { rate: formatCurrency(assumptionsSummary.softwareCostPerUserPerYear, "USD"), approach: inputs.erpApproach, deployment: inputs.deploymentModel })],
-    [m.assumptions.siBaseLabel,      fmt(m.assumptions.siBaseValueTemplate,   { rate: formatCurrency(assumptionsSummary.siBlendedDayRate, "USD"), tier: inputs.siPartnerTier, model: inputs.deliveryModel })],
+    [m.assumptions.softwareLabel,    fmt(m.assumptions.softwareValueTemplate, { rate: formatCurrency(assumptionsSummary.softwareCostPerUserPerYear, "USD"), approach: approachLabel, deployment: deploymentLabel })],
+    [m.assumptions.siBaseLabel,      fmt(m.assumptions.siBaseValueTemplate,   { rate: formatCurrency(assumptionsSummary.siBlendedDayRate, "USD"), tier: siTierLabel, model: deliveryLabel })],
     [m.assumptions.contingencyLabel, fmt(m.assumptions.contingencyValueTemplate, { pct: assumptionsSummary.contingencyPct })],
     [m.assumptions.totalModulesLabel, String(assumptionsSummary.totalModules)],
     [m.assumptions.countriesLabel,   String(assumptionsSummary.totalCountries)],
@@ -1396,10 +1405,13 @@ function ResultsPanel({
     const expectedInline = fmt(m.email.expectedInlineTemplate, {
       value: formatCurrency(result.totalY1.expected, currency, true),
     });
+    // Humanise the enum values for the share-summary readout.
+    const approachLabel = m.enumLabels.erpApproach[result.inputs.erpApproach];
+    const deploymentLabel = m.enumLabels.deploymentModel[result.inputs.deploymentModel];
     const text = `${m.email.titlePrefix} — ${new Date().toLocaleDateString(tag)}
 
 ${m.email.companyPrefix} ${result.inputs.companyName || m.email.companyDefault}
-${m.email.erpApproachPrefix} ${result.inputs.erpApproach} | ${m.email.deploymentLabel} ${result.inputs.deploymentModel}
+${m.email.erpApproachPrefix} ${approachLabel} | ${m.email.deploymentLabel} ${deploymentLabel}
 ${m.email.countriesPrefix} ${result.countryResults.length} | ${m.email.usersLabel} ${userCountFmt}
 ${m.email.modulesPrefix} ${result.inputs.modules.length}
 
@@ -1733,10 +1745,12 @@ function Step3({
   inputs,
   set,
   m,
+  regionLabels,
 }: {
   inputs: CalculatorInputs;
   set: (patch: Partial<CalculatorInputs>) => void;
   m: CalcMsgs;
+  regionLabels: Record<Region, string>;
 }) {
   const s = m.step3;
   const addCountry = () => {
@@ -1772,9 +1786,10 @@ function Step3({
           className="w-full rounded border border-corbeau/15 bg-paper text-corbeau text-sm px-3 py-2.5 focus:outline-none focus:border-papaya"
           aria-label={s.hqCountryAria}
         >
-          {/* REGIONS strings stay inline for Pass 2b-1a (deferred to 2b-1b). */}
+          {/* HQ country selector. Localised region group labels via
+              regionLabels prop (Pass 2b-1b). Country names stay inline. */}
           {REGIONS.map((region) => (
-            <optgroup key={region} label={region}>
+            <optgroup key={region} label={regionLabels[region]}>
               {getCountriesByRegion(region).map((c) => (
                 <option key={c.code} value={c.code}>
                   {c.name}
@@ -1812,6 +1827,7 @@ function Step3({
                 onChange={(e) => updateCountry(ce.id, e)}
                 onRemove={() => removeCountry(ce.id)}
                 m={m}
+                regionLabels={regionLabels}
               />
             ))}
           </div>
@@ -2001,12 +2017,23 @@ function Step5({
 
 // ─── Preset scenario picker ───────────────────────────────────────────────────
 
-function PresetPicker({ onLoad, m }: { onLoad: (inputs: CalculatorInputs) => void; m: CalcMsgs }) {
+function PresetPicker({
+  onLoad,
+  m,
+  locale,
+}: {
+  onLoad: (inputs: CalculatorInputs) => void;
+  m: CalcMsgs;
+  locale: Locale;
+}) {
+  // Locale-aware preset list. Recomputed on locale change; trivial cost
+  // (3 entries with string lookups) so no useMemo needed.
+  const presets: PresetScenario[] = getPresetScenarios(locale);
   return (
     <div className="mb-8 p-5 rounded-xl bg-cream border border-corbeau/10">
       <p className="text-xs font-semibold text-eyebrow uppercase tracking-widest mb-3">{m.presetEyebrow}</p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {PRESET_SCENARIOS.map((s) => (
+        {presets.map((s) => (
           <button
             key={s.id}
             type="button"
@@ -2031,19 +2058,21 @@ function LiveEstimateBadge({
   inputs,
   visible,
   m,
+  locale,
 }: {
   inputs: CalculatorInputs;
   visible: boolean;
   m: CalcMsgs;
+  locale: Locale;
 }) {
   const estimate = useMemo(() => {
     if (!visible || inputs.modules.length === 0 || inputs.userCount < 5) return null;
     try {
-      return calculate(inputs);
+      return calculate(inputs, locale);
     } catch {
       return null;
     }
-  }, [inputs, visible]);
+  }, [inputs, visible, locale]);
 
   if (!estimate) return null;
 
@@ -2076,6 +2105,10 @@ export default function ErpCostClient() {
   // component. Every consumer downstream sees the cleaned strings without
   // having to remember to call stripMarkers at every render site.
   const m = useMemo(() => deepStripMarkers(messages.calculator), [messages.calculator]);
+  // Locale-aware region display labels (Pass 2b-1b). Keyed by the
+  // English region literals so REGIONS.map(region => labels[region])
+  // resolves cleanly. Cheap; memoised on locale only.
+  const regionLabels = useMemo(() => getRegionLabels(locale), [locale]);
 
   const [inputs, setInputsRaw] = useState<CalculatorInputs>(DEFAULT_INPUTS);
   const [step, setStep] = useState(1);
@@ -2123,7 +2156,7 @@ export default function ErpCostClient() {
     } else {
       // Run calculation
       try {
-        const res = calculate(inputs);
+        const res = calculate(inputs, locale);
         setResult(res);
         setCompleted(new Set([1, 2, 3, 4, 5]));
         setTimeout(() => scrollToCalculator(), 50);
@@ -2197,7 +2230,7 @@ export default function ErpCostClient() {
           Preset scenario name/description/badge strings stay inline for
           Pass 2b-1a; they live in scenarios.ts and will be externalised
           in Pass 2b-1b along with calc-engine warnings. */}
-      {step === 1 && <PresetPicker onLoad={loadPreset} m={m} />}
+      {step === 1 && <PresetPicker onLoad={loadPreset} m={m} locale={locale} />}
 
       {/* Live estimate toggle */}
       {step > 1 && (
@@ -2216,7 +2249,7 @@ export default function ErpCostClient() {
         </div>
       )}
 
-      {showLive && step > 1 && <LiveEstimateBadge inputs={inputs} visible m={m} />}
+      {showLive && step > 1 && <LiveEstimateBadge inputs={inputs} visible m={m} locale={locale} />}
 
       <StepIndicator current={step} onGo={goToStep} completed={completed} m={m} />
 
@@ -2224,7 +2257,7 @@ export default function ErpCostClient() {
       <div className="bg-white rounded-xl border border-corbeau/10 p-6 md:p-8 shadow-sm">
         {step === 1 && <Step1 inputs={inputs} set={set} m={m} />}
         {step === 2 && <Step2 inputs={inputs} set={set} m={m} />}
-        {step === 3 && <Step3 inputs={inputs} set={set} m={m} />}
+        {step === 3 && <Step3 inputs={inputs} set={set} m={m} regionLabels={regionLabels} />}
         {step === 4 && <Step4 inputs={inputs} set={set} m={m} />}
         {step === 5 && <Step5 inputs={inputs} set={set} m={m} />}
 

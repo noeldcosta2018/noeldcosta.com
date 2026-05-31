@@ -7,6 +7,8 @@
 // programme looks like at different scales.
 
 import type { CalculatorInputs, PresetScenario } from "./types";
+import { type Locale } from "@/lib/locales";
+import { getMessages, stripMarkers } from "@/lib/i18n/useTranslation";
 
 // ─── Scenario 1: Mid-market, single country ───────────────────────────────────
 // A 400-person manufacturing company moving from legacy ERP to the cloud.
@@ -225,27 +227,38 @@ const SCENARIO_GLOBAL: CalculatorInputs = {
 };
 
 // ─── Export ───────────────────────────────────────────────────────────────────
+//
+// The three scenario *inputs* objects above are static numerical data —
+// no translation needed. The display labels (name, description, badge)
+// come from MESSAGES.calculator.presets.* and are returned by the
+// locale-aware getter below. Consumers (ErpCostClient.tsx) call
+// getPresetScenarios(locale) instead of importing the array.
 
-export const PRESET_SCENARIOS: PresetScenario[] = [
-  {
-    id:          "mid-market",
-    name:        "Mid-market single-country rollout",
-    description: "A 400-person manufacturer moving from legacy ERP to SAP S/4HANA Cloud. UK-based, 4 modules, 14-month target.",
-    badge:       "Mid-market",
-    inputs:      SCENARIO_MID_MARKET,
-  },
-  {
-    id:          "regional",
-    name:        "Regional 3-country rollout",
-    description: "A financial services group consolidating ERP across UAE, Saudi Arabia, and Qatar on Oracle Cloud. Complex tax and reporting scope.",
-    badge:       "Regional",
-    inputs:      SCENARIO_REGIONAL,
-  },
-  {
-    id:          "global",
-    name:        "Global 8-country phased rollout",
-    description: "A large manufacturing enterprise deploying SAP S/4HANA across North America, Europe, Middle East, and APAC in three delivery waves.",
-    badge:       "Global",
-    inputs:      SCENARIO_GLOBAL,
-  },
-];
+export function getPresetScenarios(locale: Locale): PresetScenario[] {
+  const p = getMessages(locale).calculator.presets;
+  // Strip <noTranslate> markers at the boundary — the wrapper tags
+  // survive the translation pipeline but must not reach the DOM.
+  return [
+    {
+      id:          "mid-market",
+      name:        stripMarkers(p.midMarketName),
+      description: stripMarkers(p.midMarketDescription),
+      badge:       stripMarkers(p.midMarketBadge),
+      inputs:      SCENARIO_MID_MARKET,
+    },
+    {
+      id:          "regional",
+      name:        stripMarkers(p.regionalName),
+      description: stripMarkers(p.regionalDescription),
+      badge:       stripMarkers(p.regionalBadge),
+      inputs:      SCENARIO_REGIONAL,
+    },
+    {
+      id:          "global",
+      name:        stripMarkers(p.globalName),
+      description: stripMarkers(p.globalDescription),
+      badge:       stripMarkers(p.globalBadge),
+      inputs:      SCENARIO_GLOBAL,
+    },
+  ];
+}

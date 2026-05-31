@@ -65,6 +65,17 @@ import {
   getExchangeRate,
   LOCALIZATION_COMPLEXITY_MULTIPLIER,
 } from "./countries";
+import { type Locale } from "@/lib/locales";
+import { getMessages, interpolate, stripMarkers } from "@/lib/i18n/useTranslation";
+
+// ─── Render-time marker stripping ──────────────────────────────────────────
+// Strings returned from this module land in JSX rendered by the calculator
+// client component. Wrapper tags around proper nouns in MESSAGES survive
+// the translation pipeline but must not reach the DOM. Apply at the
+// boundary where the engine pulls a value out of MESSAGES.
+function s(value: string): string {
+  return stripMarkers(value);
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -249,7 +260,8 @@ function calcContingency(preContigTotal: number, pct: number): CostBand {
 
 // ─── Timeline estimate ─────────────────────────────────────────────────────
 
-function calcTimeline(inputs: CalculatorInputs): TimelineEstimate {
+function calcTimeline(inputs: CalculatorInputs, locale: Locale): TimelineEstimate {
+  const phaseMsgs = getMessages(locale).calculator.phases;
   let months = BASE_TIMELINE_MONTHS;
 
   // User count add
@@ -298,14 +310,16 @@ function calcTimeline(inputs: CalculatorInputs): TimelineEstimate {
   const minimum  = Math.max(4, Math.round(expected * 0.80));
   const maximum  = Math.round(expected * 1.30);
 
-  // Phase breakdown
+  // Phase breakdown — names looked up from MESSAGES.calculator.phases.
+  // Same English keys + ratios as before; only the rendered label is
+  // locale-aware. <noTranslate> markers stripped at the boundary.
   const phases = [
-    { name: "Prepare & explore",        durationMonths: Math.round(expected * 0.12) },
-    { name: "Design & blueprint",       durationMonths: Math.round(expected * 0.18) },
-    { name: "Build & configure",        durationMonths: Math.round(expected * 0.30) },
-    { name: "Test",                     durationMonths: Math.round(expected * 0.18) },
-    { name: "Deploy & cutover",         durationMonths: Math.round(expected * 0.10) },
-    { name: "Hypercare & stabilise",    durationMonths: Math.round(expected * 0.12) },
+    { name: s(phaseMsgs.prepareExplore),    durationMonths: Math.round(expected * 0.12) },
+    { name: s(phaseMsgs.designBlueprint),   durationMonths: Math.round(expected * 0.18) },
+    { name: s(phaseMsgs.buildConfigure),    durationMonths: Math.round(expected * 0.30) },
+    { name: s(phaseMsgs.test),              durationMonths: Math.round(expected * 0.18) },
+    { name: s(phaseMsgs.deployCutover),     durationMonths: Math.round(expected * 0.10) },
+    { name: s(phaseMsgs.hypercareStabilise), durationMonths: Math.round(expected * 0.12) },
   ];
 
   return { minimumMonths: minimum, expectedMonths: expected, maximumMonths: maximum, phases };
@@ -461,18 +475,20 @@ function calcTCO(
 
 // ─── Warning flags ─────────────────────────────────────────────────────────
 
-function buildWarnings(inputs: CalculatorInputs): WarningFlag[] {
+function buildWarnings(inputs: CalculatorInputs, locale: Locale): WarningFlag[] {
   const warnings: WarningFlag[] = [];
   const countries = inputs.countries.length + 1;
+  const w = getMessages(locale).calculator.warnings;
 
-  // Too many countries for tight timeline
+  // Too many countries for tight timeline. Message is interpolated with
+  // the live counts via the shared interpolate() helper.
   if (countries > 3 && inputs.targetTimelineMonths < 18) {
+    const k = w.tooManyCountriesShortTimeline;
     warnings.push({
       severity:   "critical",
-      workstream: "Timeline",
-      message:    `${countries} countries in ${inputs.targetTimelineMonths} months is high-risk`,
-      detail:
-        "Multi-country rollouts typically require 18+ months for each wave of 2–3 countries. Compressing this timeline increases cutover risk significantly.",
+      workstream: s(k.workstream),
+      message:    interpolate(s(k.message), { countries, months: inputs.targetTimelineMonths }),
+      detail:     s(k.detail),
     });
   }
 
@@ -481,12 +497,12 @@ function buildWarnings(inputs: CalculatorInputs): WarningFlag[] {
     inputs.customizationLevel === "high" &&
     inputs.targetTimelineMonths < 15
   ) {
+    const k = w.highCustomShortTimeline;
     warnings.push({
       severity:   "critical",
-      workstream: "Scope & Customisation",
-      message:    "High customisation with a sub-15-month timeline rarely delivers",
-      detail:
-        "Extensive custom development requires design, build, unit test, regression, and integration test cycles that don't compress well. Consider phasing customisation into a post-go-live release.",
+      workstream: s(k.workstream),
+      message:    s(k.message),
+      detail:     s(k.detail),
     });
   }
 
@@ -495,24 +511,24 @@ function buildWarnings(inputs: CalculatorInputs): WarningFlag[] {
     inputs.changeMgmtIntensity === "light" &&
     inputs.userCount > 500
   ) {
+    const k = w.lightChangeManyUsers;
     warnings.push({
       severity:   "warning",
-      workstream: "Change Management",
-      message:    "Light change management for 500+ users is under-resourced",
-      detail:
-        "Programmes with 500+ users need structured change networks, role-based training, and sustained executive sponsorship. Light-touch approaches typically extend post-go-live stabilisation by 2–3 months.",
+      workstream: s(k.workstream),
+      message:    s(k.message),
+      detail:     s(k.detail),
     });
   }
 
   // Multi-country payroll in phase 1
   const hasPayroll = inputs.modules.includes("payroll");
   if (hasPayroll && countries > 2 && inputs.countries.some((c) => c.wave === 1)) {
+    const k = w.multiCountryPayrollWave1;
     warnings.push({
       severity:   "warning",
-      workstream: "Payroll & HR",
-      message:    "Multi-country payroll in wave 1 adds significant delivery risk",
-      detail:
-        "Payroll is legally and operationally critical. Implementing it in multiple countries simultaneously in the first wave is a known failure pattern. Phase payroll per country or use local payroll integration in wave 1.",
+      workstream: s(k.workstream),
+      message:    s(k.message),
+      detail:     s(k.detail),
     });
   }
 
@@ -521,12 +537,12 @@ function buildWarnings(inputs: CalculatorInputs): WarningFlag[] {
     inputs.erpMaturity === "spreadsheets" &&
     inputs.integrationComplexity === "high"
   ) {
+    const k = w.spreadsheetsHighIntegration;
     warnings.push({
       severity:   "warning",
-      workstream: "Data & Integration",
-      message:    "High integration complexity from a spreadsheet baseline is high-risk",
-      detail:
-        "Migrating from spreadsheets while managing complex integrations means building data structures and connecting them simultaneously. Data quality work often takes longer than planned.",
+      workstream: s(k.workstream),
+      message:    s(k.message),
+      detail:     s(k.detail),
     });
   }
 
@@ -535,12 +551,12 @@ function buildWarnings(inputs: CalculatorInputs): WarningFlag[] {
     inputs.implementationType === "post-merger" &&
     inputs.targetTimelineMonths < 24
   ) {
+    const k = w.postMergerShortTimeline;
     warnings.push({
       severity:   "warning",
-      workstream: "Programme Scope",
-      message:    "Post-merger harmonisation typically requires 24+ months",
-      detail:
-        "Aligning charts of accounts, legal entity structures, and business processes across merged entities is a significant programme. Sub-24-month targets are achievable but require tightly scoped phases.",
+      workstream: s(k.workstream),
+      message:    s(k.message),
+      detail:     s(k.detail),
     });
   }
 
@@ -549,12 +565,12 @@ function buildWarnings(inputs: CalculatorInputs): WarningFlag[] {
     inputs.deliveryModel === "offshore" &&
     (inputs.customizationLevel === "high" || inputs.integrationComplexity === "high")
   ) {
+    const k = w.offshoreHighComplexity;
     warnings.push({
       severity:   "info",
-      workstream: "Delivery Model",
-      message:    "Offshore delivery works best with well-defined, stable scope",
-      detail:
-        "High customisation or integration complexity with a fully offshore team increases coordination overhead and rework. Consider a hybrid model with onshore architects and functional leads.",
+      workstream: s(k.workstream),
+      message:    s(k.message),
+      detail:     s(k.detail),
     });
   }
 
@@ -563,7 +579,14 @@ function buildWarnings(inputs: CalculatorInputs): WarningFlag[] {
 
 // ─── Main entry point ──────────────────────────────────────────────────────
 
-export function calculate(inputs: CalculatorInputs): CalculationResult {
+// Locale-aware main entry. The default keeps the existing call sites
+// (and the CR-3 smoke test) compiling without a locale argument; consumer
+// components that thread the active locale (ErpCostClient.tsx) pass it
+// explicitly so warnings + phase names render in the user's language.
+export function calculate(
+  inputs: CalculatorInputs,
+  locale: Locale = "en",
+): CalculationResult {
   // 1. Software
   const software = calcSoftwareCost(inputs);
 
@@ -637,7 +660,7 @@ export function calculate(inputs: CalculatorInputs): CalculationResult {
   const { tco3yr, tco5yr, yearlySpend } = calcTCO(inputs, totalY1, software);
 
   // 12. Timeline
-  const timeline = calcTimeline(inputs);
+  const timeline = calcTimeline(inputs, locale);
 
   // 13. Country results
   const countryResults = calcCountryResults(inputs, totalY1);
@@ -659,7 +682,7 @@ export function calculate(inputs: CalculatorInputs): CalculationResult {
   };
 
   // 17. Warnings
-  const warnings = buildWarnings(inputs);
+  const warnings = buildWarnings(inputs, locale);
 
   return {
     totalY1,

@@ -464,7 +464,14 @@ export function getExchangeRate(code: string): number {
   return COUNTRY_MAP[code]?.exchangeRateToUSD ?? 1;
 }
 
-// Regions for grouping in UI
+// Regions for grouping in UI.
+//
+// The string literals double as the canonical join key — `c.region` on
+// each CountryData entry is one of these values, and
+// getCountriesByRegion() filters by literal match. They are NOT what the
+// UI renders to users; that's `getRegionLabels(locale)` below. Keeping
+// the keys English avoids the data needing to change every time a
+// translation is added.
 export const REGIONS = [
   "North America",
   "Europe",
@@ -479,6 +486,25 @@ export type Region = typeof REGIONS[number];
 
 export function getCountriesByRegion(region: string): CountryData[] {
   return COUNTRIES.filter((c) => c.region === region);
+}
+
+// Locale-aware region label lookup. Consumers iterate REGIONS (for the
+// canonical key used to filter countries) and look up the display label
+// from the returned record. Pass 2b-1b.
+import { type Locale } from "@/lib/locales";
+import { getMessages } from "@/lib/i18n/useTranslation";
+
+export function getRegionLabels(locale: Locale): Record<Region, string> {
+  const r = getMessages(locale).calculator.regions;
+  return {
+    "North America":        r.northAmerica,
+    "Europe":               r.europe,
+    "Middle East":          r.middleEast,
+    "Middle East & Africa": r.middleEastAndAfrica,
+    "Asia-Pacific":         r.asiaPacific,
+    "Africa":               r.africa,
+    "Latin America":        r.latinAmerica,
+  };
 }
 
 // Localization complexity → cost multiplier (on top of localizationBase)
