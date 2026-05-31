@@ -19,32 +19,36 @@
  */
 
 import { readdir, readFile, writeFile } from 'node:fs/promises';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
 import yaml from 'js-yaml';
 
+import {
+  MODEL_NAME,
+  MODEL_PRICING,
+  OPENAI_KEY_PATH,
+  TARGET_LANGUAGES,
+  LANG_NAMES,
+  LANG_REGISTER,
+  TOKENS_PER_INPUT_CHAR_EN,
+  SYSTEM_PROMPT_TOKENS_BODY,
+  SYSTEM_PROMPT_TOKENS_JSON,
+  getOutputTokensPerCharForLang,
+  loadApiKey,
+  loadOpenAiClient,
+  captureRateLimitHeaders,
+  getRateLimitSnapshot,
+  withRetry,
+  callJsonTranslate as callJsonTranslateShared,
+  calcCost,
+} from './lib/openai-shared.mjs';
+import { wrapGlossary } from './lib/glossary.mjs';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 const CONTENT_DIR = join(ROOT, 'content');
-
-// ── Constants ────────────────────────────────────────────────────────────────
-
-const TARGET_LANGUAGES = [
-  'ar', 'de', 'el', 'es', 'fr', 'it', 'ja', 'nl', 'pt', 'ru',
-];
-
-// OpenAI configuration
-const OPENAI_KEY_PATH = 'C:\\Users\\noel_\\.config\\openai\\key.txt';
-const MODEL_NAME = 'gpt-5.4';
-// USD per million tokens
-const MODEL_PRICING = { input: 2.50, output: 15.00 };
-// Per-call timeouts. The first try uses DEFAULT; if it times out we escalate
-// to EXTENDED once and retry. The default-run's only failure was a body call
-// that exceeded the SDK's stock 10-min timeout on a 84KB source file.
-const DEFAULT_TIMEOUT_MS = 600_000;   // 10 min — covers the ~5min p99 we saw
-const EXTENDED_TIMEOUT_MS = 1_200_000; // 20 min — for retry after a timeout
 
 // Body chunking. Files whose PREPROCESSED body exceeds BODY_CHUNK_THRESHOLD
 // are split on H2 boundaries and translated chunk-by-chunk in parallel.
@@ -53,80 +57,6 @@ const EXTENDED_TIMEOUT_MS = 1_200_000; // 20 min — for retry after a timeout
 // Chunking gives every page a uniform per-call latency.
 const BODY_CHUNK_THRESHOLD = 40_000;
 const TARGET_CHUNK_MAX_CHARS = 30_000;
-
-// Token estimation ratios (dry-run only).
-// Derived from the cost-calculator test: en.mdx (~15.1KB preprocessed
-// source = body + frontmatter) → Japanese, $0.09 total observed.
-//
-// Back-solving against gpt-5.4 pricing ($2.50/M input, $15/M output):
-//   ~5,500 input tokens × $2.50/M = $0.014 input cost
-//   ~5,070 output tokens × $15/M ≈ $0.076 output cost   → $0.09 total
-// → output ratio for Japanese ≈ 5,070 / 15,129 ≈ 0.34 tokens per source char.
-//
-// Languages cluster into two bands by output-token density:
-//   high-density: ar, el, ja, ru   (CJK, Cyrillic, complex script — modern
-//                                   tokenizers handle CJK well but still
-//                                   emit ~0.3-0.4 tokens per source char)
-//   normal:       de, es, fr, it, nl, pt   (Latin script close to English,
-//                                           ~1.1-1.2x output char expansion
-//                                           at ~0.20 tokens per source char)
-const TOKENS_PER_INPUT_CHAR_EN = 0.30;  // English source → input tokens
-const OUTPUT_TOKENS_PER_INPUT_CHAR_HIGH = 0.34;  // ar/el/ja/ru (test-derived)
-const OUTPUT_TOKENS_PER_INPUT_CHAR_NORMAL = 0.20; // de/es/fr/it/nl/pt
-const HIGH_DENSITY_LANGS = new Set(['ar', 'el', 'ja', 'ru']);
-const SYSTEM_PROMPT_TOKENS_BODY = 700;  // approx tokens for the body system prompt
-const SYSTEM_PROMPT_TOKENS_JSON = 250;  // approx tokens for the JSON system prompt
-
-function getOutputTokensPerCharForLang(lang) {
-  return HIGH_DENSITY_LANGS.has(lang)
-    ? OUTPUT_TOKENS_PER_INPUT_CHAR_HIGH
-    : OUTPUT_TOKENS_PER_INPUT_CHAR_NORMAL;
-}
-
-// Whole-word, case-sensitive matches. Wrapped with <span translate="no">
-// before sending to the API, then unwrapped after translation so the term
-// renders unchanged in the target language. GPT respects the marker when
-// instructed to leave inner text unchanged.
-//
-// Note: deliberately excludes "FI", "CO", "MM", "SD", "PP", "QM", "PM" —
-// they are common English fragments (co-founder, if I, summer, ...) that
-// cause false positives. FICO / S/4HANA already cover the SAP context.
-//
-// Entries ending with "(?s)" allow an optional trailing 's' so plural forms
-// (P-Users, S-Users) are also protected. The marker is stripped before the
-// final regex is built.
-const GLOSSARY = [
-  'SAP Business Technology Platform',
-  'Business Technology Platform',
-  'Rise with SAP',
-  'Grow with SAP',
-  'SAP Business One',
-  'SAP Activate',
-  'Universal ID',
-  'SuccessFactors',
-  'NetSuite',
-  'Salesforce',
-  'Business One',
-  'Workday',
-  'S/4HANA',
-  'S4HANA',
-  'Concur',
-  'Ariba',
-  'Oracle',
-  'Fiori',
-  'S-User(?s)',
-  'P-User(?s)',
-  'RISE',
-  'FICO',
-  'ABAP',
-  'BAPI',
-  'BADI',
-  'IDOC',
-  'HANA',
-  'ECC',
-  'BTP',
-  'SAP',
-];
 
 // MDX components are PascalCase, lowercase-hyphenated (stepper, compare-split,
 // ...), or single-word lowercase from the known-tags allow-list below.
@@ -399,38 +329,6 @@ function wrapInlineCode(body) {
   return body.replace(/`([^`\n]+)`/g, (m) => `<span translate="no">${m}</span>`);
 }
 
-function wrapGlossary(body) {
-  // Build one regex matching any glossary term, longest-first. Terms ending
-  // with the literal marker "(?s)" become "term(?:s)?" so the plural form is
-  // also protected (e.g. P-User → P-User and P-Users).
-  const terms = [...GLOSSARY].sort((a, b) => b.length - a.length);
-  const escaped = terms.map((t) => {
-    const pluralOpt = t.endsWith('(?s)');
-    const base = pluralOpt ? t.slice(0, -4) : t;
-    const escapedBase = base.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
-    return pluralOpt ? `${escapedBase}(?:s)?` : escapedBase;
-  });
-  const re = new RegExp(`(?<![A-Za-z0-9])(?:${escaped.join('|')})(?![A-Za-z0-9])`, 'g');
-
-  // Split body by existing <span translate="no">…</span> so we don't nest.
-  const spanRe = /<span translate="no">[\s\S]*?<\/span>/g;
-  const parts = [];
-  let last = 0;
-  let m;
-  while ((m = spanRe.exec(body)) !== null) {
-    if (m.index > last) parts.push({ kind: 'text', s: body.slice(last, m.index) });
-    parts.push({ kind: 'span', s: m[0] });
-    last = m.index + m[0].length;
-  }
-  if (last < body.length) parts.push({ kind: 'text', s: body.slice(last) });
-
-  return parts
-    .map((p) => p.kind === 'text'
-      ? p.s.replace(re, (t) => `<span translate="no">${t}</span>`)
-      : p.s)
-    .join('');
-}
-
 function preprocessBody(body) {
   const store = createStore();
   let s = body;
@@ -657,71 +555,7 @@ function stringifyMdx(body, fm) {
   return `---\n${yamlText}---\n\n${body}`;
 }
 
-// ── OpenAI client and prompts ────────────────────────────────────────────────
-
-const LANG_NAMES = {
-  ar: 'Arabic', de: 'German', el: 'Greek', es: 'Spanish',
-  fr: 'French', it: 'Italian', ja: 'Japanese', nl: 'Dutch',
-  pt: 'Portuguese', ru: 'Russian',
-};
-
-const LANG_REGISTER = {
-  ja: 'Use polite Japanese (ですます調) consistently throughout body text. Do NOT mix in plain form (だ・である).',
-  es: 'Use the standard professional register. Prefer "usted" only when directly addressing the reader; default is impersonal/first-person.',
-  fr: 'Use the standard professional register (formal "vous" where addressing the reader; otherwise impersonal/first-person).',
-  de: 'Use the standard professional register ("Sie" where addressing the reader).',
-  it: 'Use the standard professional register (formal "Lei" where addressing the reader).',
-  pt: 'Use the standard professional register (formal "você" / impersonal where addressing the reader).',
-  nl: 'Use the standard professional register (formal "u" where addressing the reader).',
-  ru: 'Use the standard professional register (formal "вы" where addressing the reader).',
-  ar: 'Use Modern Standard Arabic (فصحى) in a professional register.',
-  el: 'Use the standard professional register.',
-};
-
-function loadApiKey() {
-  if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.trim()) {
-    return process.env.OPENAI_API_KEY.trim();
-  }
-  const raw = readFileSync(OPENAI_KEY_PATH, 'utf8');
-  const key = raw.trim();
-  if (!key) throw new Error(`Key file at ${OPENAI_KEY_PATH} is empty.`);
-  return key;
-}
-
-async function loadOpenAiClient() {
-  const apiKey = loadApiKey();
-  const { default: OpenAI } = await import('openai');
-  // Client-level timeout sets the SDK's per-request default; can be
-  // overridden per-call via the second arg to .create({...}, { timeout }).
-  return new OpenAI({ apiKey, timeout: DEFAULT_TIMEOUT_MS });
-}
-
-// Rate-limit headers from the first successful body response. The OpenAI
-// API returns x-ratelimit-* on every response; capturing once is enough to
-// answer "how much headroom do we have?" without per-call noise.
-let rateLimitSnapshot = null;
-
-function captureRateLimitHeaders(rawResponse) {
-  if (rateLimitSnapshot || !rawResponse?.headers) return;
-  const h = rawResponse.headers;
-  const get = (k) => (typeof h.get === 'function' ? h.get(k) : h[k]) || null;
-  rateLimitSnapshot = {
-    limitRequests: get('x-ratelimit-limit-requests'),
-    remainingRequests: get('x-ratelimit-remaining-requests'),
-    resetRequests: get('x-ratelimit-reset-requests'),
-    limitTokens: get('x-ratelimit-limit-tokens'),
-    remainingTokens: get('x-ratelimit-remaining-tokens'),
-    resetTokens: get('x-ratelimit-reset-tokens'),
-  };
-}
-
-function isTimeoutError(err) {
-  if (!err) return false;
-  const name = err?.name || err?.constructor?.name || '';
-  if (name === 'APIConnectionTimeoutError') return true;
-  const msg = String(err?.message || err || '').toLowerCase();
-  return /timed?\s*out|timeout/.test(msg);
-}
+// ── OpenAI prompts ──────────────────────────────────────────────────────────
 
 function buildBodySystemPrompt(lang) {
   const langName = LANG_NAMES[lang] || lang;
@@ -848,80 +682,15 @@ async function callBodyTranslate(client, model, lang, body, timeoutMs, chunkInfo
   };
 }
 
+// Per-script wrapper that builds the kind-specific system prompt before
+// delegating to the shared callJsonTranslate. Keeps the existing call sites
+// untouched while sharing the API-call body with translate-ui-strings.mjs.
 async function callJsonTranslate(client, model, lang, strings, kind, timeoutMs) {
-  const t0 = Date.now();
-  const reqOpts = timeoutMs ? { timeout: timeoutMs } : undefined;
-  const res = await client.chat.completions.create({
-    model,
-    messages: [
-      { role: 'system', content: buildJsonSystemPrompt(lang, kind) },
-      { role: 'user', content: JSON.stringify(strings) },
-    ],
-    temperature: 0.3,
-    response_format: { type: 'json_object' },
-  }, reqOpts);
-  const elapsedMs = Date.now() - t0;
-  const raw = res.choices?.[0]?.message?.content ?? '{}';
-  let parsed;
-  try { parsed = JSON.parse(raw); } catch (e) {
-    throw new Error(`${kind} response was not valid JSON: ${raw.slice(0, 200)}`);
-  }
-  const arr = Array.isArray(parsed.translations) ? parsed.translations
-            : Array.isArray(parsed.items) ? parsed.items
-            : Array.isArray(parsed) ? parsed
-            : null;
-  if (!arr || arr.length !== strings.length) {
-    throw new Error(`${kind} response had ${arr?.length ?? 'no'} items; expected ${strings.length}.`);
-  }
-  const usage = res.usage || {};
-  return {
-    translations: arr,
-    promptTokens: usage.prompt_tokens || 0,
-    completionTokens: usage.completion_tokens || 0,
-    elapsedMs,
-  };
-}
-
-// Unified retry: factory takes an optional timeoutMs (undefined → SDK default).
-// First attempt uses no override (DEFAULT_TIMEOUT_MS via client config).
-// On a TIMEOUT specifically, retry once with EXTENDED_TIMEOUT_MS — logged so we
-// can see in the run log which files needed it.
-// On transient HTTP errors (429/5xx, ECONN*), exponential backoff up to 3 tries.
-async function withRetry(label, requestFactory) {
-  let lastErr;
-  let didTimeoutEscalation = false;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const timeoutMs = didTimeoutEscalation ? EXTENDED_TIMEOUT_MS : undefined;
-    try { return await requestFactory(timeoutMs); }
-    catch (err) {
-      lastErr = err;
-      if (isTimeoutError(err) && !didTimeoutEscalation) {
-        console.warn(`  TIMEOUT-RETRY ${label}: extending timeout to ${EXTENDED_TIMEOUT_MS / 1000}s and retrying once`);
-        didTimeoutEscalation = true;
-        continue;  // immediate retry, no backoff
-      }
-      const status = err?.status || err?.code;
-      const transient = status === 429 || status === 500 || status === 502 ||
-        status === 503 || status === 504 ||
-        /ECONN|ENOTFOUND|EAI_AGAIN|socket hang up/i.test(String(err?.code || err?.message || ''));
-      if (transient && attempt < 2) {
-        const wait = (1 << attempt) * 2000 + Math.floor(Math.random() * 1000);
-        console.warn(`  RETRY ${label}: ${status || err?.message || 'transient'} — waiting ${wait}ms (attempt ${attempt + 2}/3)`);
-        await new Promise((r) => setTimeout(r, wait));
-        continue;
-      }
-      throw err;
-    }
-  }
-  throw lastErr;
+  const systemPrompt = buildJsonSystemPrompt(lang, kind);
+  return callJsonTranslateShared(client, model, lang, strings, systemPrompt, timeoutMs);
 }
 
 // ── Per-file processing ──────────────────────────────────────────────────────
-
-function calcCost(promptTokens, completionTokens) {
-  return (promptTokens / 1_000_000) * MODEL_PRICING.input +
-         (completionTokens / 1_000_000) * MODEL_PRICING.output;
-}
 
 function estimateTokens(bodyChars, fmCharSum, compCharSum, lang) {
   const outRatio = getOutputTokensPerCharForLang(lang);
@@ -1209,6 +978,7 @@ async function main() {
   console.log(`Wall clock:          ${elapsedSec.toFixed(1)} s`);
   if (!opts.dryRun) {
     console.log(`Glossary collapses:  ${totalDedup}`);
+    const rateLimitSnapshot = getRateLimitSnapshot();
     if (rateLimitSnapshot) {
       console.log('');
       console.log('=== Rate-limit headroom (from first body response) ===');

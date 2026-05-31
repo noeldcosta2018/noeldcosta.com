@@ -62,6 +62,16 @@
 // from Block 6b intact.
 
 import type { Locale } from "@/lib/locales";
+import { arMessages } from "./messages.ar";
+import { deMessages } from "./messages.de";
+import { elMessages } from "./messages.el";
+import { esMessages } from "./messages.es";
+import { frMessages } from "./messages.fr";
+import { itMessages } from "./messages.it";
+import { jaMessages } from "./messages.ja";
+import { nlMessages } from "./messages.nl";
+import { ptMessages } from "./messages.pt";
+import { ruMessages } from "./messages.ru";
 
 // ── Messages schema ────────────────────────────────────────────────────
 //
@@ -1615,7 +1625,7 @@ export interface TrackRecordProject {
 // builds. The `Record<Locale, Messages>` type enforces total coverage —
 // TypeScript will fail the build if a key is missing from any locale.
 
-const EN: Messages = {
+export const EN: Messages = {
   nav: {
     solutionsDropdown: "Solutions",
     toolsDropdown: "Tools",
@@ -3842,18 +3852,20 @@ const EN: Messages = {
 // the deep clones aren't needed because the script overwrites by value.
 export const MESSAGES: Record<Locale, Messages> = {
   en: EN,
-  ja: EN,
-  es: EN,
-  fr: EN,
-  ru: EN,
-  it: EN,
-  pt: EN,
-  de: EN,
-  ar: EN,
-  el: EN,
+  ar: arMessages,
+  de: deMessages,
+  el: elMessages,
+  es: esMessages,
+  fr: frMessages,
+  it: itMessages,
+  ja: jaMessages,
+  nl: nlMessages,
+  pt: ptMessages,
+  ru: ruMessages,
+  // Future-reserved locales (not in TARGET_LANGUAGES). Mapped to EN until
+  // they are added to the translation pipeline.
   zh: EN,
   ko: EN,
   hi: EN,
   tr: EN,
-  nl: EN,
 };
