@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
-  SAP_MODULES,
-  SAP_MODULE_CATEGORIES,
+  getSapModules,
+  getSapModuleCategories,
   getCoreModules,
   getModulesByCategory,
   type SapModule,
@@ -53,7 +53,11 @@ export interface ModulePickerProps {
   onChange: (next: string[]) => void;
 }
 
-const CORE_IDS = getCoreModules().map((m) => m.id);
+// Core module IDs — locale-independent (structural). Computed once at
+// module load using the English getter purely for the ID list; the
+// labels rendered to users come from the locale-aware modules array
+// inside the component.
+const CORE_IDS = getCoreModules("en").map((m) => m.id);
 
 export default function ModulePicker({ label, value, onChange }: ModulePickerProps) {
   const pathname = usePathname();
@@ -77,13 +81,19 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
 
   const selected = useMemo(() => new Set(value), [value]);
 
+  // Locale-aware module catalogue + category list. Recomputed on locale
+  // change; the merge inside the getters is cheap (82 entries × string
+  // lookup) so no caching beyond the useMemo wrapper.
+  const modules = useMemo(() => getSapModules(locale), [locale]);
+  const categories = useMemo(() => getSapModuleCategories(locale), [locale]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return SAP_MODULES;
-    return SAP_MODULES.filter((m) =>
+    if (!q) return modules;
+    return modules.filter((m) =>
       [m.label, m.code ?? "", m.description].some((s) => s.toLowerCase().includes(q))
     );
-  }, [query]);
+  }, [query, modules]);
 
   const byCategory = useMemo(() => {
     const map = new Map<SapModuleCategory, SapModule[]>();
@@ -115,9 +125,13 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
    * any that aren't selected (preserving anything already there).
    * Operates on the full category catalogue, not the filtered view,
    * so search state doesn't change the bulk action's behaviour.
+   *
+   * Locale passed through so the structural ID list comes from the
+   * same source as the rendered modules — though in practice the IDs
+   * are locale-independent, so the choice is arbitrary.
    */
   const toggleCategoryAll = (cat: SapModuleCategory) => {
-    const catModuleIds = getModulesByCategory(cat).map((m) => m.id);
+    const catModuleIds = getModulesByCategory(cat, locale).map((m) => m.id);
     const allSelected = catModuleIds.every((id) => selected.has(id));
     const next = new Set(value);
     if (allSelected) {
@@ -188,7 +202,7 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
       {value.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-4 p-3 rounded-md bg-cream border border-corbeau/8">
           {value.map((id) => {
-            const m = SAP_MODULES.find((x) => x.id === id);
+            const m = modules.find((x) => x.id === id);
             if (!m) return null;
             return (
               <button
@@ -212,17 +226,19 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
 
       {/* Category groups */}
       <div className="space-y-2">
-        {SAP_MODULE_CATEGORIES.map((cat) => {
-          const modules = byCategory.get(cat.id) ?? [];
-          if (query.trim() && modules.length === 0) return null;
+        {categories.map((cat) => {
+          // Aliased to `catModules` to avoid shadowing the outer
+          // `modules` array (the locale-aware catalogue).
+          const catModules = byCategory.get(cat.id) ?? [];
+          if (query.trim() && catModules.length === 0) return null;
 
-          const selectedInCat = modules.filter((m) => selected.has(m.id)).length;
+          const selectedInCat = catModules.filter((m) => selected.has(m.id)).length;
           // Compute the bulk-select state against the FULL category catalogue,
           // not the filtered view. That way the "Select all" button picks up
           // everything in the category even when the search has hidden some
           // rows. Three states: none, some (indeterminate), all.
-          const catTotal = getModulesByCategory(cat.id).length;
-          const catSelectedTotal = getModulesByCategory(cat.id)
+          const catTotal = getModulesByCategory(cat.id, locale).length;
+          const catSelectedTotal = getModulesByCategory(cat.id, locale)
             .filter((m) => selected.has(m.id)).length;
           const bulkState: "none" | "some" | "all" =
             catSelectedTotal === 0
@@ -311,7 +327,7 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
 
               {open && (
                 <div className="border-t border-corbeau/8 divide-y divide-corbeau/6">
-                  {modules.map((m) => {
+                  {catModules.map((m) => {
                     const isSel = selected.has(m.id);
                     return (
                       <label

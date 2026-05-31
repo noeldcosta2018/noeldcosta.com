@@ -69,6 +69,24 @@ surrounding section chrome (which is already done).
 **Priority:** Low. Terminal demo is a stylized tech showcase, not core
 marketing copy.
 
+### SolutionClient + engine.ts still render English SAP module labels
+**Source:** Pass 2b-2c.
+**What:** After Pass 2b-2c, `getModuleById(id)` and the `SAP_MODULES`
+back-compat constant default to `locale = "en"`. SolutionClient.tsx
+(line ~156 in PhaseCard renders module pills) and
+solution-builder/engine.ts (moduleToRow builds ModuleRow with module
+labels for the cost roadmap) both call `getModuleById(id)` without
+threading a locale through. Result: module labels in the roadmap +
+phase pills always render English, even when MESSAGES.sapModules.* is
+populated in another language.
+**Fix:** Pass 2b-2d is scheduled to thread `locale` through
+`buildRoadmap(input, locale)` and `moduleToRow(id, sizeId, locale)`,
+then update SolutionClient to detect locale via usePathname and pass
+it down. This entry exists so the gap is explicit; remove when 2b-2d
+ships.
+**Estimate:** Part of Pass 2b-2d.
+**Priority:** Tracked, scheduled.
+
 ### Consolidate `bcp47()` and `detectLocale()` helpers
 **Source:** Pass 2b-1a.
 **What:** `detectLocale(pathname)` is now duplicated in 9 client components

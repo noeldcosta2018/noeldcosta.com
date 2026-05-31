@@ -1316,6 +1316,40 @@ export interface Messages {
     notesLabel: string;
     notesPlaceholder: string;
   };
+  // SAP module catalogue (Pass 2b-2c). 82 modules + 9 categories.
+  // Pairs with src/lib/sap-modules.ts which keeps the structural fields
+  // (id, code, category, effortWeight, core) inline as static data; only
+  // the user-facing label + description / blurb live here.
+  //
+  // Module keys MUST match the `id` field in SAP_MODULES (hyphen-cased
+  // identifiers like "fi-gl", "co-pa", "re-fx"). Drift between the two
+  // surfaces is a bug — the getter falls back to the ID on mismatch.
+  //
+  // Category keys are the typed SapModuleCategory enum union; the
+  // Record<SapModuleCategory, …> shape forces all 9 to be present.
+  //
+  // <noTranslate> markers wrap proper-noun SAP product names (BTP,
+  // Fiori, Ariba, Joule, etc.), SAP module codes that survive verbatim
+  // in body copy (FI-GL, EWM, TM, etc. — note: codes also appear in the
+  // separate `code` field on SAP_MODULES, which stays as a proper-noun
+  // constant), regulatory standards (IFRS 16, ASC 842, ViDA, GDPR), and
+  // any acronym that should not be translated (FX, VAT, JVA, RF, etc.).
+  sapModules: {
+    modules: Record<string, { label: string; description: string }>;
+    categories: Record<
+      | "finance"
+      | "procurement"
+      | "supply-chain"
+      | "sales-cx"
+      | "hcm"
+      | "projects"
+      | "analytics"
+      | "platform"
+      | "industry",
+      { label: string; blurb: string }
+    >;
+  };
+
   solutionBuilder: {
     _todo: string;
   };
@@ -2840,6 +2874,438 @@ const EN: Messages = {
     notesPlaceholder:
       "Language requirements, visa eligibility, team size, reporting line…",
   },
+  // Pass 2b-2c. 82 modules + 9 categories. Wrapper tags around proper
+  // nouns survive the translation pipeline and are stripped at render
+  // by stripMarkers / deepStripMarkers at every consumer site.
+  sapModules: {
+    modules: {
+      // ─── Finance & Controlling ──────────────────────────────────────
+      "fi-gl": {
+        label: "Financial Accounting",
+        description: "General Ledger, statutory reporting foundation",
+      },
+      "fi-ap": {
+        label: "Accounts Payable",
+        description: "Vendor invoicing, payment processing",
+      },
+      "fi-ar": {
+        label: "Accounts Receivable",
+        description: "Customer invoices, collections, dunning",
+      },
+      "fi-aa": {
+        label: "Asset Accounting",
+        description: "Fixed assets, depreciation, capitalisation",
+      },
+      "fi-bl": {
+        label: "Bank Accounting & Cash Management",
+        description: "Bank reconciliation, daily liquidity",
+      },
+      "tax-mgmt": {
+        label: "Tax Management",
+        description: "Indirect tax, <noTranslate>VAT</noTranslate>, withholding, jurisdiction logic",
+      },
+      "co": {
+        label: "Controlling",
+        description: "Internal cost accounting and management reporting",
+      },
+      "co-cca": {
+        label: "Cost Center Accounting",
+        description: "Cost centre design, allocations, settlements",
+      },
+      "co-pca": {
+        label: "Profit Center Accounting",
+        description: "Profit centre P&L, intra-company transfers",
+      },
+      "co-pc": {
+        label: "Product Costing",
+        description: "Standard cost, actual cost, variance analysis",
+      },
+      "co-pa": {
+        label: "Profitability Analysis",
+        description: "Margin reporting by customer, region, product",
+      },
+      "internal-orders": {
+        label: "Internal Orders",
+        description: "Capex orders, event/campaign cost capture",
+      },
+      "group-reporting": {
+        label: "Group Reporting (<noTranslate>S/4HANA</noTranslate>)",
+        description:
+          "Native <noTranslate>S/4HANA</noTranslate> consolidation, replaces <noTranslate>BPC</noTranslate> for new builds",
+      },
+      "bpc": {
+        label:
+          "Financial Consolidation (<noTranslate>BPC</noTranslate> / <noTranslate>SEM-BCS</noTranslate>)",
+        description: "Legacy consolidation, planning, eliminations",
+      },
+      "fpa-planning": {
+        label: "Financial Planning & Analysis",
+        description: "Planning, budgeting, forecasting on <noTranslate>SAC</noTranslate> for Planning",
+      },
+      "treasury": {
+        label: "Treasury & Risk Management",
+        description: "Cash management, in-house cash, <noTranslate>FX</noTranslate>, hedging, money market",
+      },
+      "in-house-cash": {
+        label: "In-House Cash / Cash Pooling",
+        description: "Intercompany payments, payment factory",
+      },
+      "fscm-credit": {
+        label: "Credit Management",
+        description: "Credit scoring, limit management, exposure",
+      },
+      "fscm-dispute": {
+        label: "Dispute Management",
+        description: "<noTranslate>AR</noTranslate> dispute case workflow",
+      },
+      "fscm-collections": {
+        label: "Collections Management",
+        description: "Worklist-driven collections, dunning strategy",
+      },
+      "re-fx": {
+        label: "Real Estate Management",
+        description:
+          "Lease contracts, <noTranslate>IFRS 16</noTranslate> / <noTranslate>ASC 842</noTranslate> compliance",
+      },
+      "drc": {
+        label: "Document & Reporting Compliance",
+        description:
+          "Global e-invoicing, statutory reporting, <noTranslate>ViDA</noTranslate>, <noTranslate>KSA</noTranslate>, <noTranslate>UAE</noTranslate>, India",
+      },
+
+      // ─── Procurement ────────────────────────────────────────────────
+      "mm": {
+        label: "Materials Management",
+        description: "Purchasing, inventory, vendor management",
+      },
+      "ariba-sourcing": {
+        label: "<noTranslate>Ariba</noTranslate> Sourcing",
+        description: "<noTranslate>RFx</noTranslate>, e-auctions, supplier discovery",
+      },
+      "ariba-buying": {
+        label: "<noTranslate>Ariba</noTranslate> Buying & Invoicing",
+        description:
+          "Catalog-driven indirect procurement, invoice automation",
+      },
+      "ariba-contracts": {
+        label: "<noTranslate>Ariba</noTranslate> Contracts",
+        description: "Contract lifecycle management",
+      },
+      "ariba-supplier": {
+        label: "<noTranslate>Ariba</noTranslate> Supplier Management",
+        description: "Supplier qualification, risk, performance",
+      },
+      "inventory-mgmt": {
+        label: "Inventory Management",
+        description: "Stock movements, valuation, physical inventory",
+      },
+      "gr-ir": {
+        label: "Goods Receipt / Invoice Verification",
+        description: "3-way match, <noTranslate>GR/IR</noTranslate> clearing",
+      },
+
+      // ─── Supply Chain & Manufacturing ───────────────────────────────
+      "pp": {
+        label: "Production Planning",
+        description: "<noTranslate>MRP</noTranslate>, production orders, capacity planning",
+      },
+      "ppds": {
+        label: "Production Planning & Detailed Scheduling",
+        description: "Advanced finite scheduling, sequencing",
+      },
+      "me": {
+        label: "Manufacturing Execution",
+        description: "Shop-floor execution, work instructions, traceability",
+      },
+      "qm": {
+        label: "Quality Management",
+        description: "Inspection lots, certificates, batch quality",
+      },
+      "pm-eam": {
+        label: "Plant Maintenance / <noTranslate>EAM</noTranslate>",
+        description:
+          "Maintenance orders, asset master, preventive maintenance",
+      },
+      "ehs": {
+        label: "Environment, Health & Safety",
+        description:
+          "Hazardous substances, incident management, <noTranslate>SDS</noTranslate>",
+      },
+      "ewm": {
+        label: "Extended Warehouse Management",
+        description:
+          "Multi-bin warehouse, wave management, <noTranslate>RF</noTranslate>, slotting",
+      },
+      "tm": {
+        label: "Transportation Management",
+        description: "Freight planning, carrier selection, settlement",
+      },
+      "ibp": {
+        label: "Integrated Business Planning",
+        description:
+          "Demand, supply, <noTranslate>S&OP</noTranslate>, inventory optimisation",
+      },
+      "dmc": {
+        label: "Digital Manufacturing Cloud",
+        description: "Cloud <noTranslate>MES</noTranslate> with <noTranslate>IoT</noTranslate> and analytics",
+      },
+      "apm": {
+        label: "Asset Performance Management",
+        description: "Predictive maintenance, asset strategy",
+      },
+
+      // ─── Sales & CX ─────────────────────────────────────────────────
+      "sd": {
+        label: "Sales & Distribution",
+        description: "Order-to-cash, pricing, billing",
+      },
+      "pricing-conditions": {
+        label: "Pricing & Condition Technique",
+        description: "Multi-tier pricing, discounts, rebates",
+      },
+      "brim": {
+        label: "Billing & Revenue Innovation Management",
+        description:
+          "Subscription billing, convergent invoicing, <noTranslate>IFRS 15</noTranslate>",
+      },
+      "sales-cloud": {
+        label: "Sales Cloud",
+        description: "<noTranslate>CRM</noTranslate>, pipeline, activity tracking",
+      },
+      "service-cloud": {
+        label: "Service Cloud",
+        description:
+          "Case management, omnichannel service, field service",
+      },
+      "marketing-cloud": {
+        label: "Marketing Cloud (<noTranslate>Emarsys</noTranslate>)",
+        description:
+          "Campaign automation, segmentation, personalisation",
+      },
+      "commerce-cloud": {
+        label: "Commerce Cloud",
+        description: "<noTranslate>B2B</noTranslate> / <noTranslate>B2C</noTranslate> storefront, catalog, checkout",
+      },
+      "cdc": {
+        label: "Customer Data Cloud (<noTranslate>CDC</noTranslate>)",
+        description:
+          "Single sign-on, consent management, identity",
+      },
+      "cpq": {
+        label: "Configure, Price, Quote",
+        description: "Guided selling, complex configuration",
+      },
+      "subscription-billing": {
+        label: "Subscription Billing",
+        description: "Recurring revenue, usage-based pricing",
+      },
+
+      // ─── HCM (SuccessFactors) ───────────────────────────────────────
+      "sf-ec": {
+        label: "Employee Central (core <noTranslate>HR</noTranslate>)",
+        description:
+          "Org structure, employee master, self-service",
+      },
+      "sf-ec-payroll": {
+        label: "Employee Central Payroll",
+        description: "Cloud payroll, multi-country",
+      },
+      "hcm-payroll-onprem": {
+        label: "<noTranslate>SAP HCM</noTranslate> Payroll (on-prem)",
+        description:
+          "Legacy <noTranslate>SAP HCM</noTranslate> payroll, country-specific schemas",
+      },
+      "sf-time": {
+        label: "Time Management",
+        description: "Time entry, attendance, absence quotas",
+      },
+      "sf-recruiting": {
+        label: "Recruiting",
+        description: "Requisitions, candidate pipeline, offers",
+      },
+      "sf-onboarding": {
+        label: "Onboarding",
+        description: "Pre-hire workflows, paperwork, equipment",
+      },
+      "sf-performance": {
+        label: "Performance & Goals",
+        description:
+          "Goal cascade, performance reviews, calibration",
+      },
+      "sf-lms": {
+        label: "Learning Management",
+        description:
+          "Learning catalogue, compliance training, certifications",
+      },
+      "sf-comp": {
+        label: "Compensation",
+        description: "Comp planning, merit cycles, bonus",
+      },
+      "sf-variable-pay": {
+        label: "Variable Pay",
+        description: "Bonus plans, sales incentives",
+      },
+      "sf-succession": {
+        label: "Succession & Development",
+        description: "Talent pools, career paths, 9-box",
+      },
+      "sf-analytics": {
+        label: "People Analytics / Workforce Planning",
+        description: "Workforce dashboards, headcount planning",
+      },
+
+      // ─── Projects ───────────────────────────────────────────────────
+      "ps": {
+        label: "Project Systems",
+        description:
+          "<noTranslate>WBS</noTranslate>, project costing, milestone billing",
+      },
+      "ppm": {
+        label: "Portfolio & Project Management",
+        description: "Portfolio dashboards, resource planning",
+      },
+      "concur": {
+        label: "<noTranslate>Concur</noTranslate> (Travel & Expense)",
+        description:
+          "Expense reports, travel booking, <noTranslate>T&E</noTranslate> policy",
+      },
+
+      // ─── Analytics & Data ───────────────────────────────────────────
+      "sac": {
+        label: "<noTranslate>SAP Analytics Cloud</noTranslate>",
+        description:
+          "Dashboards, planning, predictive on <noTranslate>SAC</noTranslate>",
+      },
+      "datasphere": {
+        label: "<noTranslate>SAP Datasphere</noTranslate>",
+        description: "Data warehousing, data products, semantic layer",
+      },
+      "bw4hana": {
+        label: "<noTranslate>SAP BW/4HANA</noTranslate>",
+        description: "Enterprise data warehouse on <noTranslate>HANA</noTranslate>",
+      },
+      "embedded-analytics": {
+        label: "Embedded Analytics in <noTranslate>S/4HANA</noTranslate>",
+        description:
+          "<noTranslate>CDS</noTranslate> views, <noTranslate>KPI</noTranslate> cards in <noTranslate>Fiori</noTranslate>",
+      },
+
+      // ─── Platform & Integration ─────────────────────────────────────
+      "btp": {
+        label: "<noTranslate>SAP BTP</noTranslate> (Business Technology Platform)",
+        description: "Extension platform, dev runtime, services",
+      },
+      "integration-suite": {
+        label:
+          "<noTranslate>SAP Integration Suite</noTranslate> (<noTranslate>CPI</noTranslate>)",
+        description:
+          "<noTranslate>iFlows</noTranslate>, <noTranslate>API</noTranslate> management, event-driven integration",
+      },
+      "build": {
+        label: "<noTranslate>SAP Build</noTranslate> (Apps + Process Automation)",
+        description:
+          "Low-code app builder, process automation, <noTranslate>RPA</noTranslate>",
+      },
+      "mdg": {
+        label: "Master Data Governance",
+        description:
+          "Central data governance, stewardship, workflows",
+      },
+      "signavio": {
+        label: "<noTranslate>SAP Signavio</noTranslate>",
+        description: "Process intelligence, mining, modelling",
+      },
+      "ias": {
+        label: "Identity & Access Management",
+        description:
+          "<noTranslate>SSO</noTranslate>, provisioning, identity federation (<noTranslate>IAS</noTranslate> / <noTranslate>IPS</noTranslate>)",
+      },
+      "ilm": {
+        label: "Information Lifecycle Management",
+        description:
+          "Data retention, archiving, <noTranslate>GDPR</noTranslate> / right-to-erasure",
+      },
+
+      // ─── Industry add-ons ───────────────────────────────────────────
+      "is-retail": {
+        label: "<noTranslate>SAP</noTranslate> for Retail",
+        description: "Article master, assortment, store ops",
+      },
+      "is-oil": {
+        label: "<noTranslate>SAP</noTranslate> for Oil, Gas & Energy",
+        description:
+          "Hydrocarbon Management, <noTranslate>JVA</noTranslate>, exchanges",
+      },
+      "is-utilities": {
+        label: "<noTranslate>SAP</noTranslate> for Utilities",
+        description: "Device Management, billing, customer service",
+      },
+      "is-public-sector": {
+        label: "<noTranslate>SAP</noTranslate> for Public Sector",
+        description:
+          "Funds Management, Grants Management, Budget Control",
+      },
+      "is-banking": {
+        label: "<noTranslate>SAP</noTranslate> for Banking",
+        description:
+          "Deposits Management, Loans Management, Account Management",
+      },
+      "is-defense": {
+        label: "<noTranslate>SAP</noTranslate> for Defence & Security",
+        description:
+          "Force Element, Stock Aggregation, military planning",
+      },
+    },
+
+    categories: {
+      finance: {
+        label: "Finance & Controlling",
+        blurb:
+          "<noTranslate>FI</noTranslate>, <noTranslate>CO</noTranslate>, Group Reporting, Treasury, <noTranslate>FSCM</noTranslate>, <noTranslate>FP&A</noTranslate>",
+      },
+      procurement: {
+        label: "Procurement & Sourcing",
+        blurb:
+          "<noTranslate>MM</noTranslate>, <noTranslate>Ariba</noTranslate>, Inventory, <noTranslate>GR/IR</noTranslate>",
+      },
+      "supply-chain": {
+        label: "Supply Chain & Manufacturing",
+        blurb:
+          "<noTranslate>PP</noTranslate>, <noTranslate>EWM</noTranslate>, <noTranslate>TM</noTranslate>, <noTranslate>IBP</noTranslate>, <noTranslate>QM</noTranslate>, <noTranslate>PM</noTranslate>, <noTranslate>EHS</noTranslate>",
+      },
+      "sales-cx": {
+        label: "Sales & Customer Experience",
+        blurb:
+          "<noTranslate>SD</noTranslate>, <noTranslate>BRIM</noTranslate>, Sales/Service/Commerce/Marketing Cloud, <noTranslate>CPQ</noTranslate>",
+      },
+      hcm: {
+        label: "Human Capital Management",
+        blurb:
+          "<noTranslate>SuccessFactors</noTranslate>, Payroll, Time, Recruiting, <noTranslate>LMS</noTranslate>",
+      },
+      projects: {
+        label: "Projects & Expense",
+        blurb:
+          "<noTranslate>PS</noTranslate>, <noTranslate>PPM</noTranslate>, <noTranslate>Concur</noTranslate>",
+      },
+      analytics: {
+        label: "Analytics & Data",
+        blurb:
+          "<noTranslate>SAC</noTranslate>, <noTranslate>Datasphere</noTranslate>, <noTranslate>BW/4HANA</noTranslate>, embedded analytics",
+      },
+      platform: {
+        label: "Platform & Integration",
+        blurb:
+          "<noTranslate>BTP</noTranslate>, Integration Suite, <noTranslate>MDG</noTranslate>, <noTranslate>Signavio</noTranslate>, <noTranslate>IAM</noTranslate>",
+      },
+      industry: {
+        label: "Industry add-ons",
+        blurb:
+          "Retail, Oil & Gas, Utilities, Public Sector, Banking, Defense",
+      },
+    },
+  },
+
   solutionBuilder: { _todo: "Pass 2: ~80 strings from SolutionClient.tsx" },
   contact: {
     eyebrow: "Get in touch",
