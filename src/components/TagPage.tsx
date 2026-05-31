@@ -21,6 +21,7 @@ import {
 } from "@/lib/content";
 import { breadcrumbJsonLd, collectionPageJsonLd, SITE_URL } from "@/lib/seo";
 import { localePathPrefix, localizedPath } from "@/lib/locales";
+import { getMessages } from "@/lib/i18n/useTranslation";
 import {
   tagInfo,
   tagLabel,
@@ -31,10 +32,13 @@ import {
 function PostCard({
   post,
   priority,
+  locale,
 }: {
   post: PostRecord;
   priority?: boolean;
+  locale: Locale;
 }) {
+  const m = getMessages(locale);
   const mins = readingTime(post.body);
   const tags = (post.frontmatter.tags ?? []).slice(0, 1);
 
@@ -90,13 +94,13 @@ function PostCard({
             className="flex items-center gap-1 font-mono text-[0.6rem] tracking-[1px]"
             style={{ color: "var(--cc-silver)" }}
           >
-            <Clock size={9} /> {mins} min read
+            <Clock size={9} /> {mins} {m.card.minRead}
           </span>
           <span
             className="inline-flex items-center gap-1 text-[0.78rem] font-semibold"
             style={{ color: "var(--cc-papaya)" }}
           >
-            Read article <ArrowRight size={11} />
+            {m.card.readArticle} <ArrowRight size={11} />
           </span>
         </div>
       </div>
@@ -111,6 +115,7 @@ export default function TagPage({
   tag: string;
   locale?: Locale;
 }) {
+  const m = getMessages(locale);
   const info = tagInfo(tag);
   const Icon = info.icon;
   const posts = getPostsByAnyTag(tagSynonyms(tag), locale);
@@ -175,11 +180,11 @@ export default function TagPage({
                 href={localizedPath(locale, "/")}
                 className="font-mono text-[0.72rem] tracking-widest uppercase text-eyebrow hover:text-papaya transition-colors"
               >
-                Home
+                {m.breadcrumb.home}
               </Link>
               <span className="font-mono text-[0.72rem] text-eyebrow/40">/</span>
               <span className="font-mono text-[0.72rem] tracking-widest uppercase text-eyebrow">
-                Tag
+                {m.tag.tagKicker}
               </span>
               <span className="font-mono text-[0.72rem] text-eyebrow/40">/</span>
               <span
@@ -205,7 +210,7 @@ export default function TagPage({
                 className="font-mono text-[0.72rem] tracking-[3px] uppercase font-semibold"
                 style={{ color: "var(--cc-papaya)" }}
               >
-                Tag
+                {m.tag.tagKicker}
               </p>
             </div>
 
@@ -238,7 +243,7 @@ export default function TagPage({
               >
                 <BookOpen size={12} style={{ color: "var(--cc-papaya)" }} />
                 {posts.length}{" "}
-                {posts.length === 1 ? "article" : "articles"}
+                {posts.length === 1 ? m.category.articleSingular : m.category.articlePlural}
               </span>
               <span
                 className="inline-flex items-center gap-2 text-[0.82rem] font-medium px-3.5 py-1.5 rounded-full"
@@ -249,7 +254,7 @@ export default function TagPage({
                 }}
               >
                 <ShieldCheck size={12} style={{ color: "var(--cc-papaya)" }} />
-                25 years field experience
+                {m.tag.badgeFieldExperience}
               </span>
             </div>
           </div>
@@ -271,18 +276,17 @@ export default function TagPage({
               }}
             >
               <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
-                [ No articles yet ]
+                {m.tag.emptyStateEyebrow}
               </p>
               <h2
                 className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-4 text-corbeau"
                 style={{ fontSize: "clamp(1.75rem,3.5vw,2.5rem)" }}
               >
-                Nothing tagged {info.label}{" "}
-                <span className="cc-emphasis-italic">yet.</span>
+                {m.tag.emptyStateTitlePrefix} {info.label}{" "}
+                <span className="cc-emphasis-italic">{m.tag.emptyStateTitleSuffix}</span>
               </h2>
               <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-6">
-                I haven&apos;t published anything under this tag yet. Browse
-                another topic below, or check the full archive.
+                {m.tag.emptyStateBody}
               </p>
               <div className="flex flex-wrap gap-2">
                 {otherTags.map((t) => (
@@ -320,19 +324,19 @@ export default function TagPage({
                   }}
                 >
                   <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
-                    [ Featured insights ]
+                    {m.tag.featuredEyebrow}
                   </p>
                   <h2
                     className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
                     style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
                   >
-                    {"Reads worth your time. "}
+                    {`${m.tag.featuredH2Lead} `}
                     <span className="cc-emphasis-italic">
-                      Start with these.
+                      {m.tag.featuredH2Emphasis}
                     </span>
                   </h2>
                   <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-10">
-                    The pieces in this tag I send to clients most often.
+                    {m.tag.featuredIntro}
                   </p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -341,6 +345,7 @@ export default function TagPage({
                         key={p.frontmatter.slug}
                         post={p}
                         priority={i === 0}
+                        locale={locale}
                       />
                     ))}
                   </div>
@@ -364,19 +369,19 @@ export default function TagPage({
                   }}
                 >
                   <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
-                    [ More on this tag ]
+                    {m.tag.moreEyebrow}
                   </p>
                   <h2
                     className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
                     style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
                   >
-                    {"The full archive. "}
+                    {`${m.tag.moreH2Lead} `}
                     <span className="cc-emphasis-italic">
-                      Field notes, not theory.
+                      {m.tag.moreH2Emphasis}
                     </span>
                   </h2>
                   <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-10">
-                    Every article tagged {info.label}.
+                    {m.tag.moreIntroPrefix} {info.label}.
                   </p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -384,6 +389,7 @@ export default function TagPage({
                       <PostCard
                         key={p.frontmatter.slug}
                         post={p}
+                        locale={locale}
                       />
                     ))}
                   </div>
@@ -407,13 +413,13 @@ export default function TagPage({
               }}
             >
               <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
-                [ Other tags ]
+                {m.tag.otherTagsEyebrow}
               </p>
               <h2
                 className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-6 text-bone"
                 style={{ fontSize: "clamp(1.6rem,3vw,2.2rem)" }}
               >
-                {"Pick another angle."}
+                {m.tag.otherTagsH2}
               </h2>
               <div className="flex flex-wrap gap-2">
                 {otherTags.map((t) => (
@@ -472,13 +478,12 @@ export default function TagPage({
                 />
               </div>
               <div className="flex-1 min-w-0">
+                {/* "Noel D'Costa" stays inline — personal name proper noun. */}
                 <p className="font-display font-black text-corbeau text-lg mb-1">
                   Noel D&apos;Costa
                 </p>
                 <p className="text-night/75 text-[0.88rem] leading-relaxed max-w-lg">
-                  Senior ERP and AI advisor. 25 years delivering for EDGE Group,
-                  Etihad Airways, ADNOC, PIF entities, and the UAE Government.
-                  CIMA, AICPA, Masters in Accounting.
+                  {m.category.aboutStripBio}
                 </p>
               </div>
               <Link
@@ -486,15 +491,15 @@ export default function TagPage({
                 className="flex-shrink-0 text-[0.82rem] font-semibold hover:underline"
                 style={{ color: "var(--cc-papaya)" }}
               >
-                Full bio →
+                {m.category.fullBioLink}
               </Link>
             </div>
           </div>
         </section>
 
-        <CTABanner />
+        <CTABanner locale={locale} />
       </main>
-      <Footer />
+      <Footer locale={locale} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

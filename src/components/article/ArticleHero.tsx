@@ -1,5 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import { type Locale } from "@/lib/locales";
+import { getMessages } from "@/lib/i18n/useTranslation";
 
 interface ArticleHeroProps {
   category?: { label: string; slug: string };
@@ -12,9 +14,37 @@ interface ArticleHeroProps {
   readingMinutes: number;
   heroImage?: string;
   heroAlt?: string;
+  locale?: Locale;
 }
 
+// Personal name — proper noun, do-not-translate. Stays inline.
 const DISPLAY_AUTHOR = "Noel D'Costa";
+
+// Convert our locale codes to BCP-47 tags for Intl.DateTimeFormat. Most
+// of our locales already work as bare codes (Intl resolves "ja" → "ja"),
+// but explicit region tags (ja_JP, en_US, etc.) give predictable date
+// formatting per OG_LOCALE_MAP. Falls back to en-US on the few locales
+// Intl doesn't recognise.
+function bcp47(locale: Locale): string {
+  switch (locale) {
+    case "en": return "en-US";
+    case "ja": return "ja-JP";
+    case "ar": return "ar-AE"; // GCC-leaning, matches OG_LOCALE_MAP
+    case "de": return "de-DE";
+    case "es": return "es-ES";
+    case "fr": return "fr-FR";
+    case "it": return "it-IT";
+    case "pt": return "pt-BR"; // Brazilian Portuguese — see OG_LOCALE_MAP
+    case "nl": return "nl-NL";
+    case "ru": return "ru-RU";
+    case "el": return "el-GR";
+    case "zh": return "zh-CN";
+    case "ko": return "ko-KR";
+    case "hi": return "hi-IN";
+    case "tr": return "tr-TR";
+    default: return "en-US";
+  }
+}
 
 /**
  * Article hero with staggered CSS entrance animations.
@@ -34,12 +64,15 @@ export default function ArticleHero({
   readingMinutes,
   heroImage,
   heroAlt,
+  locale = "en",
 }: ArticleHeroProps) {
   void _author;
   const author = DISPLAY_AUTHOR;
+  const m = getMessages(locale);
+  const dateLocale = bcp47(locale);
 
   const displayDate = new Date(updated || date);
-  const dateLabel = displayDate.toLocaleDateString("en-US", {
+  const dateLabel = displayDate.toLocaleDateString(dateLocale, {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -48,7 +81,7 @@ export default function ArticleHero({
   // E-E-A-T trustworthiness signal: human-readable "last reviewed" line.
   // Only shown when set in frontmatter — keeps editorial honesty intact.
   const reviewedLabel = lastReviewed
-    ? new Date(lastReviewed).toLocaleDateString("en-US", {
+    ? new Date(lastReviewed).toLocaleDateString(dateLocale, {
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -108,19 +141,19 @@ export default function ArticleHero({
               {author}
             </span>
             <span className="font-mono text-[0.72rem] uppercase tracking-[1.5px] text-eyebrow">
-              {updated ? "Updated " : ""}{dateLabel}
+              {updated ? m.article.updatedLabel : ""}{dateLabel}
             </span>
           </span>
         </span>
         <span className="h-4 w-px bg-corbeau/[0.12] hidden sm:block" aria-hidden />
         <span className="font-mono text-[0.72rem] uppercase tracking-[1.5px] text-eyebrow">
-          {readingMinutes} min read
+          {readingMinutes} {m.article.minRead}
         </span>
         {reviewedLabel && (
           <>
             <span className="h-4 w-px bg-corbeau/[0.12] hidden sm:block" aria-hidden />
             <span className="font-mono text-[0.72rem] uppercase tracking-[1.5px] text-eyebrow">
-              Reviewed {reviewedLabel}
+              {m.article.reviewedLabel}{reviewedLabel}
             </span>
           </>
         )}

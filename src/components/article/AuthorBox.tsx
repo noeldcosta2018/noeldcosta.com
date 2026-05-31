@@ -1,5 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import { type Locale } from "@/lib/locales";
+import { getMessages } from "@/lib/i18n/useTranslation";
 
 /**
  * Combined end-of-article author + advisory CTA card.
@@ -10,14 +12,23 @@ import Link from "next/link";
  *
  * Visual: white/paper background, 2px papaya border, papaya top-stripe
  * so it reads as a brand card without being as heavy as a full orange fill.
+ *
+ * locale prop drives Block 6c i18n. ctaTitle / ctaBody props remain
+ * available for callers that want to override the per-article CTA; when
+ * omitted, the defaults come from MESSAGES so they translate.
  */
 export default function AuthorBox({
-  ctaTitle = "Running an ERP programme right now?",
-  ctaBody = "If this article touched on a programme you are live in right now, a 30-minute conversation usually gets further than another week of internal analysis.",
+  locale = "en",
+  ctaTitle,
+  ctaBody,
 }: {
+  locale?: Locale;
   ctaTitle?: string;
   ctaBody?: string;
 }) {
+  const m = getMessages(locale);
+  const resolvedCtaTitle = ctaTitle ?? m.article.ctaWorkingOnSomething;
+  const resolvedCtaBody = ctaBody ?? m.article.ctaWorkingBody;
   return (
     <section
       className="mt-16 rounded-[20px] overflow-hidden border-2 border-papaya shadow-[0_12px_48px_rgba(252,152,90,0.18)] transition-shadow duration-500 hover:shadow-[0_20px_60px_rgba(252,152,90,0.28)]"
@@ -41,8 +52,9 @@ export default function AuthorBox({
             </div>
             <div>
               <p className="font-mono text-[0.72rem] font-medium tracking-[2.2px] uppercase text-papaya mb-1">
-                Written by
+                {m.article.writtenByLabel}
               </p>
+              {/* "Noel D'Costa" is a personal name — proper noun, stays inline. */}
               <h3 className="font-display font-black text-corbeau text-[1.25rem] tracking-[-0.03em] leading-[1.1]">
                 Noel D&apos;Costa
               </h3>
@@ -50,11 +62,7 @@ export default function AuthorBox({
           </div>
 
           <p className="text-night leading-[1.72] text-[0.95rem] mb-6 max-w-[34rem]">
-            25 years across SAP and Oracle ERP programmes in aviation,
-            government, finance, retail, and manufacturing. Finance background.
-            I help leadership teams scope transformations honestly, recover
-            programmes in trouble, and build systems that survive their first
-            year in production.
+            {m.article.authorBio}
           </p>
 
           {/* Secondary mono links */}
@@ -63,7 +71,7 @@ export default function AuthorBox({
               href="/about"
               className="px-2 py-1 text-corbeau/60 hover:text-papaya transition-colors rounded-md"
             >
-              About Noel
+              {m.article.aboutNoelLink}
             </Link>
             <span aria-hidden className="text-corbeau/25">·</span>
             <a
@@ -72,7 +80,7 @@ export default function AuthorBox({
               rel="noopener noreferrer"
               className="px-2 py-1 text-corbeau/60 hover:text-papaya transition-colors rounded-md"
             >
-              LinkedIn
+              {m.article.linkedinLink}
             </a>
             <span aria-hidden className="text-corbeau/25">·</span>
             <a
@@ -81,7 +89,7 @@ export default function AuthorBox({
               rel="noopener noreferrer"
               className="px-2 py-1 text-corbeau/60 hover:text-papaya transition-colors rounded-md"
             >
-              YouTube
+              {m.article.youtubeLink}
             </a>
           </div>
         </div>
@@ -92,10 +100,10 @@ export default function AuthorBox({
           style={{ background: "#ffffff" }}
         >
           <h3 className="font-display font-black text-corbeau text-[1.35rem] md:text-[1.55rem] tracking-[-0.03em] leading-[1.15] mb-4">
-            {ctaTitle}
+            {resolvedCtaTitle}
           </h3>
           <p className="text-night leading-[1.72] text-[0.97rem] mb-7 max-w-[30rem]">
-            {ctaBody}
+            {resolvedCtaBody}
           </p>
           <div className="flex flex-wrap gap-3 items-center">
             <a
@@ -104,7 +112,7 @@ export default function AuthorBox({
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-papaya hover:bg-[#fda66e] text-corbeau px-7 py-3.5 rounded-[10px] font-display font-bold text-[0.92rem] transition-all hover:-translate-y-px shadow-[0_4px_18px_rgba(252,152,90,0.30)] hover:shadow-[0_8px_28px_rgba(252,152,90,0.45)]"
             >
-              Book a 30-min call
+              {m.article.primaryCtaBookCall}
               <span aria-hidden className="text-[1.1em] leading-none">→</span>
             </a>
 
@@ -112,7 +120,7 @@ export default function AuthorBox({
               href="/case-studies"
               className="inline-flex items-center gap-2 bg-transparent text-corbeau px-7 py-3.5 rounded-[10px] font-semibold text-[0.92rem] border-2 border-papaya/40 hover:border-papaya hover:bg-papaya/5 transition-all hover:-translate-y-px"
             >
-              See case studies
+              {m.article.secondaryCtaCaseStudies}
             </Link>
           </div>
         </div>

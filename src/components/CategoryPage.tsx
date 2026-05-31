@@ -26,6 +26,7 @@ import {
 } from "@/lib/content";
 import { breadcrumbJsonLd, collectionPageJsonLd, SITE_URL } from "@/lib/seo";
 import { localePathPrefix, localizedPath } from "@/lib/locales";
+import { getMessages } from "@/lib/i18n/useTranslation";
 import { TAG_META, tagLabel } from "@/components/tagMeta";
 
 // Per-category taglines (italic emphasis line) and the full list of
@@ -39,10 +40,13 @@ import { TAG_META, tagLabel } from "@/components/tagMeta";
 function PostCard({
   post,
   priority,
+  locale,
 }: {
   post: PostRecord;
   priority?: boolean;
+  locale: Locale;
 }) {
+  const m = getMessages(locale);
   const mins = readingTime(post.body);
   const tags = (post.frontmatter.tags ?? []).slice(0, 1);
 
@@ -100,13 +104,13 @@ function PostCard({
             className="flex items-center gap-1 font-mono text-[0.6rem] tracking-[1px]"
             style={{ color: "var(--cc-silver)" }}
           >
-            <Clock size={9} /> {mins} min read
+            <Clock size={9} /> {mins} {m.card.minRead}
           </span>
           <span
             className="inline-flex items-center gap-1 text-[0.78rem] font-semibold"
             style={{ color: "var(--cc-papaya)" }}
           >
-            Read article <ArrowRight size={11} />
+            {m.card.readArticle} <ArrowRight size={11} />
           </span>
         </div>
       </div>
@@ -116,7 +120,8 @@ function PostCard({
 
 // ─── StartHereRow ────────────────────────────────────────────────────────────
 
-function StartHereRow({ post }: { post: PostRecord }) {
+function StartHereRow({ post, locale }: { post: PostRecord; locale: Locale }) {
+  const m = getMessages(locale);
   const mins = readingTime(post.body);
   return (
     <Link
@@ -135,7 +140,7 @@ function StartHereRow({ post }: { post: PostRecord }) {
           {post.frontmatter.title}
         </p>
         <p className="font-mono text-[0.6rem] tracking-[1px] mt-0.5" style={{ color: "var(--cc-silver)" }}>
-          {mins} min read
+          {mins} {m.card.minRead}
         </p>
       </div>
       <ArrowRight size={13} className="flex-shrink-0 text-silver group-hover:text-papaya transition-colors" />
@@ -154,6 +159,7 @@ export default function CategoryPage({
 }) {
   if (!(category in CATEGORIES)) notFound();
 
+  const m = getMessages(locale);
   const meta = CATEGORIES[category as keyof typeof CATEGORIES];
   const posts = getPostsByCategory(category as Category, locale);
 
@@ -238,7 +244,7 @@ export default function CategoryPage({
                 href={localizedPath(locale, "/")}
                 className="font-mono text-[0.72rem] tracking-widest uppercase text-eyebrow hover:text-papaya transition-colors"
               >
-                Home
+                {m.breadcrumb.home}
               </Link>
               <span className="font-mono text-[0.72rem] text-eyebrow/40">/</span>
               <span
@@ -256,7 +262,7 @@ export default function CategoryPage({
                   className="font-mono text-[0.72rem] tracking-[3px] uppercase font-semibold mb-4"
                   style={{ color: "var(--cc-papaya)" }}
                 >
-                  Category
+                  {m.category.categoryKicker}
                 </p>
                 <h1
                   aria-label={`${meta.label}. ${heroTagline}`}
@@ -278,9 +284,12 @@ export default function CategoryPage({
                 {/* Feature badges */}
                 <div className="flex flex-wrap gap-3">
                   {[
-                    { icon: BookOpen, text: "Senior advisory" },
-                    { icon: ShieldCheck, text: "25 years field experience" },
-                    { icon: Users, text: `${posts.length} articles` },
+                    { icon: BookOpen, text: m.category.badgeSeniorAdvisory },
+                    { icon: ShieldCheck, text: m.category.badgeFieldExperience },
+                    {
+                      icon: Users,
+                      text: `${posts.length} ${posts.length === 1 ? m.category.articleSingular : m.category.articlePlural}`,
+                    },
                   ].map((b) => (
                     <span
                       key={b.text}
@@ -313,13 +322,14 @@ export default function CategoryPage({
                       className="font-mono text-[0.62rem] tracking-[2.5px] uppercase font-bold mb-4"
                       style={{ color: "var(--cc-papaya)" }}
                     >
-                      Start here
+                      {m.category.startHere}
                     </p>
                     <div>
                       {startHerePosts.map((p) => (
                         <StartHereRow
                           key={p.frontmatter.slug}
                           post={p}
+                          locale={locale}
                         />
                       ))}
                     </div>
@@ -328,7 +338,7 @@ export default function CategoryPage({
                       className="inline-flex items-center gap-1.5 text-[0.8rem] font-semibold mt-4 hover:underline"
                       style={{ color: "var(--cc-papaya)" }}
                     >
-                      View all {posts.length} articles <ArrowRight size={12} />
+                      {m.category.viewAllPrefix} {posts.length} {posts.length === 1 ? m.category.articleSingular : m.category.articlePlural} <ArrowRight size={12} />
                     </Link>
                   </div>
                 </div>
@@ -351,20 +361,20 @@ export default function CategoryPage({
               }}
             >
               <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
-                [ Browse by topic ]
+                {m.category.browseByTopicEyebrow}
               </p>
               <h2
-                aria-label="Find what matters to you. Pick your topic."
+                aria-label={`${m.category.browseByTopicH2Lead} ${m.category.browseByTopicH2Emphasis}`}
                 className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-bone"
                 style={{ fontSize: "clamp(1.6rem,3vw,2.2rem)" }}
               >
                 <span aria-hidden>
-                  {"Find what matters to you. "}
-                  <span className="cc-emphasis-italic">Pick your topic.</span>
+                  {`${m.category.browseByTopicH2Lead} `}
+                  <span className="cc-emphasis-italic">{m.category.browseByTopicH2Emphasis}</span>
                 </span>
               </h2>
               <p className="text-moon text-[1rem] max-w-[480px] leading-[1.7] mb-10">
-                Every article is tagged by subject. Start where your problem is.
+                {m.category.browseByTopicIntro}
               </p>
 
               <div
@@ -401,7 +411,7 @@ export default function CategoryPage({
                         className="font-mono text-[0.62rem] tracking-[1px] font-semibold"
                         style={{ color: "var(--cc-papaya)" }}
                       >
-                        {count} {count === 1 ? "article" : "articles"}
+                        {count} {count === 1 ? m.category.articleSingular : m.category.articlePlural}
                       </p>
                     </div>
                   );
@@ -428,20 +438,20 @@ export default function CategoryPage({
             >
               {/* Header — TrackRecord style */}
               <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
-                [ Featured insights ]
+                {m.category.featuredEyebrow}
               </p>
               <h2
-                aria-label="Reads worth your time. Start with these."
+                aria-label={`${m.category.featuredH2Lead} ${m.category.featuredH2Emphasis}`}
                 className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
                 style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
               >
                 <span aria-hidden>
-                  {"Reads worth your time. "}
-                  <span className="cc-emphasis-italic">Start with these.</span>
+                  {`${m.category.featuredH2Lead} `}
+                  <span className="cc-emphasis-italic">{m.category.featuredH2Emphasis}</span>
                 </span>
               </h2>
               <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-10">
-                The guides I wish existed when I started. Drawn from 25 years of ERP delivery.
+                {m.category.featuredIntro}
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -450,6 +460,7 @@ export default function CategoryPage({
                     key={p.frontmatter.slug}
                     post={p}
                     priority={i === 0}
+                    locale={locale}
                   />
                 ))}
               </div>
@@ -474,25 +485,25 @@ export default function CategoryPage({
             >
               {/* Header — TrackRecord style */}
               <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
-                [ Latest articles ]
+                {m.category.latestEyebrow}
               </p>
               <h2
-                aria-label="The full archive. Field notes, not theory."
+                aria-label={`${m.category.latestH2Lead} ${m.category.latestH2Emphasis}`}
                 className="font-display font-black tracking-[-0.04em] leading-[1.08] mb-2.5 text-corbeau"
                 style={{ fontSize: "clamp(2rem,4vw,3rem)" }}
               >
                 <span aria-hidden>
-                  {"The full archive. "}
-                  <span className="cc-emphasis-italic">Field notes, not theory.</span>
+                  {`${m.category.latestH2Lead} `}
+                  <span className="cc-emphasis-italic">{m.category.latestH2Emphasis}</span>
                 </span>
               </h2>
               <p className="text-night text-[1rem] max-w-[520px] leading-[1.7] mb-10">
-                Every article in this category. Written from delivery experience, not vendor decks.
+                {m.category.latestIntro}
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {latest.map((p) => (
-                  <PostCard key={p.frontmatter.slug} post={p} />
+                  <PostCard key={p.frontmatter.slug} post={p} locale={locale} />
                 ))}
               </div>
             </div>
@@ -539,20 +550,21 @@ export default function CategoryPage({
 
               {/* Bio */}
               <div className="flex-1 min-w-0">
+                {/* "Noel D'Costa" stays inline — personal name proper noun. */}
                 <p className="font-display font-black text-corbeau text-lg mb-1">
                   Noel D&apos;Costa
                 </p>
                 <p className="text-night/75 text-[0.88rem] leading-relaxed max-w-lg">
-                  Senior ERP and AI advisor. 25 years delivering for EDGE Group, Etihad Airways, ADNOC, PIF entities, and the UAE Government. CIMA, AICPA, Masters in Accounting.
+                  {m.category.aboutStripBio}
                 </p>
               </div>
 
               {/* Credentials */}
               <div className="flex flex-col gap-2 flex-shrink-0">
                 {[
-                  { icon: ShieldCheck, text: "Board-level perspective" },
-                  { icon: Users, text: "Independent advice" },
-                  { icon: BookOpen, text: "Enterprise delivery experience" },
+                  { icon: ShieldCheck, text: m.category.aboutStripCredentialBoardLevel },
+                  { icon: Users, text: m.category.aboutStripCredentialIndependent },
+                  { icon: BookOpen, text: m.category.aboutStripCredentialEnterprise },
                 ].map((item) => (
                   <span
                     key={item.text}
@@ -570,17 +582,17 @@ export default function CategoryPage({
                 className="flex-shrink-0 text-[0.82rem] font-semibold hover:underline"
                 style={{ color: "var(--cc-papaya)" }}
               >
-                Full bio →
+                {m.category.fullBioLink}
               </Link>
             </div>
           </div>
         </section>
 
         {/* ── 7. End CTA — same as homepage ── */}
-        <CTABanner />
+        <CTABanner locale={locale} />
 
       </main>
-      <Footer />
+      <Footer locale={locale} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd(crumbs)) }}

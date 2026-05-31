@@ -16,6 +16,7 @@ import {
   pageWebPageJsonLd,
 } from "@/lib/seo";
 import { localePathPrefix, localizedPath } from "@/lib/locales";
+import { getMessages } from "@/lib/i18n/useTranslation";
 
 export default function MdxPageLayout({
   slug,
@@ -27,6 +28,7 @@ export default function MdxPageLayout({
   const page = getPage(slug, locale);
   if (!page) notFound();
   const fm = page.frontmatter;
+  const m = getMessages(locale);
 
   // pageWebPageJsonLd already produces the locale-prefixed canonical (using
   // originalUrl when nested). Reuse that here for breadcrumb parity so the
@@ -57,7 +59,7 @@ export default function MdxPageLayout({
           <nav aria-label="Breadcrumb" className="mb-6">
             <ol className="flex flex-wrap gap-1.5 items-center font-mono text-[0.68rem] tracking-[1.5px] uppercase text-night/70">
               <li>
-                <Link href={localizedPath(locale, "/")} className="hover:text-papaya">Home</Link>
+                <Link href={localizedPath(locale, "/")} className="hover:text-papaya">{m.breadcrumb.home}</Link>
               </li>
             </ol>
           </nav>
@@ -76,7 +78,7 @@ export default function MdxPageLayout({
           </div>
         </div>
       </section>
-      <Footer />
+      <Footer locale={locale} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageLd) }}

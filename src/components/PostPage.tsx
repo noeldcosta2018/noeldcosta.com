@@ -27,6 +27,7 @@ import {
   SITE_URL,
 } from "@/lib/seo";
 import { localePathPrefix, localizedPath } from "@/lib/locales";
+import { getMessages } from "@/lib/i18n/useTranslation";
 import { extractHeadings } from "@/lib/article-headings";
 import { splitAtMidH2 } from "@/lib/article-split";
 
@@ -70,6 +71,7 @@ export default function PostPage({
   const fm = post.frontmatter;
   const catMeta = CATEGORIES[fm.category as keyof typeof CATEGORIES];
   const rt = readingTime(post.body);
+  const m = getMessages(locale);
 
   const headings = extractHeadings(post.body);
   const [bodyTop, bodyBottom] = splitAtMidH2(post.body);
@@ -109,7 +111,7 @@ export default function PostPage({
                   href={localizedPath(locale, "/")}
                   className="text-eyebrow hover:text-papaya transition-colors"
                 >
-                  Home
+                  {m.breadcrumb.home}
                 </Link>
               </li>
               {catMeta && (
@@ -170,6 +172,7 @@ export default function PostPage({
                 readingMinutes={rt}
                 heroImage={fm.hero}
                 heroAlt={fm.heroAlt}
+                locale={locale}
               />
 
               {fm.keyTakeaways && fm.keyTakeaways.length > 0 && (
@@ -187,7 +190,7 @@ export default function PostPage({
                 return (
                   <details className="lg:hidden mb-10 rounded-xl border border-corbeau/[0.08] bg-paper p-5 group">
                     <summary className="cursor-pointer font-mono text-[0.62rem] font-medium tracking-[2.4px] uppercase text-corbeau/60 list-none flex items-center justify-between">
-                      <span>Contents</span>
+                      <span>{m.post.contentsLabel}</span>
                       <span
                         aria-hidden
                         className="text-corbeau/40 group-open:rotate-180 transition-transform"
@@ -248,11 +251,11 @@ export default function PostPage({
               {hasSplit && (
                 <ProductPromoCard
                   tone="dark"
-                  kicker="Built by Noel"
+                  kicker={m.post.commandCentreKicker}
                   title="Command Centre"
-                  description="Executive visibility, risk posture, and decision governance for ERP and SAP programmes. See where delivery is actually bleeding — before it hits the steering committee."
+                  description={m.post.commandCentreDescription}
                   href="https://commandcc.io"
-                  cta="Try Command Centre free"
+                  cta={m.post.commandCentreCta}
                   external
                   image="/images/wp/2025/02/dashboard.webp"
                 />
@@ -276,21 +279,21 @@ export default function PostPage({
               {/* ERPCV reference — dark tone, matches Command Centre format */}
               <ProductPromoCard
                 tone="dark"
-                kicker="Tool · Free to start"
-                title="Build a professional ERP CV in minutes"
-                description="Turn years of SAP, Oracle, and Microsoft programme work into a polished CV structured by role, modules, and outcomes. Used by senior ERP consultants across the Middle East, Europe, and North America."
+                kicker={m.post.erpcvKicker}
+                title={m.post.erpcvTitle}
+                description={m.post.erpcvDescription}
                 href="https://erpcv.com"
-                cta="Generate your ERP CV"
+                cta={m.post.erpcvCta}
                 external
               />
 
               {/* Combined author + advisory CTA card */}
               <FadeUp>
-                <AuthorBox />
+                <AuthorBox locale={locale} />
               </FadeUp>
 
               <RelatedArticles
-                label="Continue reading"
+                label={m.post.continueReadingLabel}
                 items={endRelated}
                 columns={2}
               />
@@ -311,7 +314,7 @@ export default function PostPage({
         </div>
       </article>
 
-      <Footer />
+      <Footer locale={locale} />
 
       {/* JSON-LD — Article */}
       <script

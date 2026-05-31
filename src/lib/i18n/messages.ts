@@ -346,8 +346,16 @@ export interface Messages {
   post: {
     contentsLabel: string;         // "Contents" — mobile ToC summary
     continueReadingLabel: string;  // "Continue reading"
-    // Promo-card content (Command Central, ERPCV) — product names
-    // do-not-translate; the surrounding chrome is.
+    // Promo-card content. Product names "Command Centre" and "ERPCV"
+    // stay inline as do-not-translate proper nouns; the
+    // descriptive chrome around them flows through these keys.
+    commandCentreKicker: string;   // "Built by Noel"
+    commandCentreDescription: string;
+    commandCentreCta: string;      // "Try Command Centre free" — contains product name
+    erpcvKicker: string;           // "Tool · Free to start"
+    erpcvTitle: string;            // "Build a professional ERP CV in minutes"
+    erpcvDescription: string;
+    erpcvCta: string;              // "Generate your ERP CV"
   };
   card: {
     readArticle: string;           // "Read article" — affordance text on PostCard
@@ -380,6 +388,7 @@ export interface Messages {
     ctaPrimary: string;            // "Talk about your project"
     ctaSecondary: string;          // "See how I help"
     nextStepEyebrow: string;       // "Next step" — CTASection eyebrow
+    authorBio: string;             // ~50-word bio paragraph rendered in AuthorBox under the headshot
   };
 
   // Case studies.
@@ -979,7 +988,8 @@ const EN: Messages = {
     latestH2Emphasis: "Field notes, not theory.",
     latestIntro:
       "Every article in this category. Written from delivery experience, not vendor decks.",
-    aboutStripBio: "TODO: Pass 2 — pull the actual bio from CategoryPage.tsx.",
+    aboutStripBio:
+      "Senior ERP and AI advisor. 25 years delivering for EDGE Group, Etihad Airways, ADNOC, PIF entities, and the UAE Government. CIMA, AICPA, Masters in Accounting.",
     aboutStripCredentialBoardLevel: "Board-level perspective",
     aboutStripCredentialIndependent: "Independent advice",
     aboutStripCredentialEnterprise: "Enterprise delivery experience",
@@ -1012,6 +1022,15 @@ const EN: Messages = {
   post: {
     contentsLabel: "Contents",
     continueReadingLabel: "Continue reading",
+    commandCentreKicker: "Built by Noel",
+    commandCentreDescription:
+      "Executive visibility, risk posture, and decision governance for ERP and SAP programmes. See where delivery is actually bleeding — before it hits the steering committee.",
+    commandCentreCta: "Try Command Centre free",
+    erpcvKicker: "Tool · Free to start",
+    erpcvTitle: "Build a professional ERP CV in minutes",
+    erpcvDescription:
+      "Turn years of SAP, Oracle, and Microsoft programme work into a polished CV structured by role, modules, and outcomes. Used by senior ERP consultants across the Middle East, Europe, and North America.",
+    erpcvCta: "Generate your ERP CV",
   },
   card: {
     readArticle: "Read article",
@@ -1043,6 +1062,8 @@ const EN: Messages = {
     ctaPrimary: "Talk about your project",
     ctaSecondary: "See how I help",
     nextStepEyebrow: "Next step",
+    authorBio:
+      "25 years across SAP and Oracle ERP programmes in aviation, government, finance, retail, and manufacturing. Finance background. I help leadership teams scope transformations honestly, recover programmes in trouble, and build systems that survive their first year in production.",
   },
   caseStudy: {
     backToAll: "← All case studies",
