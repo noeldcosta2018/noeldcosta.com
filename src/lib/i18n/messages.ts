@@ -1087,15 +1087,234 @@ export interface Messages {
     };
   };
 
-  // Other tool clients (~40 + 35 + 50 + 80 strings respectively).
+  // Pass 2b-2b: 3 form-based calculators built on top of ToolForm.
+  // Each namespace pairs formHeading + submitLabel + per-field
+  // {label, placeholder} pairs + per-field {options} sub-objects keyed
+  // by the enum value used in the component code. The shared form
+  // chrome (Select…, errors, tags helper, etc.) lives in toolForm.*
+  // from Pass 2b-2a — these namespaces only carry calculator-specific
+  // copy.
+
   sapCostCalculator: {
-    _todo: string;
+    formHeading: string;
+    submitLabel: string;
+
+    sectorLabel: string;
+    sectorOptions: {
+      manufacturing: string;
+      retail: string;
+      financeBanking: string;
+      aviationTransport: string;
+      governmentPublic: string;
+      utilitiesEnergy: string;
+      telecom: string;
+      healthcare: string;
+      oilGas: string;
+      constructionRealEstate: string;
+      professionalServices: string;
+      other: string;
+    };
+
+    companySizeLabel: string;
+    companySizeOptions: {
+      smallUnder250: string;
+      midUnder1000: string;
+      largeUnder5000: string;
+      enterprise5000Plus: string;
+    };
+
+    editionLabel: string;
+    editionOptions: {
+      grow: string;        // "S/4HANA Cloud Public (GROW with SAP)"
+      rise: string;        // "S/4HANA Cloud Private (RISE with SAP)"
+      s4Onprem: string;
+      eccBrownfield: string;
+      unsure: string;
+    };
+
+    currentSystemLabel: string;
+    currentSystemPlaceholder: string;
+
+    modulesLabel: string;
+
+    fioriScopeLabel: string;
+    fioriScopeOptions: {
+      minimal: string;
+      selected: string;
+      full: string;
+    };
+
+    cleanCoreLabel: string;
+
+    industrySolutionLabel: string;
+    industrySolutionPlaceholder: string;
+
+    userCountLabel: string;
+    userCountPlaceholder: string;
+
+    regionsLabel: string;
+    regionsOptions: {
+      uae: string;
+      saudiArabia: string;
+      gccOther: string;
+      unitedKingdom: string;
+      europeOther: string;
+      northAmerica: string;
+      apac: string;
+      africa: string;
+      latam: string;
+    };
+
+    timelineMonthsLabel: string;
+    timelineMonthsPlaceholder: string;
+
+    notesLabel: string;
+    notesPlaceholder: string;
   };
+
   migrationEstimator: {
-    _todo: string;
+    formHeading: string;
+    submitLabel: string;
+
+    sourceLabel: string;
+    sourceOptions: {
+      sapEcc: string;
+      sapS4hana: string;
+      oracleEbs: string;
+      oracleFusion: string;
+      microsoftDynamicsAx: string;
+      microsoftDynamics365: string;
+      jdEdwards: string;
+      peoplesoft: string;
+      ifs: string;
+      infor: string;
+      customLegacy: string;
+      other: string;
+    };
+
+    sourceVersionLabel: string;
+    sourceVersionPlaceholder: string;
+
+    targetLabel: string;
+    targetOptions: {
+      sapS4hanaCloud: string;
+      sapS4hanaOnPrem: string;
+      oracleFusionCloud: string;
+      microsoftDynamics365: string;
+      other: string;
+    };
+
+    masterDataRecordsLabel: string;
+    masterDataRecordsPlaceholder: string;
+
+    transactionalRecordsLabel: string;
+    transactionalRecordsPlaceholder: string;
+
+    customObjectsCountLabel: string;
+    customObjectsCountPlaceholder: string;
+
+    historicalYearsLabel: string;
+    historicalYearsPlaceholder: string;
+
+    dataQualityLabel: string;
+    dataQualityOptions: {
+      excellent: string;
+      good: string;
+      fair: string;
+      poor: string;
+      unknown: string;
+    };
+
+    languagesInScopeLabel: string;
+    languagesInScopePlaceholder: string;
+
+    notesLabel: string;
+    notesPlaceholder: string;
   };
+
   jdGenerator: {
-    _todo: string;
+    formHeading: string;
+    submitLabel: string;
+
+    roleFamilyLabel: string;
+    roleFamilyOptions: {
+      functionalFiCo: string;
+      functionalMmSd: string;
+      functionalPpQm: string;
+      functionalHcmSuccessfactors: string;
+      functionalEwmTm: string;
+      technicalAbap: string;
+      technicalBasis: string;
+      technicalFioriUi5: string;
+      technicalIntegrationCpi: string;
+      technicalBtpDeveloper: string;
+      architectSolution: string;
+      architectEnterprise: string;
+      programmeManager: string;
+      dataMigrationLead: string;
+      securityGrc: string;
+      other: string;
+    };
+
+    roleTitleLabel: string;
+    roleTitlePlaceholder: string;
+
+    seniorityLabel: string;
+    seniorityOptions: {
+      junior: string;
+      mid: string;
+      senior: string;
+      principalArchitect: string;
+      manager: string;
+      director: string;
+    };
+
+    sectorLabel: string;
+    sectorOptions: {
+      manufacturing: string;
+      retail: string;
+      financeBanking: string;
+      aviationTransport: string;
+      governmentPublic: string;
+      utilitiesEnergy: string;
+      telecom: string;
+      healthcare: string;
+      oilGas: string;
+      constructionRealEstate: string;
+      professionalServices: string;
+      other: string;
+    };
+
+    regionLabel: string;
+    regionOptions: {
+      uae: string;
+      saudiArabia: string;
+      gccOther: string;
+      unitedKingdom: string;
+      europeOther: string;
+      northAmerica: string;
+      apac: string;
+      africa: string;
+      latam: string;
+    };
+
+    remoteLabel: string;
+    remoteOptions: {
+      onsite: string;
+      hybrid: string;
+      remote: string;
+    };
+
+    clearanceRequiredLabel: string;
+
+    certificationsLabel: string;
+    certificationsPlaceholder: string;
+
+    keyProjectsLabel: string;
+    keyProjectsPlaceholder: string;
+
+    notesLabel: string;
+    notesPlaceholder: string;
   };
   solutionBuilder: {
     _todo: string;
@@ -2377,9 +2596,250 @@ const EN: Messages = {
       generatedPrefix: "Generated:",
     },
   },
-  sapCostCalculator: { _todo: "Pass 2: ~40 strings from SapCostClient.tsx" },
-  migrationEstimator: { _todo: "Pass 2: ~35 strings from MigrationClient.tsx" },
-  jdGenerator: { _todo: "Pass 2: ~50 strings from JdClient.tsx" },
+  // Pass 2b-2b.
+  sapCostCalculator: {
+    formHeading: "Enter your SAP programme details",
+    submitLabel: "Estimate my <noTranslate>SAP</noTranslate> cost",
+
+    sectorLabel: "Industry sector",
+    sectorOptions: {
+      manufacturing: "Manufacturing",
+      retail: "Retail",
+      financeBanking: "Finance & Banking",
+      aviationTransport: "Aviation & Transport",
+      governmentPublic: "Government & Public Sector",
+      utilitiesEnergy: "Utilities & Energy",
+      telecom: "Telecom",
+      healthcare: "Healthcare",
+      oilGas: "Oil & Gas",
+      constructionRealEstate: "Construction & Real Estate",
+      professionalServices: "Professional Services",
+      other: "Other",
+    },
+
+    companySizeLabel: "Company size",
+    companySizeOptions: {
+      smallUnder250: "Small (50–250 employees)",
+      midUnder1000: "Mid-size (250–1,000)",
+      largeUnder5000: "Large (1,000–5,000)",
+      enterprise5000Plus: "Enterprise (5,000+)",
+    },
+
+    editionLabel: "<noTranslate>SAP</noTranslate> edition / deployment model",
+    editionOptions: {
+      grow: "<noTranslate>S/4HANA Cloud Public (GROW with SAP)</noTranslate>",
+      rise: "<noTranslate>S/4HANA Cloud Private (RISE with SAP)</noTranslate>",
+      s4Onprem: "<noTranslate>S/4HANA</noTranslate> On-Premise",
+      eccBrownfield: "<noTranslate>ECC</noTranslate> Brownfield → <noTranslate>S/4HANA</noTranslate> Conversion",
+      unsure: "Not sure yet",
+    },
+
+    currentSystemLabel: "Current system",
+    currentSystemPlaceholder: "e.g. SAP ECC 6.0, Oracle EBS, custom legacy",
+
+    modulesLabel: "<noTranslate>SAP</noTranslate> modules in scope",
+
+    fioriScopeLabel: "<noTranslate>SAP Fiori</noTranslate> / UI scope",
+    fioriScopeOptions: {
+      minimal: "Minimal (standard delivered apps only)",
+      selected:
+        "Selected personas (custom <noTranslate>Fiori</noTranslate> for key roles)",
+      full: "Full coverage (all users on <noTranslate>Fiori</noTranslate>)",
+    },
+
+    cleanCoreLabel:
+      "Committing to clean-core / no <noTranslate>ABAP</noTranslate> customisation",
+
+    industrySolutionLabel: "Industry solution (optional)",
+    industrySolutionPlaceholder:
+      "e.g. IS-Retail, IS-Oil, A&D, IS-U",
+
+    userCountLabel: "Named / concurrent user count",
+    userCountPlaceholder: "e.g. 800",
+
+    regionsLabel: "Deployment regions",
+    regionsOptions: {
+      uae: "<noTranslate>UAE</noTranslate>",
+      saudiArabia: "Saudi Arabia",
+      gccOther: "<noTranslate>GCC</noTranslate> (other)",
+      unitedKingdom: "<noTranslate>UK</noTranslate>",
+      europeOther: "Europe (other)",
+      northAmerica: "North America",
+      apac: "<noTranslate>APAC</noTranslate>",
+      africa: "Africa",
+      latam: "<noTranslate>LATAM</noTranslate>",
+    },
+
+    timelineMonthsLabel: "Target go-live timeline (months)",
+    timelineMonthsPlaceholder: "e.g. 18",
+
+    notesLabel: "Additional context (optional)",
+    notesPlaceholder:
+      "Integration landscape, legacy <noTranslate>ABAP</noTranslate> volume, compliance requirements…",
+  },
+
+  migrationEstimator: {
+    formHeading: "Enter your migration details",
+    submitLabel: "Estimate migration effort",
+
+    sourceLabel: "Source system",
+    sourceOptions: {
+      sapEcc: "<noTranslate>SAP ECC</noTranslate>",
+      sapS4hana: "<noTranslate>SAP S/4HANA</noTranslate>",
+      oracleEbs: "<noTranslate>Oracle EBS</noTranslate>",
+      oracleFusion: "<noTranslate>Oracle Fusion Cloud</noTranslate>",
+      microsoftDynamicsAx: "<noTranslate>Microsoft Dynamics AX</noTranslate>",
+      microsoftDynamics365: "<noTranslate>Microsoft Dynamics 365</noTranslate>",
+      jdEdwards: "<noTranslate>JD Edwards</noTranslate>",
+      peoplesoft: "<noTranslate>PeopleSoft</noTranslate>",
+      ifs: "<noTranslate>IFS</noTranslate>",
+      infor: "<noTranslate>Infor</noTranslate>",
+      customLegacy: "Custom / legacy system",
+      other: "Other",
+    },
+
+    sourceVersionLabel: "Source system version (optional)",
+    sourceVersionPlaceholder: "e.g. ECC 6.0 EhP8, AX 2012 R3",
+
+    targetLabel: "Target system",
+    targetOptions: {
+      sapS4hanaCloud: "<noTranslate>SAP S/4HANA Cloud</noTranslate>",
+      sapS4hanaOnPrem: "<noTranslate>SAP S/4HANA</noTranslate> On-Premise",
+      oracleFusionCloud: "<noTranslate>Oracle Fusion Cloud</noTranslate>",
+      microsoftDynamics365: "<noTranslate>Microsoft Dynamics 365</noTranslate>",
+      other: "Other",
+    },
+
+    masterDataRecordsLabel: "Approximate master data records",
+    masterDataRecordsPlaceholder:
+      "e.g. 250000 (customers + materials + vendors combined)",
+
+    transactionalRecordsLabel: "Approximate transactional records",
+    transactionalRecordsPlaceholder:
+      "e.g. 5000000 (open + historical documents)",
+
+    customObjectsCountLabel:
+      "Number of custom objects / Z-tables / non-standard entities",
+    customObjectsCountPlaceholder: "e.g. 40",
+
+    historicalYearsLabel: "Years of historical data to carry forward",
+    historicalYearsPlaceholder: "e.g. 7",
+
+    dataQualityLabel: "Self-assessed data quality",
+    dataQualityOptions: {
+      excellent: "Excellent — clean, documented, consistent",
+      good: "Good — minor issues, mostly clean",
+      fair: "Fair — known gaps and inconsistencies",
+      poor: "Poor — major cleanup required",
+      unknown: "Unknown / not yet assessed",
+    },
+
+    languagesInScopeLabel: "Languages in scope",
+    languagesInScopePlaceholder:
+      "EN, AR, FR, DE, ZH… (ISO codes, comma-separated)",
+
+    notesLabel: "Additional context (optional)",
+    notesPlaceholder:
+      "Cutover constraints, parallel-run requirements, regulatory archiving needs…",
+  },
+
+  jdGenerator: {
+    formHeading: "Describe the role",
+    submitLabel: "Generate job description",
+
+    roleFamilyLabel: "Role family",
+    roleFamilyOptions: {
+      functionalFiCo:
+        "Functional — <noTranslate>FI</noTranslate> / <noTranslate>CO</noTranslate> (Finance & Controlling)",
+      functionalMmSd:
+        "Functional — <noTranslate>MM</noTranslate> / <noTranslate>SD</noTranslate> (Materials & Sales)",
+      functionalPpQm:
+        "Functional — <noTranslate>PP</noTranslate> / <noTranslate>QM</noTranslate> (Production & Quality)",
+      functionalHcmSuccessfactors:
+        "Functional — <noTranslate>HCM</noTranslate> / <noTranslate>SuccessFactors</noTranslate>",
+      functionalEwmTm:
+        "Functional — <noTranslate>EWM</noTranslate> / <noTranslate>TM</noTranslate> (Warehouse & Transport)",
+      technicalAbap:
+        "Technical — <noTranslate>ABAP</noTranslate> Developer",
+      technicalBasis: "Technical — Basis / System Admin",
+      technicalFioriUi5:
+        "Technical — <noTranslate>Fiori</noTranslate> / <noTranslate>UI5</noTranslate> Developer",
+      technicalIntegrationCpi:
+        "Technical — Integration / <noTranslate>CPI</noTranslate>",
+      technicalBtpDeveloper:
+        "Technical — <noTranslate>BTP</noTranslate> Developer",
+      architectSolution: "Solution Architect",
+      architectEnterprise: "Enterprise Architect",
+      programmeManager: "Programme Manager",
+      dataMigrationLead: "Data Migration Lead",
+      securityGrc: "Security / <noTranslate>GRC</noTranslate>",
+      other: "Other",
+    },
+
+    roleTitleLabel: "Specific job title",
+    roleTitlePlaceholder:
+      "e.g. Senior SAP FI/CO Consultant, SAP ABAP Developer",
+
+    seniorityLabel: "Seniority level",
+    seniorityOptions: {
+      junior: "Junior (2–4 years)",
+      mid: "Mid-level (4–7 years)",
+      senior: "Senior (7–12 years)",
+      principalArchitect: "Principal / Architect (12+ years)",
+      manager: "Manager",
+      director: "Director",
+    },
+
+    sectorLabel: "Industry sector",
+    sectorOptions: {
+      manufacturing: "Manufacturing",
+      retail: "Retail",
+      financeBanking: "Finance & Banking",
+      aviationTransport: "Aviation & Transport",
+      governmentPublic: "Government & Public Sector",
+      utilitiesEnergy: "Utilities & Energy",
+      telecom: "Telecom",
+      healthcare: "Healthcare",
+      oilGas: "Oil & Gas",
+      constructionRealEstate: "Construction & Real Estate",
+      professionalServices: "Professional Services",
+      other: "Other",
+    },
+
+    regionLabel: "Hiring region",
+    regionOptions: {
+      uae: "<noTranslate>UAE</noTranslate>",
+      saudiArabia: "Saudi Arabia",
+      gccOther: "<noTranslate>GCC</noTranslate> (other)",
+      unitedKingdom: "<noTranslate>UK</noTranslate>",
+      europeOther: "Europe (other)",
+      northAmerica: "North America",
+      apac: "<noTranslate>APAC</noTranslate>",
+      africa: "Africa",
+      latam: "<noTranslate>LATAM</noTranslate>",
+    },
+
+    remoteLabel: "Work arrangement",
+    remoteOptions: {
+      onsite: "On-site",
+      hybrid: "Hybrid",
+      remote: "Remote",
+    },
+
+    clearanceRequiredLabel: "Security clearance required",
+
+    certificationsLabel: "Certifications to require or prefer",
+    certificationsPlaceholder:
+      "e.g. SAP Certified Application Associate FI, SAP BTP Developer",
+
+    keyProjectsLabel: "Key project context (optional)",
+    keyProjectsPlaceholder:
+      "e.g. S/4HANA greenfield implementation in manufacturing, RISE with SAP migration, Centre of Excellence setup…",
+
+    notesLabel: "Additional requirements (optional)",
+    notesPlaceholder:
+      "Language requirements, visa eligibility, team size, reporting line…",
+  },
   solutionBuilder: { _todo: "Pass 2: ~80 strings from SolutionClient.tsx" },
   contact: {
     eyebrow: "Get in touch",

@@ -1,115 +1,149 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import ToolForm, { type FieldDef } from "@/components/tools/ToolForm";
 import ToolOutput from "@/components/tools/ToolOutput";
+import { isTargetLanguage, type Locale } from "@/lib/locales";
+import { useTranslation, stripMarkers } from "@/lib/i18n/useTranslation";
 
 const SLUG = "free-data-migration-estimator-sap-oracle-microsoft";
 
-const FIELDS: FieldDef[] = [
-  {
-    kind: "select",
-    name: "source",
-    label: "Source system",
-    options: [
-      { value: "sap-ecc", label: "SAP ECC" },
-      { value: "sap-s4hana", label: "SAP S/4HANA" },
-      { value: "oracle-ebs", label: "Oracle EBS" },
-      { value: "oracle-fusion", label: "Oracle Fusion Cloud" },
-      { value: "microsoft-dynamics-ax", label: "Microsoft Dynamics AX" },
-      { value: "microsoft-dynamics-365", label: "Microsoft Dynamics 365" },
-      { value: "jd-edwards", label: "JD Edwards" },
-      { value: "peoplesoft", label: "PeopleSoft" },
-      { value: "ifs", label: "IFS" },
-      { value: "infor", label: "Infor" },
-      { value: "custom-legacy", label: "Custom / legacy system" },
-      { value: "other", label: "Other" },
-    ],
-  },
-  {
-    kind: "text",
-    name: "sourceVersion",
-    label: "Source system version (optional)",
-    placeholder: "e.g. ECC 6.0 EhP8, AX 2012 R3",
-    maxLength: 60,
-  },
-  {
-    kind: "select",
-    name: "target",
-    label: "Target system",
-    options: [
-      { value: "sap-s4hana-cloud", label: "SAP S/4HANA Cloud" },
-      { value: "sap-s4hana-on-prem", label: "SAP S/4HANA On-Premise" },
-      { value: "oracle-fusion-cloud", label: "Oracle Fusion Cloud" },
-      { value: "microsoft-dynamics-365", label: "Microsoft Dynamics 365" },
-      { value: "other", label: "Other" },
-    ],
-  },
-  {
-    kind: "number",
-    name: "approximateMasterDataRecords",
-    label: "Approximate master data records",
-    min: 0,
-    max: 1000000000,
-    step: 1000,
-    placeholder: "e.g. 250000 (customers + materials + vendors combined)",
-  },
-  {
-    kind: "number",
-    name: "approximateTransactionalRecords",
-    label: "Approximate transactional records",
-    min: 0,
-    max: 1000000000000,
-    step: 100000,
-    placeholder: "e.g. 5000000 (open + historical documents)",
-  },
-  {
-    kind: "number",
-    name: "customObjectsCount",
-    label: "Number of custom objects / Z-tables / non-standard entities",
-    min: 0,
-    max: 100000,
-    step: 1,
-    placeholder: "e.g. 40",
-  },
-  {
-    kind: "number",
-    name: "historicalYears",
-    label: "Years of historical data to carry forward",
-    min: 0,
-    max: 50,
-    step: 1,
-    placeholder: "e.g. 7",
-  },
-  {
-    kind: "select",
-    name: "dataQuality",
-    label: "Self-assessed data quality",
-    options: [
-      { value: "excellent-clean-documented", label: "Excellent — clean, documented, consistent" },
-      { value: "good-minor-issues", label: "Good — minor issues, mostly clean" },
-      { value: "fair-known-gaps", label: "Fair — known gaps and inconsistencies" },
-      { value: "poor-major-cleanup-needed", label: "Poor — major cleanup required" },
-      { value: "unknown", label: "Unknown / not yet assessed" },
-    ],
-  },
-  {
-    kind: "tags",
-    name: "languagesInScope",
-    label: "Languages in scope",
-    placeholder: "EN, AR, FR, DE, ZH… (ISO codes, comma-separated)",
-  },
-  {
-    kind: "textarea",
-    name: "notes",
-    label: "Additional context (optional)",
-    placeholder: "Cutover constraints, parallel-run requirements, regulatory archiving needs…",
-    maxLength: 2000,
-    rows: 3,
-  },
-];
+function detectLocale(pathname: string | null): Locale {
+  if (!pathname) return "en";
+  const path = pathname.startsWith("/intl/") ? pathname.slice(5) : pathname;
+  const first = path.split("/").filter(Boolean)[0];
+  if (first && isTargetLanguage(first)) return first;
+  return "en";
+}
+
+// migrationEstimator namespace wraps SAP/Oracle/Microsoft product names
+// in <noTranslate> markers; strip them at the boundary.
+function deepStripMarkers<T>(value: T): T {
+  if (typeof value === "string") return stripMarkers(value) as unknown as T;
+  if (value === null || typeof value !== "object") return value;
+  const out: Record<string, unknown> = {};
+  for (const k of Object.keys(value as Record<string, unknown>)) {
+    out[k] = deepStripMarkers((value as Record<string, unknown>)[k]);
+  }
+  return out as T;
+}
 
 export default function MigrationClient() {
+  const pathname = usePathname();
+  const locale = detectLocale(pathname);
+  const { messages } = useTranslation(locale);
+  const m = useMemo(
+    () => deepStripMarkers(messages.migrationEstimator),
+    [messages.migrationEstimator],
+  );
+
+  const FIELDS: FieldDef[] = useMemo(
+    () => [
+      {
+        kind: "select",
+        name: "source",
+        label: m.sourceLabel,
+        options: [
+          { value: "sap-ecc", label: m.sourceOptions.sapEcc },
+          { value: "sap-s4hana", label: m.sourceOptions.sapS4hana },
+          { value: "oracle-ebs", label: m.sourceOptions.oracleEbs },
+          { value: "oracle-fusion", label: m.sourceOptions.oracleFusion },
+          { value: "microsoft-dynamics-ax", label: m.sourceOptions.microsoftDynamicsAx },
+          { value: "microsoft-dynamics-365", label: m.sourceOptions.microsoftDynamics365 },
+          { value: "jd-edwards", label: m.sourceOptions.jdEdwards },
+          { value: "peoplesoft", label: m.sourceOptions.peoplesoft },
+          { value: "ifs", label: m.sourceOptions.ifs },
+          { value: "infor", label: m.sourceOptions.infor },
+          { value: "custom-legacy", label: m.sourceOptions.customLegacy },
+          { value: "other", label: m.sourceOptions.other },
+        ],
+      },
+      {
+        kind: "text",
+        name: "sourceVersion",
+        label: m.sourceVersionLabel,
+        placeholder: m.sourceVersionPlaceholder,
+        maxLength: 60,
+      },
+      {
+        kind: "select",
+        name: "target",
+        label: m.targetLabel,
+        options: [
+          { value: "sap-s4hana-cloud", label: m.targetOptions.sapS4hanaCloud },
+          { value: "sap-s4hana-on-prem", label: m.targetOptions.sapS4hanaOnPrem },
+          { value: "oracle-fusion-cloud", label: m.targetOptions.oracleFusionCloud },
+          { value: "microsoft-dynamics-365", label: m.targetOptions.microsoftDynamics365 },
+          { value: "other", label: m.targetOptions.other },
+        ],
+      },
+      {
+        kind: "number",
+        name: "approximateMasterDataRecords",
+        label: m.masterDataRecordsLabel,
+        min: 0,
+        max: 1000000000,
+        step: 1000,
+        placeholder: m.masterDataRecordsPlaceholder,
+      },
+      {
+        kind: "number",
+        name: "approximateTransactionalRecords",
+        label: m.transactionalRecordsLabel,
+        min: 0,
+        max: 1000000000000,
+        step: 100000,
+        placeholder: m.transactionalRecordsPlaceholder,
+      },
+      {
+        kind: "number",
+        name: "customObjectsCount",
+        label: m.customObjectsCountLabel,
+        min: 0,
+        max: 100000,
+        step: 1,
+        placeholder: m.customObjectsCountPlaceholder,
+      },
+      {
+        kind: "number",
+        name: "historicalYears",
+        label: m.historicalYearsLabel,
+        min: 0,
+        max: 50,
+        step: 1,
+        placeholder: m.historicalYearsPlaceholder,
+      },
+      {
+        kind: "select",
+        name: "dataQuality",
+        label: m.dataQualityLabel,
+        options: [
+          { value: "excellent-clean-documented", label: m.dataQualityOptions.excellent },
+          { value: "good-minor-issues", label: m.dataQualityOptions.good },
+          { value: "fair-known-gaps", label: m.dataQualityOptions.fair },
+          { value: "poor-major-cleanup-needed", label: m.dataQualityOptions.poor },
+          { value: "unknown", label: m.dataQualityOptions.unknown },
+        ],
+      },
+      {
+        kind: "tags",
+        name: "languagesInScope",
+        label: m.languagesInScopeLabel,
+        placeholder: m.languagesInScopePlaceholder,
+      },
+      {
+        kind: "textarea",
+        name: "notes",
+        label: m.notesLabel,
+        placeholder: m.notesPlaceholder,
+        maxLength: 2000,
+        rows: 3,
+      },
+    ],
+    [m],
+  );
+
   const [markdown, setMarkdown] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState("");
@@ -124,12 +158,12 @@ export default function MigrationClient() {
     <div>
       <div className="bg-bone border border-corbeau/10 rounded-xl p-6 md:p-8">
         <h2 className="font-display font-bold text-corbeau text-xl tracking-tight mb-6">
-          Enter your migration details
+          {m.formHeading}
         </h2>
         <ToolForm
           slug={SLUG}
           fields={FIELDS}
-          submitLabel="Estimate migration effort"
+          submitLabel={m.submitLabel}
           onResult={(md) => {
             setMarkdown(md);
             setStreaming(false);

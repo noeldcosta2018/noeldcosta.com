@@ -1,141 +1,182 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import ToolForm, { type FieldDef } from "@/components/tools/ToolForm";
 import ToolOutput from "@/components/tools/ToolOutput";
+import { isTargetLanguage, type Locale } from "@/lib/locales";
+import { useTranslation, stripMarkers } from "@/lib/i18n/useTranslation";
 
 const SLUG = "sap-implementation-cost-calculator";
 
-const FIELDS: FieldDef[] = [
-  {
-    kind: "select",
-    name: "sector",
-    label: "Industry sector",
-    options: [
-      { value: "manufacturing", label: "Manufacturing" },
-      { value: "retail", label: "Retail" },
-      { value: "finance-banking", label: "Finance & Banking" },
-      { value: "aviation-transport", label: "Aviation & Transport" },
-      { value: "government-public", label: "Government & Public Sector" },
-      { value: "utilities-energy", label: "Utilities & Energy" },
-      { value: "telecom", label: "Telecom" },
-      { value: "healthcare", label: "Healthcare" },
-      { value: "oil-gas", label: "Oil & Gas" },
-      { value: "construction-real-estate", label: "Construction & Real Estate" },
-      { value: "professional-services", label: "Professional Services" },
-      { value: "other", label: "Other" },
-    ],
-  },
-  {
-    kind: "select",
-    name: "companySize",
-    label: "Company size",
-    options: [
-      { value: "small-50-250", label: "Small (50–250 employees)" },
-      { value: "mid-250-1000", label: "Mid-size (250–1,000)" },
-      { value: "large-1000-5000", label: "Large (1,000–5,000)" },
-      { value: "enterprise-5000-plus", label: "Enterprise (5,000+)" },
-    ],
-  },
-  {
-    kind: "select",
-    name: "edition",
-    label: "SAP edition / deployment model",
-    options: [
-      { value: "s4hana-cloud-public-grow", label: "S/4HANA Cloud Public (GROW with SAP)" },
-      { value: "s4hana-cloud-private-rise", label: "S/4HANA Cloud Private (RISE with SAP)" },
-      { value: "s4hana-on-premise", label: "S/4HANA On-Premise" },
-      { value: "ecc-brownfield-to-s4hana", label: "ECC Brownfield → S/4HANA Conversion" },
-      { value: "unsure", label: "Not sure yet" },
-    ],
-  },
-  {
-    kind: "text",
-    name: "currentSystem",
-    label: "Current system",
-    placeholder: "e.g. SAP ECC 6.0, Oracle EBS, custom legacy",
-    maxLength: 120,
-    required: true,
-  },
-  {
-    // SAP-expert module picker: search + categorised groups across
-    // Finance, Procurement, Supply Chain, Sales/CX, HCM, Projects,
-    // Analytics, Platform, Industry. Replaces the older free-text
-    // tags input so the cost estimate is grounded in specific named
-    // modules (Group Reporting separate from FI-GL, Treasury separate
-    // from FSCM, etc.). The downstream LLM-driven cost estimator
-    // receives human-readable module labels with codes.
-    kind: "modulePicker",
-    name: "modules",
-    label: "SAP modules in scope",
-  },
-  {
-    kind: "select",
-    name: "fioriScope",
-    label: "SAP Fiori / UI scope",
-    options: [
-      { value: "minimal", label: "Minimal (standard delivered apps only)" },
-      { value: "selected-personas", label: "Selected personas (custom Fiori for key roles)" },
-      { value: "full-coverage", label: "Full coverage (all users on Fiori)" },
-    ],
-  },
-  {
-    kind: "boolean",
-    name: "cleanCore",
-    label: "Committing to clean-core / no ABAP customisation",
-  },
-  {
-    kind: "text",
-    name: "industrySolution",
-    label: "Industry solution (optional)",
-    placeholder: "e.g. IS-Retail, IS-Oil, A&D, IS-U",
-    maxLength: 120,
-  },
-  {
-    kind: "number",
-    name: "userCount",
-    label: "Named / concurrent user count",
-    min: 1,
-    max: 500000,
-    step: 1,
-    placeholder: "e.g. 800",
-  },
-  {
-    kind: "multiselect",
-    name: "regions",
-    label: "Deployment regions",
-    options: [
-      { value: "uae", label: "UAE" },
-      { value: "saudi-arabia", label: "Saudi Arabia" },
-      { value: "gcc-other", label: "GCC (other)" },
-      { value: "united-kingdom", label: "UK" },
-      { value: "europe-other", label: "Europe (other)" },
-      { value: "north-america", label: "North America" },
-      { value: "apac", label: "APAC" },
-      { value: "africa", label: "Africa" },
-      { value: "latam", label: "LATAM" },
-    ],
-  },
-  {
-    kind: "number",
-    name: "timelineMonths",
-    label: "Target go-live timeline (months)",
-    min: 3,
-    max: 120,
-    step: 1,
-    placeholder: "e.g. 18",
-  },
-  {
-    kind: "textarea",
-    name: "notes",
-    label: "Additional context (optional)",
-    placeholder: "Integration landscape, legacy ABAP volume, compliance requirements…",
-    maxLength: 2000,
-    rows: 3,
-  },
-];
+// Auto-detect locale — Pass 2a/2b pattern.
+function detectLocale(pathname: string | null): Locale {
+  if (!pathname) return "en";
+  const path = pathname.startsWith("/intl/") ? pathname.slice(5) : pathname;
+  const first = path.split("/").filter(Boolean)[0];
+  if (first && isTargetLanguage(first)) return first;
+  return "en";
+}
+
+// Strip <noTranslate> wrapper tags from each string leaf. The
+// sapCostCalculator namespace wraps SAP product names (SAP, S/4HANA,
+// GROW, RISE, ECC, ABAP, Fiori, plus the region acronyms UAE, GCC, UK,
+// APAC, LATAM) so the translation pipeline preserves them verbatim.
+// Pass 2b-1a's deepStripMarkers pattern, repeated here.
+function deepStripMarkers<T>(value: T): T {
+  if (typeof value === "string") return stripMarkers(value) as unknown as T;
+  if (value === null || typeof value !== "object") return value;
+  const out: Record<string, unknown> = {};
+  for (const k of Object.keys(value as Record<string, unknown>)) {
+    out[k] = deepStripMarkers((value as Record<string, unknown>)[k]);
+  }
+  return out as T;
+}
 
 export default function SapCostClient() {
+  const pathname = usePathname();
+  const locale = detectLocale(pathname);
+  const { messages } = useTranslation(locale);
+  const m = useMemo(
+    () => deepStripMarkers(messages.sapCostCalculator),
+    [messages.sapCostCalculator],
+  );
+
+  // FIELDS is locale-dependent — rebuild from m on each locale change.
+  // The structure matches the original Pass 1 array verbatim; only the
+  // label / placeholder / option-label strings now come from MESSAGES.
+  const FIELDS: FieldDef[] = useMemo(
+    () => [
+      {
+        kind: "select",
+        name: "sector",
+        label: m.sectorLabel,
+        options: [
+          { value: "manufacturing", label: m.sectorOptions.manufacturing },
+          { value: "retail", label: m.sectorOptions.retail },
+          { value: "finance-banking", label: m.sectorOptions.financeBanking },
+          { value: "aviation-transport", label: m.sectorOptions.aviationTransport },
+          { value: "government-public", label: m.sectorOptions.governmentPublic },
+          { value: "utilities-energy", label: m.sectorOptions.utilitiesEnergy },
+          { value: "telecom", label: m.sectorOptions.telecom },
+          { value: "healthcare", label: m.sectorOptions.healthcare },
+          { value: "oil-gas", label: m.sectorOptions.oilGas },
+          { value: "construction-real-estate", label: m.sectorOptions.constructionRealEstate },
+          { value: "professional-services", label: m.sectorOptions.professionalServices },
+          { value: "other", label: m.sectorOptions.other },
+        ],
+      },
+      {
+        kind: "select",
+        name: "companySize",
+        label: m.companySizeLabel,
+        options: [
+          { value: "small-50-250", label: m.companySizeOptions.smallUnder250 },
+          { value: "mid-250-1000", label: m.companySizeOptions.midUnder1000 },
+          { value: "large-1000-5000", label: m.companySizeOptions.largeUnder5000 },
+          { value: "enterprise-5000-plus", label: m.companySizeOptions.enterprise5000Plus },
+        ],
+      },
+      {
+        kind: "select",
+        name: "edition",
+        label: m.editionLabel,
+        options: [
+          { value: "s4hana-cloud-public-grow", label: m.editionOptions.grow },
+          { value: "s4hana-cloud-private-rise", label: m.editionOptions.rise },
+          { value: "s4hana-on-premise", label: m.editionOptions.s4Onprem },
+          { value: "ecc-brownfield-to-s4hana", label: m.editionOptions.eccBrownfield },
+          { value: "unsure", label: m.editionOptions.unsure },
+        ],
+      },
+      {
+        kind: "text",
+        name: "currentSystem",
+        label: m.currentSystemLabel,
+        placeholder: m.currentSystemPlaceholder,
+        maxLength: 120,
+        required: true,
+      },
+      {
+        // SAP-expert module picker: search + categorised groups across
+        // Finance, Procurement, Supply Chain, Sales/CX, HCM, Projects,
+        // Analytics, Platform, Industry. Replaces the older free-text
+        // tags input so the cost estimate is grounded in specific named
+        // modules (Group Reporting separate from FI-GL, Treasury separate
+        // from FSCM, etc.). The downstream LLM-driven cost estimator
+        // receives human-readable module labels with codes.
+        kind: "modulePicker",
+        name: "modules",
+        label: m.modulesLabel,
+      },
+      {
+        kind: "select",
+        name: "fioriScope",
+        label: m.fioriScopeLabel,
+        options: [
+          { value: "minimal", label: m.fioriScopeOptions.minimal },
+          { value: "selected-personas", label: m.fioriScopeOptions.selected },
+          { value: "full-coverage", label: m.fioriScopeOptions.full },
+        ],
+      },
+      {
+        kind: "boolean",
+        name: "cleanCore",
+        label: m.cleanCoreLabel,
+      },
+      {
+        kind: "text",
+        name: "industrySolution",
+        label: m.industrySolutionLabel,
+        placeholder: m.industrySolutionPlaceholder,
+        maxLength: 120,
+      },
+      {
+        kind: "number",
+        name: "userCount",
+        label: m.userCountLabel,
+        min: 1,
+        max: 500000,
+        step: 1,
+        placeholder: m.userCountPlaceholder,
+      },
+      {
+        kind: "multiselect",
+        name: "regions",
+        label: m.regionsLabel,
+        options: [
+          { value: "uae", label: m.regionsOptions.uae },
+          { value: "saudi-arabia", label: m.regionsOptions.saudiArabia },
+          { value: "gcc-other", label: m.regionsOptions.gccOther },
+          { value: "united-kingdom", label: m.regionsOptions.unitedKingdom },
+          { value: "europe-other", label: m.regionsOptions.europeOther },
+          { value: "north-america", label: m.regionsOptions.northAmerica },
+          { value: "apac", label: m.regionsOptions.apac },
+          { value: "africa", label: m.regionsOptions.africa },
+          { value: "latam", label: m.regionsOptions.latam },
+        ],
+      },
+      {
+        kind: "number",
+        name: "timelineMonths",
+        label: m.timelineMonthsLabel,
+        min: 3,
+        max: 120,
+        step: 1,
+        placeholder: m.timelineMonthsPlaceholder,
+      },
+      {
+        kind: "textarea",
+        name: "notes",
+        label: m.notesLabel,
+        placeholder: m.notesPlaceholder,
+        maxLength: 2000,
+        rows: 3,
+      },
+    ],
+    [m],
+  );
+
   const [markdown, setMarkdown] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState("");
@@ -150,12 +191,12 @@ export default function SapCostClient() {
     <div>
       <div className="bg-bone border border-corbeau/10 rounded-xl p-6 md:p-8">
         <h2 className="font-display font-bold text-corbeau text-xl tracking-tight mb-6">
-          Enter your SAP programme details
+          {m.formHeading}
         </h2>
         <ToolForm
           slug={SLUG}
           fields={FIELDS}
-          submitLabel="Estimate my SAP cost"
+          submitLabel={m.submitLabel}
           onResult={(md) => {
             setMarkdown(md);
             setStreaming(false);
