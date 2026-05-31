@@ -1,6 +1,9 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import MdxBody from "@/components/mdx/MdxBody";
+import { isTargetLanguage, type Locale } from "@/lib/locales";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 interface ToolOutputProps {
   markdown: string;
@@ -8,11 +11,24 @@ interface ToolOutputProps {
   onReset?: () => void;
 }
 
+// Mirrors detectLocale in the other Pass 2a/2b client components.
+function detectLocale(pathname: string | null): Locale {
+  if (!pathname) return "en";
+  const path = pathname.startsWith("/intl/") ? pathname.slice(5) : pathname;
+  const first = path.split("/").filter(Boolean)[0];
+  if (first && isTargetLanguage(first)) return first;
+  return "en";
+}
+
 export default function ToolOutput({
   markdown,
   isStreaming,
   onReset,
 }: ToolOutputProps) {
+  const pathname = usePathname();
+  const { messages } = useTranslation(detectLocale(pathname));
+  const m = messages.toolOutput;
+
   if (!markdown) return null;
 
   function handleCopy() {
@@ -27,10 +43,10 @@ export default function ToolOutput({
           {isStreaming ? (
             <span className="flex items-center gap-2">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-papaya animate-pulse-dot" />
-              Generating…
+              {m.generating}
             </span>
           ) : (
-            "Result"
+            m.resultHeading
           )}
         </span>
         {!isStreaming && (
@@ -39,14 +55,14 @@ export default function ToolOutput({
               onClick={handleCopy}
               className="font-mono text-[0.7rem] text-night hover:text-corbeau transition-colors"
             >
-              Copy as markdown
+              {m.copyMarkdown}
             </button>
             {onReset && (
               <button
                 onClick={onReset}
                 className="font-mono text-[0.7rem] text-papaya hover:text-[#fdaa78] transition-colors font-semibold"
               >
-                Start over
+                {m.startOver}
               </button>
             )}
           </div>

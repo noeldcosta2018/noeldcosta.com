@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   SAP_MODULES,
   SAP_MODULE_CATEGORIES,
@@ -9,6 +10,31 @@ import {
   type SapModule,
   type SapModuleCategory,
 } from "@/lib/sap-modules";
+import { isTargetLanguage, type Locale } from "@/lib/locales";
+import { useTranslation, interpolate, stripMarkers } from "@/lib/i18n/useTranslation";
+
+// Same auto-detect pattern as the other Pass 2a/2b client components.
+function detectLocale(pathname: string | null): Locale {
+  if (!pathname) return "en";
+  const path = pathname.startsWith("/intl/") ? pathname.slice(5) : pathname;
+  const first = path.split("/").filter(Boolean)[0];
+  if (first && isTargetLanguage(first)) return first;
+  return "en";
+}
+
+// Strip the inline <noTranslate> markers from each string in the typed
+// sub-tree. Same helper used in ErpCostClient.tsx (Pass 2b-1a); promoted
+// inline here to keep the picker self-contained. See post-launch-backlog
+// for the dedup task that consolidates detectLocale + bcp47 + this helper.
+function deepStripMarkers<T>(value: T): T {
+  if (typeof value === "string") return stripMarkers(value) as unknown as T;
+  if (value === null || typeof value !== "object") return value;
+  const out: Record<string, unknown> = {};
+  for (const k of Object.keys(value as Record<string, unknown>)) {
+    out[k] = deepStripMarkers((value as Record<string, unknown>)[k]);
+  }
+  return out as T;
+}
 
 /**
  * SAP module picker designed for CFO / CIO assessing implementation
@@ -30,6 +56,19 @@ export interface ModulePickerProps {
 const CORE_IDS = getCoreModules().map((m) => m.id);
 
 export default function ModulePicker({ label, value, onChange }: ModulePickerProps) {
+  const pathname = usePathname();
+  const locale = detectLocale(pathname);
+  const { messages } = useTranslation(locale);
+  // Strip <noTranslate> wrapper tags once at the boundary — the picker
+  // namespace has them around proper-noun search hints (Treasury, Payroll,
+  // EWM, Group Reporting, ariba, etc.). Pass 2b-1a's deepStripMarkers
+  // pattern, repeated here. Aliased `t` because the existing component
+  // uses `m` extensively as a local for the iterated module object.
+  const t = useMemo(
+    () => deepStripMarkers(messages.modulePicker),
+    [messages.modulePicker],
+  );
+
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<Set<SapModuleCategory>>(
     // Open Finance by default; the rest collapsed so the page is scannable
@@ -110,7 +149,7 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
           {label}
         </label>
         <span className="font-mono text-[0.68rem] tracking-[1.6px] uppercase text-corbeau/55">
-          {value.length} selected
+          {interpolate(t.selectedCountTemplate, { count: value.length })}
         </span>
       </div>
 
@@ -121,7 +160,7 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search modules (e.g. Treasury, Payroll, EWM, Group Reporting)…"
+            placeholder={t.searchPlaceholder}
             className="w-full rounded-md border border-corbeau/15 bg-paper px-3.5 py-2.5 text-sm font-medium text-corbeau placeholder:text-corbeau/35 focus:outline-none focus:border-papaya focus:ring-2 focus:ring-papaya/20 transition-colors"
           />
         </div>
@@ -130,9 +169,9 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
             type="button"
             onClick={addCoreFinance}
             className="rounded-md border border-papaya/40 bg-papaya/8 px-3 py-2 text-xs font-semibold text-papaya hover:bg-papaya/15 transition-colors"
-            title="Add the core Finance modules most ERPs start with"
+            title={t.addCoreFinanceTitle}
           >
-            + Add core finance
+            {t.addCoreFinanceLabel}
           </button>
           <button
             type="button"
@@ -140,7 +179,7 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
             disabled={value.length === 0}
             className="rounded-md border border-corbeau/15 px-3 py-2 text-xs font-semibold text-night/70 hover:border-corbeau/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            Clear
+            {t.clear}
           </button>
         </div>
       </div>
@@ -157,7 +196,10 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
                 type="button"
                 onClick={() => toggleModule(id)}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-papaya text-corbeau text-[0.72rem] font-semibold hover:bg-[#fda66e] transition-colors"
-                title={`Remove ${m.label}`}
+                // NOTE: the variable `m` inside this map callback is the
+                // module object from SAP_MODULES.find(); `t` (closure) is the
+                // messages alias. Chip-remove tooltip uses the module's label.
+                title={interpolate(t.chipRemoveTitleTemplate, { label: m.label })}
               >
                 {m.code ? <span className="font-mono text-[0.66rem] opacity-70">{m.code}</span> : null}
                 <span>{m.label}</span>
@@ -206,13 +248,16 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
                   }}
                   aria-label={
                     bulkState === "all"
-                      ? `Deselect all ${cat.label} modules`
-                      : `Select all ${cat.label} modules`
+                      ? interpolate(t.categoryDeselectAllAriaTemplate, { label: cat.label })
+                      : interpolate(t.categorySelectAllAriaTemplate, { label: cat.label })
                   }
                   title={
+                    // Lowercase the label for natural English sentence flow
+                    // ("All 12 finance modules…"). Translation pipeline can
+                    // adjust per-locale casing if the target language needs it.
                     bulkState === "all"
-                      ? `All ${catTotal} ${cat.label.toLowerCase()} modules selected · click to clear`
-                      : `Select all ${catTotal} ${cat.label.toLowerCase()} modules`
+                      ? interpolate(t.categoryAllSelectedTitleTemplate, { total: catTotal, label: cat.label.toLowerCase() })
+                      : interpolate(t.categorySelectAllTitleTemplate, { total: catTotal, label: cat.label.toLowerCase() })
                   }
                   className="shrink-0 flex items-center justify-center px-3 hover:bg-papaya/8 transition-colors group"
                 >
@@ -250,7 +295,7 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
                         </span>
                       )}
                       <span className="ml-2 font-mono text-[0.62rem] font-normal tracking-[1.4px] uppercase text-corbeau/40 align-middle">
-                        of {catTotal}
+                        {interpolate(t.ofTotalTemplate, { total: catTotal })}
                       </span>
                     </p>
                     <p className="text-[0.78rem] text-night/60 mt-0.5">{cat.blurb}</p>
@@ -293,7 +338,7 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
                             )}
                             {m.core && (
                               <span className="font-mono text-[0.62rem] uppercase tracking-[1.4px] text-papaya">
-                                Core
+                                {t.coreBadge}
                               </span>
                             )}
                           </div>
@@ -313,10 +358,12 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
         {query.trim() && filtered.length === 0 && (
           <div className="rounded-lg border border-corbeau/10 bg-paper px-4 py-6 text-center">
             <p className="text-sm text-night/65">
-              No modules match <span className="font-semibold text-corbeau">&quot;{query}&quot;</span>.
+              {/* The full message is in MESSAGES with the query quoted in
+                  place; the trimmed query is interpolated literally. */}
+              {interpolate(t.searchNoMatchTemplate, { query })}
             </p>
             <p className="text-[0.78rem] text-night/45 mt-1">
-              Try shorter terms like &quot;treasury&quot;, &quot;payroll&quot;, &quot;ariba&quot;, or &quot;ewm&quot;.
+              {t.searchTryShorter}
             </p>
           </div>
         )}

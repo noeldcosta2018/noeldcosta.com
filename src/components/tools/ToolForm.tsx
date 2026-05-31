@@ -1,8 +1,23 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { usePathname } from "next/navigation";
 import ModulePicker from "@/components/tools/ModulePicker";
 import { getModuleById } from "@/lib/sap-modules";
+import { isTargetLanguage, type Locale } from "@/lib/locales";
+import { useTranslation, interpolate } from "@/lib/i18n/useTranslation";
+
+// Locale auto-detect — same pattern as the rest of Pass 2a/2b client
+// components. ToolForm is used by 3 free-tool routes today, all under
+// (site-en); the helper future-proofs against a translated route group
+// being added later.
+function detectLocale(pathname: string | null): Locale {
+  if (!pathname) return "en";
+  const path = pathname.startsWith("/intl/") ? pathname.slice(5) : pathname;
+  const first = path.split("/").filter(Boolean)[0];
+  if (first && isTargetLanguage(first)) return first;
+  return "en";
+}
 
 export type FieldDef =
   | {
@@ -71,6 +86,8 @@ export type FieldDef =
 export interface ToolFormProps {
   slug: string;
   fields: FieldDef[];
+  /** Submit button label. When omitted, falls back to the locale-aware
+   *  default from MESSAGES.toolForm.generateDefault ("Generate" in EN). */
   submitLabel?: string;
   onResult: (markdown: string) => void;
   onStreamChunk?: (partial: string) => void;
@@ -95,12 +112,22 @@ function initialValue(field: FieldDef): unknown {
 export default function ToolForm({
   slug,
   fields,
-  submitLabel = "Generate",
+  submitLabel,
   onResult,
   onStreamChunk,
   onError,
   onSubmitting,
 }: ToolFormProps) {
+  const pathname = usePathname();
+  const locale = detectLocale(pathname);
+  const { messages } = useTranslation(locale);
+  const m = messages.toolForm;
+  // Fall back to the locale-aware default ("Generate" in English) when
+  // the caller doesn't pass a submitLabel. Calculators pass their own
+  // submit copy ("Estimate my SAP cost", etc.) — they'll get i18n'd in
+  // Pass 2b-2b.
+  const submitText = submitLabel ?? m.generateDefault;
+
   const [values, setValues] = useState<Record<string, unknown>>(() => {
     const init: Record<string, unknown> = {};
     for (const f of fields) {
@@ -180,17 +207,18 @@ export default function ToolForm({
             formErrors?: string[];
           };
         };
-        let message = e.error || `Request failed (${res.status})`;
+        let message = e.error || interpolate(m.errorRequestFailedTemplate, { status: res.status });
         const fieldErrs = e.details?.fieldErrors ?? {};
         // Zod "Invalid option" messages dump the entire enum list which
         // is unreadable in a small error banner. Shorten to a clean
         // "Please select an option" so the user just knows the field
-        // needs a value.
+        // needs a value. The original English prefixes from Zod stay
+        // as the matching condition; the message we render is i18n'd.
         const cleanMsg = (msg: string) =>
           msg.startsWith("Invalid option")
-            ? "Please select an option"
+            ? m.errorSelect
             : msg.startsWith("Invalid input: expected")
-              ? "This field is required"
+              ? m.errorRequired
               : msg;
         const fieldList = Object.entries(fieldErrs)
           .map(([field, errs]) => `${field}: ${errs.map(cleanMsg).join(", ")}`)
@@ -206,7 +234,7 @@ export default function ToolForm({
 
       const reader = res.body?.getReader();
       if (!reader) {
-        onError("No response stream");
+        onError(m.errorNoResponse);
         return;
       }
 
@@ -241,14 +269,14 @@ export default function ToolForm({
           } else if (event.type === "done") {
             onResult(accumulated);
           } else if (event.type === "error") {
-            onError(event.message || "Stream error");
+            onError(event.message || m.errorStream);
             return;
           }
         }
       }
     } catch (err: unknown) {
       onError(
-        err instanceof Error ? err.message : "Network error"
+        err instanceof Error ? err.message : m.errorNetwork
       );
     } finally {
       setSubmitting(false);
@@ -334,7 +362,7 @@ export default function ToolForm({
               required={isRequired}
             >
               <option value="" disabled>
-                Select…
+                {m.selectPlaceholder}
               </option>
               {field.options.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -373,12 +401,12 @@ export default function ToolForm({
               <input
                 type="text"
                 className={inputBase}
-                placeholder={field.placeholder ?? "Comma-separated values"}
+                placeholder={field.placeholder ?? m.tagsPlaceholderDefault}
                 value={(values[field.name] as string) || ""}
                 onChange={(e) => set(field.name, e.target.value)}
               />
               <p className="text-[0.75rem] text-eyebrow mt-1">
-                Separate multiple values with commas.
+                {m.tagsHelper}
               </p>
             </>
           )}
@@ -391,7 +419,7 @@ export default function ToolForm({
                 checked={(values[field.name] as boolean) || false}
                 onChange={(e) => set(field.name, e.target.checked)}
               />
-              <span className="text-sm text-night">Yes</span>
+              <span className="text-sm text-night">{m.yesCheckbox}</span>
             </label>
           )}
 
@@ -412,7 +440,7 @@ export default function ToolForm({
         disabled={submitting}
         className="w-full bg-papaya text-corbeau font-bold text-sm py-3 px-6 rounded-lg transition-all hover:bg-[#fdaa78] disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {submitting ? "Generating…" : submitLabel}
+        {submitting ? m.generating : submitText}
       </button>
     </form>
   );

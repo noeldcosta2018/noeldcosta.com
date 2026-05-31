@@ -492,26 +492,55 @@ export interface Messages {
   };
 
   // Free tool page chrome (ToolShell + ToolForm + ToolOutput + ModulePicker).
+  // ToolShell chrome — page-level wrapper around each free-tool route.
   tool: {
     breadcrumbToolsLabel: string;  // "Tools" — breadcrumb segment
     freeToolEyebrow: string;       // "[ Free Tool ]" — hero eyebrow
-    formGenerateDefault: string;   // "Generate" — default submit label
-    formGenerating: string;        // "Generating…" — in-flight label
-    formErrorNoResponse: string;
-    formErrorNetwork: string;
-    formErrorRequired: string;     // "This field is required"
-    formErrorSelect: string;       // "Please select an option"
-    formSelectPlaceholder: string; // "Select…"
-    formTagsHelper: string;        // "Separate multiple values with commas."
-    formYesCheckbox: string;       // "Yes"
-    outputResultHeading: string;   // "Result"
-    outputCopyMarkdown: string;    // "Copy as markdown"
-    outputStartOver: string;       // "Start over"
-    moduleSelectedSuffix: string;  // "selected" — counter suffix
-    moduleSearchPlaceholder: string;
-    moduleAddCoreFinanceTitle: string;
-    moduleAddCoreFinanceLabel: string; // "+ Add core finance"
-    moduleClear: string;           // "Clear"
+  };
+
+  // ToolForm.tsx — shared form chrome used by the 3 form-based
+  // calculators (SapCost, Migration, Jd). Pass 2b-2a.
+  toolForm: {
+    generateDefault: string;             // "Generate" — default submit label
+    generating: string;                  // "Generating…" — in-flight label
+    selectPlaceholder: string;           // "Select…"
+    tagsHelper: string;                  // "Separate multiple values with commas."
+    tagsPlaceholderDefault: string;      // "Comma-separated values"
+    yesCheckbox: string;                 // "Yes"
+    errorNoResponse: string;             // "No response stream"
+    errorNetwork: string;                // "Network error"
+    errorStream: string;                 // "Stream error"
+    errorRequired: string;               // "This field is required"
+    errorSelect: string;                 // "Please select an option"
+    errorRequestFailedTemplate: string;  // "Request failed ({status})"
+  };
+
+  // ToolOutput.tsx — shared output panel for streamed markdown results.
+  toolOutput: {
+    generating: string;                  // "Generating…"
+    resultHeading: string;               // "Result"
+    copyMarkdown: string;                // "Copy as markdown"
+    startOver: string;                   // "Start over"
+  };
+
+  // ModulePicker.tsx — 70+ SAP module picker used inside SapCost.
+  // Templated strings use {placeholder} tokens resolved at render via
+  // interpolate() from useTranslation.ts (Pass 2b-1b pattern).
+  modulePicker: {
+    selectedCountTemplate: string;       // "{count} selected"
+    searchPlaceholder: string;
+    addCoreFinanceTitle: string;
+    addCoreFinanceLabel: string;         // "+ Add core finance"
+    clear: string;
+    coreBadge: string;                   // "Core"
+    ofTotalTemplate: string;             // "of {total}"
+    chipRemoveTitleTemplate: string;     // "Remove {label}"
+    categorySelectAllAriaTemplate: string;     // "Select all {label} modules"
+    categoryDeselectAllAriaTemplate: string;   // "Deselect all {label} modules"
+    categoryAllSelectedTitleTemplate: string;  // "All {total} {label} modules selected · click to clear"
+    categorySelectAllTitleTemplate: string;    // "Select all {total} {label} modules"
+    searchNoMatchTemplate: string;       // `No modules match "{query}".`
+    searchTryShorter: string;
   };
 
   // The ErpCostClient calculator. Pass 2b-1a populated the component body
@@ -1711,25 +1740,47 @@ const EN: Messages = {
   tool: {
     breadcrumbToolsLabel: "Tools",
     freeToolEyebrow: "[ Free Tool ]",
-    formGenerateDefault: "Generate",
-    formGenerating: "Generating…",
-    formErrorNoResponse: "No response stream",
-    formErrorNetwork: "Network error",
-    formErrorRequired: "This field is required",
-    formErrorSelect: "Please select an option",
-    formSelectPlaceholder: "Select…",
-    formTagsHelper: "Separate multiple values with commas.",
-    formYesCheckbox: "Yes",
-    outputResultHeading: "Result",
-    outputCopyMarkdown: "Copy as markdown",
-    outputStartOver: "Start over",
-    moduleSelectedSuffix: "selected",
-    moduleSearchPlaceholder:
-      "Search modules (e.g. Treasury, Payroll, EWM, Group Reporting)…",
-    moduleAddCoreFinanceTitle:
-      "Add the core Finance modules most ERPs start with",
-    moduleAddCoreFinanceLabel: "+ Add core finance",
-    moduleClear: "Clear",
+  },
+
+  // Pass 2b-2a.
+  toolForm: {
+    generateDefault: "Generate",
+    generating: "Generating…",
+    selectPlaceholder: "Select…",
+    tagsHelper: "Separate multiple values with commas.",
+    tagsPlaceholderDefault: "Comma-separated values",
+    yesCheckbox: "Yes",
+    errorNoResponse: "No response stream",
+    errorNetwork: "Network error",
+    errorStream: "Stream error",
+    errorRequired: "This field is required",
+    errorSelect: "Please select an option",
+    errorRequestFailedTemplate: "Request failed ({status})",
+  },
+  toolOutput: {
+    generating: "Generating…",
+    resultHeading: "Result",
+    copyMarkdown: "Copy as markdown",
+    startOver: "Start over",
+  },
+  modulePicker: {
+    selectedCountTemplate: "{count} selected",
+    searchPlaceholder:
+      "Search modules (e.g. <noTranslate>Treasury</noTranslate>, <noTranslate>Payroll</noTranslate>, <noTranslate>EWM</noTranslate>, <noTranslate>Group Reporting</noTranslate>)…",
+    addCoreFinanceTitle: "Add the core Finance modules most ERPs start with",
+    addCoreFinanceLabel: "+ Add core finance",
+    clear: "Clear",
+    coreBadge: "Core",
+    ofTotalTemplate: "of {total}",
+    chipRemoveTitleTemplate: "Remove {label}",
+    categorySelectAllAriaTemplate: "Select all {label} modules",
+    categoryDeselectAllAriaTemplate: "Deselect all {label} modules",
+    categoryAllSelectedTitleTemplate:
+      "All {total} {label} modules selected · click to clear",
+    categorySelectAllTitleTemplate: "Select all {total} {label} modules",
+    searchNoMatchTemplate: 'No modules match "{query}".',
+    searchTryShorter:
+      'Try shorter terms like "<noTranslate>treasury</noTranslate>", "<noTranslate>payroll</noTranslate>", "<noTranslate>ariba</noTranslate>", or "<noTranslate>ewm</noTranslate>".',
   },
   calculator: {
     // Wizard chrome.
