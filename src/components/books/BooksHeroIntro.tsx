@@ -2,6 +2,9 @@
 
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
+import { usePathname } from "next/navigation";
+import { isTargetLanguage, type Locale } from "@/lib/locales";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 /**
  * BooksHeroIntro — client island for the /books hero with a subtle
@@ -12,7 +15,17 @@ import { motion, useReducedMotion } from "framer-motion";
  * skipping the y transform.
  */
 
+function detectLocale(pathname: string | null): Locale {
+  if (!pathname) return "en";
+  const path = pathname.startsWith("/intl/") ? pathname.slice(5) : pathname;
+  const first = path.split("/").filter(Boolean)[0];
+  if (first && isTargetLanguage(first)) return first;
+  return "en";
+}
+
 export default function BooksHeroIntro() {
+  const pathname = usePathname();
+  const { messages: m } = useTranslation(detectLocale(pathname));
   const reduce = useReducedMotion();
   const initial = reduce ? { opacity: 0 } : { opacity: 0, y: 12 };
   const animate = { opacity: 1, y: 0 };
@@ -25,35 +38,33 @@ export default function BooksHeroIntro() {
         transition={{ duration: 0.4, ease: "easeOut" }}
       >
         <p className="font-mono text-[0.72rem] tracking-[2px] uppercase text-eyebrow mb-4">
-          [ 01 · Books ]
+          {m.books.heroEyebrow}
         </p>
         <h1
           className="font-display font-black tracking-[-0.04em] leading-[1.05] text-corbeau mb-5 max-w-[640px]"
           style={{ fontSize: "clamp(2.2rem,4.5vw,3.4rem)" }}
         >
-          Books for teams building, fixing, or surviving ERP and AI programmes.
+          {m.books.heroH1}
         </h1>
         <p className="text-night text-[1.02rem] leading-[1.65] max-w-[560px] mb-6">
-          I write for SAP consultants, CIOs, CFOs, and programme leaders
-          who need clear answers. The stuff I wish more teams knew before
-          they spent millions getting it wrong.
+          {m.books.heroIntro}
         </p>
         <div className="flex flex-wrap items-center gap-3 mt-2">
           <a
             href="#free-books"
             className="inline-flex items-center justify-center bg-papaya text-corbeau font-bold text-[0.95rem] px-6 py-3 min-h-[44px] rounded-[10px] no-underline transition-all hover:bg-[#fb8843] hover:-translate-y-px"
           >
-            Browse free books
+            {m.books.heroBrowseFreeCta}
           </a>
           <a
             href="#paid-books"
             className="inline-flex items-center justify-center bg-transparent text-corbeau font-bold text-[0.95rem] px-6 py-3 min-h-[44px] rounded-[10px] border border-corbeau transition-all hover:bg-corbeau hover:text-bone"
           >
-            Browse paid books
+            {m.books.heroBrowsePaidCta}
           </a>
         </div>
         <p className="font-mono text-[0.72rem] tracking-[2px] uppercase text-eyebrow mt-6">
-          25 years in ERP · CIMA &amp; AICPA · $700M+ delivered
+          {m.books.heroCredentials}
         </p>
       </motion.div>
       <motion.div

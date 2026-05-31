@@ -9,6 +9,7 @@ import {
   isTargetLanguage,
   type Locale,
 } from "@/lib/locales";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 
 // English + the 10 routed locales. English is implicit at the URL root
 // (no prefix). Order: English first, then the TARGET_LANGUAGES list as
@@ -56,6 +57,7 @@ export default function LanguageSwitcher() {
   const optionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const currentLocale = detectLocale(pathname);
+  const { messages: m } = useTranslation(currentLocale);
 
   // Hide the switcher while the mobile drawer in Nav.tsx is open — they
   // both sit at z-40 and the switcher is rendered later in the document,
@@ -163,7 +165,7 @@ export default function LanguageSwitcher() {
       <button
         ref={buttonRef}
         type="button"
-        aria-label="Select language"
+        aria-label={m.languageSwitcher.selectLanguage}
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
@@ -185,7 +187,7 @@ export default function LanguageSwitcher() {
         <div
           ref={dropdownRef}
           role="listbox"
-          aria-label="Select language"
+          aria-label={m.languageSwitcher.selectLanguage}
           tabIndex={-1}
           onKeyDown={onListKeyDown}
           className="absolute right-0 bottom-full mb-2 w-[220px] rounded-lg overflow-hidden transition-opacity duration-150"

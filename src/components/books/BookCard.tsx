@@ -2,10 +2,21 @@
 
 import { useRef } from "react";
 import { motion, useReducedMotion } from "framer-motion";
+import { usePathname } from "next/navigation";
 import BookThumbnail from "./BookThumbnail";
 import BookAccordion, { type AccordionItem } from "./BookAccordion";
 import { BOOK_ACCORDION_QUESTIONS } from "./accordion-questions";
 import type { BookFrontmatter } from "@/types/book";
+import { isTargetLanguage, type Locale } from "@/lib/locales";
+import { useTranslation } from "@/lib/i18n/useTranslation";
+
+function detectLocale(pathname: string | null): Locale {
+  if (!pathname) return "en";
+  const path = pathname.startsWith("/intl/") ? pathname.slice(5) : pathname;
+  const first = path.split("/").filter(Boolean)[0];
+  if (first && isTargetLanguage(first)) return first;
+  return "en";
+}
 
 /**
  * BookCard — single book card for the Free / Paid grid.
@@ -34,6 +45,8 @@ interface Props {
 }
 
 export default function BookCard({ book, hasCoverImage, onRequest }: Props) {
+  const pathname = usePathname();
+  const { messages: m } = useTranslation(detectLocale(pathname));
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const reduceMotion = useReducedMotion();
   const isPaid = book.kind === "paid";
@@ -83,7 +96,7 @@ export default function BookCard({ book, hasCoverImage, onRequest }: Props) {
                   : "bg-papaya text-corbeau"
               }`}
             >
-              {isPaid ? "Paid" : "Free"}
+              {isPaid ? m.bookCard.paidBadge : m.bookCard.freeBadge}
             </span>
             {isPaid && typeof price === "number" && (
               <span className="font-mono text-[0.78rem] text-night font-semibold">
@@ -118,7 +131,7 @@ export default function BookCard({ book, hasCoverImage, onRequest }: Props) {
             onClick={() => onRequest(book, triggerRef.current)}
             className="mt-4 w-full md:w-auto inline-flex items-center justify-center bg-papaya text-corbeau font-bold text-[0.92rem] px-5 py-3 min-h-[44px] rounded-[10px] transition-all hover:bg-[#fb8843] hover:-translate-y-px"
           >
-            Get the book
+            {m.bookCard.getTheBookCta}
           </button>
         </div>
       </div>

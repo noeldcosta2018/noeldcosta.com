@@ -439,6 +439,12 @@ export interface Messages {
   books: {
     pageMetaTitle: string;         // Browser <title>
     pageMetaDescription: string;
+    heroEyebrow: string;           // "[ 01 · Books ]"
+    heroH1: string;
+    heroIntro: string;
+    heroBrowseFreeCta: string;     // "Browse free books"
+    heroBrowsePaidCta: string;     // "Browse paid books"
+    heroCredentials: string;       // "25 years in ERP · CIMA & AICPA · $700M+ delivered" — proper nouns CIMA/AICPA stay verbatim; the surrounding numerics + descriptor translate
     pressEyebrow: string;          // "Writing and commentary featured in"
     freeBooksEyebrow: string;      // "[ 02 · Free books ]"
     freeBooksHeading: string;      // "Free reading. Sent by email."
@@ -1112,6 +1118,15 @@ const EN: Messages = {
     pageMetaTitle: "Books by Noel D'Costa | SAP, ERP and Enterprise AI",
     pageMetaDescription:
       "Practical books for SAP consultants, CIOs, CFOs, and ERP programme leaders covering SAP careers, enterprise AI, autonomous agents, and the SAP career playbook for the AI era.",
+    heroEyebrow: "[ 01 · Books ]",
+    heroH1:
+      "Books for teams building, fixing, or surviving ERP and AI programmes.",
+    heroIntro:
+      "I write for SAP consultants, CIOs, CFOs, and programme leaders who need clear answers. The stuff I wish more teams knew before they spent millions getting it wrong.",
+    heroBrowseFreeCta: "Browse free books",
+    heroBrowsePaidCta: "Browse paid books",
+    heroCredentials:
+      "25 years in ERP · CIMA & AICPA · $700M+ delivered",
     pressEyebrow: "Writing and commentary featured in",
     freeBooksEyebrow: "[ 02 · Free books ]",
     freeBooksHeading: "Free reading. Sent by email.",
@@ -1221,7 +1236,8 @@ const EN: Messages = {
   terms: { _todo: "Pass 2: full terms page copy" },
   error: {
     notFoundH1: "Page not found",
-    notFoundBody: "TODO: Pass 2",
+    notFoundBody:
+      "The page you're looking for has moved, been renamed, or never existed. Head back to the homepage and find what you need.",
     backHomeCta: "Back home",
   },
 };

@@ -1,8 +1,23 @@
 "use client";
 import { useEffect, useState } from "react";
 import { ArrowUpRight } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { isTargetLanguage, type Locale } from "@/lib/locales";
+import { useTranslation } from "@/lib/i18n/useTranslation";
+
+// Same pathname-based locale detection used by Nav, LanguageSwitcher,
+// and other client components on the public site.
+function detectLocale(pathname: string | null): Locale {
+  if (!pathname) return "en";
+  const path = pathname.startsWith("/intl/") ? pathname.slice(5) : pathname;
+  const first = path.split("/").filter(Boolean)[0];
+  if (first && isTargetLanguage(first)) return first;
+  return "en";
+}
 
 export default function StickyCTA() {
+  const pathname = usePathname();
+  const { messages: m } = useTranslation(detectLocale(pathname));
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -39,7 +54,7 @@ export default function StickyCTA() {
         whiteSpace: "nowrap",
       }}
     >
-      Book consultation <ArrowUpRight size={14} />
+      {m.stickyCta.bookConsultation} <ArrowUpRight size={14} />
     </a>
   );
 }

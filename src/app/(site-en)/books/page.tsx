@@ -8,6 +8,13 @@ import BooksHeroIntro from "@/components/books/BooksHeroIntro";
 import { BOOK_ACCORDION_QUESTIONS } from "@/components/books/accordion-questions";
 import { getAllBooks, coverExists } from "@/lib/books";
 import { SITE_URL, SITE_NAME, AUTHOR } from "@/lib/seo";
+import { getMessages } from "@/lib/i18n/useTranslation";
+
+// /books/ is an English-only route under (site-en)/ — there is no
+// translated counterpart at (site-intl)/intl/[lang]/books/. The locale
+// is hardcoded "en" for now; Block 6c-final could revisit if a
+// translated books surface is added.
+const locale = "en";
 
 /**
  * /books — full rebuild.
@@ -33,9 +40,9 @@ import { SITE_URL, SITE_NAME, AUTHOR } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const url = `${SITE_URL}/books/`;
-  const title = "Books by Noel D'Costa | SAP, ERP and Enterprise AI";
-  const description =
-    "Practical books for SAP consultants, CIOs, CFOs, and ERP programme leaders covering SAP careers, enterprise AI, autonomous agents, and the SAP career playbook for the AI era.";
+  const m = getMessages(locale);
+  const title = m.books.pageMetaTitle;
+  const description = m.books.pageMetaDescription;
   return {
     title,
     description,
@@ -66,6 +73,7 @@ const PRESS: { name: string; src: string }[] = [
 
 export default async function BooksPage() {
   const pageUrl = `${SITE_URL}/books`;
+  const m = getMessages(locale);
 
   const allBooks = getAllBooks();
   const frontmatters = allBooks.map((b) => b.frontmatter);
@@ -159,7 +167,7 @@ export default async function BooksPage() {
       >
         <div className="max-w-[1200px] mx-auto">
           <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-eyebrow mb-6">
-            Writing and commentary featured in
+            {m.books.pressEyebrow}
           </p>
           <ul className="flex flex-wrap items-center justify-between gap-x-12 gap-y-6 list-none p-0 m-0">
             {PRESS.map((p) => (
@@ -182,9 +190,9 @@ export default async function BooksPage() {
       {freeBooks.length > 0 && (
         <BookSection
           sectionId="free-books"
-          eyebrow="[ 02 · Free books ]"
-          heading="Free reading. Sent by email."
-          intro="Three field guides from active SAP and AI work. Drop an email, the PDF arrives."
+          eyebrow={m.books.freeBooksEyebrow}
+          heading={m.books.freeBooksHeading}
+          intro={m.books.freeBooksIntro}
           books={freeBooks}
         />
       )}
@@ -193,17 +201,17 @@ export default async function BooksPage() {
       {paidBooks.length > 0 && (
         <BookSection
           sectionId="paid-books"
-          eyebrow="[ 03 · Paid books ]"
-          heading="The deep one. Paid."
-          intro="Practical execution, not theory. $12.99 ebook, ships the day you buy."
+          eyebrow={m.books.paidBooksEyebrow}
+          heading={m.books.paidBooksHeading}
+          intro={m.books.paidBooksIntro}
           books={paidBooks}
         />
       )}
 
       {/* 5. CTA banner — reuses the existing component. */}
-      <CTABanner />
+      <CTABanner locale={locale} />
 
-      <Footer />
+      <Footer locale={locale} />
 
       {bookListLd && (
         <script
