@@ -1350,8 +1350,167 @@ export interface Messages {
     >;
   };
 
+  // SAP Solution Builder (Pass 2b-2d). Final calculator namespace.
+  // Covers SolutionClient chrome + the lib data files
+  // (solution-builder/data.ts industries/sizes/phases/team-roles) and
+  // the cost taxonomy from solution-builder/engine.ts.
+  //
+  // Note: the cost-roadmap CATEGORY_LABEL (engine.ts) is intentionally
+  // *separate* from sapModules.categories — the picker uses one labelling
+  // ("Finance & Controlling") and the cost breakdown uses another
+  // ("Finance & Compliance"). Same enum keys, different display strings.
   solutionBuilder: {
-    _todo: string;
+    // SolutionClient chrome — selectors, buttons, section headings.
+    formHeading: string;
+    industryLabel: string;
+    industrySelectPlaceholder: string;
+    companySizeLabel: string;
+    companySizeSelectPlaceholder: string;
+    resetCta: string;
+    generateRecommendationsCta: string;
+    changeIndustryOrSizeCta: string;
+    modulesSelectionHeading: string;
+    mandatoryModulesTitle: string;
+    industryModulesTitle: string;
+    recommendedModulesTitle: string;
+    moduleSingular: string;
+    modulePlural: string;
+    generateRoadmapCta: string;
+    bestPracticesTitleTemplate: string;        // "Industry best practices: {industry}"
+
+    // Module table (Step 2 / phase modules).
+    moduleTableModule: string;
+    moduleTableLicense: string;
+    moduleTableQuantity: string;
+    moduleTableCategory: string;
+    moduleTableDescription: string;
+
+    // Roadmap summary cards.
+    summaryTotalDuration: string;
+    summaryTotalInvestment: string;
+    summaryTeamSize: string;
+    summaryMonthsTemplate: string;             // "{n} months"
+    summaryPeopleTemplate: string;             // "{n} people"
+
+    // Implementation timeline section.
+    timelineHeading: string;
+    timelineCaptionTemplate: string;           // "Phased delivery sized to {industry} at {size} scale."
+
+    // Cost breakdown section.
+    costBreakdownHeading: string;
+    costBreakdownCaptionTemplate: string;      // "Where the {total} programme cost lands by category. Directional, not a vendor quote."
+
+    // Implementation team section.
+    implementationTeamHeading: string;
+    implementationTeamCaptionTemplate: string;
+
+    // Team table headers + footer.
+    teamTableRole: string;
+    teamTableFunction: string;
+    teamTableCount: string;
+    teamTableDayRate: string;                  // "Day rate (USD)"
+    teamTableTotal: string;
+
+    // Phase card chrome.
+    phaseFocusPrefix: string;                  // "Focus:"
+    phaseModulesCaption: string;               // "Modules in this phase"
+    phaseMonthsTemplate: string;               // "{n} months"
+
+    // Action buttons (final step).
+    printPdfCta: string;
+    startOverCta: string;
+
+    // INDUSTRIES — 14 entries. Keys match the IndustryId union literal.
+    industries: Record<
+      | "manufacturing"
+      | "retail"
+      | "healthcare"
+      | "financial-services"
+      | "public-sector"
+      | "utilities"
+      | "consumer-goods"
+      | "professional-services"
+      | "telecommunications"
+      | "oil-gas"
+      | "education"
+      | "hospitality"
+      | "logistics-transport"
+      | "construction-real-estate",
+      { label: string; bestPractices: string; phasingNarrative: string }
+    >;
+
+    // COMPANY_SIZES — labels only. The numeric quantity bands
+    // ("25-50", "1,000-5,000") stay inline in data.ts because they are
+    // pure numeric ranges; locale-aware thousand-separator formatting is
+    // deferred to a post-launch concern (the bands are rendered into the
+    // module table and currently use comma separators globally).
+    companySizes: Record<
+      "small" | "mid" | "large" | "enterprise",
+      { label: string }
+    >;
+
+    // PHASES — 3 entries. Each has label + description + array of
+    // focusArea strings (variable length 4-5 per phase).
+    phases: Record<
+      "phase1" | "phase2" | "phase3",
+      { label: string; description: string; focusAreas: string[] }
+    >;
+
+    // TEAM_ROLES — 13 entries. Keyed by kebab-case role identifier.
+    // dayRateBand stays inline in data.ts (numeric currency formatting).
+    teamRoles: Record<
+      | "programme-director"
+      | "programme-manager"
+      | "solution-architect"
+      | "functional-lead-finance"
+      | "functional-lead-supply-chain"
+      | "functional-lead-hr"
+      | "functional-consultants"
+      | "technical-abap-developer"
+      | "basis-btp-admin"
+      | "integration-cpi-consultant"
+      | "data-migration-lead"
+      | "change-manager"
+      | "test-lead",
+      { role: string; function: string }
+    >;
+
+    // License type labels returned by licenseTypeFor() in data.ts.
+    licenseTypes: {
+      userBased: string;
+      employeeBased: string;
+      transactionBased: string;
+    };
+
+    // engine.ts CATEGORY_LABEL — cost-roadmap category names (DIFFERENT
+    // copy from sapModules.categories).
+    costRoadmapCategories: Record<
+      | "finance"
+      | "procurement"
+      | "supply-chain"
+      | "sales-cx"
+      | "hcm"
+      | "projects"
+      | "analytics"
+      | "platform"
+      | "industry",
+      string
+    >;
+
+    // engine.ts cost share categories + descriptions. The keys are the
+    // 9 cost lines in costSharesPct; pairs label + description as
+    // displayed in the cost breakdown table.
+    costCategories: {
+      softwareLicensing: { label: string; description: string };
+      implementationServices: { label: string; description: string };
+      internalTeamTime: { label: string; description: string };
+      dataMigration: { label: string; description: string };
+      customisationDevelopment: { label: string; description: string };
+      trainingChangeManagement: { label: string; description: string };
+      infrastructureHosting: { label: string; description: string };
+      postGoliveSupport: { label: string; description: string };
+      contingency: { label: string; description: string };
+    };
   };
 
   // Contact page (ContactHero + ContactBlock + CalendlyEmbed).
@@ -3306,7 +3465,335 @@ const EN: Messages = {
     },
   },
 
-  solutionBuilder: { _todo: "Pass 2: ~80 strings from SolutionClient.tsx" },
+  // Pass 2b-2d.
+  solutionBuilder: {
+    formHeading: "Create your SAP implementation roadmap",
+    industryLabel: "Industry",
+    industrySelectPlaceholder: "Select industry",
+    companySizeLabel: "Company size",
+    companySizeSelectPlaceholder: "Select company size",
+    resetCta: "Reset",
+    generateRecommendationsCta: "Generate recommendations",
+    changeIndustryOrSizeCta: "← Change industry or size",
+    modulesSelectionHeading: "<noTranslate>SAP</noTranslate> modules selection",
+    mandatoryModulesTitle: "Mandatory modules",
+    industryModulesTitle: "Industry-specific modules",
+    recommendedModulesTitle: "Recommended modules",
+    moduleSingular: "module",
+    modulePlural: "modules",
+    generateRoadmapCta: "Generate implementation roadmap",
+    bestPracticesTitleTemplate: "Industry best practices: {industry}",
+
+    moduleTableModule: "Module",
+    moduleTableLicense: "License",
+    moduleTableQuantity: "Quantity",
+    moduleTableCategory: "Category",
+    moduleTableDescription: "Description",
+
+    summaryTotalDuration: "Total duration",
+    summaryTotalInvestment: "Total investment",
+    summaryTeamSize: "Team size",
+    summaryMonthsTemplate: "{n} months",
+    summaryPeopleTemplate: "{n} people",
+
+    timelineHeading: "Implementation timeline",
+    timelineCaptionTemplate:
+      "Phased delivery sized to {industry} at {size} scale.",
+
+    costBreakdownHeading: "Cost breakdown",
+    costBreakdownCaptionTemplate:
+      "Where the {total} programme cost lands by category. Directional, not a vendor quote.",
+
+    implementationTeamHeading: "Implementation team",
+    implementationTeamCaptionTemplate:
+      "Suggested team composition for a {size} programme. Headcount scales with selected modules. Day-rate bands are <noTranslate>USD</noTranslate>.",
+
+    teamTableRole: "Role",
+    teamTableFunction: "Function",
+    teamTableCount: "Count",
+    teamTableDayRate: "Day rate (<noTranslate>USD</noTranslate>)",
+    teamTableTotal: "Total",
+
+    phaseFocusPrefix: "Focus:",
+    phaseModulesCaption: "Modules in this phase",
+    phaseMonthsTemplate: "{n} months",
+
+    printPdfCta: "Print / save as PDF",
+    startOverCta: "Start over",
+
+    // INDUSTRIES — 14 entries.
+    industries: {
+      manufacturing: {
+        label: "Manufacturing",
+        bestPractices:
+          "Focus on integrating production planning with materials management. Quality management and manufacturing execution are non-negotiable. Plant maintenance and <noTranslate>EHS</noTranslate> protect uptime.",
+        phasingNarrative:
+          "Start with core ERP and manufacturing modules in Phase 1. Add quality management and execution systems in Phase 2. Deploy <noTranslate>IoT</noTranslate>, predictive maintenance, and analytics in Phase 3.",
+      },
+      retail: {
+        label: "Retail",
+        bestPractices:
+          "Article master and assortment depth determine the size of the build. Omnichannel commerce, customer data, and store operations require tight integration. Inventory accuracy across stores and <noTranslate>DCs</noTranslate> is the value driver.",
+        phasingNarrative:
+          "Phase 1 covers core ERP, finance, and merchandise management. Phase 2 layers in commerce, marketing cloud, and store operations. Phase 3 brings analytics, customer data, and personalisation.",
+      },
+      healthcare: {
+        label: "Healthcare",
+        bestPractices:
+          "Patient data privacy and audit trails dominate the design. Procurement and inventory of medical supplies need strict batch and expiry control. Workforce planning is mission-critical for clinical staffing.",
+        phasingNarrative:
+          "Phase 1 covers finance, procurement, and core HR with full audit trail. Phase 2 adds workforce planning, learning, and analytics. Phase 3 layers AI for forecasting and patient operations.",
+      },
+      "financial-services": {
+        label: "Financial Services",
+        bestPractices:
+          "Regulatory reporting, Group consolidation, and <noTranslate>FSCM</noTranslate> (credit, dispute, collections) are the spine. Treasury, in-house cash, and risk management carry the heaviest configuration burden.",
+        phasingNarrative:
+          "Phase 1: core finance, controlling, Group Reporting, and statutory compliance. Phase 2: treasury, <noTranslate>FSCM</noTranslate>, and regulatory reporting (<noTranslate>DRC</noTranslate>). Phase 3: analytics, planning, and risk dashboards.",
+      },
+      "public-sector": {
+        label: "Public Sector",
+        bestPractices:
+          "Funds management, grants, and budget control are the heart of the system. Procurement transparency and audit are non-negotiable. Citizen-facing services need a separate engagement layer.",
+        phasingNarrative:
+          "Phase 1: core finance with Funds Management and grants. Phase 2: procurement transparency, HR/payroll, and audit reporting. Phase 3: citizen engagement, analytics, and <noTranslate>DRC</noTranslate> reporting.",
+      },
+      utilities: {
+        label: "Utilities",
+        bestPractices:
+          "Device management, metering, and customer billing dominate. Plant maintenance and asset performance management protect grid reliability. Regulatory reporting and unbundling are baseline.",
+        phasingNarrative:
+          "Phase 1: core ERP plus <noTranslate>IS-U</noTranslate> device management and billing. Phase 2: <noTranslate>PM</noTranslate>, <noTranslate>EAM</noTranslate>, and <noTranslate>APM</noTranslate> for asset operations. Phase 3: customer engagement, <noTranslate>IBP</noTranslate>, and analytics.",
+      },
+      "consumer-goods": {
+        label: "Consumer Goods",
+        bestPractices:
+          "Trade promotion management and demand planning drive margin. Warehouse and transportation management determine service levels. Subscription and direct-to-consumer add channel complexity.",
+        phasingNarrative:
+          "Phase 1: core ERP, finance, and supply chain. Phase 2: <noTranslate>IBP</noTranslate>, warehouse and transportation. Phase 3: commerce, customer data, and advanced analytics.",
+      },
+      "professional-services": {
+        label: "Professional Services",
+        bestPractices:
+          "Project accounting, time and expense, and resource planning are the engine. Revenue recognition under <noTranslate>IFRS 15</noTranslate> carries hidden complexity. Talent management drives utilisation.",
+        phasingNarrative:
+          "Phase 1: core finance, project systems, and <noTranslate>Concur</noTranslate>. Phase 2: HR, recruiting, performance. Phase 3: analytics, planning, and workforce optimisation.",
+      },
+      telecommunications: {
+        label: "Telecommunications",
+        bestPractices:
+          "Subscription and convergent billing (<noTranslate>BRIM</noTranslate>) carry the heaviest load. Customer experience and service cloud are baseline. Network asset management on <noTranslate>PM</noTranslate>/<noTranslate>APM</noTranslate> is the operations spine.",
+        phasingNarrative:
+          "Phase 1: core ERP, finance, <noTranslate>BRIM</noTranslate>. Phase 2: service cloud, commerce, customer data. Phase 3: <noTranslate>PM</noTranslate>, <noTranslate>APM</noTranslate>, and analytics.",
+      },
+      "oil-gas": {
+        label: "Oil, Gas & Energy",
+        bestPractices:
+          "Hydrocarbon management, exchanges, and joint venture accounting are non-negotiable. <noTranslate>PM</noTranslate> and <noTranslate>EHS</noTranslate> protect both safety and uptime. <noTranslate>EWM</noTranslate> handles complex bulk and packaged inventory.",
+        phasingNarrative:
+          "Phase 1: core ERP plus <noTranslate>IS-OIL</noTranslate> and <noTranslate>EHS</noTranslate>. Phase 2: <noTranslate>PM</noTranslate>, <noTranslate>EAM</noTranslate>, <noTranslate>EWM</noTranslate>. Phase 3: <noTranslate>APM</noTranslate>, <noTranslate>IBP</noTranslate>, and analytics.",
+      },
+      education: {
+        label: "Education",
+        bestPractices:
+          "Student finance, grants, and donor management are unique to the sector. HR and payroll for academic and admin staff need separate schemas. Compliance and reporting are heavy.",
+        phasingNarrative:
+          "Phase 1: core finance, procurement, and HR. Phase 2: payroll, recruiting, learning. Phase 3: analytics and student engagement.",
+      },
+      hospitality: {
+        label: "Hospitality",
+        bestPractices:
+          "Procurement, inventory, and F&B costing carry the operational load. Customer experience and loyalty drive revenue. Workforce time and scheduling are the daily friction.",
+        phasingNarrative:
+          "Phase 1: core ERP, finance, procurement. Phase 2: HR, time, learning. Phase 3: customer experience, commerce, analytics.",
+      },
+      "logistics-transport": {
+        label: "Logistics & Transportation",
+        bestPractices:
+          "Transportation management is the spine. Warehouse management at scale across distribution centres is the second pillar. Fleet, asset, and driver management round out the operations.",
+        phasingNarrative:
+          "Phase 1: core ERP, finance, <noTranslate>MM</noTranslate>. Phase 2: <noTranslate>TM</noTranslate> and <noTranslate>EWM</noTranslate>. Phase 3: <noTranslate>APM</noTranslate>, <noTranslate>IBP</noTranslate>, analytics.",
+      },
+      "construction-real-estate": {
+        label: "Construction & Real Estate",
+        bestPractices:
+          "Project systems, lease accounting (<noTranslate>IFRS 16</noTranslate> / <noTranslate>ASC 842</noTranslate>), and progress billing dominate. Procurement of materials and subcontractors needs strong contract control. <noTranslate>EHS</noTranslate> is regulated.",
+        phasingNarrative:
+          "Phase 1: core finance, <noTranslate>PS</noTranslate>, <noTranslate>RE-FX</noTranslate>. Phase 2: procurement, contracts, <noTranslate>EHS</noTranslate>. Phase 3: analytics and asset operations.",
+      },
+    },
+
+    companySizes: {
+      small:      { label: "Small (< 100 employees)" },
+      mid:        { label: "Mid-size (100-500 employees)" },
+      large:      { label: "Large (500-2,000 employees)" },
+      enterprise: { label: "Enterprise (2,000+ employees)" },
+    },
+
+    phases: {
+      phase1: {
+        label: "Phase 1: Core ERP, Finance & Compliance",
+        description:
+          "Establish the core ERP foundation with finance, procurement, and HR.",
+        focusAreas: [
+          "Core ERP configuration",
+          "Financial accounting",
+          "Procurement setup",
+          "HR and payroll",
+          "Statutory compliance",
+        ],
+      },
+      phase2: {
+        label: "Phase 2: Industry-Specific Solutions",
+        description:
+          "Layer in the modules that make the system fit your industry.",
+        focusAreas: [
+          "Industry-specific processes",
+          "Specialised modules",
+          "Industry compliance",
+          "Extended features",
+        ],
+      },
+      phase3: {
+        label: "Phase 3: Advanced, Analytics & Platform",
+        description:
+          "Add analytics, integration, and the platform capabilities for scale.",
+        focusAreas: [
+          "Analytics and reporting",
+          "Integration and extension",
+          "Master data governance",
+          "Process intelligence",
+        ],
+      },
+    },
+
+    teamRoles: {
+      "programme-director": {
+        role: "Programme Director",
+        function: "Programme leadership and stakeholder management",
+      },
+      "programme-manager": {
+        role: "Programme Manager",
+        function: "Day-to-day delivery, plan, <noTranslate>RAID</noTranslate> log",
+      },
+      "solution-architect": {
+        role: "Solution Architect",
+        function: "End-to-end design, integration patterns",
+      },
+      "functional-lead-finance": {
+        role: "Functional Lead — Finance",
+        function:
+          "<noTranslate>FI</noTranslate>/<noTranslate>CO</noTranslate>/Treasury design, <noTranslate>GL</noTranslate> chart, controlling model",
+      },
+      "functional-lead-supply-chain": {
+        role: "Functional Lead — Supply Chain",
+        function:
+          "<noTranslate>MM</noTranslate>/<noTranslate>PP</noTranslate>/<noTranslate>EWM</noTranslate>/<noTranslate>TM</noTranslate> design and config",
+      },
+      "functional-lead-hr": {
+        role: "Functional Lead — HR",
+        function: "<noTranslate>SuccessFactors</noTranslate> / <noTranslate>HCM</noTranslate> design",
+      },
+      "functional-consultants": {
+        role: "Functional Consultants",
+        function: "Module-level configuration and testing",
+      },
+      "technical-abap-developer": {
+        role: "Technical / <noTranslate>ABAP</noTranslate> Developer",
+        function: "Custom dev, <noTranslate>RICEFW</noTranslate>, performance",
+      },
+      "basis-btp-admin": {
+        role: "Basis / <noTranslate>BTP</noTranslate> Admin",
+        function:
+          "Landscape, transports, performance, security",
+      },
+      "integration-cpi-consultant": {
+        role: "Integration / <noTranslate>CPI</noTranslate> Consultant",
+        function:
+          "Interfaces, <noTranslate>iFlows</noTranslate>, <noTranslate>API</noTranslate> management",
+      },
+      "data-migration-lead": {
+        role: "Data Migration Lead",
+        function: "Data mapping, cleansing, cutover",
+      },
+      "change-manager": {
+        role: "Change Manager",
+        function: "Communications, training plan, adoption",
+      },
+      "test-lead": {
+        role: "Test Lead",
+        function:
+          "Test strategy, <noTranslate>UAT</noTranslate>, regression, defect triage",
+      },
+    },
+
+    licenseTypes: {
+      userBased: "User-Based",
+      employeeBased: "Employee-Based",
+      transactionBased: "Transaction-Based",
+    },
+
+    // Cost-roadmap CATEGORY_LABEL — distinct from sapModules.categories.
+    costRoadmapCategories: {
+      finance:        "Finance & Compliance",
+      procurement:    "Procurement & Supply Chain",
+      "supply-chain": "Supply Chain & Manufacturing",
+      "sales-cx":     "Sales & Customer Experience",
+      hcm:            "HR & Workforce Management",
+      projects:       "Projects & Expense",
+      analytics:      "Analytics & Reporting",
+      platform:       "Platform & Integration",
+      industry:       "Industry Solution",
+    },
+
+    costCategories: {
+      softwareLicensing: {
+        label: "Software licensing",
+        description:
+          "Core modules, user licences, and add-ons across the selected scope",
+      },
+      implementationServices: {
+        label: "Implementation services",
+        description:
+          "Consulting, configuration, testing, and project management",
+      },
+      internalTeamTime: {
+        label: "Internal team time",
+        description:
+          "IT, business SMEs, and process owners (often invisible in vendor quotes)",
+      },
+      dataMigration: {
+        label: "Data migration",
+        description:
+          "Extraction, cleansing, conversion, validation, cutover dress rehearsal",
+      },
+      customisationDevelopment: {
+        label: "Customisation & development",
+        description:
+          "Z-code, <noTranslate>Fiori</noTranslate> extensions, integrations beyond standard",
+      },
+      trainingChangeManagement: {
+        label: "Training & change management",
+        description:
+          "End-user training, change agents, communications, adoption",
+      },
+      infrastructureHosting: {
+        label: "Infrastructure & hosting",
+        description:
+          "Cloud subscriptions, middleware, network readiness",
+      },
+      postGoliveSupport: {
+        label: "Post-go-live support (hypercare)",
+        description:
+          "First 30-90 days post-cutover with elevated support staffing",
+      },
+      contingency: {
+        label: "Contingency",
+        description:
+          "Reserve for scope changes, delays, unforeseen requirements",
+      },
+    },
+  },
   contact: {
     eyebrow: "Get in touch",
     h2Lead: "30 minutes.",

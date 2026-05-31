@@ -7,8 +7,29 @@
  * Module IDs reference the catalogue in `src/lib/sap-modules.ts` so
  * the picker, cost calculator, and solution builder all share one
  * source of truth for module names, codes, and effort weights.
+ *
+ * ── i18n architecture (Pass 2b-2d) ────────────────────────────────────
+ *
+ * Translatable fields (industry label / bestPractices / phasingNarrative,
+ * company size label, phase label / description / focusAreas, team role /
+ * function, license-type label) moved to MESSAGES.solutionBuilder.* in
+ * src/lib/i18n/messages.ts.
+ *
+ * The structural arrays / records below keep ID + numeric / enum fields
+ * only (multipliers, durations, day-rate bands, module ID lists, accept-
+ * category enums). The locale-aware getters below merge the static
+ * structure with translated copy, strip <noTranslate> markers, and
+ * return the same shape consumers used before — buildRoadmap / engine
+ * code paths unchanged apart from threading `locale` through.
+ *
+ * Day-rate bands ($2,000-$3,500 etc.) stay inline as numeric currency
+ * strings. Locale-aware thousand-separator formatting on those is a
+ * post-launch concern (the calculator decision was "currency stays in
+ * USD across all locales" — same applies here).
  */
 
+import type { Locale } from "@/lib/locales";
+import { getMessages, stripMarkers } from "@/lib/i18n/useTranslation";
 import type { SapModuleCategory } from "@/lib/sap-modules";
 
 // ─── Industry presets ─────────────────────────────────────────────────
@@ -46,6 +67,14 @@ export interface IndustryPreset {
   complexityMultiplier: number;
 }
 
+interface IndustryStatic {
+  id: IndustryId;
+  mandatoryModuleIds: string[];
+  industryModuleIds: string[];
+  recommendedModuleIds: string[];
+  complexityMultiplier: number;
+}
+
 /**
  * Core modules every SAP implementation includes regardless of industry.
  * Layered on top of industry-specific lists. Listed here once to avoid
@@ -62,14 +91,9 @@ const CORE_MANDATORY = [
   "sf-ec",
 ];
 
-export const INDUSTRIES: IndustryPreset[] = [
+const INDUSTRIES_STATIC: IndustryStatic[] = [
   {
     id: "manufacturing",
-    label: "Manufacturing",
-    bestPractices:
-      "Focus on integrating production planning with materials management. Quality management and manufacturing execution are non-negotiable. Plant maintenance and EHS protect uptime.",
-    phasingNarrative:
-      "Start with core ERP and manufacturing modules in Phase 1. Add quality management and execution systems in Phase 2. Deploy IoT, predictive maintenance, and analytics in Phase 3.",
     mandatoryModuleIds: [...CORE_MANDATORY, "fi-aa", "tax-mgmt"],
     industryModuleIds: ["pp", "qm", "pm-eam", "ehs", "ewm"],
     recommendedModuleIds: ["ppds", "me", "apm", "dmc", "ibp", "sac"],
@@ -77,11 +101,6 @@ export const INDUSTRIES: IndustryPreset[] = [
   },
   {
     id: "retail",
-    label: "Retail",
-    bestPractices:
-      "Article master and assortment depth determine the size of the build. Omnichannel commerce, customer data, and store operations require tight integration. Inventory accuracy across stores and DCs is the value driver.",
-    phasingNarrative:
-      "Phase 1 covers core ERP, finance, and merchandise management. Phase 2 layers in commerce, marketing cloud, and store operations. Phase 3 brings analytics, customer data, and personalisation.",
     mandatoryModuleIds: [...CORE_MANDATORY, "fi-aa", "tax-mgmt", "ewm"],
     industryModuleIds: ["is-retail", "commerce-cloud", "marketing-cloud", "cdc"],
     recommendedModuleIds: ["sales-cloud", "service-cloud", "ibp", "sac", "datasphere"],
@@ -89,11 +108,6 @@ export const INDUSTRIES: IndustryPreset[] = [
   },
   {
     id: "healthcare",
-    label: "Healthcare",
-    bestPractices:
-      "Patient data privacy and audit trails dominate the design. Procurement and inventory of medical supplies need strict batch and expiry control. Workforce planning is mission-critical for clinical staffing.",
-    phasingNarrative:
-      "Phase 1 covers finance, procurement, and core HR with full audit trail. Phase 2 adds workforce planning, learning, and analytics. Phase 3 layers AI for forecasting and patient operations.",
     mandatoryModuleIds: [...CORE_MANDATORY, "tax-mgmt", "ilm", "ias"],
     industryModuleIds: ["qm", "sf-time", "sf-recruiting", "sf-lms"],
     recommendedModuleIds: ["sac", "datasphere", "sf-analytics", "service-cloud"],
@@ -101,11 +115,6 @@ export const INDUSTRIES: IndustryPreset[] = [
   },
   {
     id: "financial-services",
-    label: "Financial Services",
-    bestPractices:
-      "Regulatory reporting, Group consolidation, and FSCM (credit, dispute, collections) are the spine. Treasury, in-house cash, and risk management carry the heaviest configuration burden.",
-    phasingNarrative:
-      "Phase 1: core finance, controlling, Group Reporting, and statutory compliance. Phase 2: treasury, FSCM, and regulatory reporting (DRC). Phase 3: analytics, planning, and risk dashboards.",
     mandatoryModuleIds: [
       ...CORE_MANDATORY,
       "fi-aa",
@@ -127,11 +136,6 @@ export const INDUSTRIES: IndustryPreset[] = [
   },
   {
     id: "public-sector",
-    label: "Public Sector",
-    bestPractices:
-      "Funds management, grants, and budget control are the heart of the system. Procurement transparency and audit are non-negotiable. Citizen-facing services need a separate engagement layer.",
-    phasingNarrative:
-      "Phase 1: core finance with Funds Management and grants. Phase 2: procurement transparency, HR/payroll, and audit reporting. Phase 3: citizen engagement, analytics, and DRC reporting.",
     mandatoryModuleIds: [
       ...CORE_MANDATORY,
       "fi-aa",
@@ -145,11 +149,6 @@ export const INDUSTRIES: IndustryPreset[] = [
   },
   {
     id: "utilities",
-    label: "Utilities",
-    bestPractices:
-      "Device management, metering, and customer billing dominate. Plant maintenance and asset performance management protect grid reliability. Regulatory reporting and unbundling are baseline.",
-    phasingNarrative:
-      "Phase 1: core ERP plus IS-U device management and billing. Phase 2: PM, EAM, and APM for asset operations. Phase 3: customer engagement, IBP, and analytics.",
     mandatoryModuleIds: [...CORE_MANDATORY, "fi-aa", "tax-mgmt", "is-utilities"],
     industryModuleIds: ["pm-eam", "apm", "ehs"],
     recommendedModuleIds: ["service-cloud", "ibp", "sac", "datasphere"],
@@ -157,11 +156,6 @@ export const INDUSTRIES: IndustryPreset[] = [
   },
   {
     id: "consumer-goods",
-    label: "Consumer Goods",
-    bestPractices:
-      "Trade promotion management and demand planning drive margin. Warehouse and transportation management determine service levels. Subscription and direct-to-consumer add channel complexity.",
-    phasingNarrative:
-      "Phase 1: core ERP, finance, and supply chain. Phase 2: IBP, warehouse and transportation. Phase 3: commerce, customer data, and advanced analytics.",
     mandatoryModuleIds: [...CORE_MANDATORY, "fi-aa", "tax-mgmt", "ewm", "tm"],
     industryModuleIds: ["ibp", "pp", "qm", "brim"],
     recommendedModuleIds: ["commerce-cloud", "marketing-cloud", "cdc", "sac"],
@@ -169,11 +163,6 @@ export const INDUSTRIES: IndustryPreset[] = [
   },
   {
     id: "professional-services",
-    label: "Professional Services",
-    bestPractices:
-      "Project accounting, time and expense, and resource planning are the engine. Revenue recognition under IFRS 15 carries hidden complexity. Talent management drives utilisation.",
-    phasingNarrative:
-      "Phase 1: core finance, project systems, and Concur. Phase 2: HR, recruiting, performance. Phase 3: analytics, planning, and workforce optimisation.",
     mandatoryModuleIds: [...CORE_MANDATORY, "ps", "concur", "tax-mgmt"],
     industryModuleIds: ["ppm", "sf-recruiting", "sf-performance"],
     recommendedModuleIds: ["sac", "sf-analytics", "fpa-planning"],
@@ -181,11 +170,6 @@ export const INDUSTRIES: IndustryPreset[] = [
   },
   {
     id: "telecommunications",
-    label: "Telecommunications",
-    bestPractices:
-      "Subscription and convergent billing (BRIM) carry the heaviest load. Customer experience and service cloud are baseline. Network asset management on PM/APM is the operations spine.",
-    phasingNarrative:
-      "Phase 1: core ERP, finance, BRIM. Phase 2: service cloud, commerce, customer data. Phase 3: PM, APM, and analytics.",
     mandatoryModuleIds: [...CORE_MANDATORY, "fi-aa", "tax-mgmt", "brim"],
     industryModuleIds: ["service-cloud", "commerce-cloud", "cdc", "pm-eam"],
     recommendedModuleIds: ["apm", "sac", "marketing-cloud", "datasphere"],
@@ -193,11 +177,6 @@ export const INDUSTRIES: IndustryPreset[] = [
   },
   {
     id: "oil-gas",
-    label: "Oil, Gas & Energy",
-    bestPractices:
-      "Hydrocarbon management, exchanges, and joint venture accounting are non-negotiable. PM and EHS protect both safety and uptime. EWM handles complex bulk and packaged inventory.",
-    phasingNarrative:
-      "Phase 1: core ERP plus IS-OIL and EHS. Phase 2: PM, EAM, EWM. Phase 3: APM, IBP, and analytics.",
     mandatoryModuleIds: [...CORE_MANDATORY, "fi-aa", "tax-mgmt", "is-oil", "ehs"],
     industryModuleIds: ["pm-eam", "apm", "ewm"],
     recommendedModuleIds: ["ibp", "sac", "datasphere", "signavio"],
@@ -205,11 +184,6 @@ export const INDUSTRIES: IndustryPreset[] = [
   },
   {
     id: "education",
-    label: "Education",
-    bestPractices:
-      "Student finance, grants, and donor management are unique to the sector. HR and payroll for academic and admin staff need separate schemas. Compliance and reporting are heavy.",
-    phasingNarrative:
-      "Phase 1: core finance, procurement, and HR. Phase 2: payroll, recruiting, learning. Phase 3: analytics and student engagement.",
     mandatoryModuleIds: [...CORE_MANDATORY, "fi-aa", "tax-mgmt"],
     industryModuleIds: ["hcm-payroll-onprem", "sf-recruiting", "sf-lms", "re-fx"],
     recommendedModuleIds: ["service-cloud", "cdc", "sac"],
@@ -217,11 +191,6 @@ export const INDUSTRIES: IndustryPreset[] = [
   },
   {
     id: "hospitality",
-    label: "Hospitality",
-    bestPractices:
-      "Procurement, inventory, and F&B costing carry the operational load. Customer experience and loyalty drive revenue. Workforce time and scheduling are the daily friction.",
-    phasingNarrative:
-      "Phase 1: core ERP, finance, procurement. Phase 2: HR, time, learning. Phase 3: customer experience, commerce, analytics.",
     mandatoryModuleIds: [...CORE_MANDATORY, "fi-aa", "tax-mgmt"],
     industryModuleIds: ["sf-time", "service-cloud", "marketing-cloud"],
     recommendedModuleIds: ["commerce-cloud", "cdc", "sac"],
@@ -229,11 +198,6 @@ export const INDUSTRIES: IndustryPreset[] = [
   },
   {
     id: "logistics-transport",
-    label: "Logistics & Transportation",
-    bestPractices:
-      "Transportation management is the spine. Warehouse management at scale across distribution centres is the second pillar. Fleet, asset, and driver management round out the operations.",
-    phasingNarrative:
-      "Phase 1: core ERP, finance, MM. Phase 2: TM and EWM. Phase 3: APM, IBP, analytics.",
     mandatoryModuleIds: [...CORE_MANDATORY, "fi-aa", "tax-mgmt", "tm", "ewm"],
     industryModuleIds: ["pm-eam", "ehs", "apm"],
     recommendedModuleIds: ["ibp", "sac", "datasphere"],
@@ -241,17 +205,33 @@ export const INDUSTRIES: IndustryPreset[] = [
   },
   {
     id: "construction-real-estate",
-    label: "Construction & Real Estate",
-    bestPractices:
-      "Project systems, lease accounting (IFRS 16 / ASC 842), and progress billing dominate. Procurement of materials and subcontractors needs strong contract control. EHS is regulated.",
-    phasingNarrative:
-      "Phase 1: core finance, PS, RE-FX. Phase 2: procurement, contracts, EHS. Phase 3: analytics and asset operations.",
     mandatoryModuleIds: [...CORE_MANDATORY, "fi-aa", "tax-mgmt", "ps", "re-fx"],
     industryModuleIds: ["pm-eam", "ehs", "ariba-contracts"],
     recommendedModuleIds: ["sac", "ppm", "concur"],
     complexityMultiplier: 1.1,
   },
 ];
+
+function buildIndustry(s: IndustryStatic, locale: Locale): IndustryPreset {
+  const t = getMessages(locale).solutionBuilder.industries[s.id];
+  return {
+    id: s.id,
+    label: stripMarkers(t.label),
+    bestPractices: stripMarkers(t.bestPractices),
+    phasingNarrative: stripMarkers(t.phasingNarrative),
+    mandatoryModuleIds: s.mandatoryModuleIds,
+    industryModuleIds: s.industryModuleIds,
+    recommendedModuleIds: s.recommendedModuleIds,
+    complexityMultiplier: s.complexityMultiplier,
+  };
+}
+
+export function getIndustries(locale: Locale = "en"): IndustryPreset[] {
+  return INDUSTRIES_STATIC.map((s) => buildIndustry(s, locale));
+}
+
+/** Back-compat: English-rendered array for non-UI consumers. */
+export const INDUSTRIES: IndustryPreset[] = getIndustries("en");
 
 // ─── Company size bands ───────────────────────────────────────────────
 
@@ -277,10 +257,22 @@ export interface CompanySizePreset {
   phase3Months: number;
 }
 
-export const COMPANY_SIZES: CompanySizePreset[] = [
+interface CompanySizeStatic {
+  id: CompanySizeId;
+  userCountRange: string;
+  userBasedQty: string;
+  transactionBasedQty: string;
+  employeeBasedQty: string;
+  costMultiplier: number;
+  teamMultiplier: number;
+  phase1Months: number;
+  phase2Months: number;
+  phase3Months: number;
+}
+
+const COMPANY_SIZES_STATIC: CompanySizeStatic[] = [
   {
     id: "small",
-    label: "Small (< 100 employees)",
     userCountRange: "25-50",
     userBasedQty: "25-50",
     transactionBasedQty: "1,000-5,000",
@@ -293,7 +285,6 @@ export const COMPANY_SIZES: CompanySizePreset[] = [
   },
   {
     id: "mid",
-    label: "Mid-size (100-500 employees)",
     userCountRange: "50-200",
     userBasedQty: "50-200",
     transactionBasedQty: "5,000-25,000",
@@ -306,7 +297,6 @@ export const COMPANY_SIZES: CompanySizePreset[] = [
   },
   {
     id: "large",
-    label: "Large (500-2,000 employees)",
     userCountRange: "200-800",
     userBasedQty: "200-800",
     transactionBasedQty: "25,000-100,000",
@@ -319,7 +309,6 @@ export const COMPANY_SIZES: CompanySizePreset[] = [
   },
   {
     id: "enterprise",
-    label: "Enterprise (2,000+ employees)",
     userCountRange: "800+",
     userBasedQty: "800+",
     transactionBasedQty: "100,000+",
@@ -332,6 +321,29 @@ export const COMPANY_SIZES: CompanySizePreset[] = [
   },
 ];
 
+function buildCompanySize(s: CompanySizeStatic, locale: Locale): CompanySizePreset {
+  const t = getMessages(locale).solutionBuilder.companySizes[s.id];
+  return {
+    id: s.id,
+    label: stripMarkers(t.label),
+    userCountRange: s.userCountRange,
+    userBasedQty: s.userBasedQty,
+    transactionBasedQty: s.transactionBasedQty,
+    employeeBasedQty: s.employeeBasedQty,
+    costMultiplier: s.costMultiplier,
+    teamMultiplier: s.teamMultiplier,
+    phase1Months: s.phase1Months,
+    phase2Months: s.phase2Months,
+    phase3Months: s.phase3Months,
+  };
+}
+
+export function getCompanySizes(locale: Locale = "en"): CompanySizePreset[] {
+  return COMPANY_SIZES_STATIC.map((s) => buildCompanySize(s, locale));
+}
+
+export const COMPANY_SIZES: CompanySizePreset[] = getCompanySizes("en");
+
 // ─── Phase templates ──────────────────────────────────────────────────
 
 export interface PhaseTemplate {
@@ -343,45 +355,46 @@ export interface PhaseTemplate {
   acceptCategories: SapModuleCategory[];
 }
 
-export const PHASES: PhaseTemplate[] = [
+interface PhaseStatic {
+  id: 1 | 2 | 3;
+  messageKey: "phase1" | "phase2" | "phase3";
+  acceptCategories: SapModuleCategory[];
+}
+
+const PHASES_STATIC: PhaseStatic[] = [
   {
     id: 1,
-    label: "Phase 1: Core ERP, Finance & Compliance",
-    description: "Establish the core ERP foundation with finance, procurement, and HR.",
-    focusAreas: [
-      "Core ERP configuration",
-      "Financial accounting",
-      "Procurement setup",
-      "HR and payroll",
-      "Statutory compliance",
-    ],
+    messageKey: "phase1",
     acceptCategories: ["finance", "procurement", "hcm"],
   },
   {
     id: 2,
-    label: "Phase 2: Industry-Specific Solutions",
-    description: "Layer in the modules that make the system fit your industry.",
-    focusAreas: [
-      "Industry-specific processes",
-      "Specialised modules",
-      "Industry compliance",
-      "Extended features",
-    ],
+    messageKey: "phase2",
     acceptCategories: ["industry", "supply-chain", "sales-cx", "projects"],
   },
   {
     id: 3,
-    label: "Phase 3: Advanced, Analytics & Platform",
-    description: "Add analytics, integration, and the platform capabilities for scale.",
-    focusAreas: [
-      "Analytics and reporting",
-      "Integration and extension",
-      "Master data governance",
-      "Process intelligence",
-    ],
+    messageKey: "phase3",
     acceptCategories: ["analytics", "platform"],
   },
 ];
+
+function buildPhase(s: PhaseStatic, locale: Locale): PhaseTemplate {
+  const t = getMessages(locale).solutionBuilder.phases[s.messageKey];
+  return {
+    id: s.id,
+    label: stripMarkers(t.label),
+    description: stripMarkers(t.description),
+    focusAreas: t.focusAreas.map(stripMarkers),
+    acceptCategories: s.acceptCategories,
+  };
+}
+
+export function getPhases(locale: Locale = "en"): PhaseTemplate[] {
+  return PHASES_STATIC.map((s) => buildPhase(s, locale));
+}
+
+export const PHASES: PhaseTemplate[] = getPhases("en");
 
 // ─── Team role templates ──────────────────────────────────────────────
 
@@ -394,34 +407,98 @@ export interface TeamRole {
   dayRateBand: string;
 }
 
+// Same shape as the public TeamRole; the id ties this to MESSAGES.
+type TeamRoleId =
+  | "programme-director"
+  | "programme-manager"
+  | "solution-architect"
+  | "functional-lead-finance"
+  | "functional-lead-supply-chain"
+  | "functional-lead-hr"
+  | "functional-consultants"
+  | "technical-abap-developer"
+  | "basis-btp-admin"
+  | "integration-cpi-consultant"
+  | "data-migration-lead"
+  | "change-manager"
+  | "test-lead";
+
+interface TeamRoleStatic {
+  id: TeamRoleId;
+  baseCount: number;
+  dayRateBand: string;
+}
+
 /**
  * Standard SAP programme team. Each module added to scope increases
  * specialist functional consultant count via the engine. Tech, ABAP,
  * Basis, PMO, and Change scale with company size.
  */
-export const TEAM_ROLES: TeamRole[] = [
-  { role: "Programme Director", function: "Programme leadership and stakeholder management", baseCount: 1, dayRateBand: "$2,000-$3,500" },
-  { role: "Programme Manager", function: "Day-to-day delivery, plan, RAID log", baseCount: 1, dayRateBand: "$1,400-$2,200" },
-  { role: "Solution Architect", function: "End-to-end design, integration patterns", baseCount: 1, dayRateBand: "$1,600-$2,400" },
-  { role: "Functional Lead — Finance", function: "FI/CO/Treasury design, GL chart, controlling model", baseCount: 1, dayRateBand: "$1,200-$1,800" },
-  { role: "Functional Lead — Supply Chain", function: "MM/PP/EWM/TM design and config", baseCount: 1, dayRateBand: "$1,200-$1,800" },
-  { role: "Functional Lead — HR", function: "SuccessFactors / HCM design", baseCount: 1, dayRateBand: "$1,100-$1,700" },
-  { role: "Functional Consultants", function: "Module-level configuration and testing", baseCount: 3, dayRateBand: "$800-$1,300" },
-  { role: "Technical / ABAP Developer", function: "Custom dev, RICEFW, performance", baseCount: 2, dayRateBand: "$700-$1,200" },
-  { role: "Basis / BTP Admin", function: "Landscape, transports, performance, security", baseCount: 1, dayRateBand: "$800-$1,200" },
-  { role: "Integration / CPI Consultant", function: "Interfaces, iFlows, API management", baseCount: 1, dayRateBand: "$1,000-$1,500" },
-  { role: "Data Migration Lead", function: "Data mapping, cleansing, cutover", baseCount: 1, dayRateBand: "$1,000-$1,500" },
-  { role: "Change Manager", function: "Communications, training plan, adoption", baseCount: 1, dayRateBand: "$900-$1,400" },
-  { role: "Test Lead", function: "Test strategy, UAT, regression, defect triage", baseCount: 1, dayRateBand: "$800-$1,200" },
+const TEAM_ROLES_STATIC: TeamRoleStatic[] = [
+  { id: "programme-director",        baseCount: 1, dayRateBand: "$2,000-$3,500" },
+  { id: "programme-manager",         baseCount: 1, dayRateBand: "$1,400-$2,200" },
+  { id: "solution-architect",        baseCount: 1, dayRateBand: "$1,600-$2,400" },
+  { id: "functional-lead-finance",   baseCount: 1, dayRateBand: "$1,200-$1,800" },
+  { id: "functional-lead-supply-chain", baseCount: 1, dayRateBand: "$1,200-$1,800" },
+  { id: "functional-lead-hr",        baseCount: 1, dayRateBand: "$1,100-$1,700" },
+  { id: "functional-consultants",    baseCount: 3, dayRateBand: "$800-$1,300" },
+  { id: "technical-abap-developer",  baseCount: 2, dayRateBand: "$700-$1,200" },
+  { id: "basis-btp-admin",           baseCount: 1, dayRateBand: "$800-$1,200" },
+  { id: "integration-cpi-consultant", baseCount: 1, dayRateBand: "$1,000-$1,500" },
+  { id: "data-migration-lead",       baseCount: 1, dayRateBand: "$1,000-$1,500" },
+  { id: "change-manager",            baseCount: 1, dayRateBand: "$900-$1,400" },
+  { id: "test-lead",                 baseCount: 1, dayRateBand: "$800-$1,200" },
 ];
+
+function buildTeamRole(s: TeamRoleStatic, locale: Locale): TeamRole {
+  const t = getMessages(locale).solutionBuilder.teamRoles[s.id];
+  return {
+    role: stripMarkers(t.role),
+    function: stripMarkers(t.function),
+    baseCount: s.baseCount,
+    dayRateBand: s.dayRateBand,
+  };
+}
+
+export function getTeamRoles(locale: Locale = "en"): TeamRole[] {
+  return TEAM_ROLES_STATIC.map((s) => buildTeamRole(s, locale));
+}
+
+export const TEAM_ROLES: TeamRole[] = getTeamRoles("en");
 
 // ─── License type heuristic ───────────────────────────────────────────
 
-export function licenseTypeFor(category: SapModuleCategory, moduleId?: string): string {
-  // HR modules typically employee-based; Ariba and similar transactional;
-  // most else user-based.
-  if (category === "hcm") return "Employee-Based";
-  if (moduleId === "ariba-sourcing" || moduleId === "ariba-buying" || moduleId === "ariba-contracts" || moduleId === "ariba-supplier") return "Transaction-Based";
-  if (moduleId === "mm" || moduleId === "inventory-mgmt" || moduleId === "gr-ir") return "Transaction-Based";
-  return "User-Based";
+/** Mapping table for licenseTypeFor: returns the messages-key (not the
+ *  display label). Engine calls the public licenseTypeFor below to get
+ *  the display label in the user's locale. */
+function licenseTypeKey(
+  category: SapModuleCategory,
+  moduleId?: string,
+): "userBased" | "employeeBased" | "transactionBased" {
+  if (category === "hcm") return "employeeBased";
+  if (
+    moduleId === "ariba-sourcing" ||
+    moduleId === "ariba-buying" ||
+    moduleId === "ariba-contracts" ||
+    moduleId === "ariba-supplier"
+  ) {
+    return "transactionBased";
+  }
+  if (
+    moduleId === "mm" ||
+    moduleId === "inventory-mgmt" ||
+    moduleId === "gr-ir"
+  ) {
+    return "transactionBased";
+  }
+  return "userBased";
+}
+
+export function licenseTypeFor(
+  category: SapModuleCategory,
+  moduleId?: string,
+  locale: Locale = "en",
+): string {
+  const key = licenseTypeKey(category, moduleId);
+  return stripMarkers(getMessages(locale).solutionBuilder.licenseTypes[key]);
 }
