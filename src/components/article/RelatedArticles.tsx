@@ -103,7 +103,7 @@ export default function RelatedArticles({
           className="hidden md:inline-flex items-center gap-1.5 font-mono text-[0.72rem] font-medium tracking-[2px] uppercase text-corbeau/60 hover:text-papaya transition-colors"
         >
           Browse all
-          <span aria-hidden>→</span>
+          <span aria-hidden className="inline-block rtl:rotate-180">→</span>
         </Link>
       </header>
       <div className={`grid grid-cols-1 ${colsClass} gap-4`}>

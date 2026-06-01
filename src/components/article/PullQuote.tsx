@@ -11,10 +11,10 @@ export default function PullQuote({
   attribution?: string;
 }) {
   return (
-    <figure className="my-12 pl-8 md:pl-10 border-l-[3px] border-papaya relative">
+    <figure className="my-12 ps-8 md:ps-10 border-s-[3px] border-papaya relative">
       <span
         aria-hidden
-        className="absolute -top-2 -left-2 font-display text-[4rem] leading-none text-papaya/20 select-none"
+        className="absolute -top-2 -start-2 font-display text-[4rem] leading-none text-papaya/20 select-none"
       >
         “
       </span>

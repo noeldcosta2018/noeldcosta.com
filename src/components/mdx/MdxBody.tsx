@@ -191,20 +191,20 @@ export default function MdxBody({ source }: { source: string }) {
         },
         ul: (p: ComponentProps<"ul">) => (
           <ul
-            className="text-night my-5 space-y-2 leading-[1.7] text-[0.94rem] md:text-[1rem] [&>li]:relative [&>li]:pl-6 [&>li]:before:content-[''] [&>li]:before:absolute [&>li]:before:left-0 [&>li]:before:top-[0.65em] [&>li]:before:w-[6px] [&>li]:before:h-[6px] [&>li]:before:rounded-full [&>li]:before:bg-papaya"
+            className="text-night my-5 space-y-2 leading-[1.7] text-[0.94rem] md:text-[1rem] [&>li]:relative [&>li]:ps-6 [&>li]:before:content-[''] [&>li]:before:absolute [&>li]:before:start-0 [&>li]:before:top-[0.65em] [&>li]:before:w-[6px] [&>li]:before:h-[6px] [&>li]:before:rounded-full [&>li]:before:bg-papaya"
             {...p}
           />
         ),
         ol: (p: ComponentProps<"ol">) => (
           <ol
-            className="list-decimal marker:text-corbeau marker:font-display marker:font-black pl-8 text-night my-5 space-y-2.5 leading-[1.7] text-[0.94rem] md:text-[1rem] [&>li]:pl-2"
+            className="list-decimal marker:text-corbeau marker:font-display marker:font-black ps-8 text-night my-5 space-y-2.5 leading-[1.7] text-[0.94rem] md:text-[1rem] [&>li]:ps-2"
             {...p}
           />
         ),
         blockquote: (p: ComponentProps<"blockquote">) => (
           <FadeUp as="div" className="my-7">
             <blockquote
-              className="border-l-[3px] border-papaya pl-5 py-1 text-corbeau/90 italic text-[0.96rem] md:text-[1.02rem] leading-[1.6] [&>p]:my-2 [&>p]:text-[0.96rem] [&>p]:md:text-[1.02rem]"
+              className="border-s-[3px] border-papaya ps-5 py-1 text-corbeau/90 italic text-[0.96rem] md:text-[1.02rem] leading-[1.6] [&>p]:my-2 [&>p]:text-[0.96rem] [&>p]:md:text-[1.02rem]"
               {...p}
             />
           </FadeUp>
@@ -240,13 +240,13 @@ export default function MdxBody({ source }: { source: string }) {
         ),
         th: (p: ComponentProps<"th">) => (
           <th
-            className="text-left font-display font-black tracking-[-0.01em] text-corbeau text-[0.78rem] md:text-[0.9rem] py-3 px-2 md:px-4 first:pl-3 md:first:pl-5 last:pr-3 md:last:pr-5 leading-snug break-words"
+            className="text-start font-display font-black tracking-[-0.01em] text-corbeau text-[0.78rem] md:text-[0.9rem] py-3 px-2 md:px-4 first:ps-3 md:first:ps-5 last:pe-3 md:last:pe-5 leading-snug break-words"
             {...p}
           />
         ),
         td: (p: ComponentProps<"td">) => (
           <td
-            className="text-night border-t border-corbeau/[0.06] py-3 px-2 md:px-4 first:pl-3 md:first:pl-5 last:pr-3 md:last:pr-5 leading-[1.55] align-top break-words first:font-semibold first:text-corbeau"
+            className="text-night border-t border-corbeau/[0.06] py-3 px-2 md:px-4 first:ps-3 md:first:ps-5 last:pe-3 md:last:pe-5 leading-[1.55] align-top break-words first:font-semibold first:text-corbeau"
             {...p}
           />
         ),

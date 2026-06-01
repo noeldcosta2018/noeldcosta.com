@@ -64,9 +64,9 @@ export default function ArticleCallout({
     >
       <span
         aria-hidden
-        className={`absolute left-0 top-0 bottom-0 w-1 ${v.marker}`}
+        className={`absolute start-0 top-0 bottom-0 w-1 ${v.marker}`}
       />
-      <div className="pl-6 pr-5 py-5 md:pl-7 md:pr-6 md:py-6">
+      <div className="ps-6 pe-5 py-5 md:ps-7 md:pe-6 md:py-6">
         <p
           className={`font-mono text-[0.62rem] font-semibold tracking-[2.5px] uppercase ${labelColor} mb-2`}
         >

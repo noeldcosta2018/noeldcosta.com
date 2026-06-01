@@ -40,7 +40,7 @@ function Identity({ t }: { t: Testimonial }) {
 
 function Quote({ t }: { t: Testimonial }) {
   return (
-    <blockquote className="border-l-[3px] border-papaya/60 pl-4 text-corbeau/90 italic text-[0.94rem] leading-[1.65] space-y-3">
+    <blockquote className="border-s-[3px] border-s-papaya/60 ps-4 text-corbeau/90 italic text-[0.94rem] leading-[1.65] space-y-3">
       {t.quote.map((para, i) => (
         <p key={i}>{para}</p>
       ))}

@@ -59,7 +59,7 @@ export default function CTASection({
               href={primary}
               className="inline-flex items-center gap-1.5 bg-papaya text-corbeau px-7 py-3.5 rounded-[10px] font-bold text-[0.92rem] transition-all hover:bg-[#fdaa78] hover:-translate-y-px hover:shadow-[0_8px_30px_rgba(252,152,90,0.3)]"
             >
-              {primaryCta} →
+              {primaryCta} <span aria-hidden className="inline-block rtl:rotate-180">→</span>
             </Link>
             <Link
               href={secondary}

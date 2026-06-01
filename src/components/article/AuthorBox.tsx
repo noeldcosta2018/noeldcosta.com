@@ -39,7 +39,7 @@ export default function AuthorBox({
 
       <div className="flex flex-col md:flex-row">
         {/* ── Left: author identity ── */}
-        <div className="flex-1 p-8 md:p-10 md:border-r border-papaya/20">
+        <div className="flex-1 p-8 md:p-10 md:border-e border-papaya/20">
           <div className="flex items-center gap-4 mb-5">
             <div className="relative w-[72px] h-[72px] rounded-xl overflow-hidden border-2 border-papaya/40 flex-shrink-0">
               <Image
@@ -96,7 +96,7 @@ export default function AuthorBox({
 
         {/* ── Right: advisory CTA — white with orange left border ── */}
         <div
-          className="flex-1 p-8 md:p-10 flex flex-col justify-center md:border-l-4 md:border-l-papaya"
+          className="flex-1 p-8 md:p-10 flex flex-col justify-center md:border-s-4 md:border-s-papaya"
           style={{ background: "#ffffff" }}
         >
           <h3 className="font-display font-black text-corbeau text-[1.35rem] md:text-[1.55rem] tracking-[-0.03em] leading-[1.15] mb-4">
@@ -113,7 +113,7 @@ export default function AuthorBox({
               className="inline-flex items-center gap-2 bg-papaya hover:bg-[#fda66e] text-corbeau px-7 py-3.5 rounded-[10px] font-display font-bold text-[0.92rem] transition-all hover:-translate-y-px shadow-[0_4px_18px_rgba(252,152,90,0.30)] hover:shadow-[0_8px_28px_rgba(252,152,90,0.45)]"
             >
               {m.article.primaryCtaBookCall}
-              <span aria-hidden className="text-[1.1em] leading-none">→</span>
+              <span aria-hidden className="text-[1.1em] leading-none inline-block rtl:rotate-180">→</span>
             </a>
 
             <Link

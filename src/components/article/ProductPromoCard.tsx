@@ -35,7 +35,7 @@ export default function ProductPromoCard({
 
   const outerClass = isDark
     ? "my-12 rounded-[20px] bg-corbeau text-bone border border-corbeau shadow-[0_12px_40px_rgba(14,16,32,0.15)] overflow-hidden relative transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:shadow-[0_28px_72px_rgba(14,16,32,0.32)]"
-    : "my-12 rounded-[20px] bg-paper border border-corbeau/[0.08] p-7 md:p-9 border-l-[4px] border-l-papaya shadow-[0_2px_20px_rgba(14,16,32,0.04)] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:shadow-[0_20px_48px_rgba(252,152,90,0.22)]";
+    : "my-12 rounded-[20px] bg-paper border border-corbeau/[0.08] p-7 md:p-9 border-s-[4px] border-s-papaya shadow-[0_2px_20px_rgba(14,16,32,0.04)] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:shadow-[0_20px_48px_rgba(252,152,90,0.22)]";
 
   // Dark card padding applied inline so we can skip it on the image-panel side
   const innerPad = isDark ? "p-7 md:p-9" : "";
@@ -69,7 +69,7 @@ export default function ProductPromoCard({
   const CtaInner = (
     <>
       {cta}
-      <span aria-hidden className="text-[1.1em] leading-none">→</span>
+      <span aria-hidden className="text-[1.1em] leading-none inline-block rtl:rotate-180">→</span>
     </>
   );
 
@@ -94,27 +94,33 @@ export default function ProductPromoCard({
       {isDark && (
         <span
           aria-hidden
-          className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-papaya/10 blur-2xl pointer-events-none"
+          className="absolute -top-16 -end-16 w-48 h-48 rounded-full bg-papaya/10 blur-2xl pointer-events-none"
         />
       )}
 
-      {/* Dashboard / product screenshot panel — absolute right edge */}
+      {/* Dashboard / product screenshot panel — pinned to the inline-end
+          edge of the card, so it sits on the right in LTR and the visual
+          left in RTL. */}
       {hasImage && (
         <div
           aria-hidden
-          className="hidden md:block absolute right-0 top-0 bottom-0 w-[240px]"
+          className="hidden md:block absolute end-0 top-0 bottom-0 w-[240px]"
           style={{
             backgroundImage: `url('${image}')`,
             backgroundSize: "cover",
             backgroundPosition: "center top",
           }}
         >
-          {/* left-edge fade so content text doesn't collide with the image */}
+          {/* Inside-text-facing fade so content text doesn't collide with
+              the image. The 16px strip lives at the image panel's
+              inline-start edge in both directions, and the gradient runs
+              from corbeau to transparent toward the image content
+              (inline-end) so it stays dark on the text-facing side. */}
           <div
-            className="absolute inset-y-0 left-0 w-16"
+            className="absolute inset-y-0 start-0 w-16"
             style={{
               background:
-                "linear-gradient(to right, #0e1020 0%, transparent 100%)",
+                "linear-gradient(to inline-end, #0e1020 0%, transparent 100%)",
             }}
           />
         </div>
@@ -124,7 +130,7 @@ export default function ProductPromoCard({
         className={[
           "relative flex flex-col gap-3",
           innerPad,
-          hasImage ? "md:mr-[240px]" : "",
+          hasImage ? "md:me-[240px]" : "",
         ].join(" ")}
       >
         <p className={kickerClass}>{kicker}</p>
