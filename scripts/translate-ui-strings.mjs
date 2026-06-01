@@ -69,7 +69,7 @@ const SOFT_BREAK_MIN_CHARS = 1_500;
 
 function parseArgs(argv) {
   const args = {
-    dryRun: false, lang: null, key: null, check: null,
+    dryRun: false, lang: null, key: null, keys: null, check: null,
     force: false, yes: false, concurrency: 3,
     verbose: false, help: false,
   };
@@ -83,10 +83,12 @@ function parseArgs(argv) {
     else if (a === '--help' || a === '-h') args.help = true;
     else if (a === '--lang') args.lang = take(i++);
     else if (a === '--key') args.key = take(i++);
+    else if (a === '--keys') args.keys = take(i++);
     else if (a === '--check') args.check = take(i++);
     else if (a === '--concurrency') args.concurrency = parseInt(take(i++), 10);
     else if (a.startsWith('--lang=')) args.lang = a.slice(7);
     else if (a.startsWith('--key=')) args.key = a.slice(6);
+    else if (a.startsWith('--keys=')) args.keys = a.slice(7);
     else if (a.startsWith('--check=')) args.check = a.slice(8);
     else if (a.startsWith('--concurrency=')) args.concurrency = parseInt(a.slice(14), 10);
   }
@@ -110,6 +112,9 @@ Options:
   --key <dotPath>      Translate only the specified dot-path across all
                        target locales. Useful after a single EN string
                        changes.
+  --keys <dotPaths>    Comma-separated dot-paths. Same as --key but for a
+                       batch (e.g. re-translating a group of related
+                       strings after a prompt-tuning round).
   --check <locale>     Re-validate the existing messages.<locale>.ts file
                        (marker preservation, placeholder preservation,
                        structural completeness vs EN) without API calls.
@@ -386,6 +391,12 @@ function buildUiSystemPrompt(lang, retry = false) {
     '',
     'Tone: professional, direct, first-person where the source uses first',
     `person. ${register}`,
+    '',
+    'When the English source uses imperative voice without an explicit',
+    `subject (e.g., "Focus on...", "Plan for...", "Build...", "Ensure..."),`,
+    'translate as imperative advice directed to the reader, not as',
+    `first-person ("I focus on..."). The strings describe guidance for`,
+    `users, not Noel's personal practice.`,
     '',
     'Audience: enterprise CIO / CFO / Programme Director, age 45-58, fluent',
     'business English speakers reading in their native language by preference.',
@@ -820,13 +831,31 @@ async function main() {
   // Load EN.
   console.log(`Source: ${MESSAGES_TS_PATH}`);
   const en = loadEnMessages();
-  let leaves = walkLeaves(en);
+  // Keep the FULL leaves list separate from the (possibly filtered) work
+  // set. The .ts file emitter below uses allLeaves to compute hasAll, so
+  // a --key partial run never overwrites messages.<locale>.ts with a
+  // single-leaf object that fails the Messages contract.
+  const allLeaves = walkLeaves(en);
+  let leaves = allLeaves;
 
   // --key narrows to a single dot-path.
   if (opts.key) {
     const filtered = leaves.filter(([p]) => p === opts.key);
     if (filtered.length === 0) {
       console.error(`Error: --key "${opts.key}" not found in EN (or value is empty/_todo).`);
+      process.exit(1);
+    }
+    leaves = filtered;
+  }
+
+  // --keys narrows to a set of dot-paths (comma-separated).
+  if (opts.keys) {
+    const wanted = new Set(opts.keys.split(',').map((s) => s.trim()).filter(Boolean));
+    const filtered = leaves.filter(([p]) => wanted.has(p));
+    const found = new Set(filtered.map(([p]) => p));
+    const missing = [...wanted].filter((p) => !found.has(p));
+    if (missing.length > 0) {
+      console.error(`Error: --keys contains ${missing.length} dot-path(s) not in EN: ${missing.slice(0, 5).join(', ')}${missing.length > 5 ? ', ...' : ''}`);
       process.exit(1);
     }
     leaves = filtered;
@@ -987,8 +1016,13 @@ async function main() {
       await appendErrors(locale, failedEntries);
     }
 
-    // Emit messages.<locale>.ts if we have full coverage in the cache.
-    const enLeafPaths = leaves.map(([p]) => p);
+    // Emit messages.<locale>.ts only when the cache has a translation
+    // for every EN leaf — not just the leaves we worked on this run.
+    // This means a --key partial run never overwrites the locale's
+    // .ts file with a single-leaf nested object (which would break the
+    // Messages type contract); the .ts gets regenerated only after a
+    // full successful translation pass.
+    const enLeafPaths = allLeaves.map(([p]) => p);
     const hasAll = enLeafPaths.every((p) => p in cache);
     let outPath = null;
     if (hasAll) {
