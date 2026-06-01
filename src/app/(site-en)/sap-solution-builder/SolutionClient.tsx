@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import { usePathname } from "next/navigation";
 import FadeUp from "@/components/article/FadeUp";
 import { getModuleById } from "@/lib/sap-modules";
@@ -430,8 +431,9 @@ export default function SolutionClient() {
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="text-[0.78rem] text-corbeau/60 hover:text-papaya transition-colors"
+                  className="inline-flex items-center gap-1 text-[0.78rem] text-corbeau/60 hover:text-papaya transition-colors"
                 >
+                  <ArrowLeft size={12} className="rtl:-scale-x-100" aria-hidden />
                   {m.changeIndustryOrSizeCta}
                 </button>
               </div>

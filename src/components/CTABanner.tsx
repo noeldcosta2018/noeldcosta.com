@@ -1,3 +1,4 @@
+import { ArrowUpRight } from "lucide-react";
 import { type Locale } from "@/lib/locales";
 import { getMessages } from "@/lib/i18n/useTranslation";
 
@@ -49,6 +50,7 @@ export default function CTABanner({ locale = "en" }: { locale?: Locale }) {
               className="inline-flex items-center gap-1.5 bg-corbeau text-bone px-7 py-3.5 rounded-[10px] no-underline font-bold text-[0.92rem] transition-all hover:bg-haiti hover:-translate-y-px"
             >
               {m.ctaBanner.primaryCta}
+              <ArrowUpRight size={14} className="rtl:-scale-x-100" aria-hidden />
             </a>
             <a
               href="mailto:solutions@noeldcosta.com"

@@ -303,7 +303,7 @@ export interface Messages {
     eyebrow: string;               // "READY WHEN YOU ARE"
     h2: string;
     body: string;
-    primaryCta: string;            // "Book a 30-min call ↗"
+    primaryCta: string;            // "Book a 30-min call"
     secondaryCta: string;          // "Email me directly"
   };
 
@@ -329,7 +329,7 @@ export interface Messages {
     aboutStripCredentialBoardLevel: string;
     aboutStripCredentialIndependent: string;
     aboutStripCredentialEnterprise: string;
-    fullBioLink: string;           // "Full bio →"
+    fullBioLink: string;           // "Full bio"
     categoryKicker: string;        // "Category" — breadcrumb segment label
     badgeSeniorAdvisory: string;
     badgeFieldExperience: string;
@@ -403,7 +403,7 @@ export interface Messages {
 
   // Case studies.
   caseStudy: {
-    backToAll: string;             // "← All case studies"
+    backToAll: string;             // "All case studies"
     metaClient: string;            // "Client"
     metaIndustry: string;          // "Industry"
     metaRegion: string;            // "Region"
@@ -1717,7 +1717,7 @@ export const EN: Messages = {
         "Vendor selection and contract negotiation",
         "Solution architecture with finance depth",
       ],
-      cta: "Talk about your project →",
+      cta: "Talk about your project",
     },
     card2: {
       numberEyebrow: "CLIENT · 02",
@@ -1734,7 +1734,7 @@ export const EN: Messages = {
         "Use ERPCV to build recruiter-ready CVs",
         "Real talk on the consulting business",
       ],
-      cta: "Check out my tools →",
+      cta: "Check out my tools",
     },
   },
   trackRecord: {
@@ -1958,7 +1958,7 @@ export const EN: Messages = {
     h2: "Your next programme starts with a conversation.",
     body:
       "30 minutes. No sales pitch. Tell me what's going on with your ERP or AI programme. I'll tell you straight if I can help.",
-    primaryCta: "Book a 30-min call ↗",
+    primaryCta: "Book a 30-min call",
     secondaryCta: "Email me directly",
   },
   category: {
@@ -1986,7 +1986,7 @@ export const EN: Messages = {
     aboutStripCredentialBoardLevel: "Board-level perspective",
     aboutStripCredentialIndependent: "Independent advice",
     aboutStripCredentialEnterprise: "Enterprise delivery experience",
-    fullBioLink: "Full bio →",
+    fullBioLink: "Full bio",
     categoryKicker: "Category",
     badgeSeniorAdvisory: "Senior advisory",
     badgeFieldExperience: "25 years field experience",
@@ -2059,7 +2059,7 @@ export const EN: Messages = {
       "25 years across SAP and Oracle ERP programmes in aviation, government, finance, retail, and manufacturing. Finance background. I help leadership teams scope transformations honestly, recover programmes in trouble, and build systems that survive their first year in production.",
   },
   caseStudy: {
-    backToAll: "← All case studies",
+    backToAll: "All case studies",
     metaClient: "Client",
     metaIndustry: "Industry",
     metaRegion: "Region",
@@ -2207,9 +2207,9 @@ export const EN: Messages = {
   calculator: {
     // Wizard chrome.
     wizardStepIndicatorAria: "Calculator steps",
-    wizardNavBack: "← Back",
-    wizardNavContinue: "Continue →",
-    wizardNavCalculate: "Calculate →",
+    wizardNavBack: "Back",
+    wizardNavContinue: "Continue",
+    wizardNavCalculate: "Calculate",
     wizardStepOfLabel: "Step {step} of {total}",
     wizardToggleLiveAria: "Toggle live estimate",
     wizardLiveEstimateLabel: "Live estimate",
@@ -2654,7 +2654,7 @@ export const EN: Messages = {
       saveScenarioCountTemplate: "({n}/3)",
       copySummary: "Copy summary",
       printExport: "Print / export",
-      startOver: "← Start over",
+      startOver: "Start over",
     },
 
     // Lib-side strings (Pass 2b-1b).
@@ -3484,7 +3484,7 @@ export const EN: Messages = {
     companySizeSelectPlaceholder: "Select company size",
     resetCta: "Reset",
     generateRecommendationsCta: "Generate recommendations",
-    changeIndustryOrSizeCta: "← Change industry or size",
+    changeIndustryOrSizeCta: "Change industry or size",
     modulesSelectionHeading: "<noTranslate>SAP</noTranslate> modules selection",
     mandatoryModulesTitle: "Mandatory modules",
     industryModulesTitle: "Industry-specific modules",

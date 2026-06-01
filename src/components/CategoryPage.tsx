@@ -579,10 +579,11 @@ export default function CategoryPage({
 
               <Link
                 href="/sap-erp-consultant-my-story-noel-dcosta"
-                className="flex-shrink-0 text-[0.82rem] font-semibold hover:underline"
+                className="inline-flex items-center gap-1 flex-shrink-0 text-[0.82rem] font-semibold hover:underline"
                 style={{ color: "var(--cc-papaya)" }}
               >
                 {m.category.fullBioLink}
+                <ArrowRight size={12} className="rtl:-scale-x-100" aria-hidden />
               </Link>
             </div>
           </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { isTargetLanguage, type Locale } from "@/lib/locales";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -73,9 +74,10 @@ function ServiceCard({
       </ul>
       <a
         href={ctaHref}
-        className="inline-flex items-center font-mono text-papaya no-underline text-[0.82rem] font-semibold transition-colors hover:text-[#fdaa78] min-h-[44px] py-2.5 -my-2.5"
+        className="inline-flex items-center gap-1.5 font-mono text-papaya no-underline text-[0.82rem] font-semibold transition-colors hover:text-[#fdaa78] min-h-[44px] py-2.5 -my-2.5"
       >
         {cta}
+        <ArrowRight size={14} className="rtl:-scale-x-100" aria-hidden />
       </a>
     </div>
   );

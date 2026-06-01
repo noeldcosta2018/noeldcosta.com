@@ -4,6 +4,7 @@
 // Vendor-agnostic. CFO + CIO views. Multi-country. Fully client-side.
 
 import { useState, useCallback, useId, useMemo, useRef } from "react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { usePathname } from "next/navigation";
 import FadeUp from "@/components/article/FadeUp";
 import { calculate, formatCurrency, formatBand } from "@/lib/erp-calculator/calc-engine";
@@ -1461,8 +1462,9 @@ ${m.email.generatedPrefix} ${new Date(result.generatedAt).toLocaleString(tag)}`;
         <button
           type="button"
           onClick={onReset}
-          className="ml-auto text-xs text-eyebrow hover:text-canyon px-3 py-2"
+          className="ml-auto inline-flex items-center gap-1 text-xs text-eyebrow hover:text-canyon px-3 py-2"
         >
+          <ArrowLeft size={12} className="rtl:-scale-x-100" aria-hidden />
           {m.actions.startOver}
         </button>
       </div>
@@ -2267,8 +2269,9 @@ export default function ErpCostClient() {
             type="button"
             onClick={goPrev}
             disabled={step === 1}
-            className="cc-btn-secondary rounded-md px-5 py-2.5 text-sm font-semibold disabled:opacity-30 disabled:cursor-not-allowed"
+            className="cc-btn-secondary inline-flex items-center gap-1.5 rounded-md px-5 py-2.5 text-sm font-semibold disabled:opacity-30 disabled:cursor-not-allowed"
           >
+            <ArrowLeft size={14} className="rtl:-scale-x-100" aria-hidden />
             {m.wizardNavBack}
           </button>
 
@@ -2279,9 +2282,10 @@ export default function ErpCostClient() {
           <button
             type="button"
             onClick={goNext}
-            className="cc-btn-primary rounded-md px-6 py-2.5 text-sm font-semibold"
+            className="cc-btn-primary inline-flex items-center gap-1.5 rounded-md px-6 py-2.5 text-sm font-semibold"
           >
             {step < 5 ? m.wizardNavContinue : m.wizardNavCalculate}
+            <ArrowRight size={14} className="rtl:-scale-x-100" aria-hidden />
           </button>
         </div>
       </div>
