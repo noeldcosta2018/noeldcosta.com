@@ -245,6 +245,49 @@ clear.
 **Estimate:** 5 minutes.
 **Priority:** Low. Backstop for after the manual cleanup completes.
 
+## Category/tag pages — SEO metadata in translated locales
+
+### Category page og:title/og:description not translated
+**Source:** Block 8 Pass 8-2.
+**What:** On `/<lang>/category/<slug>/` pages, `og:locale` correctly
+reflects the locale (e.g. `ja_JP`), `og:url` is correctly the
+locale-prefixed URL, and the page body content is translated — but
+`og:title` and `og:description` render the English-only values pulled
+from the `CATEGORIES` static constant in `src/lib/content.ts`
+(e.g. "SAP Modules" / "Deep technical coverage of SAP and ERP modules.").
+Social-share previews on Twitter / Facebook / LinkedIn for translated
+category URLs therefore show an English title with a translated URL.
+**Fix:** Extend MESSAGES schema with `categoryMeta.<slug>.label` and
+`categoryMeta.<slug>.description` sub-namespaces. Populate English
+values, run `--keys` translation pass across 10 locales. Update the
+category route metadata to pull from MESSAGES.
+**Estimate:** ~45 min refactor + ~$0.10 translation cost.
+**Priority:** Medium.
+
+### Tag page og:title/og:description not translated
+**Source:** Block 8 Pass 8-2.
+**What:** Same pattern as the category-page finding above, applied to
+`/<lang>/tag/<slug>/`. `og:title` and `og:description` come from the
+`tagMeta.ts` static constants and render English on translated routes.
+**Fix:** Extend MESSAGES schema with `tagMeta.<slug>.label` and
+`tagMeta.<slug>.description`. There are ~50+ WordPress tags, so the
+translation cost is larger than the category equivalent.
+**Estimate:** ~1 hour refactor + ~$0.20 translation cost.
+**Priority:** Low. Tag pages are deeper in the site than category
+indexes; lower share-volume impact.
+
+### Category/tag pages have empty og:image
+**Source:** Block 8 Pass 8-2.
+**What:** `/category/<slug>/` and `/tag/<slug>/` render `og:image`
+with empty `content=""`. Social-share previews fall back to no-image
+OG cards (less engaging than image-bearing cards). Pre-existing,
+unrelated to i18n migration.
+**Fix:** Provide a default site OG image (e.g. `/og-default.png`) when
+the page itself doesn't have a hero, or add per-category hero images
+in `CATEGORIES` / `tagMeta`.
+**Estimate:** ~15 min for the default fallback approach.
+**Priority:** Low.
+
 ## Adding to this file
 
 Append new deferred items as they emerge. Keep entries terse: source,

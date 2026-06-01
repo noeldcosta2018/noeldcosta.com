@@ -2,7 +2,7 @@ export const runtime = "nodejs";
 
 import type { NextRequest } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { getBook } from "@/lib/books";
+import { getBookBySlug } from "@/lib/books-registry";
 
 /**
  * POST /api/books/leads
@@ -125,17 +125,20 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Look up the book server-side. Rejects unknown slugs so the client
-  // cannot capture leads against books that do not exist.
-  const book = getBook(bookSlug);
+  // Look up the book server-side via the runtime-safe registry (see
+  // src/lib/books-registry.ts for why we don't readFileSync content/ here:
+  // outputFileTracingExcludes strips content/ from every API function
+  // bundle, so the previous getBook(slug) path returned null for every
+  // valid slug at runtime). Rejects unknown slugs so the client cannot
+  // capture leads against books that do not exist.
+  const book = getBookBySlug(bookSlug);
   if (!book) {
     return Response.json(
       { success: false, error: "Unknown book." },
-      { status: 400 },
+      { status: 404 },
     );
   }
-  const fm = book.frontmatter;
-  if (fm.kind !== bookType) {
+  if (book.kind !== bookType) {
     return Response.json(
       { success: false, error: "Book type mismatch." },
       { status: 400 },
@@ -179,9 +182,9 @@ export async function POST(request: NextRequest) {
   const { error: insertError } = await supabase.from("book_leads").insert({
     name,
     email,
-    book_title: fm.title,
-    book_slug: fm.slug,
-    book_type: fm.kind,
+    book_title: book.title,
+    book_slug: book.slug,
+    book_type: book.kind,
     source_page: "/books",
     consent_accepted: true,
     terms_accepted: termsAccepted,
@@ -198,9 +201,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Free → sign a short URL to the PDF, if a storagePath is set.
-  if (fm.kind === "free") {
-    const storagePath = fm.storagePath ?? `${fm.slug}.pdf`;
+  // Free → sign a short URL to the PDF.
+  if (book.kind === "free") {
+    const storagePath = book.storagePath ?? `${book.slug}.pdf`;
     const { data: signed, error: signError } = await supabase.storage
       .from(BUCKET)
       .createSignedUrl(storagePath, SIGNED_URL_EXPIRY_SECONDS);
