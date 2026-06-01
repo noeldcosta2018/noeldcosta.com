@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { type Locale } from "@/lib/locales";
-import { getMessages } from "@/lib/i18n/useTranslation";
+import { getMessages, stripMarkers } from "@/lib/i18n/useTranslation";
 
 /**
  * Homepage H-11 — Credentials + Featured On press strip.
@@ -58,11 +58,16 @@ export default function Credentials({
   locale?: Locale;
 }) {
   const m = getMessages(locale);
+  // Some cred subs (e.g. cred3Sub = "Activate · SAFe · ITIL") wrap the
+  // certification names in <noTranslate> in the message source so the
+  // translation pipeline preserves them verbatim. Strip the markers at
+  // render time — they are author-only metadata and must not reach the
+  // DOM. The shared stripMarkers helper does this for all locales.
   const credSubs = [
-    m.credentials.cred1Sub,
-    m.credentials.cred2Sub,
-    m.credentials.cred3Sub,
-    m.credentials.cred4Sub,
+    stripMarkers(m.credentials.cred1Sub),
+    stripMarkers(m.credentials.cred2Sub),
+    stripMarkers(m.credentials.cred3Sub),
+    stripMarkers(m.credentials.cred4Sub),
   ];
   return (
     <section
