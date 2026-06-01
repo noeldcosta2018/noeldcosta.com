@@ -343,6 +343,26 @@ before deciding fix urgency. Bump to medium if TBT > 800 ms
 persists post-cutover — the Arabic market is the localization's
 highest-traffic non-English locale per Search Console data.
 
+## i18n consumer wiring follow-ups
+
+### `caseStudy.backToAll` consumer needs i18n wiring
+**Source:** Arabic arrow fix follow-up (commit `5f79580`).
+**What:** `src/components/case-studies/CaseStudyArticleHero.tsx:133`
+hardcodes `← All case studies` in English directly in JSX, bypassing
+the `MESSAGES.caseStudy.backToAll` key. All 11 locale translations of
+that key exist in `messages.<locale>.ts` but render nowhere. The
+arrow-strip from EN source landed during the arrow-consistency fix so
+the key is clean for future wiring — only the consumer change is
+outstanding.
+**Fix:** Wire `CaseStudyArticleHero` through `MESSAGES.caseStudy.backToAll`,
+prepend Lucide `ArrowLeft` icon with `rtl:-scale-x-100` per the
+established Block 7 pattern (matches the `wizardNavBack` button in
+`ErpCostClient.tsx`).
+**Estimate:** 15 min.
+**Priority:** Low. Case-study chrome is currently English-only on the
+Vercel preview anyway; this is hygiene for the eventual i18n of case
+studies.
+
 ## Adding to this file
 
 Append new deferred items as they emerge. Keep entries terse: source,
