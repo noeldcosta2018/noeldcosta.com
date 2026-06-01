@@ -34,7 +34,10 @@ export default function StickyCTA() {
       style={{
         position: "fixed",
         bottom: 28,
-        right: 28,
+        // Logical inline-end so the CTA flips to the visual left under
+        // <html dir="rtl"> on Arabic routes. See _docs/coding-conventions.md
+        // (RTL section) for the inline-style equivalents.
+        insetInlineEnd: 28,
         zIndex: 50,
         display: "flex",
         alignItems: "center",

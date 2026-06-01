@@ -159,7 +159,12 @@ export default function LanguageSwitcher() {
       className="fixed z-40 print:hidden"
       style={{
         bottom: "max(1rem, env(safe-area-inset-bottom))",
-        right: "max(1rem, env(safe-area-inset-right))",
+        // Logical inline-end so the FAB flips to bottom-left under
+        // <html dir="rtl"> on Arabic routes. The safe-area inset stays
+        // as `safe-area-inset-right` because the iOS notch is a physical
+        // viewport edge — it doesn't flip with text direction. See
+        // _docs/coding-conventions.md (RTL section).
+        insetInlineEnd: "max(1rem, env(safe-area-inset-right))",
       }}
     >
       <button
@@ -190,7 +195,7 @@ export default function LanguageSwitcher() {
           aria-label={m.languageSwitcher.selectLanguage}
           tabIndex={-1}
           onKeyDown={onListKeyDown}
-          className="absolute right-0 bottom-full mb-2 w-[220px] rounded-lg overflow-hidden transition-opacity duration-150"
+          className="absolute end-0 bottom-full mb-2 w-[220px] rounded-lg overflow-hidden transition-opacity duration-150"
           style={{
             background: "rgba(244, 237, 228, 0.96)",
             backdropFilter: "blur(20px)",

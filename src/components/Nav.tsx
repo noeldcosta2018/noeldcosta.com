@@ -114,7 +114,7 @@ export default function Nav() {
 
         {/* Mobile toggle — min-w/h 44 to meet Apple HIG / WCAG touch target. */}
         <button
-          className="md:hidden bg-transparent border-none text-[1.3rem] cursor-pointer text-corbeau inline-flex items-center justify-center min-w-[44px] min-h-[44px] -mr-2"
+          className="md:hidden bg-transparent border-none text-[1.3rem] cursor-pointer text-corbeau inline-flex items-center justify-center min-w-[44px] min-h-[44px] -me-2"
           onClick={() => setMobileOpen((o) => !o)}
           aria-label={mobileOpen ? m.nav.closeMenu : m.nav.openMenu}
           aria-expanded={mobileOpen}
@@ -154,7 +154,7 @@ export default function Nav() {
               <span style={{ fontSize: 10 }}>▾</span>
             </button>
             {openMenu === "solutions" && (
-              <div className="absolute left-0 top-full mt-1 w-[360px] bg-bone border border-corbeau/[0.08] rounded-lg shadow-xl p-2 z-50">
+              <div className="absolute start-0 top-full mt-1 w-[360px] bg-bone border border-corbeau/[0.08] rounded-lg shadow-xl p-2 z-50">
                 {PILLARS.map((p) => (
                   <Link
                     key={p.slug}
@@ -202,7 +202,7 @@ export default function Nav() {
               <span style={{ fontSize: 10 }}>▾</span>
             </button>
             {openMenu === "tools" && (
-              <div className="absolute left-0 top-full mt-1 w-[360px] bg-bone border border-corbeau/[0.08] rounded-lg shadow-xl p-2 z-50">
+              <div className="absolute start-0 top-full mt-1 w-[360px] bg-bone border border-corbeau/[0.08] rounded-lg shadow-xl p-2 z-50">
                 {TOOLS.map((t) => (
                   <Link
                     key={t.slug}
