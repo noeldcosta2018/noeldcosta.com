@@ -120,6 +120,43 @@ function emitWithLocales(
   }
 }
 
+/**
+ * Emit a single sitemap entry for an English-only route — routes whose
+ * page handler lives under (site-en)/ with no MDX counterpart and no
+ * matching (site-intl)/intl/[lang]/ route. Listing those at every locale
+ * (the default emitWithLocales behaviour) would point Google at /<lang>/
+ * URLs that 404, registering as soft-404s and hurting overall quality
+ * signal. Use this helper for /books/ and any future English-only short
+ * URL; do NOT use it for content pages that have translated MDX (the
+ * calculator routes, /about/ via MDX, etc. all resolve cleanly under
+ * /<lang>/ and should keep the full hreflang map).
+ */
+function emitEnglishOnly(
+  items: MetadataRoute.Sitemap,
+  entry: {
+    englishPath: string;
+    lastModified?: Date;
+    changeFrequency?:
+      | "always"
+      | "hourly"
+      | "daily"
+      | "weekly"
+      | "monthly"
+      | "yearly"
+      | "never";
+    priority?: number;
+    images?: string[];
+  },
+) {
+  items.push({
+    url: `${SITE_URL}${entry.englishPath}`,
+    lastModified: entry.lastModified,
+    changeFrequency: entry.changeFrequency,
+    priority: entry.priority,
+    images: entry.images,
+  });
+}
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const items: MetadataRoute.Sitemap = [];
 
@@ -132,8 +169,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 1,
   });
 
-  // /books — net-new short URL, no WordPress equivalent.
-  emitWithLocales(items, {
+  // /books — net-new short URL, no WordPress equivalent. The page handler
+  // lives under (site-en)/books/page.tsx only; there's no localized
+  // counterpart at (site-intl)/intl/[lang]/books/, so the per-locale loop
+  // would advertise 10 dead URLs. Emit English only. (Block 8 Pass 8-1
+  // caught this; see _docs/post-launch-backlog.md if we ever localize.)
+  emitEnglishOnly(items, {
     englishPath: "/books/",
     changeFrequency: "weekly",
     priority: 0.7,
