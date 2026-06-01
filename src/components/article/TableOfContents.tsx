@@ -177,13 +177,13 @@ export default function TableOfContents({
                 <div
                   aria-hidden={!isActive}
                   className={[
-                    "grid pl-8",
+                    "grid ps-8",
                     isActive ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
                     motionCls,
                   ].join(" ")}
                 >
                   <div className="overflow-hidden">
-                    <ul className="border-l border-bone/[0.12] ml-0 pt-1 pb-2 space-y-[1px]">
+                    <ul className="border-s border-bone/[0.12] ms-0 pt-1 pb-2 space-y-[1px]">
                       {g.children.map((c) => {
                         const cActive = c.id === activeId;
                         return (
@@ -192,14 +192,14 @@ export default function TableOfContents({
                               href={`#${c.id}`}
                               onClick={() => onClickEntry(c.id)}
                               className={[
-                                "group flex items-start gap-3 min-h-[40px] py-2 pl-4 pr-2 -mr-2 rounded-md relative transition-colors",
+                                "group flex items-start gap-3 min-h-[40px] py-2 ps-4 pe-2 -me-2 rounded-md relative transition-colors",
                                 cActive ? "bg-papaya/80" : "hover:bg-papaya/70",
                               ].join(" ")}
                             >
                               <span
                                 aria-hidden
                                 className={[
-                                  "absolute left-[-1px] top-0 bottom-0 w-[2px] transition-colors",
+                                  "absolute start-[-1px] top-0 bottom-0 w-[2px] transition-colors",
                                   cActive ? "bg-papaya" : "bg-transparent group-hover:bg-corbeau/30",
                                 ].join(" ")}
                               />

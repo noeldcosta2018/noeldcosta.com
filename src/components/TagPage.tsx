@@ -100,7 +100,7 @@ function PostCard({
             className="inline-flex items-center gap-1 text-[0.78rem] font-semibold"
             style={{ color: "var(--cc-papaya)" }}
           >
-            {m.card.readArticle} <ArrowRight size={11} />
+            {m.card.readArticle} <ArrowRight size={11} className="rtl:-scale-x-100" />
           </span>
         </div>
       </div>

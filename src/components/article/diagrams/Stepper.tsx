@@ -47,7 +47,7 @@ export default function Stepper(props: StepperProps) {
         {/* connector */}
         <span
           aria-hidden
-          className="absolute top-[18px] left-0 right-0 h-[2px] bg-corbeau/10"
+          className="absolute top-[18px] inset-x-0 h-[2px] bg-corbeau/10"
         />
         {steps.map((s, i) => (
           <li key={i} className="relative">
@@ -70,16 +70,16 @@ export default function Stepper(props: StepperProps) {
       </ol>
 
       {/* Mobile: vertical stack, left rail */}
-      <ol className="md:hidden relative pl-10">
+      <ol className="md:hidden relative ps-10">
         <span
           aria-hidden
-          className="absolute left-[18px] top-2 bottom-2 w-[2px] bg-corbeau/10"
+          className="absolute start-[18px] top-2 bottom-2 w-[2px] bg-corbeau/10"
         />
         {steps.map((s, i) => (
           <li key={i} className="relative mb-5 last:mb-0">
             <span
               aria-hidden
-              className="absolute left-[-30px] top-0 flex items-center justify-center w-9 h-9 rounded-full bg-papaya text-corbeau font-display font-black text-[0.85rem] shadow-[0_2px_8px_rgba(252,152,90,0.3)]"
+              className="absolute start-[-30px] top-0 flex items-center justify-center w-9 h-9 rounded-full bg-papaya text-corbeau font-display font-black text-[0.85rem] shadow-[0_2px_8px_rgba(252,152,90,0.3)]"
             >
               {String(i + 1).padStart(2, "0")}
             </span>

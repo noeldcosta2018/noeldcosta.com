@@ -110,7 +110,7 @@ function PostCard({
             className="inline-flex items-center gap-1 text-[0.78rem] font-semibold"
             style={{ color: "var(--cc-papaya)" }}
           >
-            {m.card.readArticle} <ArrowRight size={11} />
+            {m.card.readArticle} <ArrowRight size={11} className="rtl:-scale-x-100" />
           </span>
         </div>
       </div>
@@ -143,7 +143,7 @@ function StartHereRow({ post, locale }: { post: PostRecord; locale: Locale }) {
           {mins} {m.card.minRead}
         </p>
       </div>
-      <ArrowRight size={13} className="flex-shrink-0 text-silver group-hover:text-papaya transition-colors" />
+      <ArrowRight size={13} className="flex-shrink-0 text-silver group-hover:text-papaya transition-colors rtl:-scale-x-100" />
     </Link>
   );
 }
@@ -338,7 +338,7 @@ export default function CategoryPage({
                       className="inline-flex items-center gap-1.5 text-[0.8rem] font-semibold mt-4 hover:underline"
                       style={{ color: "var(--cc-papaya)" }}
                     >
-                      {m.category.viewAllPrefix} {posts.length} {posts.length === 1 ? m.category.articleSingular : m.category.articlePlural} <ArrowRight size={12} />
+                      {m.category.viewAllPrefix} {posts.length} {posts.length === 1 ? m.category.articleSingular : m.category.articlePlural} <ArrowRight size={12} className="rtl:-scale-x-100" />
                     </Link>
                   </div>
                 </div>
@@ -393,8 +393,8 @@ export default function CategoryPage({
                       key={tag}
                       className="relative bg-haiti border border-white/[0.06] rounded-2xl p-6 overflow-hidden transition-all duration-300 hover:border-papaya/20 hover:-translate-y-1 hover:shadow-[0_16px_48px_rgba(0,0,0,0.3)]"
                     >
-                      {/* Top accent line */}
-                      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-papaya to-canyon" />
+                      {/* Top accent line — gradient follows reading direction. */}
+                      <div className="absolute top-0 inset-x-0 h-0.5 ltr:bg-gradient-to-r rtl:bg-gradient-to-l from-papaya to-canyon" />
                       <div
                         className="w-10 h-10 rounded-lg flex items-center justify-center mb-4"
                         style={{ background: "rgba(252,152,90,0.12)" }}

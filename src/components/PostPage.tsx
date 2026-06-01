@@ -207,7 +207,7 @@ export default function PostPage({
                               href={`#${h.id}`}
                               className={[
                                 "flex items-start gap-3 py-1.5 leading-[1.4]",
-                                isH3 ? "pl-8" : "",
+                                isH3 ? "ps-8" : "",
                               ].join(" ")}
                             >
                               {!isH3 && (
