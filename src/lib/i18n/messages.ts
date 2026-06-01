@@ -1908,7 +1908,7 @@ export const EN: Messages = {
     alsoPublishedInLabel: "Also published in:",
     cred1Sub: "Management accounting",
     cred2Sub: "Finance depth, not surface",
-    cred3Sub: "Activate · SAFe · ITIL",
+    cred3Sub: "<noTranslate>Activate</noTranslate> · <noTranslate>SAFe</noTranslate> · <noTranslate>ITIL</noTranslate>",
     cred4Sub: "Architecture across the stack",
   },
   youtube: {

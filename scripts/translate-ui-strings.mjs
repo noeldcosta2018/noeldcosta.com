@@ -57,12 +57,19 @@ const CACHE_DIR = join(ROOT, '.cache', 'translate-ui');
 
 // ── Chunking parameters ──────────────────────────────────────────────────────
 
-const MAX_STRINGS_PER_CHUNK = 60;
+// Smaller chunks have a much lower mid-response item-drop rate in OpenAI
+// JSON mode. Lowered from 60 → 10 (HARD MAX) and 20 → 5 (SOFT BREAK) after
+// the Pass 4-B run, where a single 20-string chunk on ar dropped one item
+// and failed validation. Cost impact: more system-prompt overhead per
+// chunk, but the script's withRetry handles count-mismatch as transient
+// now, so the residual failures retry instead of dropping work on the
+// floor.
+const MAX_STRINGS_PER_CHUNK = 10;
 const MAX_CHARS_PER_CHUNK = 4_000;
 // Soft thresholds: only break early on a sub-namespace boundary if the
 // current chunk has at least this much content. Prevents tiny namespaces
 // from each becoming their own one-string chunk.
-const SOFT_BREAK_MIN_STRINGS = 20;
+const SOFT_BREAK_MIN_STRINGS = 5;
 const SOFT_BREAK_MIN_CHARS = 1_500;
 
 // ── CLI parsing ──────────────────────────────────────────────────────────────

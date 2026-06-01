@@ -135,6 +135,19 @@ export function isTimeoutError(err) {
   return /timed?\s*out|timeout/.test(msg);
 }
 
+// JSON-mode count mismatch: callJsonTranslate throws
+//   "JSON response had X items; expected Y."
+// when the model drops items from a long JSON array (an intermittent
+// OpenAI JSON-mode behaviour observed on chunks of ~15+ strings). The
+// retry usually succeeds on its own, so withRetry treats this exactly
+// like a transient HTTP error. The match is narrow on purpose — we
+// don't want to retry an actually-broken response shape.
+export function isJsonCountMismatchError(err) {
+  if (!err) return false;
+  const msg = String(err?.message || err || '');
+  return /JSON response had .+ items; expected \d+/.test(msg);
+}
+
 // Unified retry: factory takes an optional timeoutMs (undefined → SDK default).
 // First attempt uses no override (DEFAULT_TIMEOUT_MS via client config).
 // On a TIMEOUT specifically, retry once with EXTENDED_TIMEOUT_MS — logged so we
@@ -156,7 +169,8 @@ export async function withRetry(label, requestFactory) {
       const status = err?.status || err?.code;
       const transient = status === 429 || status === 500 || status === 502 ||
         status === 503 || status === 504 ||
-        /ECONN|ENOTFOUND|EAI_AGAIN|socket hang up/i.test(String(err?.code || err?.message || ''));
+        /ECONN|ENOTFOUND|EAI_AGAIN|socket hang up/i.test(String(err?.code || err?.message || '')) ||
+        isJsonCountMismatchError(err);
       if (transient && attempt < 2) {
         const wait = (1 << attempt) * 2000 + Math.floor(Math.random() * 1000);
         console.warn(`  RETRY ${label}: ${status || err?.message || 'transient'} — waiting ${wait}ms (attempt ${attempt + 2}/3)`);
