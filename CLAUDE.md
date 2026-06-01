@@ -318,4 +318,6 @@ the pipeline preserves it across all locales.
 | `_docs/audits/_prompts/phase-3-gtranslate.md` | Historical — pre-pivot GTranslate setup prompt (kept for context, no longer applicable). |
 | `_docs/audits/i18n-strings-audit-2026-05-26.md` | Audit of ~680 hardcoded UI strings; input to Block 6c. |
 | `_docs/audits/phase-4-comprehensive-review-2026-05-26.md` | End-to-end review of the self-hosted i18n migration. |
+| `_docs/coding-conventions.md` | RTL logical-property rules + canonical patterns (start/end utilities, rtl: variants, forward-arrow flipping). Required reading before touching any layout class. |
+| `_docs/post-launch-backlog.md` | Items deferred from Phase 4 (not launch blockers). RTL holdouts, low-severity cleanups, post-cutover work. |
 | `playbook.md` (repo root or _docs/) | Step-by-step migration plan. |

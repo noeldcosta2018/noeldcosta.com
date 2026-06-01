@@ -190,6 +190,61 @@ mobile, covering English + /ja/ + /ar/ + /de/.
 **Estimate:** 2-3 hours.
 **Priority:** **HIGH before Phase 5 cutover.**
 
+## RTL — design decisions and deferred polish
+
+### RTL flow reversal — design decisions
+**Source:** Block 7 Phase 1 inventory.
+**What:** `src/components/article/diagrams/CompareSplit.tsx` renders
+two side-by-side panels (e.g. greenfield vs brownfield, big-bang vs
+phased). Under `<html dir="rtl">` the panels naturally swap visual
+order — what was on the left now renders on the right, and vice versa.
+**Decision:** RTL flow reversal accepted as natural reading order. Do
+not force original visual order with `rtl:flex-row-reverse` or
+similar. Rationale: in RTL the reader's eye moves right-to-left, so
+the "primary option then comparison option" semantic flow stays
+correct after the visual swap. Trying to lock the left/right physical
+order would feel awkward to native RTL readers — the diagram should
+read like the surrounding prose, not as an embedded LTR island.
+**Estimate:** N/A — explicit decision, no work required.
+**Priority:** Documented for reviewer reference.
+
+### Low-severity physical-property holdouts
+**Source:** Block 7 Phase 1 inventory, low-severity tier.
+**What:** A few small physical-property usages were deferred because
+they don't render under Arabic or have no visible asymmetry:
+- `src/components/tools/ToolShell.tsx:77` — symmetric `paddingLeft` /
+  `paddingRight` clamp values (cosmetic, no asymmetry).
+- `src/components/books/BookAccordion.tsx:55` — `text-left` on
+  accordion header. Arabic content right-aligns via bidi anyway, but
+  `text-start` is the explicit/canonical replacement.
+- `src/components/books/LeadCaptureModal.tsx:215` — modal close button
+  pinned `absolute top-2 right-2`. RTL convention varies; many web
+  apps keep close-X in the same physical corner regardless of dir.
+- `src/components/admin/BookLeadsTable.tsx:194` — internal admin tool,
+  English-only.
+- Calculator clients under `src/app/(site-en)/` — English-only routes
+  by design; Arabic users land on MDX intro pages, not the React
+  widgets. Includes ErpCostClient, SapCostClient, MigrationClient,
+  JdClient, SolutionClient.
+**Fix:** Replace each `ml-*` / `mr-*` / `pl-*` / `pr-*` / `text-left`
+/ `text-right` / `left-*` / `right-*` / `border-l*` / `border-r*` /
+`rounded-l*` / `rounded-r*` / `bg-gradient-to-r` with its logical
+equivalent. Run `node scripts/check-rtl-properties.mjs` to enumerate.
+**Estimate:** 2-3 hours for all holdouts.
+**Priority:** Low. Defer until calculator localisation (separate
+post-launch initiative) so we don't churn those files twice.
+
+### Wire RTL audit script into CI in strict mode
+**Source:** Block 7 Phase 2.
+**What:** `scripts/check-rtl-properties.mjs` is warn-only today. Once
+the low-severity holdouts above are migrated, flip the script into
+strict mode by adding `npm run check-rtl` to the `lint` script in
+`package.json` (or a pre-commit hook).
+**Fix:** Two lines in `package.json`. Trivial once holdouts are
+clear.
+**Estimate:** 5 minutes.
+**Priority:** Low. Backstop for after the manual cleanup completes.
+
 ## Adding to this file
 
 Append new deferred items as they emerge. Keep entries terse: source,
