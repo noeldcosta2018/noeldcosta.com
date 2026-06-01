@@ -288,6 +288,61 @@ in `CATEGORIES` / `tagMeta`.
 **Estimate:** ~15 min for the default fallback approach.
 **Priority:** Low.
 
+## Lighthouse follow-ups (Block 8 Pass 8-3)
+
+### Accessibility pass to 95+
+**Source:** Block 8 Pass 8-3 (`_docs/lighthouse-baseline.md`).
+**What:** Mobile Lighthouse scored Accessibility 85-86 across 6
+sample URLs against the PRD target of ≥ 95. Seven failing audits,
+all pre-existing (not introduced by Block 6c / 7 / 8):
+- `aria-hidden-focus` — focusable elements inside `aria-hidden="true"`
+- `color-contrast` — insufficient contrast on some text
+- `heading-order` — non-sequentially-descending headings (h1 → h3 jumps)
+- `link-name` — at least one icon-only link without `aria-label`
+- `label-content-name-mismatch` — visible text vs accessible name
+- `landmark-one-main` — articles missing `<main>` element
+- `target-size` — at least one touch target < 44 px (ar article)
+**Fix:** Dedicated a11y pass. Address audits in the order above
+(start with the structural ones — landmark-one-main, heading-order,
+link-name — since those have ripple effects).
+**Estimate:** 4-6 hours.
+**Priority:** Medium. Not a cutover blocker; PRD L-03 will gate this
+formally pre-launch but this captures the audit-level finding.
+
+### Image weight reduction
+**Source:** Block 8 Pass 8-3 (`_docs/lighthouse-baseline.md`).
+**What:** Total page transfer 5.9-6.2 MiB on mobile per Lighthouse.
+Post heroes and WordPress-imported imagery dominate. Largest single
+factor in the Perf 47-73 scores. Will partially auto-improve at
+cutover (warm edge cache), but real fix is image-format optimization.
+**Fix:** Convert WordPress-imported `/images/wp/...` heroes to
+AVIF/WebP at multiple resolutions via Next.js `Image` component
+(currently using raw `<img>` tags in MDX for WordPress paths). Add
+`<Image>` wrapper for non-MDX hero usage.
+**Estimate:** 2-3 hours.
+**Priority:** Low. Cosmetic / score-improving, not functional.
+
+### `/ar/` TBT spike — verify on production
+**Source:** Block 8 Pass 8-3 (`_docs/lighthouse-baseline.md`).
+**What:** `/ar/` homepage shows Total Blocking Time = 1,680 ms vs
+200-460 ms on LTR homepages. Likely a preview-cold-start artifact
+(the Arabic homepage was migrated to logical properties in Block 7
+and may need a first paint to resolve the CSS variables), but worth
+re-measuring on production with warm edge cache. If it persists in
+production, it's a real UX regression for the Arabic market.
+**Fix:** Re-run Lighthouse on `/ar/` from production 7 days
+post-cutover (median of 3-5 runs). Compare to LTR locales. If
+sustained spike, investigate via Chrome DevTools Performance
+panel — likely candidates are RTL CSS layout recalculation, a
+client component that does extra work under RTL, or font-loading
+order.
+**Estimate:** 1 hour for the measurement; 2-4 hours if the issue
+turns out to be real and needs root-cause investigation.
+**Priority:** Low-medium. Re-measure on production warm-cache
+before deciding fix urgency. Bump to medium if TBT > 800 ms
+persists post-cutover — the Arabic market is the localization's
+highest-traffic non-English locale per Search Console data.
+
 ## Adding to this file
 
 Append new deferred items as they emerge. Keep entries terse: source,
