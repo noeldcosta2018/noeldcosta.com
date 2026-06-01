@@ -171,7 +171,7 @@ export default function Hero({ locale = "en" }: { locale?: Locale }) {
                   borderRadius: 999,
                 }}
               >
-                {m.hero.secondaryCta} <ArrowRight size={16} />
+                {m.hero.secondaryCta} <ArrowRight size={16} className="rtl:-scale-x-100" />
               </Link>
             </div>
 
@@ -209,7 +209,7 @@ export default function Hero({ locale = "en" }: { locale?: Locale }) {
               {STATS.map((s, i) => (
                 <div
                   key={s.label}
-                  className={`cc-enter-up pr-6 mr-6 max-md:pr-0 max-md:mr-0 max-md:py-3 max-md:first:pt-0 ${i < 3 ? 'border-r border-corbeau/[0.10] max-md:border-r-0' : ''}`}
+                  className={`cc-enter-up pe-6 me-6 max-md:pe-0 max-md:me-0 max-md:py-3 max-md:first:pt-0 ${i < 3 ? 'border-e border-corbeau/[0.10] max-md:border-e-0' : ''}`}
                   style={{ animationDelay: `${1100 + i * 80}ms` }}
                 >
                   <div

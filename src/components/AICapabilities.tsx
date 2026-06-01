@@ -108,7 +108,7 @@ export default function AICapabilities({
                   <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
                   <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
                 </div>
-                <span className="font-mono text-[0.7rem] text-silver ml-2.5">{m.aiCapabilities.terminalLabel}</span>
+                <span className="font-mono text-[0.7rem] text-silver ms-2.5">{m.aiCapabilities.terminalLabel}</span>
               </div>
               <span className="inline-flex items-center gap-1.5 font-mono text-[0.62rem] text-brand-green font-semibold">
                 <span className="w-[5px] h-[5px] rounded-full bg-brand-green animate-pulse-dot" />

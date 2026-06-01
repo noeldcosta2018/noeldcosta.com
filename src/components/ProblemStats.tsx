@@ -60,10 +60,10 @@ export default function ProblemStats({ locale = "en" }: { locale?: Locale }) {
           {STATS.map((s, i) => (
             <div
               key={i}
-              className={`max-md:border-l-0 max-md:pl-0 max-md:border-b max-md:border-corbeau/[0.08] max-md:pb-8 last:border-b-0 last:pb-0 ${
+              className={`max-md:border-s-0 max-md:ps-0 max-md:border-b max-md:border-corbeau/[0.08] max-md:pb-8 last:border-b-0 last:pb-0 ${
                 i === 0
-                  ? "pl-0"
-                  : "pl-[clamp(1rem,3vw,2.5rem)] border-l border-corbeau/[0.1]"
+                  ? "ps-0"
+                  : "ps-[clamp(1rem,3vw,2.5rem)] border-s border-corbeau/[0.1]"
               }`}
             >
               <div

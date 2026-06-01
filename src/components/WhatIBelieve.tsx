@@ -56,7 +56,7 @@ export default function WhatIBelieve({
           {BELIEFS.map((b) => (
             <li
               key={b.num}
-              className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 max-md:grid-cols-1 max-md:gap-y-3 border-l-4 border-papaya/70 pl-6 py-2 transition-colors hover:border-papaya"
+              className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 max-md:grid-cols-1 max-md:gap-y-3 border-s-4 border-papaya/70 ps-6 py-2 transition-colors hover:border-papaya"
             >
               <span
                 className="font-display font-black text-papaya leading-none tracking-[-0.04em] row-span-2 max-md:row-span-1"
@@ -84,7 +84,7 @@ export default function WhatIBelieve({
             className="inline-flex items-center gap-2 bg-papaya text-corbeau font-semibold text-[0.95rem] no-underline px-6 py-3 rounded-lg transition-colors hover:bg-[#fdaa78] min-h-[44px]"
           >
             {m.whatIBelieve.primaryCta}
-            <span aria-hidden>→</span>
+            <span aria-hidden className="inline-block rtl:rotate-180">→</span>
           </a>
           <span className="font-mono text-[0.78rem] text-eyebrow tracking-[1px]">
             {m.whatIBelieve.ctaTagline}

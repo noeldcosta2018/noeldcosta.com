@@ -285,7 +285,7 @@ export default function TrackRecord() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: fadeDur, ease: [0.22, 1, 0.36, 1] }}
-                    className="font-mono text-[0.7rem] text-silver ml-2.5"
+                    className="font-mono text-[0.7rem] text-silver ms-2.5"
                   >
                     {active.dashboardLabel}
                   </motion.span>

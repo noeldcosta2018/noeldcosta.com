@@ -100,9 +100,9 @@ export default function Credentials({
             <div
               key={label}
               className={`
-                ${i === 0 ? "pl-0" : "pl-[clamp(1rem,2.5vw,2.5rem)] border-l border-corbeau/[0.1]"}
-                max-md:pl-0 max-md:border-l-0
-                ${i % 2 === 0 ? "max-md:pr-6 max-md:border-r max-md:border-corbeau/[0.1]" : ""}
+                ${i === 0 ? "ps-0" : "ps-[clamp(1rem,2.5vw,2.5rem)] border-s border-corbeau/[0.1]"}
+                max-md:ps-0 max-md:border-s-0
+                ${i % 2 === 0 ? "max-md:pe-6 max-md:border-e max-md:border-corbeau/[0.1]" : ""}
               `}
             >
               <span className="text-papaya block mb-4" aria-hidden>

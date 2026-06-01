@@ -41,8 +41,9 @@ function ServiceCard({
       }}
       className="cc-spotlight relative bg-haiti border border-white/[0.06] rounded-2xl p-10 overflow-hidden transition-all duration-300 hover:border-papaya/20 hover:-translate-y-1 hover:shadow-[0_16px_48px_rgba(0,0,0,0.3)]"
     >
-      {/* top accent line */}
-      <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${gradient}`} />
+      {/* top accent line — gradient follows reading direction so it sweeps
+          left-to-right in LTR and right-to-left in RTL. */}
+      <div className={`absolute top-0 inset-x-0 h-0.5 ltr:bg-gradient-to-r rtl:bg-gradient-to-l ${gradient}`} />
 
       <p className="font-mono text-[0.72rem] text-silver tracking-[2px] uppercase mb-3.5">{num}</p>
       <h3 className="font-display text-[1.4rem] font-extrabold text-bone tracking-[-0.03em] mb-1">
@@ -60,10 +61,10 @@ function ServiceCard({
         {list.map((item, i) => (
           <li
             key={i}
-            className="text-[0.88rem] text-moon pl-[22px] relative leading-[1.5]"
+            className="text-[0.88rem] text-moon ps-[22px] relative leading-[1.5]"
           >
             <span
-              className="absolute left-0 top-[6px] w-2 h-2 rounded-[2px] border border-papaya"
+              className="absolute start-0 top-[6px] w-2 h-2 rounded-[2px] border border-papaya"
               style={{ background: "rgba(252,152,90,0.2)" }}
             />
             {item}
