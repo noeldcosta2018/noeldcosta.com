@@ -1,0 +1,195 @@
+---
+title: "SAP Integration Suite：決策與正式環境的取捨"
+h1: "SAP Integration Suite：決策與正式環境的取捨"
+slug: "sap-integration-suite-delivery-delays"
+date: "2025-07-16"
+updated: "2026-10-07"
+hero: "/images/wp/2025/07/10-1.webp"
+heroAlt: "SAP 整合架構師在雙螢幕上檢視訊息流程圖與錯誤日誌"
+category: "sap-modules"
+tags: ["sap-industry-topics", "sap-technical-decisions", "sap-integration-suite", "rise-with-sap"]
+author: "Noel D'Costa"
+metaTitle: "2026 年 SAP Integration Suite：決策與取捨"
+metaDescription: "造成交付延誤的 SAP Integration Suite 決策：各元件的分工、標準內容與客製開發的選擇、2027 年前的 PI/PO 移轉、舊系統限制與測試做法。"
+excerpt: "SAP Integration Suite 不只是改了名字的 CPI，團隊做錯的決策，也很少與技術有關。本文涵蓋各元件、PI/PO 移轉、舊系統限制、測試，以及多數介面失敗背後的責任缺口。"
+experienceSource: "Noel's SAP integration experience as published in the original article: the middleware flow that failed every Friday because a payroll system token expired weekly, two project teams building separate integrations to the same endpoint, weeks lost tweaking mismatched standard content, legacy systems freezing under parallel calls, and the team that expected 80% Integration Advisor coverage and got closer to 40%. PI/PO maintenance dates and Integration Suite editions checked against SAP sources in October 2026."
+lastReviewed: "2026-05-21"
+keyTakeaways:
+  - "Integration Suite 不只是 CPI：Cloud Integration、API Management、Event Mesh、Integration Advisor、Open Connectors 與移轉工具，各自負責不同的工作"
+  - "多數介面失敗要回溯到責任缺口，而不是技術。上線前，為每一個介面指定負責人"
+  - "PI/PO 7.5 的主流維護在 2027 年結束，延伸維護到 2030 年。請分波規劃移轉，不要在期限壓力下進行"
+  - "舊系統往往無法承受並行的同步呼叫。要在設計階段發現，不要等到 UAT"
+  - "有一個團隊預期 Integration Advisor 能涵蓋 80% 的對應，實際只有約 40%。其餘部分要編列預算"
+pullQuote: "SAP 專案中的整合失敗，多數可回溯到責任缺口，而不是技術。如果沒有人明確負責訊息監控、重試與錯誤處理，就算 iFlow 設計得再好，在正式環境中也會悄悄失敗。"
+mentions:
+  - "SAP Integration Suite"
+  - "SAP BTP"
+  - "SAP CPI"
+  - "SAP S/4HANA"
+  - "SAP Process Orchestration"
+  - "SAP Ariba"
+  - "SAP SuccessFactors"
+  - "SAP API Management"
+  - "SAP Event Mesh"
+  - "SAP Integration Advisor"
+  - "SAP Cloud ALM"
+  - "RISE with SAP"
+  - "GROW with SAP"
+originalUrl: "https://noeldcosta.com/sap-integration-suite-delivery-delays/"
+canonicalUrl: "https://noeldcosta.com/zh-TW/sap-integration-suite-delivery-delays/"
+locale: "zh-TW"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP Integration Suite 是 SAP 在 SAP BTP 上的整合平台：Cloud Integration（前身為 CPI），加上 API Management、Event Mesh、Integration Advisor、Open Connectors，以及從 PI/PO 移轉的工具。它是 S/4HANA 雲端專案預設的中介軟體，也是離開 PI/PO 的路徑，而 PI/PO 的主流維護將在 2027 年結束。介面延誤很少出自技術本身。它們來自責任不清、對舊系統未經驗證的假設，以及只求通過、而不是為了找出失敗所設計的測試。本文寫給整合負責人、架構師與專案經理。內容涵蓋各元件的用途、標準內容與客製開發、PI/PO 移轉、舊系統與測試風險，以及上線後的治理。
+
+## 2026 年有什麼不同
+
+**PI/PO 已進入倒數。**SAP Process Integration 與 Process Orchestration 7.5 的主流維護，持續到 2027 年底。選購的延伸維護可延到 2030 年底，之後 SAP 的支援即告結束。SAP 的[移轉參考架構](https://architecture.learning.sap.com/docs/ref-arch/8566b4)說明了這條路徑。Integration Suite 內含 Migration Assessment 應用程式，可評估每個 PI/PO 情境的規模；Cloud Integration 中則有精靈式的移轉工具。請分波移轉：低風險的 SAP 對 SAP 流程先做，B2B 與 EDI 居中，高交易量的訂單流程最後。在期限壓力下被迫切換，花的時間更長，成本也更高。
+
+<explainer-timeline title="分波離開 PI/PO，在倒數結束前完成" caption="趁還有時間，把各波完成。在期限壓力下被迫切換，花的時間更長，成本也更高。" items="第 1 波 => 低風險的 SAP 對 SAP 流程|第 2 波 => B2B 與 EDI|第 3 波 => 高交易量的訂單流程|2027 => PI/PO 7.5 主流維護結束|2030 => 選購的延伸維護結束" notes="先用 Migration Assessment 評估每個情境的規模|||年底。請規劃各波在此之前完成|年底。之後 SAP 的支援即告結束" highlight="4" source="SAP 維護日期與移轉參考架構，2026 年 10 月查證"></explainer-timeline>
+
+**確認您的雲端合約涵蓋什麼。**RISE 與 GROW 合約通常包含 SAP BTP 額度，可用來支付 Integration Suite。在拿 Integration Suite 與 MuleSoft 或 Boomi 單純比較功能之前，先確認您的使用權益涵蓋哪個版本與多少訊息量。平台已內含時，經濟面的算法就不一樣了。
+
+**AI 分階段到來。**Cloud Integration 自 2024 年中起，就在 Premium 版提供生成式 AI 的流程產生功能。它產生的是 iFlow 的結構（步驟、通道、例外子流程），不包括對應或腳本。SAP 在 2026 年 3 月推出的強化版，加入了文字轉流程的產生與腳本最佳化，而 SAP 規劃在 2026 年第三季讓 Integration Suite 中的 Joule 正式發行。對標準流程有用。涉及深層業務邏輯的複雜編排，仍然需要資深架構師。
+
+## 各元件與其用途
+
+Integration Suite 是一組服務。為每項工作選對服務，會決定整體架構能撐多久。
+
+| 元件 | 角色 | 用錯時會出什麼問題 |
+|---|---|---|
+| Cloud Integration（CPI） | 訊息流程、路由與轉換；多數 iFlow 的預設選擇 | 什麼都塞進 CPI，包括 API 與事件，會變得難以維護與測試 |
+| API Management | 管理 API 的對外開放：安全性、速率限制、分析 | 略過它，點對點呼叫就會成倍增加；事後很難補上治理 |
+| Event Mesh | 為解耦的觸發機制提供非同步訊息 | 沒人追蹤的佇列會悄悄成長，也不會通知任何人 |
+| Integration Advisor | 為 EDIFACT、X12 與 IDoc 等 B2B 格式提供對應建議 | 團隊預期涵蓋率很高；有一個團隊預期 80%，實際只有約 40% |
+| Open Connectors | 連接第三方雲端應用程式的預建連接器 | 外部 API 異動會讓連接器悄悄壞掉，除非有人監控 |
+| Migration Assessment 與移轉工具 | 評估並移轉 PI/PO 情境 | 被當成一次性的估算，而不是可實際執行的移轉計畫 |
+
+把 Integration Suite 當成「CPI 加上附加功能」的團隊，常常忽略 API Management 與 Event Mesh。這在複雜度追上來之前都沒問題。我的 [SAP CPI 指南](/zh-TW/sap-cpi/)對 Cloud Integration 本身談得更深。
+
+## 標準內容與客製開發
+
+SAP 預建的整合內容，在流程標準的時候確實有用。以標準流程把 S/4HANA 連接到 SAP Ariba 或 SuccessFactors，通常很合用。真實的流程很少會乖乖待在 SAP 的參考框線之內。
+
+在以下情況選擇標準內容：
+
+1. 情境是 SAP 對 SAP，且接近 SAP 的參考流程
+2. 流程簡單，且大多是單向
+3. 您可以接受 SAP 的對應，只透過提供的擴充點來延伸
+
+在以下情況選擇客製開發：
+
+1. 多年內部決策已讓流程偏離 SAP 的模型
+2. 涉及條件式路由、多步驟邏輯或舊系統的怪癖
+3. 大幅修改會讓標準套件失去 SAP 的支援一致性
+
+請在藍圖階段做決定。拖到後面才決定，團隊會在專案中途發現，某個「標準」iFlow 被改得太多，已經失去支援一致性，只好在上線壓力下重建。我見過專案因此損失數週，因為團隊以為標準內容能一次吸收客製的主檔資料結構、額外欄位與舊系統的驗證機制。結果不行。原本該在設計階段做的分析，被拖到 UAT 才做。
+
+## 複雜專案中的整合
+
+在大型 SAP 專案中，整合往往是最先掉進各工作流縫隙的事項。介面跨越團隊邊界，卻沒有人負責協調。我見過兩個專案團隊各自為同一個業務夥伴建了整合，指向同一個端點，卻互不知情。兩邊直到 UAT 才發現。這是結構性的失敗，不是技術性的。
+
+及早建立集中的整合治理：
+
+1. 一份所有工作流都看得到的共用整合待辦清單
+2. 每個介面都有指定的負責人，並在交付過程中持續追蹤
+3. 每次重大部署前，在各工作流之間設立協調查核點
+4. 在承諾任何上線日期之前，檢視介面之間的相依性，並把共用的端點與佇列排進切換計畫
+5. 環境之間採自動化部署，並依各系統環境記錄憑證
+
+## 舊系統與第三方整合
+
+最難的整合問題，很少出在現代化平台。它們出在關鍵流程中間的舊系統。
+
+舊的 ERP 往往無法處理並行的同步呼叫。同時送出五個平行 API 呼叫，伺服器就會變慢、凍結，或悄悄丟資料。非同步整合只有在接收端系統能處理佇列時才有幫助，而許多系統做不到。
+
+通訊協定不相容很常見，而且發現得晚。您用 OAuth2 與 REST 設計；舊系統講的是 SOAP，逾時值寫死為 30 秒，而且處理權杖更新的能力很差。
+
+在一個客戶案例中，有一條中介軟體流程每週五都失敗，因為第三方薪資系統核發的權杖每週到期。直到第二輪 UAT，才有人注意到。這類怪癖很常見，而且會吃掉時程。
+
+下表列出設計凍結前要檢查的風險。
+
+| 風險 | 常見問題 | 設計階段該做什麼 |
+|---|---|---|
+| 同步限制 | 舊系統在並行呼叫下鎖死 | 使用非同步訊息；透過 Event Mesh 或 Cloud Integration 錯開呼叫 |
+| 通訊協定不相容 | 舊系統拒絕 REST 或 OAuth，或在 SOAP 上逾時 | 設計開始前，先確認通訊協定與逾時設定 |
+| API 速率限制 | 批次作業超出第三方的節流上限 | 在 API Management 中節流；在 iFlow 中加入等待邏輯 |
+| 權杖到期 | 流程在離峰時段悄悄失敗 | 排定更新週期並監控到期 |
+| 僵硬的格式 | 動態的酬載格式讓舊系統的解析失敗 | 以真實的正式環境樣本驗證 |
+| 沒有備援 | 檔案傳輸失敗卻不重試，資料卡住 | 在中介軟體中緩衝；在 iFlow 中建立重試與警示 |
+
+跨雲端版本的這些問題，請看我寫的[ERP 與 Salesforce 整合為何失敗，以及如何修正](/zh-TW/why-erp-integration-with-salesforce-fails-and-how-to-fix-it/)。
+
+## 以正式環境的方式測試介面
+
+整合不會以功能測試所檢查的方式壞掉。它是在時間壓力下、背景作業重疊時，以及輸入以大量而非逐筆方式湧入時才失敗。功能測試證明的是交易能過帳、日誌裡出現訊息。它不能證明第一次薪資執行送出大量 IDoc 時會發生什麼事。在一個專案中，有一筆 IDoc 在系統整合測試中看起來沒問題，但真實的薪資量一進來，佇列就卡住了。只有負載測試找得出來。
+
+介面測試需要涵蓋：
+
+1. 真實的資料量，搭配並行使用者
+2. 服務中斷與復原行為
+3. 中介軟體與後端之間的逾時與重試
+4. 批次作業與即時呼叫同時執行
+5. 月結與其他尖峰期間
+
+開發環境很乾淨。死結、競爭條件與節流，會在 UAT 與 Pre-Production 環境出現，因為那裡其他系統與批次時段都是活的，所以負載測試要在那裡跑。責任要切分清楚：功能團隊驗證整條流程的業務結果，整合團隊負責日誌、重試與例外流程，專案負責人確認涵蓋範圍。我的 [SAP 效能測試指南](/zh-TW/sap-performance-testing-it-leaders/)談的是負載這一面。
+
+## Integration Advisor 能做什麼，不能做什麼
+
+Integration Advisor 為結構化的 B2B 格式提出對應建議。對於遵循嚴格慣例的夥伴，它確實能省下設定時間。對於涉及舊系統、自訂欄位、條件邏輯與未成文規則的企業整合，它只是個起點。
+
+我合作過的一個團隊預期對應涵蓋率有 80%。實際涵蓋率約 40%。其餘部分必須客製、與業務端驗證，並以手動測試。
+
+它無法解決多年來非正式累積起來的業務邏輯（付款條件、定價類別、單位慣例）、依業務情境而定的條件規則，也無法處理標準格式以外的例外。這些需要功能面的意見。沒有這些意見，介面在技術上是對應好了，在特定情況下卻是邏輯錯誤。
+
+## 上線後的文件與治理
+
+上線後，當文件逐漸與實況脫節、責任歸屬又不正式時，整合就會退化。有用的文件包括欄位對應與轉換邏輯，以及驗證細節，例如端點、權杖更新與憑證輪替。也包括錯誤處理、備援規則，以及月結與薪資這類關鍵時段的交易量預期。檢驗標準是：下週才加入支援團隊的人，能不能光靠文件就排除一個故障介面的問題？
+
+每個介面，即使交易量很低，都需要一位指定的負責人，負責監控、議題升級與生命週期的異動。沒有負責人，故障就會在 Basis、中介軟體與功能團隊之間踢來踢去，業務端只能乾等。Hypercare 結束後，監控往往逐漸鬆懈。請建立定期的錯誤日誌檢視、從專案到支援的正式交接，以及業務端與 IT 之間議定的服務水準。上線數週後才浮現的許多過帳延遲、發票遺失與財務報表不一致，背後都是被忽視的整合。
+
+## 常見問題
+
+<details>
+<summary>什麼是 SAP Integration Suite？它和 CPI 有何不同？</summary>
+
+Cloud Integration，前身為 SAP Cloud Platform Integration（CPI），是 Integration Suite 內的一項能力。這個套件另外加入了管理 API 對外開放的 API Management，以及用於非同步訊息的 Event Mesh。它還包含提供 B2B 對應建議的 Integration Advisor、連接第三方雲端應用程式的 Open Connectors，以及針對 PI/PO 的評估與移轉工具。把它當成改了名字的 CPI 的團隊，常常略過 API Management 與 Event Mesh，之後要為治理缺口付出代價。
+
+</details>
+
+<details>
+<summary>SAP PI/PO 的支援何時結束？</summary>
+
+SAP Process Integration 與 Process Orchestration 7.5 的主流維護持續到 2027 年底。客戶可選購延伸維護到 2030 年底，之後 SAP 的支援即告結束。Integration Suite 內含 Migration Assessment 應用程式，用來評估每個情境的規模，也有移轉工具可半自動地搬移相關物件。請先擬定分波計畫，不要等到期限逼近才動手。
+
+</details>
+
+<details>
+<summary>SAP 整合何時該用標準內容，何時該客製開發？</summary>
+
+當情境是 SAP 對 SAP、接近 SAP 的參考流程，而且相對單純時，用標準內容。當流程已偏離 SAP 的模型、舊系統的怪癖需要特別處理，或條件式與多步驟邏輯會迫使標準套件大幅更動時，就客製開發。請在藍圖階段決定；在上線壓力下重建一個被改得過頭的標準流程，比一開始就乾淨地客製開發更花錢。
+
+</details>
+
+<details>
+<summary>是什麼造成複雜專案中的 SAP 整合失敗？</summary>
+
+多半是結構性的原因。沒有指定的監控與錯誤處理負責人，於是故障在團隊之間踢皮球。兩個工作流在不知情的情況下，各自建立共用同一個端點或佇列的整合。舊系統無法承受並行呼叫，只有在負載下才被發現。還有，測試單獨執行時一切正常，卻從未模擬批次重疊或尖峰交易量。
+
+</details>
+
+<details>
+<summary>SAP Integration Suite 的整合測試該怎麼安排？</summary>
+
+除了功能測試，還要涵蓋真實的交易量，例如第一次月結或薪資執行。測試批次作業與即時介面同時執行、下游系統無法使用時的復原，以及大量作業期間的第三方速率限制。請在與正式環境相近的環境中執行負載與效能測試，因為乾淨的開發系統會掩蓋問題。
+
+</details>
+
+<details>
+<summary>SAP 整合在上線後該如何治理？</summary>
+
+讓每個介面都有指定的負責人，負責監控、議題升級與變更。保持文件更新：對應、驗證與憑證輪替、錯誤處理與交易量預期。並建立長期的支援模式，包括定期檢視錯誤日誌、從專案到支援的正式交接，以及議定的服務水準。變得看不見的整合，就會被忽視。
+
+</details>

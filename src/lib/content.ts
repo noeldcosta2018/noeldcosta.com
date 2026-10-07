@@ -27,27 +27,27 @@ export const CATEGORIES: Record<Category, { label: string; slug: string; descrip
   "sap-modules": {
     label: "SAP Modules",
     slug: "sap-modules",
-    description: "Deep technical coverage of SAP and ERP modules.",
+    description: "How SAP modules work in practice: FICO, SD, PP, EWM, Ariba, BTP and integration, with the design decisions that make or break an implementation.",
   },
   "erp-strategy": {
     label: "ERP Strategy & Cost",
     slug: "erp-strategy",
-    description: "Vendor selection, licensing, modernization, and ERP economics.",
+    description: "ERP vendor selection, SAP licensing and negotiation, modernisation and the real economics of ERP programmes, written for CIOs and CFOs making the call.",
   },
   "ai-governance": {
     label: "AI Governance",
     slug: "ai-governance",
-    description: "Responsible AI frameworks, risk management, and compliance.",
+    description: "Practical AI governance: risk frameworks, the EU AI Act, ISO 42001, NIST AI RMF and how to keep AI inside SAP and ERP compliant and accountable.",
   },
   "agentic-ai": {
     label: "Agentic AI",
     slug: "agentic-ai",
-    description: "Generative and agentic AI in enterprise ERP contexts.",
+    description: "Generative and agentic AI inside enterprise ERP: SAP Joule, AI agents on BTP and what works today in finance, HR and supply chain, and what does not.",
   },
   "sap-case-studies": {
     label: "SAP Case Studies",
     slug: "sap-case-studies",
-    description: "Real programmes, outcomes, and lessons.",
+    description: "SAP and ERP programmes from my own work: the problem, the decisions, what went wrong and what each programme delivered in the end.",
   },
 };
 
@@ -74,6 +74,7 @@ export interface PostFrontmatter {
   h1?: string;
   primaryKeyword?: string;
   canonical?: string;
+  canonicalUrl?: string;
   noindex?: boolean;
   // E-E-A-T provenance — internal forcing fields per CLAUDE.md.
   // experienceSource: where the content came from (project, interview, etc).
@@ -98,19 +99,28 @@ export interface PageFrontmatter {
   metaDescription?: string;
   h1?: string;
   canonical?: string;
+  canonicalUrl?: string;
   noindex?: boolean;
 }
 
 export interface PostRecord {
   frontmatter: PostFrontmatter;
   body: string;
+  /** Locale of the returned MDX body. */
   locale: Locale;
+  /** Locale requested by the caller, retained when English fallback is used. */
+  requestedLocale: Locale;
+  isFallback: boolean;
 }
 
 export interface PageRecord {
   frontmatter: PageFrontmatter;
   body: string;
+  /** Locale of the returned MDX body. */
   locale: Locale;
+  /** Locale requested by the caller, retained when English fallback is used. */
+  requestedLocale: Locale;
+  isFallback: boolean;
 }
 
 const CONTENT_ROOT = join(process.cwd(), "content");
@@ -144,7 +154,7 @@ function listSlugs(kind: "posts" | "pages"): string[] {
  * react-markdown + rehype-raw handles the rest of the HTML safely downstream.
  */
 function sanitizeMdxBody(body: string): string {
-  let out = body
+  const out = body
     .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
     .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
 
@@ -177,31 +187,38 @@ function loadMdx<T>(path: string, locale: Locale): { frontmatter: T; body: strin
   const raw = safeRead(path);
   if (!raw) return null;
   const { data, content } = matter(raw);
-  return { frontmatter: data as T, body: sanitizeMdxBody(content), locale };
+  // Some migrated files use CRLF; the line-based repairs downstream expect LF.
+  return { frontmatter: data as T, body: sanitizeMdxBody(content.replace(/\r\n?/g, "\n")), locale };
 }
 
 function resolveWithFallback<T>(kind: "posts" | "pages", slug: string, locale: Locale):
-  | { frontmatter: T; body: string; locale: Locale; isFallback: boolean }
+  | {
+      frontmatter: T;
+      body: string;
+      locale: Locale;
+      requestedLocale: Locale;
+      isFallback: boolean;
+    }
   | null {
   const primary = join(CONTENT_ROOT, kind, slug, `${locale}.mdx`);
   const hit = loadMdx<T>(primary, locale);
-  if (hit) return { ...hit, isFallback: false };
+  if (hit) return { ...hit, requestedLocale: locale, isFallback: false };
   if (locale === "en") return null;
   const fallback = join(CONTENT_ROOT, kind, slug, "en.mdx");
   const en = loadMdx<T>(fallback, "en");
-  return en ? { ...en, locale, isFallback: true } : null;
+  return en ? { ...en, requestedLocale: locale, isFallback: true } : null;
 }
 
 export function getPost(slug: string, locale: Locale = "en"): PostRecord | null {
   const r = resolveWithFallback<PostFrontmatter>("posts", slug, locale);
   if (!r) return null;
-  return { frontmatter: r.frontmatter, body: r.body, locale: r.locale };
+  return r;
 }
 
 export function getPage(slug: string, locale: Locale = "en"): PageRecord | null {
   const r = resolveWithFallback<PageFrontmatter>("pages", slug, locale);
   if (!r) return null;
-  return { frontmatter: r.frontmatter, body: r.body, locale: r.locale };
+  return r;
 }
 
 export function getAllPostSlugs(): string[] {
@@ -264,10 +281,15 @@ export function getAvailableLocales(kind: "posts" | "pages", slug: string): Loca
     .filter((l) => LOCALES.includes(l));
 }
 
+// Japanese and Chinese run words together without spaces.
+const CJK_CHAR = /[\u{3040}-\u{30ff}\u{3400}-\u{9fff}]/gu;
+
 /**
- * Estimate reading time from markdown body.
+ * Estimate reading time from markdown body: about 225 words a minute, and for
+ * Japanese and Chinese text about 500 characters a minute.
  */
 export function readingTime(body: string): number {
-  const words = body.trim().split(/\s+/).length;
-  return Math.max(1, Math.round(words / 225));
+  const cjk = body.match(CJK_CHAR)?.length ?? 0;
+  const words = body.replace(CJK_CHAR, " ").trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.round(words / 225 + cjk / 500));
 }

@@ -1,0 +1,195 @@
+---
+title: "SAP Integration Suite: odluke i kompromisi u produkciji"
+h1: "SAP Integration Suite: odluke i kompromisi u produkciji"
+slug: "sap-integration-suite-delivery-delays"
+date: "2025-07-16"
+updated: "2026-10-07"
+hero: "/images/wp/2025/07/10-1.webp"
+heroAlt: "SAP arhitekt integracija pregledava dijagram toka poruka i zapisnike pogrešaka na dva monitora"
+category: "sap-modules"
+tags: ["sap-industry-topics", "sap-technical-decisions", "sap-integration-suite", "rise-with-sap"]
+author: "Noel D'Costa"
+metaTitle: "SAP Integration Suite u 2026.: odluke i kompromisi"
+metaDescription: "SAP Integration Suite: odluke koje uzrokuju kašnjenja, komponente, standardni i prilagođeni sadržaj, migracija s PI/PO-a prije 2027., stari sustavi i testiranje."
+excerpt: "SAP Integration Suite nije samo preimenovani CPI, a odluke koje timovi pogrešno donose rijetko su tehnološke. Ovaj vodič obuhvaća komponente, migraciju s PI/PO-a, ograničenja naslijeđenih sustava, testiranje i praznine u vlasništvu iza većine kvarova sučelja."
+experienceSource: "Noel's SAP integration experience as published in the original article: the middleware flow that failed every Friday because a payroll system token expired weekly, two project teams building separate integrations to the same endpoint, weeks lost tweaking mismatched standard content, legacy systems freezing under parallel calls, and the team that expected 80% Integration Advisor coverage and got closer to 40%. PI/PO maintenance dates and Integration Suite editions checked against SAP sources in October 2026."
+lastReviewed: "2026-05-21"
+keyTakeaways:
+  - "Integration Suite je više od CPI-ja: Cloud Integration, API Management, Event Mesh, Integration Advisor, Open Connectors i alati za migraciju obavljaju različite poslove"
+  - "Većina kvarova sučelja proizlazi iz praznina u vlasništvu, a ne iz tehnologije. Imenujte vlasnika svakog sučelja prije puštanja u rad"
+  - "Redovno održavanje PI/PO 7.5 završava 2027., a prošireno traje do 2030. Migraciju planirajte u valovima, a ne pod pritiskom roka"
+  - "Naslijeđeni sustavi često ne mogu primiti istodobne sinkrone pozive. To otkrijte u dizajnu, a ne u UAT-u"
+  - "Jedan je tim očekivao da će Integration Advisor pokriti 80 posto mapiranja, a dobio je bliže 40 posto. Predvidite proračun za ostatak"
+pullQuote: "Većina neuspjeha integracija u SAP programima proizlazi iz praznina u vlasništvu, a ne iz tehnologije. Bez definirane odgovornosti za nadzor poruka, ponovne pokušaje i rješavanje pogrešaka čak i dobro dizajnirani iFlow tokovi tiho padaju u produkciji."
+mentions:
+  - "SAP Integration Suite"
+  - "SAP BTP"
+  - "SAP CPI"
+  - "SAP S/4HANA"
+  - "SAP Process Orchestration"
+  - "SAP Ariba"
+  - "SAP SuccessFactors"
+  - "SAP API Management"
+  - "SAP Event Mesh"
+  - "SAP Integration Advisor"
+  - "SAP Cloud ALM"
+  - "RISE with SAP"
+  - "GROW with SAP"
+originalUrl: "https://noeldcosta.com/sap-integration-suite-delivery-delays/"
+canonicalUrl: "https://noeldcosta.com/hr/sap-integration-suite-delivery-delays/"
+locale: "hr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP Integration Suite SAP-ova je integracijska platforma na SAP BTP-u: Cloud Integration (nekadašnji CPI) te API Management, Event Mesh, Integration Advisor, Open Connectors i alati za migraciju s PI/PO-a. To je zadani middleware za S/4HANA cloud programe i put s PI/PO-a, čije redovno održavanje (mainstream maintenance) završava 2027. Kašnjenja sučelja rijetko dolaze od tehnologije. Dolaze iz nejasnog vlasništva, neprovjerenih pretpostavki o naslijeđenim sustavima i testiranja osmišljenog da prođe, a ne da pronađe pogreške. Ovaj je vodič za voditelje integracija, arhitekte i voditelje programa. Obuhvaća čemu služi koja komponenta, standardni naspram prilagođenog sadržaja, migraciju s PI/PO-a, rizike naslijeđenih sustava i testiranja te upravljanje nakon puštanja u rad.
+
+## Što se promijenilo za 2026.
+
+**Za PI/PO odbrojavanje je počelo.** SAP Process Integration i Process Orchestration 7.5 u redovnom su održavanju do kraja 2027. Opcionalno prošireno održavanje traje do kraja 2030., nakon čega SAP-ova podrška završava. SAP-ova [referentna arhitektura migracije](https://architecture.learning.sap.com/docs/ref-arch/8566b4) opisuje put. Integration Suite uključuje aplikaciju Migration Assessment koja procjenjuje veličinu svakog PI/PO scenarija te alate za migraciju vođene čarobnjakom u Cloud Integration. Migrirajte u valovima: prvo tokove niskog rizika između SAP sustava, B2B i EDI u sredini, a tokove narudžbi velikog volumena na kraju. Prisilni prelazak pod pritiskom roka traje dulje i košta više.
+
+<explainer-timeline title="Odlazak s PI/PO-a u valovima, prije nego što vrijeme istekne" caption="Završite valove dok još ima vremena. Prisilni prelazak pod pritiskom roka traje dulje i košta više." items="Val 1 => Tokovi niskog rizika između SAP sustava|Val 2 => B2B i EDI|Val 3 => Tokovi narudžbi velikog volumena|2027 => Završava redovno održavanje PI/PO 7.5|2030 => Završava opcionalno prošireno održavanje" notes="Prvo procijenite svaki scenarij alatom Migration Assessment|||Kraj godine. Planirajte valove tako da završe prije toga|Kraj godine. Nakon toga završava SAP-ova podrška" highlight="4" source="SAP-ovi datumi održavanja i referentna arhitektura migracije, provjereno u listopadu 2026."></explainer-timeline>
+
+**Provjerite što pokriva Vaš cloud ugovor.** Ugovori za RISE i GROW obično uključuju SAP BTP kredite kojima se može platiti Integration Suite. Prije nego što Integration Suite usporedite s rješenjima MuleSoft ili Boomi samo po funkcionalnostima, potvrdite koje izdanje i koje količine poruka pokriva Vaše pravo korištenja. Ekonomika uključene platforme mijenja usporedbu.
+
+**AI stiže u fazama.** Cloud Integration od sredine 2024. u izdanju Premium nudi generiranje tokova pomoću generativne AI. Proizvodi strukturu toka (iFlow): korake, kanale i potproces za iznimke, a ne mapiranja ni skripte. SAP-ovo poboljšano izdanje, pokrenuto u ožujku 2026., dodaje generiranje tokova iz teksta i optimizaciju skripti, a SAP je opću dostupnost asistenta Joule u Integration Suite planirao za treće tromjesečje 2026. Korisno za standardne tokove. Složena orkestracija s dubokom poslovnom logikom i dalje traži iskusne arhitekte.
+
+## Komponente i čemu svaka služi
+
+Integration Suite skup je servisa. Koristite li pravi servis za pravi posao, određuje koliko će dobro izdržati cijeli krajolik sustava.
+
+| Komponenta | Uloga | Što pođe po zlu kada se pogrešno koristi |
+|---|---|---|
+| Cloud Integration (CPI) | Tokovi poruka, usmjeravanje i transformacija; zadano za većinu iFlow tokova | Kada se sve strpa u CPI, uključujući API-je i događaje, postaje teško za podršku i testiranje |
+| API Management | Upravlja izlaganjem API-ja: sigurnost, ograničenja broja poziva, analitika | Ako ga preskočite, množe se izravne veze od točke do točke; upravljanje je teško naknadno uvesti |
+| Event Mesh | Asinkrono slanje poruka za razdvojene okidače | Neprativi redovi poruka tiho rastu a da nikoga ne upozore |
+| Integration Advisor | Prijedlozi mapiranja za B2B formate poput EDIFACT-a, X12 i IDoc-a | Timovi pretpostavljaju visoku pokrivenost; jedan je tim očekivao 80 posto, a dobio bliže 40 posto |
+| Open Connectors | Gotovi konektori za aplikacije trećih strana u oblaku | Promjene vanjskih API-ja tiho lome konektore ako ih netko ne nadzire |
+| Migration Assessment i alati | Procjenjuje veličinu i migrira PI/PO scenarije | Tretira se kao jednokratna procjena umjesto kao radni plan migracije |
+
+Timovi koji Integration Suite smatraju „CPI-jem s dodacima” često zanemaruju API Management i Event Mesh. To funkcionira dok ih složenost ne sustigne. Moj [vodič za SAP CPI](/hr/sap-cpi/) dublje obrađuje sam Cloud Integration.
+
+## Standardni sadržaj naspram prilagođenog razvoja
+
+Gotov SAP integracijski sadržaj doista je koristan kada je proces standardan. Povezivanje S/4HANA sa SAP Ariba ili SuccessFactors uz standardne procese često se uklapa bez problema. Stvarni procesi rijetko ostaju unutar SAP-ovih referentnih okvira.
+
+Odaberite standardni sadržaj kada:
+
+1. Je scenarij između SAP sustava i blizu SAP-ova referentnog procesa
+2. Je tok jednostavan i uglavnom jednosmjeran
+3. Možete živjeti sa SAP-ovim mapiranjem i proširivati samo kroz ponuđene točke proširenja
+
+Odaberite prilagođenu izradu kada:
+
+1. Su godine internih odluka odmaknule proces od SAP-ova modela
+2. Su uključeni uvjetno usmjeravanje, višekoračna logika ili posebnosti naslijeđenih sustava
+3. Bi opsežne izmjene narušile usklađenost standardnog paketa sa SAP-ovom podrškom
+
+Odluku donesite u fazi blueprinta. Kada se donese kasno, timovi usred projekta otkriju da je „standardni” iFlow toliko izmijenjen da je izgubio usklađenost s podrškom pa ga ponovno grade pod pritiskom puštanja u rad. Vidio sam projekte koji su izgubili tjedne jer su timovi pretpostavili da će standardni sadržaj odjednom podnijeti prilagođene strukture matičnih podataka, dodatna polja i naslijeđenu autentifikaciju. Nije podnio. Analiza koja je pripadala dizajnu dogodila se tijekom UAT-a.
+
+## Integracija u složenim programima
+
+U velikim SAP programima integracija je često prva stvar koja ispadne između radnih tokova. Sučelja prelaze granice timova, ali nitko ne odgovara za koordinaciju. Vidio sam dva projektna tima kako grade zasebne integracije za istog poslovnog partnera, usmjerene na istu krajnju točku, a da nisu znali jedan za drugoga. Nijedan nije saznao do UAT-a. To je strukturni, a ne tehnički propust.
+
+Rano uspostavite središnje upravljanje integracijama:
+
+1. Zajednički integracijski backlog vidljiv svakom radnom toku
+2. Imenovani vlasnik svakog sučelja, praćen kroz isporuku
+3. Kontrolne točke koordinacije između radnih tokova prije svake veće isporuke
+4. Pregled ovisnosti sučelja prije svake obveze oko puštanja u rad, uz zajedničke krajnje točke i redove poruka poredane u cutover planu
+5. Automatiziran prijenos između okruženja, s vjerodajnicama dokumentiranima za svaku liniju sustava
+
+## Naslijeđeni sustavi i integracija trećih strana
+
+Najteži integracijski problemi rijetko su moderne platforme. To su stariji sustavi usred kritičnih procesa.
+
+Naslijeđeni ERP-ovi često ne podnose istodobne sinkrone pozive. Pošaljite pet paralelnih API poziva i poslužitelj uspori, zamrzne se ili tiho izgubi podatke. Asinkrona integracija pomaže samo ako prijamni sustav može obraditi red poruka, a mnogi ne mogu.
+
+Nepodudarnosti protokola česte su i otkrivaju se kasno. Dizajnirate s OAuth2 i REST-om; naslijeđeni sustav govori SOAP s čvrsto zadanim istekom od 30 sekundi i loše podnosi osvježavanje tokena.
+
+Kod jednog klijenta tok u middlewareu padao je svakog petka jer je token koji je izdao sustav za obračun plaća treće strane istjecao tjedno. Nitko to nije primijetio do drugog ciklusa UAT-a. Ovakve su posebnosti česte i jedu vremenske rokove.
+
+Tablica navodi rizike koje treba provjeriti prije zamrzavanja dizajna.
+
+| Rizik | Uobičajeni problem | Što učiniti u dizajnu |
+|---|---|---|
+| Sinkrona ograničenja | Naslijeđeni sustav se blokira pod paralelnim pozivima | Koristite asinkrono slanje poruka; rasporedite pozive kroz Event Mesh ili Cloud Integration |
+| Nepodudarnost protokola | Naslijeđeni sustav odbija REST ili OAuth, ili mu istječe vrijeme na SOAP-u | Potvrdite protokole i istek vremena prije početka dizajna |
+| Ograničenja API-ja | Batch poslovi premašuju ograničenja treće strane | Ograničite protok u API Managementu; dodajte logiku čekanja u iFlow |
+| Istek tokena | Tokovi tiho padaju u razdobljima izvan vršnog opterećenja | Zakažite cikluse osvježavanja i pratite istek |
+| Kruti formati | Dinamički sadržaj poruka lomi parsiranje u naslijeđenom sustavu | Validirajte na stvarnim uzorcima iz produkcije |
+| Nema rezervnog puta | Prijenosi datoteka padaju bez ponovnog pokušaja i podaci zapnu | Spremite u međuspremnik u middlewareu; ugradite ponovne pokušaje i upozorenja u iFlow tokove |
+
+Za verziju ovih problema između različitih clouda pogledajte moj tekst o tome [zašto integracija ERP-a sa sustavom Salesforce ne uspijeva i kako to popraviti](/hr/why-erp-integration-with-salesforce-fails-and-how-to-fix-it/).
+
+## Testirajte sučelja onako kako će ih opteretiti produkcija
+
+Integracija ne pada onako kako to provjeravaju funkcionalni testovi. Pada pod vremenskim pritiskom, kada se pozadinski poslovi preklapaju i kada ulazni podaci stižu u količinama, a ne jedan po jedan. Funkcionalni test dokazuje da se transakcija knjiži i da se poruka pojavljuje u zapisniku. Ne dokazuje što se događa kada prvi obračun plaća pošalje bujicu IDoc-ova. Na jednom projektu IDoc koji je u testiranju sistemske integracije izgledao čisto zaustavio je red poruka kada su stigli stvarni volumeni obračuna plaća. Pronašlo ga je samo testiranje opterećenja.
+
+Testiranje sučelja mora pokriti:
+
+1. Realistične količine podataka uz istodobne korisnike
+2. Prekide usluge i ponašanje pri oporavku
+3. Istek vremena i ponovne pokušaje kroz middleware i pozadinske sustave
+4. Batch poslove koji rade uz pozive u stvarnom vremenu
+5. Mjesečno zatvaranje i druga vršna razdoblja
+
+Razvojna okruženja su čista. Međusobna blokiranja (deadlock), stanja utrke (race condition) i ograničavanje protoka pojavljuju se u UAT-u i predprodukciji, gdje su drugi sustavi i batch prozori aktivni, pa ondje provodite testove opterećenja. Jasno podijelite vlasništvo: funkcionalni timovi potvrđuju poslovne rezultate kroz cijeli tok, integracijski timovi odgovaraju za zapisnike, ponovne pokušaje i tokove iznimki, a voditelji projekta potvrđuju pokrivenost. Moj vodič o [testiranju performansi SAP-a](/hr/sap-performance-testing-it-leaders/) obrađuje stranu opterećenja.
+
+## Što Integration Advisor hoće, a što neće
+
+Integration Advisor predlaže mapiranja za strukturirane B2B formate. Za partnere koji se drže strogih konvencija štedi stvarno vrijeme postavljanja. Za poslovne integracije s naslijeđenim sustavima, prilagođenim poljima, uvjetnom logikom i nedokumentiranim pravilima on je samo polazište.
+
+Jedan tim s kojim sam radio očekivao je 80 posto pokrivenosti mapiranja. Stvarna pokrivenost bila je oko 40 posto. Ostatak se morao prilagoditi, potvrditi s poslovnom stranom i ručno testirati.
+
+Ne rješava poslovnu logiku koja se neformalno nakupljala godinama (uvjeti plaćanja, kategorije cijena, konvencije mjernih jedinica), uvjetna pravila koja ovise o poslovnom kontekstu ni iznimke izvan standardnog formata. Za to treba funkcionalni doprinos. Bez njega su sučelja tehnički mapirana, a u pojedinim slučajevima logički pogrešna.
+
+## Dokumentacija i upravljanje nakon puštanja u rad
+
+Integracija se nakon puštanja u rad pogoršava kada dokumentacija zastari, a vlasništvo nije formalno. Korisna dokumentacija pokriva mapiranja polja i logiku transformacije te pojedinosti autentifikacije, poput krajnjih točaka, osvježavanja tokena i rotacije vjerodajnica. Pokriva i obradu pogrešaka, pravila rezervnih puteva i očekivane količine za kritična razdoblja poput mjesečnog zatvaranja i obračuna plaća. Test glasi: bi li netko tko se sljedeći tjedan pridruži timu za podršku mogao otkloniti kvar sučelja samo iz dokumentacije?
+
+Svako sučelje, čak i ono s malim volumenom, treba imenovanog vlasnika za nadzor, eskalaciju i promjene tijekom životnog ciklusa. Bez njega se kvarovi prebacuju između timova za Basis, middleware i funkcionalnih timova dok poslovna strana čeka. Nakon faze pojačane podrške (hypercare) nadzor obično slabi. Uvedite redovite preglede zapisnika pogrešaka, formalnu primopredaju iz projekta u podršku i razine usluge dogovorene između poslovne strane i IT-a. Zanemarena integracija stoji iza mnogih zakašnjelih knjiženja, nedostajućih računa i neusklađenih financijskih izvješća koji izlaze na vidjelo tjednima nakon puštanja u rad.
+
+## Često postavljana pitanja
+
+<details>
+<summary>Što je SAP Integration Suite i po čemu se razlikuje od CPI-ja?</summary>
+
+Cloud Integration, nekadašnji SAP Cloud Platform Integration (CPI), jedna je od mogućnosti unutar paketa Integration Suite. Paket dodaje API Management za upravljano izlaganje API-ja i Event Mesh za asinkrono slanje poruka. Uključuje i Integration Advisor za prijedloge B2B mapiranja, Open Connectors za aplikacije trećih strana u oblaku te alate za procjenu i migraciju s PI/PO-a. Timovi koji ga smatraju CPI-jem s novim imenom često preskaču API Management i Event Mesh, a to kasnije plaćaju prazninama u upravljanju.
+
+</details>
+
+<details>
+<summary>Kada završava SAP-ova podrška za PI/PO?</summary>
+
+SAP Process Integration i Process Orchestration 7.5 u redovnom su održavanju do kraja 2027. Kupci mogu uzeti opcionalno prošireno održavanje do kraja 2030., nakon čega SAP-ova podrška završava. Integration Suite uključuje aplikaciju Migration Assessment za procjenu svakog scenarija i alate za migraciju za poluautomatski prijenos artefakata. Krenite s planom po valovima umjesto da čekate rok.
+
+</details>
+
+<details>
+<summary>Kada u SAP integraciji koristiti standardni sadržaj, a kada prilagođeni razvoj?</summary>
+
+Standardni sadržaj koristite kada je scenarij između SAP sustava, blizu SAP-ova referentnog procesa i relativno jednostavan. Prilagođeno gradite kada se proces odmaknuo od SAP-ova modela, kada naslijeđene posebnosti traže posebno postupanje ili kada bi uvjetna i višekoračna logika prisilila na velike izmjene standardnog paketa. Odlučite u fazi blueprinta; ponovna izgradnja pretjerano izmijenjenog standardnog toka pod pritiskom puštanja u rad košta više od čiste prilagođene izrade.
+
+</details>
+
+<details>
+<summary>Što uzrokuje neuspjehe SAP integracija u složenim programima?</summary>
+
+Uglavnom strukturni uzroci. Nema imenovanog vlasnika za nadzor i rješavanje pogrešaka, pa se kvarovi prebacuju između timova. Dva radna toka grade integracije koje dijele krajnju točku ili red poruka a da ne znaju jedan za drugoga. Naslijeđeni sustavi koji ne podnose istodobne pozive, što se otkrije tek pod opterećenjem. I testiranje koje prolazi čisto u izolaciji, ali nikad ne simulira preklapanje batch poslova ni vršni volumen.
+
+</details>
+
+<details>
+<summary>Kako treba strukturirati testiranje integracija za SAP Integration Suite?</summary>
+
+Osim funkcionalnih testova pokrijte realistične količine, poput prvog mjesečnog zatvaranja ili prvog obračuna plaća. Testirajte batch poslove koji rade uz sučelja u stvarnom vremenu, oporavak kada je nizvodni sustav nedostupan i ograničenja broja poziva trećih strana tijekom masovnih poslova. Testove opterećenja i performansi provodite u okruženjima sličnim produkciji, jer čisti razvojni sustavi skrivaju probleme.
+
+</details>
+
+<details>
+<summary>Kako upravljati SAP integracijom nakon puštanja u rad?</summary>
+
+Svakom sučelju dodijelite imenovanog vlasnika za nadzor, eskalaciju i promjene. Dokumentaciju održavajte ažurnom: mapiranja, autentifikaciju i rotaciju vjerodajnica, obradu pogrešaka i očekivane količine. I izgradite dugoročni model podrške s redovitim pregledima zapisnika pogrešaka, formalnom primopredajom iz projekta u podršku i dogovorenim razinama usluge. Integracija koja postane nevidljiva bude zanemarena.
+
+</details>

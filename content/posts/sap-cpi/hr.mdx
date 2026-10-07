@@ -1,0 +1,175 @@
+---
+title: "SAP CPI i Integration Suite: što su i gdje se uklapaju"
+h1: "SAP CPI i Integration Suite: što su i gdje se uklapaju"
+slug: "sap-cpi"
+date: "2025-04-28"
+updated: "2026-10-07"
+hero: "/images/wp/2025/04/1-3.webp"
+heroAlt: "Osoba za laptopom, uz plutajuće poslovne ikone grafikona, ciljeva i izvještaja"
+category: "sap-modules"
+tags: ["sap-technical-decisions", "sap-integration-suite", "sap-btp", "sap-cpi"]
+author: "Noel D'Costa"
+metaTitle: "SAP CPI i Integration Suite 2026: gdje se uklapa"
+metaDescription: "SAP CPI objašnjen: što radi Integration Suite, kako se uspoređuje s PI/PO-om prije 2027., gašenje okruženja Neo i plan po valovima za selidbu sučelja."
+excerpt: "SAP CPI, danas mogućnost Cloud Integration unutar rješenja SAP Integration Suite, zamjenjuje krhke skripte točka-do-točka upravljanim integracijskim tokovima. Kako standardno održavanje PI/PO-a završava 2027., evo kako se uklapa i kako isplanirati selidbu."
+experienceSource: "Direct experience designing and implementing SAP CPI and SAP Integration Suite integration architectures across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets. Includes SAP PI/PO migration, S/4HANA and SuccessFactors integrations, Salesforce-to-SAP pipelines, and post-go-live monitoring design. Anchored stories: European retail 2023 (Groovy script fragility on order interface), GCC manufacturing 2024 (PI/PO to Integration Suite migration in waves). Product dates (PI/PO maintenance, Neo shutdown, Edge Integration Cell) verified October 2026."
+lastReviewed: "2026-05-21"
+keyTakeaways:
+  - "SAP CPI je middleware u oblaku na SAP BTP-u: prenosi i transformira podatke između sustava, ali ih ne pohranjuje dugoročno"
+  - "Službeno je to mogućnost Cloud Integration unutar rješenja SAP Integration Suite; CPI je i dalje naziv koji koristi većina konzultanata"
+  - "CPI nije ETL alat niti isto što i SAP BTP. BTP je platforma, a Integration Suite se bavi integracijom"
+  - "SAP PI/PO 7.5 izlazi iz standardnog održavanja krajem 2027., a produljeno održavanje traje do kraja 2030. Selidbu planirajte po valovima, a ne kao prisilan prijelaz"
+  - "Okruženje SAP BTP Neo gasi se 31. prosinca 2028. Sve što se još tamo izvodi treba preseliti na Cloud Foundry"
+  - "Složena mapiranja traže Groovy ili JavaScript. CPI nije zero-code za ništa što nadilazi standardne tokove"
+pullQuote: "SAP CPI je moćan kad se projektira na razini arhitekture. Kad ga timovi tretiraju kao vježbu konfiguracije, svaki mali prečac stvara krhkost koja se pokaže šest mjeseci kasnije."
+mentions:
+  - "SAP CPI"
+  - "SAP Integration Suite"
+  - "SAP BTP"
+  - "SAP PI"
+  - "SAP PO"
+  - "SAP S/4HANA"
+  - "SAP SuccessFactors"
+  - "SAP Ariba"
+  - "SAP Analytics Cloud"
+  - "RISE with SAP"
+  - "Cloud Foundry"
+originalUrl: "https://noeldcosta.com/sap-cpi/"
+canonicalUrl: "https://noeldcosta.com/hr/sap-cpi/"
+locale: "hr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP CPI (Cloud Platform Integration) je SAP-ov middleware u oblaku. Danas živi kao mogućnost Cloud Integration unutar rješenja SAP Integration Suite na SAP BTP-u i SAP-ov je odgovor na povezivanje S/4HANA s ostalim SAP sustavima i sustavima izvan SAP-a. Ako još uvijek koristite SAP PI/PO, vrijeme je važno: PI/PO 7.5 izlazi iz standardnog održavanja krajem 2027.
+
+Ovaj je vodič namijenjen voditeljima integracija i CIO-ima koji odlučuju kako napustiti PI/PO ili osmisliti integraciju za novi S/4HANA program. Obuhvaća što CPI radi, a što ne radi, kako se uspoređuje s PI/PO-om i plan po valovima za migraciju sučelja.
+
+Viđao sam timove koji mjesecima grade krhke prilagođene skripte za povezivanje SAP sustava i sustava izvan SAP-a. U početku sve radi. Zatim nadogradnja sustava promijeni naziv polja, izađe nova verzija API-ja ili se promet udvostruči. Skripta tiho puca. Nitko ne zna sve dok izvještaj ne povuče zastarjele podatke ili narudžbenica ne ostane neobrađena tri dana.
+
+CPI to zamjenjuje upravljanim, višekratno iskoristivim integracijskim tokovima. Ne zato što je jednostavniji (često nije), nego zato što je arhitektura izgrađena da se nadzire i održava. Male odluke donesene rano u dizajnu CPI-ja nakupljaju tehnički dug brže nego što većina timova očekuje.
+
+## Što je SAP CPI, a što nije
+
+CPI je sloj koji povezuje sustave, transformira podatke i usmjerava poruke između aplikacija. SAP Integration Suite objedinjuje ga s API Managementom, Event Meshom, Integration Advisorom i upravljanjem poslovnim partnerima (trading partner management). Većina konzultanata i dalje kaže „CPI" kad misli na dio s integracijskim tokovima, i to je u redu.
+
+**Što CPI radi:** prenosi podatke između sustava, transformira formate poruka, usmjerava ih na pravi cilj te obrađuje pogreške i ponovne pokušaje. Povezuje SAP sustave (S/4HANA, SuccessFactors, Ariba) i platforme izvan SAP-a (Salesforce, Workday, ServiceNow) putem standardnih adaptera.
+
+**Što ne radi:** ne pohranjuje podatke dugoročno, ne zamjenjuje ERP i ne služi kao ETL alat za masovnu migraciju podataka. Izgrađen je za poruke u stvarnom ili gotovo stvarnom vremenu. Korištenje kao skladišta podataka ili alata za migraciju kasnije stvara probleme u arhitekturi.
+
+**CPI naspram SAP BTP-a:** BTP je cijela platforma: razvoj aplikacija, podaci, AI, analitika i integracija. CPI je jedna usluga na njoj. Razlika je bitna kad određujete opseg vještina i proračun. BTP arhitekt projektira preko više usluga. CPI specijalist odgovoran je za tokove, adaptere, mapiranja i povezivost.
+
+## Što se promijenilo za 2026.
+
+Četiri datuma i odluke danas oblikuju svaki plan integracije.
+
+<explainer-timeline title="Datumi iza plana integracije" caption="Planirajte oko 2027. Selidba po valovima prije tog roka košta znatno manje od prisilnog prijelaza." items="2023. => Edge Integration Cell općenito dostupan|2027. => Završava standardno održavanje PI/PO-a|2028. => Gasi se okruženje SAP BTP Neo|2030. => Završava produljeno održavanje PI/PO-a" notes="Kraj 2023. Izvodi tokove SAP Integration Suite unutar Vaše mreže|Krajem godine, za SAP NetWeaver 7.5|31. prosinca. CPI tenanti iz okruženja Neo prelaze na Cloud Foundry|Krajem godine. Zadnja stanica za svaku PI/PO okolinu" highlight="2" source="Najave SAP-a o održavanju NetWeavera 7.5 i gašenju okruženja Neo, prema pisanju SAPinsidera"></explainer-timeline>
+
+1. **PI/PO ostaje bez puta.** [SAP NetWeaver 7.5, koji uključuje PI/PO, slijedi vremenski plan održavanja za Business Suite](https://sapinsider.org/blogs/sap-extends-maintenance-for-sap-netweaver-7-5-and-sap-bw-4hana/): standardno održavanje do kraja 2027., produljeno održavanje do kraja 2030. Nove značajke ne stižu. Planirana selidba po valovima košta znatno manje od prisilnog prijelaza 2027. ili 2030.
+2. **Za hibridno postoji odgovor.** Edge Integration Cell, općenito dostupan od kraja 2023., izvodi tokove SAP Integration Suite unutar Vaše vlastite mreže za sučelja koja moraju ostati on-premise. To uklanja najčešći razlog koji su timovi navodili za ostanak na PI/PO-u.
+3. **Neo se zatvara.** SAP je [2023. najavio](https://sapinsider.org/blogs/sap-announces-sunset-of-neo-cloud-environment/) da se okruženje SAP BTP Neo gasi 31. prosinca 2028. Stariji CPI tenanti u okruženju Neo moraju prijeći na multi-cloud okruženje (Cloud Foundry), a ta je migracija zaseban mali projekt.
+4. **Joule je u alatima.** SAP je Joule dodao u Integration Suite pa programeri mogu opisati tok običnim jezikom i dobiti prvu skicu. To ubrzava standardne scenarije. Složena orkestracija sa stvarnom poslovnom logikom i dalje traži višeg integracijskog arhitekta.
+
+Što se tiče komercijalnog dijela: ako ste na RISE with SAP, provjerite koje pravo korištenja SAP BTP-a Vaš ugovor već uključuje prije nego što zasebno kupite kapacitet za Integration Suite.
+
+## Kako se CPI uspoređuje sa SAP PI/PO-om
+
+| Čimbenik | SAP PI/PO | SAP CPI (Integration Suite) |
+|---|---|---|
+| Model isporuke | On-premise, na Vašim poslužiteljima | Oblak na SAP BTP-u; Edge Integration Cell za on-premise runtime |
+| Opterećenje održavanjem | Visoko: zakrpe, nadogradnje, upravljanje poslužiteljima | Niže: platformu vodi SAP |
+| Proširivost | Duboko prilagođavanje; teže za nadogradnju | Modularno; brža ažuriranja; manje kontrole na niskoj razini |
+| Licenciranje | Statično, obično prema kapacitetu | Pretplata s metrikom prema broju poruka |
+| Smjer ulaganja | Samo održavanje, bez novih značajki | Aktivan razvoj |
+| Kraj standardnog održavanja | Kraj 2027. (produljeno do kraja 2030.) | Nije primjenjivo (usluga u oblaku) |
+
+Promjenu licenciranja vrijedi modelirati. Trošak CPI-ja vezan je uz broj poruka. Neke tvrtke štede u odnosu na PI/PO. Druge otkriju da je njihov stvarni integracijski promet veći nego što su mislile pa moraju rano optimizirati tokove. Izradite model prije migracije.
+
+## Ključne značajke i adapteri
+
+Osnovni građevni element je **iFlow** (integracijski tok). Svaki iFlow definira kako poruka putuje od izvora do cilja: transformaciju, pravila usmjeravanja i koje se rukovanje pogreškama aktivira kad nešto zakaže.
+
+| Značajka | Što radi |
+|---|---|
+| Unaprijed izrađeni integracijski sadržaj | Paketi gotovih iFlowova za SAP i uobičajene scenarije trećih strana na SAP Business Accelerator Hubu |
+| Grafički dizajner tokova | Web dizajner za izradu iFlowova |
+| API Management | Dizajn, objava, sigurnost i nadzor API-ja |
+| Sigurnost | OAuth 2.0, SAML, TLS, upravljanje certifikatima |
+| Nadzor | Zapisnici poruka, detalji pogrešaka, povijest ponovnih pokušaja, upozorenja |
+
+**Standardni adapteri** uključuju SOAP, REST, OData, IDoc, JDBC, SFTP, JMS i AS2, uz dodatne za pojedine SaaS proizvode.
+
+**Skriptiranje.** Složene transformacije traže Groovy ili JavaScript unutar iFlowa. CPI nije zero-code izvan standardnih tokova. Ako nitko u Vašem timu ne zna napisati osnovnu skriptnu logiku, složena mapiranja postaju usko grlo.
+
+## Migracija s PI/PO-a: što stvarno uključuje
+
+Migracija nije automatska pretvorba. Ponašanje adaptera razlikuje se između PI-ja i CPI-ja, a rukovanje pogreškama koje je radilo u PI-ju u CPI-ju se može ponašati drukčije. Neke tokove treba izgraditi ispočetka. Drugi se prenose uz male izmjene. SAP-ovi alati za migraciju i unaprijed izrađeni sadržaj smanjuju mehanički posao. Ne donose odluke o tome što treba ponovno izgraditi, a što ukinuti.
+
+Evo plana po valovima koji koristim kao polazište. Valove prilagodite vlastitom popisu.
+
+| Val | Što se seli | Zašto ovim redom | Vlasnik | Kriteriji izlaska |
+|---|---|---|---|---|
+| 0. Popis | Svako PI sučelje: učestalost, volumen, adapter, kritičnost, vlasnik | Ne možete planirati ono što niste prebrojili | Voditelj integracija | Popis potvrđen od poslovnih vlasnika |
+| 1. Nizak rizik | Tokovi SAP-na-SAP sa standardnim sadržajem | Dokazuje operativni model i nadzor | Voditelj integracija | Dva tjedna stabilno u produkciji, PI put ukinut |
+| 2. Partneri | B2B i EDI tokovi s ključnim poslovnim partnerima | Traži termine testiranja s partnerima i koordiniran prijelaz | Voditelj integracija uz nabavu i prodaju | Svaki partner potvrđuje pisanim putem |
+| 3. Visok rizik | Tokovi velikog volumena, regulirani ili ključni za prihod | Seli se zadnji, uz najviše probi | Integracijski arhitekt | Test opterećenja položen; povratak na PI uvježban |
+| 4. Gašenje | PI/PO se gasi | Prestajete plaćati dvije platforme | CIO | Svi tokovi migrirani ili ukinuti; licence završene |
+
+Za svaki val zadržite povratni put na PI dok novi tok ne proradi bez greške u produkciji. Redoslijed je bitan: operativni model dokažite na tokovima niskog rizika prije nego što dotaknete sučelja koja nose prihod.
+
+## Uobičajeni integracijski obrasci
+
+Scenariji koje najčešće viđam:
+
+1. **S/4HANA prema SuccessFactorsu.** Organizacijski podaci, broj zaposlenih i promjene naknada. SAP-ov standardni integracijski sadržaj pokriva uobičajene scenarije; prilagođeni tokovi obrađuju odstupanja.
+2. **Naslijeđena nabava prema SAP Aribi.** Narudžbenice idu van, potvrde i računi vraćaju se. Obično u oba smjera.
+3. **Financijski podaci prema SAP Analytics Cloudu.** Prijenos podataka iz ECC-a ili sustava izvan SAP-a u SAC.
+4. **Salesforce prema SAP-u.** Zaključeni poslovi teku u SAP radi isporuke, fakturiranja i ažuriranja zaliha. Bez upravljane integracije to se obično odvija preko izvoza u proračunske tablice ili krhkih skripti. Moj tekst o [tome zašto integracije Salesforcea i ERP-a ne uspijevaju](/hr/why-erp-integration-with-salesforce-fails-and-how-to-fix-it/) obrađuje pogreške u dizajnu.
+
+Ako integracijski radovi na Vašem programu već kasne, tekst o [kašnjenjima isporuke SAP Integration Suitea](/hr/sap-integration-suite-delivery-delays/) obrađuje uobičajene uzroke. Pregled platformi u tekstu o [SAP integracijskim platformama](/hr/sap-implementation/sap-integration-platforms/) uspoređuje opcije jednu uz drugu.
+
+## Često postavljana pitanja
+
+<details>
+<summary>Što je SAP CPI i kako se danas zove?</summary>
+
+SAP CPI je kratica za Cloud Platform Integration. Danas je to mogućnost Cloud Integration unutar rješenja SAP Integration Suite na SAP BTP-u, uz API Management, Event Mesh i alate za integraciju partnera. „CPI" je i dalje svakodnevni naziv za izradu integracijskih tokova.
+
+</details>
+
+<details>
+<summary>Po čemu se SAP CPI razlikuje od SAP PI/PO-a?</summary>
+
+PI (Process Integration) i PO (Process Orchestration) su on-premise middleware s dubokim prilagođavanjem i punom kontrolom nad infrastrukturom. CPI je usluga u oblaku na SAP BTP-u koju za Vas vodi SAP, a novi adapteri i sadržaj stižu centralno.
+
+PI/PO 7.5 dobiva samo održavanje. Standardno održavanje završava krajem 2027., a produljeno krajem 2030., pa svaka PI/PO okolina treba plan migracije.
+
+</details>
+
+<details>
+<summary>Je li SAP CPI isto što i SAP BTP?</summary>
+
+Ne. SAP BTP je platforma: razvoj aplikacija, podaci, analitika, AI i integracija. CPI je integracijska usluga na njoj. Pri određivanju opsega razlikuju se proračun i vještine: BTP arhitekt radi preko više usluga, a CPI specijalist odgovoran je za tokove, adaptere i mapiranja.
+
+</details>
+
+<details>
+<summary>Koliko je teško naučiti SAP CPI?</summary>
+
+Podnošljivo, ali ne jednostavno. Standardni tokovi slijede dokumentirane obrasce, a grafički dizajner pomaže. Teški su dijelovi razumijevanje poslovnog procesa dovoljno dobro da se osmisli tok, ispravno rukovanje pogreškama i ponovnim pokušajima te pisanje Groovyja ili JavaScripta za složena mapiranja. Prvo naučite poslovni proces, a zatim integraciju.
+
+</details>
+
+<details>
+<summary>Što trebam uzeti u obzir pri migraciji sa SAP PI/PO-a na CPI?</summary>
+
+Popišite svako sučelje s volumenom, učestalošću, adapterom i kritičnošću. Za svako odlučite: ponovno izgraditi, prilagoditi ili ukinuti. Modelirajte troškove po broju poruka prema stvarnim volumenima. Selite po valovima uz povratni put i rano planirajte regresijsko testiranje s B2B partnerima i ciljevima izvan SAP-a, jer se oni tiho kvare. Za tokove koji moraju ostati on-premise koristite Edge Integration Cell.
+
+</details>
+
+<details>
+<summary>Koja je razlika između okruženja Neo i Cloud Foundry za SAP CPI?</summary>
+
+Oba su okruženja SAP BTP-a. Neo je starije, SAP-ovo vlasničko okruženje i gasi se 31. prosinca 2028. Multi-cloud okruženje temeljeno na Cloud Foundryju mjesto je kamo ide SAP-ov razvoj. Svaki CPI tenant koji je još u okruženju Neo treba plan migracije već sada; novi tenanti ne bi trebali počinjati tamo.
+
+</details>

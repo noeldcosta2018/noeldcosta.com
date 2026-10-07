@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import ModulePicker from "@/components/tools/ModulePicker";
 import { getModuleById } from "@/lib/sap-modules";
+import { TOOL_COPY_EN, type ToolCopy } from "@/components/tools/tool-copy";
 
 export type FieldDef =
   | {
@@ -76,6 +77,8 @@ export interface ToolFormProps {
   onStreamChunk?: (partial: string) => void;
   onError: (msg: string) => void;
   onSubmitting: (isSubmitting: boolean) => void;
+  /** Widget text, already translated on translated pages. Defaults to English. */
+  copy?: ToolCopy;
 }
 
 function initialValue(field: FieldDef): unknown {
@@ -100,6 +103,7 @@ export default function ToolForm({
   onStreamChunk,
   onError,
   onSubmitting,
+  copy = TOOL_COPY_EN,
 }: ToolFormProps) {
   const [values, setValues] = useState<Record<string, unknown>>(() => {
     const init: Record<string, unknown> = {};
@@ -188,17 +192,17 @@ export default function ToolForm({
         // needs a value.
         const cleanMsg = (msg: string) =>
           msg.startsWith("Invalid option")
-            ? "Please select an option"
+            ? copy.selectOption
             : msg.startsWith("Invalid input: expected")
-              ? "This field is required"
+              ? copy.fieldRequired
               : msg;
         const fieldList = Object.entries(fieldErrs)
           .map(([field, errs]) => `${field}: ${errs.map(cleanMsg).join(", ")}`)
           .filter(Boolean);
         if (fieldList.length > 0) {
-          message = `${message} — ${fieldList.join("; ")}`;
+          message = `${message}: ${fieldList.join("; ")}`;
         } else if (e.details?.formErrors?.length) {
-          message = `${message} — ${e.details.formErrors.join("; ")}`;
+          message = `${message}: ${e.details.formErrors.join("; ")}`;
         }
         onError(message);
         return;
@@ -256,11 +260,11 @@ export default function ToolForm({
     }
   }
 
-  const inputBase =
-    "w-full bg-paper border border-corbeau/15 rounded-lg px-3 py-2 text-corbeau text-sm placeholder:text-silver focus:outline-none focus:border-papaya transition-colors";
+  // Fill, border, colour and focus ring come from `.nda-tool` in nd-archives.css.
+  const inputBase = "w-full px-3.5 py-2.5 text-[15px] leading-snug";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="grid gap-6">
       {fields.map((field) => {
         // A field is "required" by default for selects, multiselects,
         // and texts/numbers explicitly marked required. Required-ness
@@ -281,17 +285,26 @@ export default function ToolForm({
         <div key={field.name}>
           {/* ModulePicker renders its own header (label + selected count),
               so suppress the standard uppercase mono label for that kind. */}
-          {field.kind !== "modulePicker" && (
-            <label className="block font-mono text-[0.72rem] font-semibold uppercase tracking-[1.5px] text-night mb-1.5">
+          {field.kind !== "modulePicker" && field.kind !== "multiselect" && field.kind !== "boolean" && (
+            <label htmlFor={`tf-${field.name}`} className="nda-tool-label">
               {field.label}
               {isRequired && (
-                <span className="text-papaya ml-1" aria-hidden>*</span>
+                <span className="req" aria-hidden>*</span>
               )}
             </label>
+          )}
+          {(field.kind === "multiselect" || field.kind === "boolean") && (
+            <p id={`tf-${field.name}-label`} className="nda-tool-label">
+              {field.label}
+              {isRequired && (
+                <span className="req" aria-hidden>*</span>
+              )}
+            </p>
           )}
 
           {field.kind === "text" && (
             <input
+              id={`tf-${field.name}`}
               type="text"
               className={inputBase}
               placeholder={field.placeholder}
@@ -304,6 +317,7 @@ export default function ToolForm({
 
           {field.kind === "textarea" && (
             <textarea
+              id={`tf-${field.name}`}
               className={inputBase}
               placeholder={field.placeholder}
               maxLength={field.maxLength}
@@ -315,6 +329,7 @@ export default function ToolForm({
 
           {field.kind === "number" && (
             <input
+              id={`tf-${field.name}`}
               type="number"
               className={inputBase}
               placeholder={field.placeholder}
@@ -328,13 +343,14 @@ export default function ToolForm({
 
           {field.kind === "select" && (
             <select
+              id={`tf-${field.name}`}
               className={inputBase}
               value={(values[field.name] as string) || ""}
               onChange={(e) => set(field.name, e.target.value)}
               required={isRequired}
             >
               <option value="" disabled>
-                Select…
+                {copy.select}
               </option>
               {field.options.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -345,7 +361,7 @@ export default function ToolForm({
           )}
 
           {field.kind === "multiselect" && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2" role="group" aria-labelledby={`tf-${field.name}-label`}>
               {field.options.map((o) => {
                 const selected = (
                   (values[field.name] as string[]) ?? []
@@ -354,12 +370,9 @@ export default function ToolForm({
                   <button
                     key={o.value}
                     type="button"
+                    aria-pressed={selected}
                     onClick={() => toggleMulti(field.name, o.value)}
-                    className={`px-3 py-1.5 rounded-lg text-[0.78rem] font-medium border transition-colors ${
-                      selected
-                        ? "bg-papaya border-papaya text-corbeau"
-                        : "bg-paper border-corbeau/15 text-night hover:border-papaya/50"
-                    }`}
+                    className="nda-toggle"
                   >
                     {o.label}
                   </button>
@@ -371,27 +384,29 @@ export default function ToolForm({
           {field.kind === "tags" && (
             <>
               <input
+                id={`tf-${field.name}`}
                 type="text"
                 className={inputBase}
-                placeholder={field.placeholder ?? "Comma-separated values"}
+                placeholder={field.placeholder ?? copy.commaPlaceholder}
                 value={(values[field.name] as string) || ""}
                 onChange={(e) => set(field.name, e.target.value)}
               />
-              <p className="text-[0.75rem] text-eyebrow mt-1">
-                Separate multiple values with commas.
+              <p className="text-[0.8rem] text-eyebrow mt-1.5">
+                {copy.commaHint}
               </p>
             </>
           )}
 
           {field.kind === "boolean" && (
-            <label className="flex items-center gap-3 cursor-pointer">
+            <label className="nda-toggle" style={{ cursor: "pointer" }}>
               <input
                 type="checkbox"
-                className="w-4 h-4 rounded accent-papaya"
+                className="w-4 h-4"
+                aria-labelledby={`tf-${field.name}-label`}
                 checked={(values[field.name] as boolean) || false}
                 onChange={(e) => set(field.name, e.target.checked)}
               />
-              <span className="text-sm text-night">Yes</span>
+              <span>{copy.yes}</span>
             </label>
           )}
 
@@ -401,6 +416,7 @@ export default function ToolForm({
               label={field.label}
               value={(values[field.name] as string[]) ?? []}
               onChange={(next) => set(field.name, next)}
+              copy={copy}
             />
           )}
         </div>
@@ -410,9 +426,11 @@ export default function ToolForm({
       <button
         type="submit"
         disabled={submitting}
-        className="w-full bg-papaya text-corbeau font-bold text-sm py-3 px-6 rounded-lg transition-all hover:bg-[#fdaa78] disabled:opacity-50 disabled:cursor-not-allowed"
+        className="nd-btn nd-btn-primary"
+        style={{ width: "100%", justifyContent: "center", minHeight: 48, fontSize: 15 }}
       >
-        {submitting ? "Generating…" : submitLabel}
+        {submitting ? copy.generating : submitLabel}
+        {!submitting && <span aria-hidden="true">→</span>}
       </button>
     </form>
   );

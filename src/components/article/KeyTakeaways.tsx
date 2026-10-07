@@ -1,11 +1,9 @@
-"use client";
-
 import FadeUp from "@/components/article/FadeUp";
 
 /**
- * Executive summary card with staggered scroll-reveal per bullet.
- * Each item fades up 60ms after the previous, giving the list a
- * reading-speed cascade feel rather than everything popping at once.
+ * Executive summary near the top of an article: the frontmatter
+ * keyTakeaways as a numbered list on a highlighted tile. One restrained
+ * reveal for the whole block, not per item.
  */
 export default function KeyTakeaways({
   title = "Key takeaways",
@@ -17,26 +15,18 @@ export default function KeyTakeaways({
   if (!items.length) return null;
   return (
     <FadeUp>
-      <aside
-        className="my-10 p-6 md:p-8 rounded-xl bg-cream border border-corbeau/[0.06]"
-        aria-label={title}
-      >
-        <p className="font-mono text-[0.72rem] font-medium tracking-[2px] uppercase text-papaya mb-4">
-          {title}
-        </p>
-        <ul className="space-y-3">
+      <aside className="nd-takeaways" aria-label={title}>
+        <p className="nd-takeaways-label">{title}</p>
+        <ol className="nd-takeaways-list">
           {items.map((item, i) => (
-            <FadeUp key={i} delay={i * 60}>
-              <li className="flex gap-3 text-corbeau leading-[1.6] text-[0.98rem]">
-                <span
-                  aria-hidden
-                  className="mt-[0.55rem] flex-shrink-0 w-1.5 h-1.5 rounded-full bg-papaya"
-                />
-                <span>{item}</span>
-              </li>
-            </FadeUp>
+            <li key={i}>
+              <span className="n" aria-hidden="true">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span>{item}</span>
+            </li>
           ))}
-        </ul>
+        </ol>
       </aside>
     </FadeUp>
   );

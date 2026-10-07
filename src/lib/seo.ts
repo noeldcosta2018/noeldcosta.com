@@ -1,8 +1,15 @@
 import type { Metadata } from "next";
 import type { Locale, PostRecord, PageRecord } from "./content";
 import { LOCALES, CATEGORIES } from "./content";
+import { PUBLISHED_TRANSLATED_LOCALES, buildLocalizedPath } from "./locale-url";
+import {
+  buildLanguageAlternates,
+  hreflangCode,
+  resolveCanonicalUrl,
+  SEO_SITE_URL,
+} from "./seo-graph";
 
-export const SITE_URL = "https://noeldcosta.com";
+export const SITE_URL = SEO_SITE_URL;
 export const SITE_NAME = "Noel D'Costa";
 export const AUTHOR = {
   name: "Noel D'Costa",
@@ -17,12 +24,43 @@ export const AUTHOR = {
   ],
 };
 
-// English-only flat URL with a trailing slash, matching the WordPress URL
-// contract (every legacy URL ends in `/`) and Next.js's `trailingSlash: true`
-// config. Locale parameter retained for call-site compatibility — GTranslate
-// handles all non-English variants externally on its proxy. See CLAUDE.md.
-function flatPath(_locale: Locale, slug: string): string {
-  return `/${slug}/`;
+// Public article/page path with the repository's required trailing slash.
+// English remains unprefixed; translated content uses the approved public
+// locale prefix contract (`zh` content maps to public `zh-CN`).
+function flatPath(locale: Locale, slug: string): string {
+  return buildLocalizedPath(locale, slug);
+}
+
+/** Branded fallback for pages without their own hero image (public/og-image.png). */
+export const DEFAULT_OG_IMAGE = {
+  url: "/og-image.png",
+  width: 1200,
+  height: 630,
+  alt: "Noel D'Costa: enterprise applications, data and AI",
+};
+
+function openGraphLocale(locale: Locale): string {
+  const locales = {
+    en: "en",
+    ar: "ar_AE",
+    de: "de_DE",
+    es: "es_ES",
+    fr: "fr_FR",
+    hi: "hi_IN",
+    it: "it_IT",
+    ja: "ja_JP",
+    ko: "ko_KR",
+    nl: "nl_NL",
+    pt: "pt_PT",
+    ru: "ru_RU",
+    tr: "tr_TR",
+    zh: "zh_CN",
+    el: "el_GR",
+    hr: "hr_HR",
+    "zh-TW": "zh_TW",
+  } as const satisfies Record<Locale, string>;
+
+  return locales[locale];
 }
 
 /**
@@ -65,20 +103,75 @@ export function extractFaqItems(body: string): { question: string; answer: strin
   return items;
 }
 
+/**
+ * Meta description that fits the search result snippet (about 160 characters).
+ * Translations often run 20 to 40% longer than English: cut at the last full
+ * sentence that fits, otherwise at the last word boundary with an ellipsis.
+ */
+export function clampDescription(text: string | undefined, max = 160): string | undefined {
+  if (!text) return text;
+  const clean = text.replace(/\s+/g, " ").trim();
+  if ([...clean].length <= max) return clean;
+  const chars = [...clean];
+  const head = chars.slice(0, max).join("");
+  const sentence = head.match(/^[\s\S]*[.!?。！？।](?=\s|$)/u)?.[0];
+  if (sentence && [...sentence].length >= max * 0.6) return sentence.trim();
+  const cut = chars.slice(0, max - 1).join("");
+  const space = cut.lastIndexOf(" ");
+  const base = space > max * 0.6 ? cut.slice(0, space) : cut;
+  return `${base.replace(/[\s,;:.]+$/u, "")}…`;
+}
+
+// Brand tails the translated WordPress titles carry ("- Noel DCosta",
+// "- 노엘 디코스타", "— Ноэль ДКоста"), sometimes twice and with zero-width spaces.
+const BRAND_TAIL =
+  /\s*[-\u{2013}\u{2014}|]\s*[\u{200b}\s]*(?:noel\s*d['\u{2019}]?\s*costa(?:\.com)?|noeldcosta(?:\.com)?|नोएल\s*डी'?कोस्टा|노엘\s*디코스타|Ноэль\s*Д'?Коста|ノエル・ディコスタ|نويل\s*دي\s*كوستا|نويل\s*ديكوستا)[\u{200b}\s]*$/iu;
+
+/**
+ * Translated title without its trailing brand, so documentTitle adds the one
+ * brand suffix when it fits. English titles are not passed through this.
+ */
+export function stripBrandSuffix(title: string): string {
+  let out = title.trim();
+  for (let next = out.replace(BRAND_TAIL, ""); next !== out && next; next = out.replace(BRAND_TAIL, "")) out = next;
+  return out;
+}
+
+/**
+ * Document title for content pages. The " | Noel D'Costa" suffix is added only
+ * when the whole title still fits in about 65 characters, so search results
+ * show the real title instead of a truncated brand.
+ */
+export function documentTitle(title: string): { absolute: string } {
+  const brand = " | Noel D'Costa";
+  const clean = title.trim();
+  if (/noel d.?costa/i.test(clean)) return { absolute: clean };
+  return { absolute: clean.length + brand.length <= 65 ? `${clean}${brand}` : clean };
+}
+
 // ─── Page Metadata builders (for Next.js `generateMetadata`) ─────────────
 
 export function buildPostMetadata(post: PostRecord): Metadata {
   const fm = post.frontmatter;
-  const title = fm.metaTitle || fm.title;
-  const description =
-    fm.metaDescription || fm.excerpt || `${fm.title} — by Noel D'Costa.`;
-  const canonical =
-    fm.canonical || `${SITE_URL}${flatPath(post.locale, fm.slug)}`;
+  const translated = post.locale !== "en";
+  // Translated titles and descriptions keep their words; only the brand tail
+  // and the length past the snippet limit go. English is unchanged.
+  const title = translated ? stripBrandSuffix(fm.metaTitle || fm.title) : fm.metaTitle || fm.title;
+  const rawDescription =
+    fm.metaDescription || fm.excerpt || `${fm.title}, by Noel D'Costa.`;
+  const description = translated ? clampDescription(rawDescription) ?? rawDescription : rawDescription;
+  const canonical = resolveCanonicalUrl({
+    kind: "post",
+    slug: fm.slug,
+    locale: post.locale,
+    frontmatter: fm,
+  });
+  const languages = buildLanguageAlternates("post", post);
 
   return {
-    title,
+    title: documentTitle(title),
     description,
-    alternates: { canonical },
+    alternates: { canonical, ...(languages ? { languages } : {}) },
     // Only override the layout's default robots config when the post is
     // explicitly noindex; otherwise let the parent indexing directives flow
     // through (omitting the field — passing `undefined` would shadow it).
@@ -89,35 +182,46 @@ export function buildPostMetadata(post: PostRecord): Metadata {
       url: canonical,
       siteName: SITE_NAME,
       type: "article",
-      locale: "en",
+      locale: openGraphLocale(post.locale),
       publishedTime: toIso(fm.date),
       modifiedTime: toIso(fm.updated),
       authors: [AUTHOR.name],
       images: fm.hero
         ? [{ url: fm.hero, alt: fm.heroAlt || fm.title }]
-        : undefined,
+        : [DEFAULT_OG_IMAGE],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: fm.hero ? [fm.hero] : undefined,
+      images: fm.hero ? [fm.hero] : [DEFAULT_OG_IMAGE.url],
     },
   };
 }
 
-export function buildPageMetadata(page: PageRecord): Metadata {
+export function buildPageMetadata(
+  page: PageRecord,
+  publicPath?: string,
+): Metadata {
   const fm = page.frontmatter;
-  const title = fm.metaTitle || fm.title;
-  const description =
-    fm.metaDescription || fm.excerpt || `${fm.title} — Noel D'Costa.`;
-  const canonical =
-    fm.canonical || `${SITE_URL}${flatPath(page.locale, fm.slug)}`;
+  const translated = page.locale !== "en";
+  const title = translated ? stripBrandSuffix(fm.metaTitle || fm.title) : fm.metaTitle || fm.title;
+  const rawDescription =
+    fm.metaDescription || fm.excerpt || `${fm.title}. Noel D'Costa.`;
+  const description = translated ? clampDescription(rawDescription) ?? rawDescription : rawDescription;
+  const canonical = resolveCanonicalUrl({
+    kind: "page",
+    slug: fm.slug,
+    locale: page.locale,
+    frontmatter: fm,
+    publicPath,
+  });
+  const languages = buildLanguageAlternates("page", page);
 
   return {
-    title,
+    title: documentTitle(title),
     description,
-    alternates: { canonical },
+    alternates: { canonical, ...(languages ? { languages } : {}) },
     // Only override the layout's default robots config when the post is
     // explicitly noindex; otherwise let the parent indexing directives flow
     // through (omitting the field — passing `undefined` would shadow it).
@@ -128,16 +232,76 @@ export function buildPageMetadata(page: PageRecord): Metadata {
       url: canonical,
       siteName: SITE_NAME,
       type: "website",
-      locale: "en",
-      images: fm.hero ? [{ url: fm.hero }] : undefined,
+      locale: openGraphLocale(page.locale),
+      images: fm.hero ? [{ url: fm.hero }] : [DEFAULT_OG_IMAGE],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: fm.hero ? [fm.hero] : undefined,
+      images: fm.hero ? [fm.hero] : [DEFAULT_OG_IMAGE.url],
     },
   };
+}
+
+interface ArchiveMetadataInput {
+  title: string;
+  description: string;
+  canonical: string;
+  /** hreflang alternates, only for surfaces that are language-graph members. */
+  languages?: Record<string, string>;
+}
+
+interface StaticPageMetadataInput extends ArchiveMetadataInput {
+  robots?: Metadata["robots"];
+}
+
+/** Metadata for an English static surface with complete route-level socials. */
+export function buildStaticPageMetadata({
+  title,
+  description,
+  canonical,
+  languages,
+  robots,
+}: StaticPageMetadataInput): Metadata {
+  description = clampDescription(description) ?? description;
+  return {
+    title: { absolute: title },
+    description,
+    alternates: { canonical, ...(languages ? { languages } : {}) },
+    ...(robots ? { robots } : {}),
+    openGraph: {
+      title,
+      description,
+      url: canonical,
+      siteName: SITE_NAME,
+      type: "website",
+      locale: "en",
+      images: [DEFAULT_OG_IMAGE],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [DEFAULT_OG_IMAGE.url],
+    },
+  };
+}
+
+/**
+ * Metadata for non-content archive surfaces. Archives retain their existing
+ * canonical but never participate in the reciprocal content language graph.
+ */
+export function buildArchiveMetadata({
+  title,
+  description,
+  canonical,
+  languages,
+}: ArchiveMetadataInput): Metadata {
+  // Archive callers already supply the approved branded title. The shared
+  // static-page boundary marks it absolute so the root title template cannot
+  // add the brand a second time.
+  return buildStaticPageMetadata({ title, description, canonical, languages });
 }
 
 // ─── Topic / mentions defaults — entity disambiguation for Google ────────
@@ -331,7 +495,12 @@ function authorPerson() {
  */
 export function articleJsonLd(post: PostRecord) {
   const fm = post.frontmatter;
-  const url = `${SITE_URL}${flatPath(post.locale, fm.slug)}`;
+  const url = resolveCanonicalUrl({
+    kind: "post",
+    slug: fm.slug,
+    locale: post.locale,
+    frontmatter: fm,
+  });
   const heroAbsolute = fm.hero
     ? fm.hero.startsWith("http")
       ? fm.hero
@@ -382,12 +551,12 @@ export function articleJsonLd(post: PostRecord) {
     isPartOf: {
       "@type": "Blog",
       "@id": `${SITE_URL}/#blog`,
-      name: `${SITE_NAME} — ERP & AI`,
+      name: `${SITE_NAME} | ERP & AI`,
       url: SITE_URL,
     },
     articleSection: cat?.label,
     wordCount: countWords(post.body),
-    inLanguage: "en",
+    inLanguage: hreflangCode(post.locale),
     speakable: {
       "@type": "SpeakableSpecification",
       cssSelector: ["h1", "header p"],
@@ -421,7 +590,8 @@ export function websiteJsonLd() {
     name: SITE_NAME,
     url: SITE_URL,
     publisher: { "@id": `${SITE_URL}/#noel-dcosta` },
-    inLanguage: "en",
+    // English plus every language the site publishes translated pages in.
+    inLanguage: ["en", ...PUBLISHED_TRANSLATED_LOCALES],
   };
 }
 
@@ -434,7 +604,7 @@ export function blogJsonLd() {
     "@context": "https://schema.org",
     "@type": "Blog",
     "@id": `${SITE_URL}/#blog`,
-    name: `${SITE_NAME} — ERP & AI`,
+    name: `${SITE_NAME} | ERP & AI`,
     url: SITE_URL,
     publisher: { "@id": `${SITE_URL}/#noel-dcosta` },
     inLanguage: "en",
@@ -447,11 +617,17 @@ export function blogJsonLd() {
  * in parity with the WordPress origin. References the sitewide WebSite and
  * Person nodes via `@id` rather than duplicating them.
  */
-export function pageWebPageJsonLd(page: PageRecord) {
+export function pageWebPageJsonLd(page: PageRecord, publicPath?: string) {
   const fm = page.frontmatter;
-  const url = `${SITE_URL}${flatPath(page.locale, fm.slug)}`;
+  const url = resolveCanonicalUrl({
+    kind: "page",
+    slug: fm.slug,
+    locale: page.locale,
+    frontmatter: fm,
+    publicPath,
+  });
   const description =
-    fm.metaDescription || fm.excerpt || `${fm.title} — Noel D'Costa.`;
+    fm.metaDescription || fm.excerpt || `${fm.title}. Noel D'Costa.`;
   const heroAbsolute = fm.hero
     ? fm.hero.startsWith("http")
       ? fm.hero
@@ -466,7 +642,7 @@ export function pageWebPageJsonLd(page: PageRecord) {
     url,
     name: fm.title,
     description,
-    inLanguage: "en",
+    inLanguage: hreflangCode(page.locale),
     isPartOf: { "@id": `${SITE_URL}/#website` },
     author: { "@id": `${SITE_URL}/#noel-dcosta` },
     ...(heroAbsolute
@@ -483,11 +659,17 @@ export function pageWebPageJsonLd(page: PageRecord) {
  * thin pages (FAQs, redirect shells) don't carry an Article claim they can't
  * defend.
  */
-export function pageArticleJsonLd(page: PageRecord) {
+export function pageArticleJsonLd(page: PageRecord, publicPath?: string) {
   const fm = page.frontmatter;
-  const url = `${SITE_URL}${flatPath(page.locale, fm.slug)}`;
+  const url = resolveCanonicalUrl({
+    kind: "page",
+    slug: fm.slug,
+    locale: page.locale,
+    frontmatter: fm,
+    publicPath,
+  });
   const description =
-    fm.metaDescription || fm.excerpt || `${fm.title} — Noel D'Costa.`;
+    fm.metaDescription || fm.excerpt || `${fm.title}. Noel D'Costa.`;
   const heroAbsolute = fm.hero
     ? fm.hero.startsWith("http")
       ? fm.hero
@@ -508,7 +690,7 @@ export function pageArticleJsonLd(page: PageRecord) {
     publisher: personRef,
     mainEntityOfPage: { "@type": "WebPage", "@id": `${url}#webpage` },
     wordCount: countWords(page.body),
-    inLanguage: "en",
+    inLanguage: hreflangCode(page.locale),
   };
 }
 
@@ -543,16 +725,21 @@ export function aboutPageJsonLd(url: string) {
 }
 
 /** ContactPage schema. */
-export function contactPageJsonLd(url: string) {
+export function contactPageJsonLd(
+  url: string,
+  locale: Locale = "en",
+  name = `Contact ${AUTHOR.name}`,
+  description = `Get in touch with ${AUTHOR.name} for ERP advisory engagements.`,
+) {
   return {
     "@context": "https://schema.org",
     "@type": "ContactPage",
     url,
-    name: `Contact ${AUTHOR.name}`,
-    description: `Get in touch with ${AUTHOR.name} for ERP advisory engagements.`,
+    name,
+    description,
     mainEntity: { "@id": `${SITE_URL}/#noel-dcosta` },
     isPartOf: { "@id": `${SITE_URL}/#website` },
-    inLanguage: "en",
+    inLanguage: hreflangCode(locale),
   };
 }
 

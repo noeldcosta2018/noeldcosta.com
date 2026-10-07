@@ -5,8 +5,8 @@
 
 import { useState, useCallback, useId, useMemo, useRef } from "react";
 import FadeUp from "@/components/article/FadeUp";
-import { calculate, formatCurrency, formatBand } from "@/lib/erp-calculator/calc-engine";
-import { COUNTRIES, REGIONS, getCountriesByRegion } from "@/lib/erp-calculator/countries";
+import { calculate, formatCurrency } from "@/lib/erp-calculator/calc-engine";
+import { REGIONS, getCountriesByRegion } from "@/lib/erp-calculator/countries";
 import { PRESET_SCENARIOS } from "@/lib/erp-calculator/scenarios";
 import type {
   CalculatorInputs,
@@ -89,7 +89,7 @@ function Label({
   return (
     <label
       htmlFor={htmlFor}
-      className="block text-sm font-semibold text-corbeau mb-1"
+      className="block text-sm font-semibold text-corbeau mb-1.5"
     >
       {children}
     </label>
@@ -98,7 +98,7 @@ function Label({
 
 function Hint({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-xs text-eyebrow mt-1 leading-relaxed">{children}</p>
+    <p className="text-[12.5px] text-eyebrow mt-1.5 leading-relaxed">{children}</p>
   );
 }
 
@@ -124,7 +124,7 @@ function Select<T extends string>({
       id={id}
       value={value}
       onChange={(e) => onChange(e.target.value as T)}
-      className={`w-full rounded border border-corbeau/15 bg-paper text-corbeau text-sm px-3 py-2.5 focus:outline-none focus:border-papaya focus:ring-2 focus:ring-papaya/15 transition-colors ${className}`}
+      className={`w-full text-[15px] px-3.5 py-2.5 ${className}`}
     >
       {options.map((o) => (
         <option key={o.value} value={o.value}>
@@ -162,7 +162,7 @@ function NumberInput({
       max={max}
       step={step}
       placeholder={placeholder}
-      className="w-full rounded border border-corbeau/15 bg-paper text-corbeau text-sm px-3 py-2.5 focus:outline-none focus:border-papaya focus:ring-2 focus:ring-papaya/15 transition-colors"
+      className="w-full text-[15px] px-3.5 py-2.5"
     />
   );
 }
@@ -185,7 +185,7 @@ function TextInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full rounded border border-corbeau/15 bg-paper text-corbeau text-sm px-3 py-2.5 focus:outline-none focus:border-papaya focus:ring-2 focus:ring-papaya/15 transition-colors"
+      className="w-full text-[15px] px-3.5 py-2.5"
     />
   );
 }
@@ -208,10 +208,11 @@ function RadioCard<T extends string | number>({
     <button
       type="button"
       onClick={() => onClick(value)}
-      className={`text-left rounded-lg border px-4 py-3 transition-all ${
+      aria-pressed={active}
+      className={`text-left rounded-[10px] border px-4 py-3 transition-all min-h-[48px] ${
         active
-          ? "border-papaya bg-papaya/8 ring-1 ring-papaya"
-          : "border-corbeau/12 bg-paper hover:border-papaya/50 hover:bg-papaya/4"
+          ? "border-papaya bg-papaya/12 ring-1 ring-papaya"
+          : "border-corbeau/15 bg-bone hover:border-papaya/60"
       }`}
     >
       <p className={`text-sm font-semibold ${active ? "text-papaya" : "text-corbeau"}`}>
@@ -294,15 +295,23 @@ function SliderField({
   );
 }
 
+// h2: on translated pages the tool follows the banner H1 directly.
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="font-display font-bold text-corbeau text-base mb-4 pb-2 border-b border-corbeau/8">
+    <h2 className="font-display font-bold text-corbeau text-[17px] mb-4 pb-3 border-b border-corbeau/10">
       {children}
-    </h3>
+    </h2>
   );
 }
 
 // ─── Warning banner ───────────────────────────────────────────────────────────
+
+// Severity carries meaning, so it keeps its colour in both themes.
+const SEVERITY_COLOR: Record<string, string> = {
+  critical: "#e5484d",
+  warning: "#d97706",
+  info: "var(--accent2)",
+};
 
 function WarningBanner({
   warnings,
@@ -319,25 +328,21 @@ function WarningBanner({
       {[...critical, ...regular].map((w, i) => (
         <div
           key={i}
-          className={`rounded-lg border px-4 py-3 ${
-            w.severity === "critical"
-              ? "border-red-200 bg-red-50"
-              : w.severity === "warning"
-              ? "border-amber-200 bg-amber-50"
-              : "border-blue-200 bg-blue-50"
-          }`}
+          className="rounded-r-[10px] border-l-2 bg-[var(--surface-overlay)] px-4 py-3"
+          style={{ borderLeftColor: SEVERITY_COLOR[w.severity] ?? "var(--accent2)" }}
         >
-          <div className="flex gap-2 items-start">
-            <span className="text-base shrink-0 mt-0.5">
-              {w.severity === "critical" ? "🔴" : w.severity === "warning" ? "⚠️" : "ℹ️"}
-            </span>
+          <div className="flex gap-3 items-start">
+            <span
+              aria-hidden
+              className="mt-1.5 w-2 h-2 rounded-full shrink-0"
+              style={{ background: SEVERITY_COLOR[w.severity] ?? "var(--accent2)" }}
+            />
             <div>
-              <p className={`text-sm font-semibold ${
-                w.severity === "critical" ? "text-red-700" : w.severity === "warning" ? "text-amber-700" : "text-blue-700"
-              }`}>
+              <p className="text-sm font-semibold text-corbeau">
+                <span className="sr-only">{w.severity}: </span>
                 {w.workstream}: {w.message}
               </p>
-              <p className="text-xs text-night mt-0.5 leading-relaxed">{w.detail}</p>
+              <p className="text-[13px] text-night mt-1 leading-relaxed">{w.detail}</p>
             </div>
           </div>
         </div>
@@ -350,9 +355,9 @@ function WarningBanner({
 
 function DisclaimerBanner() {
   return (
-    <div className="rounded-lg border border-corbeau/10 bg-cream px-4 py-3 mb-6">
-      <p className="text-xs text-night leading-relaxed">
-        <span className="font-semibold text-corbeau">Directional estimate only.</span>{" "}
+    <div className="nda-note mb-6">
+      <p className="text-[13.5px] leading-relaxed">
+        <b>Directional estimate only.</b>{" "}
         This tool produces budget ranges based on multiplier-based assumptions, not vendor quotes.
         Use it to frame early business-case conversations. Engage your SI and software vendor for
         programme-specific pricing before committing budget.
@@ -391,16 +396,16 @@ function StepIndicator({
                 <span
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
                     active
-                      ? "border-papaya bg-papaya text-white"
+                      ? "border-papaya bg-papaya text-[var(--accent-fg)]"
                       : done
                       ? "border-papaya bg-papaya/15 text-papaya"
-                      : "border-corbeau/20 bg-bone text-eyebrow"
+                      : "border-corbeau/25 bg-bone text-eyebrow"
                   }`}
                 >
                   {done && !active ? "✓" : step.id}
                 </span>
                 <span
-                  className={`text-[10px] font-semibold hidden sm:block ${
+                  className={`text-[11px] font-semibold hidden sm:block ${
                     active ? "text-papaya" : done ? "text-night" : "text-eyebrow"
                   }`}
                 >
@@ -466,10 +471,11 @@ function ModuleGrid({
                   key={m.value}
                   type="button"
                   onClick={() => toggle(m.value)}
-                  className={`text-left rounded border px-3 py-2 text-xs font-medium transition-all ${
+                  aria-pressed={on}
+                  className={`text-left rounded-[10px] border px-3 py-2.5 text-[13px] font-medium transition-all ${
                     on
-                      ? "border-papaya bg-papaya/10 text-papaya"
-                      : "border-corbeau/12 text-night hover:border-papaya/40 hover:bg-papaya/4"
+                      ? "border-papaya bg-papaya/12 text-corbeau ring-1 ring-papaya"
+                      : "border-corbeau/15 bg-bone text-night hover:border-papaya/60"
                   }`}
                 >
                   {m.label}
@@ -495,12 +501,12 @@ function CountryRow({
   onRemove: () => void;
 }) {
   return (
-    <div className="rounded-lg border border-corbeau/12 bg-cream p-4 space-y-3">
+    <div className="rounded-[12px] border border-corbeau/15 bg-[var(--surface-overlay)] p-4 space-y-3">
       <div className="flex items-center justify-between gap-2">
         <select
           value={entry.countryCode}
           onChange={(e) => onChange({ ...entry, countryCode: e.target.value })}
-          className="flex-1 rounded border border-corbeau/15 bg-paper text-corbeau text-sm px-3 py-2 focus:outline-none focus:border-papaya"
+          className="flex-1 text-sm px-3 py-2"
           aria-label="Country"
         >
           {REGIONS.map((region) => (
@@ -516,7 +522,7 @@ function CountryRow({
         <button
           type="button"
           onClick={onRemove}
-          className="text-eyebrow hover:text-canyon text-sm px-2 py-1 shrink-0"
+          className="nda-icon-btn shrink-0"
           aria-label="Remove country"
         >
           ✕
@@ -573,18 +579,19 @@ function CountryRow({
 
 // ─── SVG bar chart ────────────────────────────────────────────────────────────
 
+// Mid-tone series colours that read on both the dark and the light surface.
 const CHART_COLORS = [
-  "#fc985a", // papaya — software
-  "#e2826b", // canyon — SI
-  "#282937", // haiti — internal
-  "#4c4d59", // night — data
-  "#7e7e87", // silver — integration
-  "#a6a6ac", // moon — change
-  "#0D9488", // teal — testing
-  "#2C6FBF", // blue — infrastructure
-  "#7B61A8", // purple — localization
-  "#d97706", // amber — PMO
-  "#ef4444", // red — contingency
+  "var(--accent)", // software
+  "var(--area-apps)", // SI
+  "var(--area-data)", // internal
+  "#7B61A8", // data
+  "#d97706", // integration
+  "var(--accent2)", // change
+  "#0D9488", // testing
+  "#2C6FBF", // infrastructure
+  "var(--color-canyon)", // localization
+  "var(--mut2)", // PMO
+  "#e5484d", // contingency
 ];
 
 const CHART_LABELS: Record<string, string> = {
@@ -633,13 +640,13 @@ function CostBreakdownChart({
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex-1 h-8 bg-bone rounded-md overflow-hidden relative">
+              <div className="flex-1 h-8 bg-[var(--surface-overlay)] border border-corbeau/10 rounded-md overflow-hidden relative">
                 <div
                   style={{ width: `${pct}%`, backgroundColor: color }}
                   className="h-full rounded-md transition-[width] duration-700 ease-out flex items-center justify-end pr-2.5"
                 >
                   {labelInside && (
-                    <span className="font-mono font-bold text-corbeau text-xs tabular-nums">
+                    <span className="font-mono font-bold text-corbeau text-xs tabular-nums rounded px-1.5 py-0.5 bg-bone/85">
                       {pct.toFixed(1)}%
                     </span>
                   )}
@@ -671,7 +678,7 @@ function RiskMeter({
 }) {
   const pct = Math.min(100, (score / max) * 100);
   const color =
-    pct < 35 ? "#22c55e" : pct < 65 ? "#d97706" : "#ef4444";
+    pct < 35 ? "#2D8A4E" : pct < 65 ? "#d97706" : "#e5484d";
   const level = pct < 35 ? "Low" : pct < 65 ? "Medium" : "High";
   return (
     <div className="space-y-1.5">
@@ -681,7 +688,7 @@ function RiskMeter({
           {level}
         </span>
       </div>
-      <div className="h-2.5 rounded-full bg-bone overflow-hidden">
+      <div className="h-2.5 rounded-full bg-[var(--surface-overlay)] border border-corbeau/10 overflow-hidden">
         <div
           style={{ width: `${pct}%`, backgroundColor: color }}
           className="h-full rounded-full transition-all duration-700"
@@ -694,7 +701,7 @@ function RiskMeter({
 // ─── Executive summary card ───────────────────────────────────────────────────
 
 function ExecSummary({ result }: { result: CalculationResult }) {
-  const { totalY1, tco3yr, costPerUser, costAsRevenuePct, multiCountryRating, timeline, inputs } = result;
+  const { totalY1, costPerUser, costAsRevenuePct, multiCountryRating, timeline, inputs } = result;
   const currency = inputs.reportingCurrency;
 
   const multiLabel = {
@@ -771,8 +778,8 @@ function CFOView({ result }: { result: CalculationResult }) {
             <div
               className={`relative rounded-2xl px-6 py-6 overflow-hidden transition-all duration-300 hover:-translate-y-px ${
                 item.accent
-                  ? "bg-gradient-to-br from-papaya to-[#fda66e] text-corbeau shadow-[0_8px_32px_rgba(252,152,90,0.25)]"
-                  : "bg-paper border border-corbeau/10 shadow-[0_2px_14px_rgba(14,16,32,0.04)]"
+                  ? "bg-papaya text-corbeau shadow-[0_8px_32px_rgba(var(--accent-rgb),0.25)]"
+                  : "bg-paper border border-corbeau/10 shadow-[0_2px_14px_rgba(var(--ink-rgb),0.04)]"
               }`}
             >
               <p
@@ -804,12 +811,12 @@ function CFOView({ result }: { result: CalculationResult }) {
 
       {/* Annual cash-flow bar chart — gradient bars with prominent labels */}
       <FadeUp>
-        <div className="rounded-2xl bg-paper border border-corbeau/[0.08] p-6 shadow-[0_2px_14px_rgba(14,16,32,0.04)]">
+        <div className="rounded-2xl bg-paper border border-corbeau/[0.08] p-6 shadow-[0_2px_14px_rgba(var(--ink-rgb),0.04)]">
           <div className="flex items-baseline justify-between mb-5">
             <p className="font-display font-bold text-corbeau text-[1.05rem] tracking-[-0.015em]">
               Annual spend profile
             </p>
-            <p className="font-mono text-[0.62rem] uppercase tracking-[1.6px] text-corbeau/50">
+            <p className="font-mono text-[0.62rem] uppercase tracking-[1.6px] text-eyebrow">
               {currency}
             </p>
           </div>
@@ -818,26 +825,30 @@ function CFOView({ result }: { result: CalculationResult }) {
               const h = maxSpend > 0 ? (v / maxSpend) * 100 : 0;
               const isImpl = i === 0;
               return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                <div key={i} className="flex-1 h-full flex flex-col items-center gap-2">
                   <span className="font-mono font-bold text-corbeau text-[0.78rem] tabular-nums">
                     {formatCurrency(v, currency, true)}
                   </span>
-                  <div
-                    style={{ height: `${Math.max(4, h)}%` }}
-                    className={`w-full rounded-t-lg transition-[height] duration-700 ease-out shadow-[inset_0_-2px_8px_rgba(14,16,32,0.05)] ${
-                      isImpl
-                        ? "bg-gradient-to-b from-papaya to-[#fda66e]"
-                        : "bg-gradient-to-b from-papaya/55 to-papaya/30"
-                    }`}
-                  />
-                  <span className="font-mono text-[0.7rem] font-semibold uppercase tracking-[1.4px] text-corbeau/60">
+                  {/* The bar sits in a flex-1 track so its percentage height
+                      resolves against a definite size. */}
+                  <div className="flex-1 w-full flex items-end min-h-0">
+                    <div
+                      style={{ height: `${Math.max(4, h)}%` }}
+                      className={`w-full rounded-t-lg transition-[height] duration-700 ease-out ${
+                        isImpl
+                          ? "bg-gradient-to-b from-papaya to-[#fda66e]"
+                          : "bg-gradient-to-b from-papaya/55 to-papaya/25"
+                      }`}
+                    />
+                  </div>
+                  <span className="font-mono text-[0.7rem] font-semibold uppercase tracking-[1.4px] text-eyebrow">
                     Y{i + 1}
                   </span>
                 </div>
               );
             })}
           </div>
-          <p className="mt-5 text-[0.75rem] text-night/65 leading-[1.55]">
+          <p className="mt-5 text-[0.75rem] text-eyebrow leading-[1.55]">
             Y1 covers implementation plus software. Y2 onward is AMS support plus software subscription. Figures are directional, not contractual.
           </p>
         </div>
@@ -849,7 +860,7 @@ function CFOView({ result }: { result: CalculationResult }) {
           <p className="font-display font-bold text-corbeau text-[1.05rem] tracking-[-0.015em] mb-4">
             Budget allocation, year 1
           </p>
-          <div className="not-prose overflow-x-auto rounded-xl border border-corbeau/[0.08] bg-paper shadow-[0_2px_14px_rgba(14,16,32,0.04)]">
+          <div className="not-prose overflow-x-auto rounded-xl border border-corbeau/[0.08] bg-paper shadow-[0_2px_14px_rgba(var(--ink-rgb),0.04)]">
             <table className="min-w-full text-[0.92rem] border-collapse">
               <thead className="bg-papaya">
                 <tr>
@@ -893,12 +904,12 @@ function CIOView({ result }: { result: CalculationResult }) {
 
   const drivers = [
     inputs.modules.length > 6 && "Wide module scope (6+ modules) increases test surface",
-    inputs.integrationComplexity === "high" && "High integration complexity — legacy system audit recommended",
-    inputs.dataMigrationComplexity === "high" && "High data complexity — data profiling should start in phase 1",
-    inputs.customizationLevel === "high" && "High customisation — clean-core strategy review advised",
-    inputs.countries.length > 2 && `${inputs.countries.length + 1} countries — wave planning and central governance are critical`,
-    inputs.erpMaturity === "spreadsheets" && "Starting from spreadsheets — process definition effort underestimated in most programmes",
-    inputs.implementationType === "post-merger" && "Post-merger scope — entity harmonisation is typically the longest workstream",
+    inputs.integrationComplexity === "high" && "High integration complexity: legacy system audit recommended",
+    inputs.dataMigrationComplexity === "high" && "High data complexity: data profiling should start in phase 1",
+    inputs.customizationLevel === "high" && "High customisation: clean-core strategy review advised",
+    inputs.countries.length > 2 && `${inputs.countries.length + 1} countries: wave planning and central governance are critical`,
+    inputs.erpMaturity === "spreadsheets" && "Starting from spreadsheets: process definition effort is underestimated in most programmes",
+    inputs.implementationType === "post-merger" && "Post-merger scope: entity harmonisation is typically the longest workstream",
   ].filter(Boolean) as string[];
 
   return (
@@ -908,18 +919,18 @@ function CIOView({ result }: { result: CalculationResult }) {
         <div className="flex items-center gap-4">
           <div className="shrink-0">
             <svg width="64" height="64" viewBox="0 0 64 64">
-              <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(14,16,32,0.08)" strokeWidth="6" />
+              <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(var(--ink-rgb),0.08)" strokeWidth="6" />
               <circle
                 cx="32" cy="32" r="28"
                 fill="none"
-                stroke={complexityScore < 40 ? "#22c55e" : complexityScore < 70 ? "#d97706" : "#ef4444"}
+                stroke={complexityScore < 40 ? "#2D8A4E" : complexityScore < 70 ? "#d97706" : "#e5484d"}
                 strokeWidth="6"
                 strokeLinecap="round"
                 strokeDasharray={`${(complexityScore / 100) * 175.9} 175.9`}
                 strokeDashoffset="43.98"
                 transform="rotate(-90 32 32)"
               />
-              <text x="32" y="36" textAnchor="middle" fontSize="16" fontWeight="700" fill="#0e1020" fontFamily="monospace">
+              <text x="32" y="36" textAnchor="middle" fontSize="16" fontWeight="700" fill="currentColor" fontFamily="monospace">
                 {complexityScore}
               </text>
             </svg>
@@ -958,7 +969,7 @@ function CIOView({ result }: { result: CalculationResult }) {
           {timeline.phases.map((phase, i) => (
             <div key={phase.name} className="flex items-center gap-3">
               <span className="text-xs font-mono text-eyebrow w-4 shrink-0">{i + 1}</span>
-              <div className="flex-1 h-6 bg-bone rounded overflow-hidden">
+              <div className="flex-1 h-6 bg-[var(--surface-overlay)] border border-corbeau/10 rounded overflow-hidden">
                 <div
                   style={{
                     width: `${(phase.durationMonths / timeline.expectedMonths) * 100}%`,
@@ -966,7 +977,7 @@ function CIOView({ result }: { result: CalculationResult }) {
                   }}
                   className="h-full rounded flex items-center"
                 >
-                  <span className="pl-2 text-[10px] text-white font-semibold whitespace-nowrap overflow-hidden">
+                  <span className="ml-1 text-[10px] text-corbeau font-semibold whitespace-nowrap overflow-hidden rounded px-1 bg-bone/85">
                     {phase.durationMonths}m
                   </span>
                 </div>
@@ -1025,14 +1036,20 @@ function CountryTable({ result }: { result: CalculationResult }) {
               <td className="py-2.5 pr-3 font-mono text-xs text-night">{r.wave}</td>
               <td className="py-2.5 pr-3">
                 <span
-                  className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                    r.localizationComplexity === "high"
-                      ? "bg-red-100 text-red-700"
-                      : r.localizationComplexity === "medium"
-                      ? "bg-amber-100 text-amber-700"
-                      : "bg-green-100 text-green-700"
-                  }`}
+                  className="nd-chip uppercase tracking-wide"
+                  style={{ fontSize: 10.5 }}
                 >
+                  <i
+                    aria-hidden
+                    style={{
+                      background:
+                        r.localizationComplexity === "high"
+                          ? "#e5484d"
+                          : r.localizationComplexity === "medium"
+                          ? "#d97706"
+                          : "#2D8A4E",
+                    }}
+                  />
                   {r.localizationComplexity}
                 </span>
               </td>
@@ -1090,15 +1107,14 @@ function AssumptionsPanel({ result }: { result: CalculationResult }) {
     <div className="space-y-4">
       <p className="text-sm text-night leading-relaxed">
         All values below are the directional assumptions used in this estimate.
-        They are calibrated to typical market rates — not specific vendor quotes.
-        Edit the assumptions source file (<code className="text-xs bg-bone px-1 py-0.5 rounded font-mono">src/lib/erp-calculator/assumptions.ts</code>) to adjust the model.
+        They are calibrated to typical market rates, not specific vendor quotes.
       </p>
-      <div className="rounded-xl border border-corbeau/10 overflow-hidden">
+      <div className="rounded-xl border border-corbeau/15 overflow-hidden">
         {rows.map(([label, value], i) => (
           <div
             key={i}
             className={`flex items-start justify-between gap-4 px-4 py-2.5 text-sm ${
-              i % 2 === 0 ? "bg-paper" : "bg-cream"
+              i % 2 === 0 ? "bg-paper" : "bg-[var(--surface-overlay)]"
             }`}
           >
             <span className="text-night">{label}</span>
@@ -1121,9 +1137,10 @@ function ScenarioCompare({
 }) {
   if (saved.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-corbeau/20 py-12 text-center">
-        <p className="text-eyebrow text-sm">No saved scenarios yet.</p>
-        <p className="text-xs text-moon mt-1">Run a calculation and click "Save scenario" to compare.</p>
+      <div className="nda-empty">
+        <div className="nd-label">Scenarios</div>
+        <h3>Your saved scenarios appear here.</h3>
+        <p>Click &quot;Save scenario&quot; above to keep this estimate, then change the inputs and compare up to three side by side.</p>
       </div>
     );
   }
@@ -1194,9 +1211,9 @@ function ResultsPanel({
   const currency = result.inputs.reportingCurrency;
 
   const handleCopyEmail = useCallback(() => {
-    const text = `ERP Programme Estimate — ${new Date().toLocaleDateString()}
+    const text = `ERP Programme Estimate, ${new Date().toLocaleDateString()}
 
-Company: ${result.inputs.companyName || "—"}
+Company: ${result.inputs.companyName || "Not provided"}
 ERP approach: ${result.inputs.erpApproach} | Deployment: ${result.inputs.deploymentModel}
 Countries: ${result.countryResults.length} | Users: ${result.inputs.userCount.toLocaleString()}
 Modules: ${result.inputs.modules.length}
@@ -1226,28 +1243,31 @@ Not a vendor quote. Generated: ${new Date(result.generatedAt).toLocaleString()}`
           type="button"
           onClick={onSave}
           disabled={saved.length >= 3}
-          className="cc-btn-secondary rounded-md px-4 py-2 text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+          className="nd-btn nd-btn-secondary"
+          style={{ padding: "9px 14px", fontSize: 13 }}
         >
           Save scenario {saved.length > 0 && `(${saved.length}/3)`}
         </button>
         <button
           type="button"
           onClick={handleCopyEmail}
-          className="cc-btn-secondary rounded-md px-4 py-2 text-xs font-semibold"
+          className="nd-btn nd-btn-secondary"
+          style={{ padding: "9px 14px", fontSize: 13 }}
         >
           Copy summary
         </button>
         <button
           type="button"
           onClick={() => window.print()}
-          className="cc-btn-secondary rounded-md px-4 py-2 text-xs font-semibold"
+          className="nd-btn nd-btn-secondary"
+          style={{ padding: "9px 14px", fontSize: 13 }}
         >
           Print / export
         </button>
         <button
           type="button"
           onClick={onReset}
-          className="ml-auto text-xs text-eyebrow hover:text-canyon px-3 py-2"
+          className="nda-clear ml-auto"
         >
           ← Start over
         </button>
@@ -1261,7 +1281,8 @@ Not a vendor quote. Generated: ${new Date(result.generatedAt).toLocaleString()}`
               key={t.id}
               type="button"
               onClick={() => setTab(t.id)}
-              className={`px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${
+              aria-pressed={tab === t.id}
+              className={`px-4 py-3 text-[13px] font-semibold border-b-2 transition-colors whitespace-nowrap ${
                 tab === t.id
                   ? "border-papaya text-papaya"
                   : "border-transparent text-eyebrow hover:text-night"
@@ -1323,14 +1344,15 @@ function Step1({
           ]}
           cols={3}
         />
-        <Hint>Used to calculate cost as % of revenue — a common board-level metric.</Hint>
+        <Hint>Used to calculate cost as % of revenue, a common board-level metric.</Hint>
       </FieldWrap>
 
       <div className="grid grid-cols-2 gap-4">
         <FieldWrap>
-          <Label>Total employees</Label>
+          <Label htmlFor="erp-employees">Total employees</Label>
           <Select
-            value={String(inputs.employeeCount) as any}
+            id="erp-employees"
+            value={String(inputs.employeeCount)}
             onChange={(v) => set({ employeeCount: Number(v) })}
             options={[
               { value: "50",     label: "Under 100" },
@@ -1364,8 +1386,9 @@ function Step1({
       </div>
 
       <FieldWrap>
-        <Label>Industry</Label>
+        <Label htmlFor="erp-industry">Industry</Label>
         <Select<Industry>
+            id="erp-industry"
           value={inputs.industry}
           onChange={(v) => set({ industry: v })}
           options={[
@@ -1470,7 +1493,7 @@ function Step2({
 
       <SectionTitle>Complexity levels</SectionTitle>
       <p className="text-sm text-eyebrow -mt-3 mb-4">
-        These four axes are the biggest cost drivers after module count. Be honest — under-scoping complexity is the most common cause of overruns.
+        These four axes are the biggest cost drivers after module count. Be honest. Under-scoping complexity is the most common cause of overruns.
       </p>
 
       {(
@@ -1514,9 +1537,10 @@ function Step2({
       ))}
 
       <FieldWrap>
-        <Label>Target go-live timeline</Label>
+        <Label htmlFor="erp-timeline">Target go-live timeline</Label>
         <Select
-          value={String(inputs.targetTimelineMonths) as any}
+            id="erp-timeline"
+          value={String(inputs.targetTimelineMonths)}
           onChange={(v) => set({ targetTimelineMonths: Number(v) })}
           options={[
             { value: "6",  label: "6 months" },
@@ -1529,7 +1553,7 @@ function Step2({
             { value: "36", label: "36 months" },
           ]}
         />
-        <Hint>This is your target — the calculator will tell you if it's realistic given your scope.</Hint>
+        <Hint>This is your target. The calculator will tell you if it&apos;s realistic given your scope.</Hint>
       </FieldWrap>
     </div>
   );
@@ -1574,7 +1598,7 @@ function Step3({
         <select
           value={inputs.hqCountryCode}
           onChange={(e) => set({ hqCountryCode: e.target.value })}
-          className="w-full rounded border border-corbeau/15 bg-paper text-corbeau text-sm px-3 py-2.5 focus:outline-none focus:border-papaya"
+          className="w-full text-[15px] px-3.5 py-2.5"
           aria-label="HQ country"
         >
           {REGIONS.map((region) => (
@@ -1598,16 +1622,17 @@ function Step3({
           <button
             type="button"
             onClick={addCountry}
-            className="cc-btn-primary rounded-md px-3 py-1.5 text-xs font-semibold"
+            className="nd-btn nd-btn-secondary"
+            style={{ padding: "8px 14px", fontSize: 13 }}
           >
             + Add country
           </button>
         </div>
 
         {inputs.countries.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-corbeau/20 py-8 text-center">
-            <p className="text-sm text-eyebrow">Single-country rollout</p>
-            <p className="text-xs text-moon mt-1">Add countries for a multi-country estimate.</p>
+          <div className="nda-empty" style={{ padding: "28px 20px" }}>
+            <h3 style={{ marginTop: 0 }}>Single-country rollout</h3>
+            <p>Add countries for a multi-country estimate.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -1624,11 +1649,11 @@ function Step3({
       </div>
 
       {inputs.countries.length > 0 && (
-        <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-xs text-blue-700">
-          <p className="font-semibold mb-0.5">Multi-country rollout detected</p>
-          <p>
+        <div className="nda-note">
+          <p><b>Multi-country rollout detected.</b></p>
+          <p className="mt-1">
             Country cost indices, localisation complexity, and language requirements are all factored into
-            the estimate. Consider wave sequencing — the most complex countries should not all be in wave 1.
+            the estimate. Consider wave sequencing: the most complex countries should not all be in wave 1.
           </p>
         </div>
       )}
@@ -1661,7 +1686,7 @@ function Step4({
           ]}
           cols={3}
         />
-        <Hint>Day rate is not the biggest variable — team quality and methodology are. But partner tier has a direct multiplier on SI fees.</Hint>
+        <Hint>Day rate is not the biggest variable. Team quality and methodology are. But partner tier has a direct multiplier on SI fees.</Hint>
       </FieldWrap>
 
       <FieldWrap>
@@ -1779,20 +1804,21 @@ function Step5({
       />
 
       <FieldWrap>
-        <Label>Reporting currency</Label>
+        <Label htmlFor="erp-currency">Reporting currency</Label>
         <Select
-          value={inputs.reportingCurrency as any}
+            id="erp-currency"
+          value={inputs.reportingCurrency}
           onChange={(v) => set({ reportingCurrency: v })}
           options={[
-            { value: "USD", label: "USD — US Dollar" },
-            { value: "EUR", label: "EUR — Euro" },
-            { value: "GBP", label: "GBP — British Pound" },
-            { value: "AED", label: "AED — UAE Dirham" },
-            { value: "SAR", label: "SAR — Saudi Riyal" },
-            { value: "INR", label: "INR — Indian Rupee" },
-            { value: "AUD", label: "AUD — Australian Dollar" },
-            { value: "CAD", label: "CAD — Canadian Dollar" },
-            { value: "SGD", label: "SGD — Singapore Dollar" },
+            { value: "USD", label: "USD · US Dollar" },
+            { value: "EUR", label: "EUR · Euro" },
+            { value: "GBP", label: "GBP · British Pound" },
+            { value: "AED", label: "AED · UAE Dirham" },
+            { value: "SAR", label: "SAR · Saudi Riyal" },
+            { value: "INR", label: "INR · Indian Rupee" },
+            { value: "AUD", label: "AUD · Australian Dollar" },
+            { value: "CAD", label: "CAD · Canadian Dollar" },
+            { value: "SGD", label: "SGD · Singapore Dollar" },
           ]}
         />
         <Hint>
@@ -1808,21 +1834,21 @@ function Step5({
 
 function PresetPicker({ onLoad }: { onLoad: (inputs: CalculatorInputs) => void }) {
   return (
-    <div className="mb-8 p-5 rounded-xl bg-cream border border-corbeau/10">
-      <p className="text-xs font-semibold text-eyebrow uppercase tracking-widest mb-3">Load a preset scenario</p>
+    <div className="mb-8">
+      <p className="nda-tool-label">Start from a preset scenario</p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {PRESET_SCENARIOS.map((s) => (
           <button
             key={s.id}
             type="button"
             onClick={() => onLoad(s.inputs)}
-            className="text-left rounded-lg border border-corbeau/12 bg-paper hover:border-papaya/50 hover:bg-papaya/4 px-4 py-3 transition-all group"
+            className="text-left rounded-[12px] border border-corbeau/15 bg-bone hover:border-papaya/60 px-4 py-3.5 transition-all group"
           >
-            <span className="inline-block text-[10px] font-bold uppercase tracking-wide bg-papaya/15 text-papaya px-2 py-0.5 rounded-full mb-1.5">
+            <span className="inline-block text-[10px] font-bold uppercase tracking-wide bg-papaya/15 text-corbeau px-2 py-0.5 rounded-full mb-1.5">
               {s.badge}
             </span>
-            <p className="font-semibold text-corbeau text-xs group-hover:text-papaya transition-colors">{s.name}</p>
-            <p className="text-[10px] text-eyebrow mt-1 leading-relaxed">{s.description}</p>
+            <p className="font-semibold text-corbeau text-[13.5px] group-hover:text-papaya transition-colors">{s.name}</p>
+            <p className="text-[12.5px] text-eyebrow mt-1 leading-relaxed">{s.description}</p>
           </button>
         ))}
       </div>
@@ -1851,8 +1877,8 @@ function LiveEstimateBadge({
   if (!estimate) return null;
 
   return (
-    <div className="sticky top-0 z-10 -mx-1 mb-6 px-1">
-      <div className="rounded-lg border border-papaya/30 bg-papaya/6 px-4 py-2.5 flex items-center justify-between gap-3 shadow-sm backdrop-blur-sm">
+    <div className="sticky top-[calc(var(--nav)+8px)] z-10 -mx-1 mb-6 px-1">
+      <div className="rounded-[12px] border border-papaya/40 bg-[var(--panel)] px-4 py-2.5 flex items-center justify-between gap-3 shadow-sm">
         <p className="text-xs text-night">
           Live estimate:
         </p>
@@ -1950,7 +1976,7 @@ export default function ErpCostClient() {
       ...prev,
       {
         id:       Math.random().toString(36).slice(2),
-        label:    `Scenario ${prev.length + 1}${inputs.companyName ? ` — ${inputs.companyName}` : ""}`,
+        label:    `Scenario ${prev.length + 1}${inputs.companyName ? `: ${inputs.companyName}` : ""}`,
         result,
         savedAt:  new Date().toISOString(),
       },
@@ -1997,7 +2023,8 @@ export default function ErpCostClient() {
             type="button"
             onClick={() => setShowLive(!showLive)}
             aria-label="Toggle live estimate"
-            className={`relative w-9 h-5 rounded-full transition-colors ${showLive ? "bg-papaya" : "bg-corbeau/20"}`}
+            aria-pressed={showLive}
+            className={`relative w-9 h-5 rounded-full transition-colors ${showLive ? "bg-papaya" : "bg-corbeau/25"}`}
           >
             <span
               className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${showLive ? "translate-x-4" : "translate-x-0.5"}`}
@@ -2011,7 +2038,7 @@ export default function ErpCostClient() {
       <StepIndicator current={step} onGo={goToStep} completed={completed} />
 
       {/* Step content */}
-      <div className="bg-white rounded-xl border border-corbeau/10 p-6 md:p-8 shadow-sm">
+      <div className="rounded-[14px] border border-corbeau/15 bg-[var(--surface-overlay)] p-5 md:p-8">
         {step === 1 && <Step1 inputs={inputs} set={set} />}
         {step === 2 && <Step2 inputs={inputs} set={set} />}
         {step === 3 && <Step3 inputs={inputs} set={set} />}
@@ -2024,7 +2051,7 @@ export default function ErpCostClient() {
             type="button"
             onClick={goPrev}
             disabled={step === 1}
-            className="cc-btn-secondary rounded-md px-5 py-2.5 text-sm font-semibold disabled:opacity-30 disabled:cursor-not-allowed"
+            className="nd-btn nd-btn-secondary"
           >
             ← Back
           </button>
@@ -2036,7 +2063,7 @@ export default function ErpCostClient() {
           <button
             type="button"
             onClick={goNext}
-            className="cc-btn-primary rounded-md px-6 py-2.5 text-sm font-semibold"
+            className="nd-btn nd-btn-primary"
           >
             {step < 5 ? "Continue →" : "Calculate →"}
           </button>

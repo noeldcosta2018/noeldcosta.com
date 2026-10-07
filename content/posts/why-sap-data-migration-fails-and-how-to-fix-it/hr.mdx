@@ -1,0 +1,171 @@
+---
+title: "Zašto migracija SAP podataka ne uspijeva i kako to popraviti"
+h1: "Zašto migracija SAP podataka ne uspijeva i kako to popraviti"
+slug: "why-sap-data-migration-fails-and-how-to-fix-it"
+date: "2025-03-22"
+updated: "2026-10-07"
+hero: "/images/wp/2025/03/Data-Migration-4.png"
+heroAlt: "Tim za migraciju podataka pregledava pogreške ekstrakcije i tablice mapiranja tijekom pripreme prijelaza u SAP implementaciji"
+category: "erp-strategy"
+tags: ["sap-crisis-management", "sap-data-migration", "sap-migration-cockpit", "sap-datasphere"]
+author: "Noel D'Costa"
+metaTitle: "Zašto migracija SAP podataka ne uspijeva i popravak 2026."
+metaDescription: "Zašto migracija SAP podataka ne uspijeva i kako to popraviti: pet pogrešaka iza većine neuspjeha prijelaza, plan probnih punjenja i pravi S/4HANA alati u 2026."
+excerpt: "Većina migracija SAP podataka ne uspijeva jer je plan izgrađen na onome što je posao mislio da su njegovi podaci. Ovaj vodič pokriva pet pogrešaka iza većine neuspjeha prijelaza, plan probnih punjenja koji možete preslikati i koji S/4HANA alat odgovara kojem poslu."
+experienceSource: "Noel's SAP data migration experience as published in the original article: the manufacturing go-live that failed on data migration after 18 months and $4.5 million, and the client that estimated 50,000 material records and found closer to 500,000. Product facts (Migration Cockpit, Migrate Your Data app, business partner model) checked against SAP documentation in October 2026."
+lastReviewed: "2026-05-21"
+keyTakeaways:
+  - "Procjenu kvalitete podataka temeljite na potpunoj ekstrakciji, a ne na onome što posao vjeruje da su njegovi podaci"
+  - "Jedan je klijent mislio da ima oko 50.000 zapisa materijala. Kad su se prebrojale sve varijante i zapisi specifični za pogon, stvarni je broj bio bliži 500.000"
+  - "Odluke o čišćenju donose poslovni vlasnici. IT ne može odlučiti koji je od dva duplikata dobavljača pravi"
+  - "Planirajte najmanje tri probna punjenja i uskladite svako. Punjenje pri prijelazu treba točno ponoviti završnu probu"
+  - "U S/4HANA koristite aplikaciju Migrate Your Data (transakcija LTMC je zastarjela) i kupce te dobavljače punite kao poslovne partnere"
+pullQuote: "Uspjeh ili neuspjeh Vaše SAP implementacije ovisit će o tome koliko dobro riješite migraciju podataka. Tako jednostavno."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP LTMC"
+  - "SAP Migration Cockpit"
+  - "SAP Data Services"
+  - "SAP Datasphere"
+  - "SAP Business Data Cloud"
+  - "RISE with SAP"
+originalUrl: "https://noeldcosta.com/why-sap-data-migration-fails-and-how-to-fix-it/"
+canonicalUrl: "https://noeldcosta.com/hr/why-sap-data-migration-fails-and-how-to-fix-it/"
+locale: "hr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Migracija SAP podataka ne uspijeva zbog jednog razloga više od svih ostalih: plan je izgrađen na onome što posao misli da su njegovi podaci, a ne na onome što pokazuje ekstrakcija. Ovaj je vodič namijenjen direktorima programa, voditeljima podataka i financijskim rukovoditeljima na S/4HANA programu. Obrađuje zašto se migracije lome, pet pogrešaka iza većine neuspjeha prijelaza, plan probnih punjenja koji možete preslikati i koji SAP alati odgovaraju kojem poslu u 2026. Ako ovaj tjedan učinite samo jedno, napravite potpunu ekstrakciju matičnih podataka kupaca, dobavljača i materijala te sami prebrojite zapise.
+
+Jedna proizvodna tvrtka potrošila je 18 mjeseci i 4,5 milijuna dolara na SAP implementaciju. Stigao je dan puštanja u rad. Svi su bili nervozni, ali uzbuđeni. Zatim je migracija podataka propala.
+
+Ništa nije radilo kako treba. Podaci o kupcima nedostajali su. Brojevi zaliha bili su pogrešni. Računovodstvo nije moglo zatvoriti knjige. Direktor je bio bijesan.
+
+Nije bio kriv softver i nije bio kriv implementacijski tim. Neuspjeh je bio u jazu između onoga što je posao mislio da su njegovi podaci i onoga što su zapravo bili.
+
+## Zašto su SAP podaci teži nego što izgledaju
+
+SAP-ov podatkovni model nije ravni uvoz. Zapisi ovise jedni o drugima. Matični zapis materijala ima opći zapis (MARA), podatke o pogonu (MARC), podatke o vrednovanju (MBEW) i, gdje se koriste MRP područja, podatke MRP područja (MDMA). Učitate li zaglavlje bez zavisnih pogleda, materijal postoji, ali se ne može koristiti u transakciji.
+
+S/4HANA dodaje vlastito pravilo. Kupci i dobavljači su poslovni partneri. Naslijeđeni kupac postaje poslovni partner s ulogom kupca, a dobavljač poslovni partner s ulogom dobavljača. Kreditni limiti, bankovni podaci i porezni brojevi vise na tom poslovnom partneru. Zapis koji je naslijeđeni sustav tolerirao s rupama ovdje će pasti na validaciji.
+
+Zatim je tu opseg. Većinu tvrtki šokira koliko podataka zapravo imaju. Jedan je klijent mislio da ima oko 50.000 zapisa materijala. Kad su se prebrojale sve varijante i zapisi specifični za pogon, broj je bio bliži 500.000. Plan dimenzioniran za prvi broj ne preživljava drugi.
+
+<explainer-before-after title="Podaci koje je plan pretpostavljao i podaci koje je ekstrakcija pronašla" caption="Približni brojevi jednog klijenta. Jaz je bio problem opsega prije nego što je postao problem migracije." metric="Zapisi materijala u opsegu" before-label="Procjena posla" after-label="Potpuna ekstrakcija" before-value="50,000" after-value="500,000" before-points="Prebrojeno prema onome u što je posao vjerovao|Plan, napor i rokovi dimenzionirani prema tom broju" after-points="Prebrojana je svaka varijanta i svaki zapis specifičan za pogon|Plan dimenzioniran prema procjeni to ne preživljava"></explainer-before-after>
+
+To nije bio problem migracije podataka. Bio je to problem opsega koji je postao problem migracije.
+
+## Zašto se kvaliteta podataka otkriva kasno
+
+Procjena kvalitete podataka na početku projekta obično je opis podataka, a ne njihovo ispitivanje. Financijski direktor kaže da je matični zapis dobavljača dobro održavan. Voditelj skladišta kaže da su materijali uglavnom čisti. To su dojmovi.
+
+Prva ekstrakcija govori istinu. Dobavljači koje je trebalo očistiti prije godina, a nisu. Materijali ukinuti davno i nikad deaktivirani. Adrese kupaca s nedosljednim šiframa zemalja. Bankovni podaci koji nedostaju kod dobavljača plaćanih elektroničkim prijenosom.
+
+Svaka od tih stvari traži poslovnu odluku, a ne tehničko rješenje. Samo obveze prema dobavljačima mogu reći koji je od dva duplikata dobavljača ispravan. Samo nabava može reći koje zastarjele materijale blokirati, a koje ostaviti. Te odluke traju i traže ljude koji znaju podatke. Ako procjena nije utemeljena na stvarnoj ekstrakciji, plan se gradi na pretpostavkama koje neće preživjeti susret s podacima. Moj [besplatni procjenjivač migracije podataka](/hr/free-data-migration-estimator-sap-oracle-microsoft/) pomaže dimenzionirati napor kad imate stvarne brojke.
+
+## Pet pogrešaka iza većine neuspjeha migracije
+
+### 1. Tretiranje migracije kao kasnog tehničkog zadatka
+
+Migracija pripada u svaku fazu metodologije SAP Activate. Explore određuje opseg: objekte, izvorne sustave, količine i kvalitetu. Realize gradi predloške i provodi probna punjenja. Deploy provodi završnu probu i punjenje pri prijelazu. Run usklađuje prvo zatvaranje razdoblja na živim podacima.
+
+Projekti koji počinju rad na migraciji u fazi Deploy počinju mjesecima prekasno. Problemi s kvalitetom koji su se trebali riješiti u fazi Realize izlaze na vidjelo u prvom probnom punjenju, tjednima prije prijelaza. Moj [vodič za planiranje SAP vremenskog plana](/hr/2024-sap-timeline-planning-implementation-guide-essentials/) pokazuje gdje migracija stoji u cjelokupnom planu.
+
+### 2. Premalo uključenosti poslovne strane
+
+Migracija je tehnička u izvedbi, a poslovna aktivnost u donošenju odluka. IT ne može izraditi popis duplikata dobavljača. Koji računi kupaca prelaze kao aktivni, a koji ostaju kao povijest, financijska je odluka. Čišćenje zastarjelih materijala traži nabavu, skladište i upravljanje proizvodima.
+
+Programi koji migraciju popunjavaju samo tehničkim ljudima, a posao tretiraju kao potpis na kraju, proizvode podatke koji se učitaju. Komercijalno su pogrešni.
+
+### 3. Planiranje premalo probnih punjenja
+
+Dobro vođena migracija SAP podataka traži najmanje tri probna punjenja prije prijelaza, a složeni programi traže više. Projekti koji planiraju jedno ili dva planiraju čiste podatke i čisto mapiranje. Taj je scenarij rijedak. Više ciklusa nije znak migracije u problemima. To je znak pravilno planirane migracije.
+
+### 4. Neusklađivanje probnih punjenja
+
+Posao punjenja koji završi bez pogrešaka nije validacija. Validacija uspoređuje ono što je učitano s onim što se očekivalo: brojeve zapisa, financijske zbrojeve, stanja otvorenih stavki. Zatim procesni smoke test potvrđuje da podaci rade u transakcijama.
+
+Probno punjenje koje nije usklađeno ipak košta vremena. Rupa koju je proizvelo još je tu pri sljedećem probnom punjenju, samo što ju je sada teže pratiti do uzroka. Uskladite svako punjenje prije početka sljedećeg.
+
+### 5. Punjenje pri prijelazu koje se razlikuje od proba
+
+Migracija pri prijelazu treba točno ponoviti završno probno punjenje: iste skripte ekstrakcije, logiku transformacije, redoslijed punjenja, provjere i vremena. Svaka promjena pri prijelazu neprovjeren je rizik u točki najvećeg pritiska programa.
+
+Najmanje testiran dio obično je delta. Između završnog probnog punjenja i prijelaza posao stalno dodaje dobavljače, mijenja narudžbe i premješta zalihe. Odredite datum zamrzavanja podataka i uvježbajte delta punjenje kao dio završnog probnog punjenja.
+
+## Plan probnih punjenja koji možete preslikati
+
+Koristite ovu strukturu ciklusa kao polazište. Svaki ciklus ima cilj i kriterij izlaza, a nije dovršen dok usklađivanje nije potpisano.
+
+| Ciklus | Cilj | Kriterij izlaza | Vlasnik |
+|---|---|---|---|
+| Probno 1 | Struktura: svaki objekt se učitava redoslijedom ovisnosti | Rupe u mapiranju i pogreške formata zabilježene po objektu | Voditelj migracije podataka |
+| Probno 2 | Kvaliteta: testirajte ispravke mapiranja i otkrijte probleme s podacima | Stopa pogrešaka pada po objektu; odluke o čišćenju zabilježene | Skrbnici podataka |
+| Probno 3 | Poslovna pravila: iznimke i rubni slučajevi | Skrbnici prihvaćaju usklađen uzorak u svakoj domeni | Skrbnici podataka |
+| Probno 4 | Količina i vrijeme u punoj proizvodnoj veličini | Potpuno punjenje završava unutar prozora prijelaza | Voditelj prijelaza |
+| Završna proba | Generalna proba prijelaza, uključujući deltu i zamrzavanje | Brojevi i financijski zbrojevi usklađeni i potpisani | Financijski kontrolor i voditelj podataka |
+
+Oko tog plana pet stvari čini razliku:
+
+1. **Potpuna ekstrakcija u fazi Prepare.** Svega, a ne uzorka. Profilirajte potpunost, točnost, dosljednost i duplikate, a zatim iz rezultata dimenzionirajte čišćenje i vremenski plan.
+2. **Mapiranje objekt po objekt.** Za svaki objekt (poslovni partneri, materijali, otvorene nabavne i prodajne narudžbe, otvorene stavke, zalihe, dugotrajna imovina) dokumentirajte polja izvor-cilj, pravila transformacije, provjere validacije i pravila iznimaka.
+3. **Imenovani skrbnici podataka.** Financije posjeduju financijske podatke kupaca i dobavljača. Nabava posjeduje matični zapis materijala. Skladište posjeduje zalihe. Svaki skrbnik potpisuje svoju domenu nakon svakog ciklusa.
+4. **Usklađivanje definirano unaprijed.** Dogovorite koji brojevi i zbrojevi dokazuju da je punjenje ispravno prije prvog probnog punjenja, da se nitko ne prepire o tome pri prijelazu.
+5. **Pisani slijed prijelaza.** Zamrzavanje, ekstrakcija, transformacija, punjenje, validacija, poslovni potpis, go/no-go. Isti slijed kao u završnoj probi.
+
+## Alati za migraciju u 2026.
+
+Za novu S/4HANA implementaciju [SAP S/4HANA Migration Cockpit](https://pages.community.sap.com/topics/s4hana-migration-cockpit) SAP-ov je preporučeni alat za početno punjenje. Od izdanja S/4HANA 2020 radi kao Fiori aplikacija Migrate Your Data. Transakcija LTMC je zastarjela, a postojeći LTMC projekti mogu se samo prikazati. Aplikacija nudi dva pristupa: migraciju podataka putem staging tablica (pune se iz datoteka ili vlastitim alatima) i migraciju podataka izravno iz SAP izvornog sustava. Timovi na on-premise i private cloud okruženjima koriste transakciju LTMOM, modelar migracijskih objekata, za prilagodbu standardnih objekata ili izradu vlastitih. Cockpit je izgrađen za početna punjenja, a ne za ponavljajuća sučelja ili masovne promjene.
+
+**SAP Data Services** SAP-ova je ETL platforma. Koristite ga za velike količine, tešku logiku transformacije, više izvornih sustava ili kad želite ponovno upotrebljiv okvir kvalitete podataka koji nadživi projekt.
+
+**ETL alati trećih strana** poput Informatice, Talenda ili Microsoft SSIS-a imaju smisla gdje ih organizacija već posjeduje i ima vještine.
+
+**SAP Datasphere**, sada dio SAP Business Data Clouda, nije alat za migraciju. Njegovo je mjesto analitički sloj nakon puštanja u rad. Važan je ako povijest ostavljate u naslijeđenom sustavu, a i dalje trebate izvještavati o njoj.
+
+Za većinu standardnih implementacija Migration Cockpit pokriva većinu objekata. Velike količine, jako prilagođeni naslijeđeni sustavi ili neobične izvorne strukture obično trebaju Data Services ili ETL alat uz njega. Konverzije s ECC-a drugačija su vježba, opisana u mom [vodiču za migraciju s ECC-a na S/4HANA](/hr/ecc-to-s4hana-migration/).
+
+## Često postavljana pitanja
+
+<details>
+<summary>Što je migracija SAP podataka?</summary>
+
+Migracija SAP podataka je ekstrakcija podataka iz naslijeđenih sustava, njihova transformacija da odgovaraju SAP-ovim strukturama i pravilima te punjenje u SAP u sklopu implementacije ili konverzije. Tipični objekti su poslovni partneri (kupci i dobavljači), materijali s podacima o pogonu, otvorene nabavne i prodajne narudžbe, stanja zaliha, financijske otvorene stavke i dugotrajna imovina. Teška je jer SAP provodi ovisnosti i pravila validacije koje naslijeđeni sustavi često nisu.
+
+</details>
+
+<details>
+<summary>Koji su glavni pristupi migraciji SAP podataka?</summary>
+
+Nova implementacija (greenfield) učitava odabrane matične podatke i otvorene stavke u novi S/4HANA sustav, a povijest ostavlja u naslijeđenom sustavu ili arhivi. Konverzija sustava (brownfield) pretvara postojeći ECC sustav i njegovu povijest na mjestu. Selektivni prijelaz podataka nalazi se između ta dva, premještajući odabrane šifre tvrtke, objekte ili vremenske odsječke. Pravi izbor ovisi o kvaliteti podataka, zahtjevima za povijest i o tome koliko starog procesa želite zadržati.
+
+</details>
+
+<details>
+<summary>Što je SAP Migration Cockpit i kada ga koristiti?</summary>
+
+SAP S/4HANA Migration Cockpit SAP-ov je preporučeni alat za početno punjenje podataka u S/4HANA, u svim izdanjima. Od izdanja S/4HANA 2020 radi kao Fiori aplikacija Migrate Your Data; transakcija LTMC je zastarjela. Nudi unaprijed definirane migracijske objekte, validira podatke prije knjiženja i prijavljuje pogreške na razini polja. Koristite ga za standardne objekte pri uobičajenim količinama. Dodajte SAP Data Services ili drugi ETL alat kad količine, logika transformacije ili izvorne strukture nadmaše ono što predlošci obrađuju.
+
+</details>
+
+<details>
+<summary>Koliko probnih punjenja treba planirati za migraciju SAP podataka?</summary>
+
+Najmanje tri, a zadnje kao potpuna proba prijelaza. Složeni programi traže više. U tipičnom planu prvo otkriva strukturne rupe u mapiranju. Drugo testira ispravke i otkriva probleme s kvalitetom podataka. Treće prolazi poslovna pravila i rubne slučajeve. Završno izvođenje točno ponavlja prijelaz, a njegovo usklađivanje postaje osnova za dan puštanja u rad.
+
+</details>
+
+<details>
+<summary>Kako migrirati kupce i dobavljače u SAP S/4HANA?</summary>
+
+Kao poslovne partnere. U S/4HANA se matični podaci kupaca i dobavljača održavaju kroz poslovnog partnera, uz pridružene uloge kupca i dobavljača. U novoj implementaciji Migration Cockpit ih puni kroz svoje objekte poslovnog partnera. Kod konverzije s ECC-a integraciju kupac-dobavljač treba postaviti i provesti prije same konverzije.
+
+</details>
+
+<details>
+<summary>Što uzrokuje neuspjeh migracije SAP podataka pri prijelazu?</summary>
+
+Pet obrazaca uzrokuje većinu neuspjeha pri prijelazu. Premalo probnih punjenja. Slijed prijelaza koji nikad nije testiran od početka do kraja. Promjene u naslijeđenom sustavu nakon završnog probnog punjenja uz netestirano delta punjenje. Rupe u usklađivanju ostavljene otvorenima. Poslovni potpis utemeljen na provjeri uzorka. „Prvih 1.000 zapisa izgledalo je dobro” nije validacija. Za puštanje u rad trebaju usklađeni brojevi i zbrojevi.
+
+</details>

@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { CASE_STUDIES, type CaseStudy } from "@/lib/case-studies";
+import { CLIENT_WORK } from "@/data/site-menu";
 import CaseStudyCard from "./CaseStudyCard";
 
 /**
@@ -37,26 +39,20 @@ export default function RelatedCaseStudies({ current }: { current: CaseStudy }) 
   if (related.length === 0) return null;
 
   return (
-    <section
-      className="bg-bone border-t border-corbeau/[0.06]"
-      style={{ padding: "clamp(3.5rem,6vw,5rem) clamp(1.5rem,5vw,4rem)" }}
-    >
-      <div className="max-w-[1200px] mx-auto">
-        <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-papaya mb-2">
-          [ Other programmes ]
-        </p>
-        <h2
-          aria-label="Different industries. Same playbook."
-          className="font-display font-black tracking-[-0.04em] leading-[1.08] text-corbeau mb-10"
-          style={{ fontSize: "clamp(1.65rem,3vw,2.25rem)" }}
-        >
-          <span aria-hidden>
-            {"Different industries. "}
-            <span className="cc-emphasis-italic">Same playbook.</span>
-          </span>
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <section className="nda-section" aria-labelledby="related-cs-title">
+      <div className="nda-wrap">
+        <div className="nda-head">
+          <div>
+            <div className="nd-eyebrow">Other programmes</div>
+            <h2 id="related-cs-title" className="nd-display nd-h2">
+              Different industries. <span className="nd-hl">Same playbook.</span>
+            </h2>
+          </div>
+          <Link className="nd-textlink" href={CLIENT_WORK}>
+            All case studies <span aria-hidden="true">→</span>
+          </Link>
+        </div>
+        <div className="nda-cs-grid anchor">
           {related.map((c) => (
             <CaseStudyCard key={c.slug} c={c} variant="anchor" />
           ))}

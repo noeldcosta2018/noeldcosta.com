@@ -104,7 +104,7 @@ export default function AICapabilities() {
                   {f.icon}
                 </div>
                 <div>
-                  <h4 className="font-display text-[1rem] font-bold mb-0.5 tracking-[-0.02em]">{f.title}</h4>
+                  <h3 className="font-display text-[1rem] font-bold mb-0.5 tracking-[-0.02em]">{f.title}</h3>
                   <p className="text-[0.88rem] text-night leading-[1.55]">{f.body}</p>
                 </div>
               </div>

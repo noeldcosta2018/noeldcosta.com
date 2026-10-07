@@ -2,26 +2,23 @@
 title: "SAP SD: what it does and where implementations break"
 slug: "sap-sd-sales-and-distribution"
 date: "2025-04-08"
-updated: "2026-05-21"
+updated: "2026-10-07"
 hero: "/images/wp/2025/04/What-You-Must-Know-Before-Starting-SAP-SD-Implementation.webp"
 heroAlt: "SAP SD order-to-cash process diagram showing sales order, delivery, and billing document flow"
 category: "sap-modules"
 tags: ["sap-technical-decisions", "sap-sd", "order-to-cash", "rise-with-sap"]
 author: "Noel D'Costa"
-metaTitle: "SAP SD in 2026: What It Does and Where Implementations Break"
-metaDescription: "SAP SD in 2026 from real implementation experience. Order-to-cash flow on S/4HANA, components, org structure, MM/PP/FI integration, and failure modes."
-excerpt: "On a European manufacturing rollout in 2023 after a full SAP implementation, the order-to-cash steps were built exactly as designed. Looked fine on the process map. But nobody checked how stock updates were coming from production. Sales told customers five days. Manufacturing knew it was closer to ten. That gap cost more than late deliveries. It cost trust. SAP SD done well connects sales promises to operational reality. Done badly, it passes the disconnect directly to your customers."
-experienceSource: "Direct experience implementing SAP SD across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets, covering manufacturing, retail, and distribution environments. Covers customer master setup, pricing conditions, availability checking, billing integration, and order-to-cash cycle optimisation. 2026 SAP SD on S/4HANA, RISE deployment, and Joule for sales positioning reflects current SAP product roadmap."
+metaTitle: "SAP SD in 2026: What It Does and Where It Breaks"
+metaDescription: "SAP SD explained for 2026: order-to-cash on S/4HANA, pricing, advanced ATP, credit management, FI integration and the four places SD implementations break."
+excerpt: "SAP SD connects what sales promises with what operations can deliver. This guide covers the order-to-cash flow, what changes on S/4HANA, and the four places SD implementations usually break."
+experienceSource: "Noel's SAP SD experience as published in the original article: the rollout where sales quoted five days and manufacturing knew it was ten, the manufacturing client that cut its order-to-cash cycle by 40%, and the data governance problems (old pricing conditions, incomplete customer masters, mismatched tax codes). S/4HANA SD facts (business partner, SAP Credit Management, condition contracts, advanced ATP licensing, RAR) checked against SAP documentation in October 2026."
 lastReviewed: "2026-05-21"
 keyTakeaways:
-  - "SAP SD manages the full order-to-cash cycle: inquiry, quotation, sales order, delivery, goods issue, billing, payment"
-  - "Manufacturing client reduced order-to-cash cycle by 40% post-SD implementation by eliminating manual handoffs between sales, warehouse, and finance"
-  - "Sales told customers five days, manufacturing knew it was ten. No ATP check configured properly. That gap cost customer trust, not just delivery performance"
-  - "Pricing conditions are the most underestimated setup in SD. Old condition records produce incorrect invoices. Disputes follow"
-  - "Credit management only works if credit data is maintained. Static credit limits from year one become irrelevant within eighteen months"
-  - "The billing document is where SD hands off to FI. Wrong account determination or missing tax codes block invoices silently until month-end"
-  - "Integration with MM determines whether availability promises are real. Integration with PP determines whether production commitments are reflected in ATP"
-  - "Customer master data quality is the foundation. Missing fields (tax classification, payment terms, shipping conditions) cause errors downstream at every order"
+  - "SAP SD runs order-to-cash: quotation, sales order, delivery, billing and the handoff to finance"
+  - "Sales told customers five days while manufacturing knew it was ten. An availability check reading the wrong data cost customer trust, not just delivery performance"
+  - "Pricing condition records need an owner after go-live. Stale conditions produce wrong invoices and disputes"
+  - "In S/4HANA, customers become business partners, credit management moves to SAP Credit Management and rebates move to condition contracts"
+  - "Test account determination and tax with the real chart of accounts and tax codes before UAT sign-off"
 pullQuote: "SAP SD connects the sales promise to the operational reality. When that connection is wrong, the customer sees it first."
 mentions:
   - "SAP S/4HANA"
@@ -31,284 +28,195 @@ mentions:
   - "SAP FI"
   - "SAP ECC"
   - "SAP TM"
+  - "SAP Credit Management"
+  - "SAP Revenue Accounting and Reporting"
   - "RISE with SAP"
-  - "Joule"
 ---
 
-On a European manufacturing rollout in 2023 after a full SAP implementation, the order-to-cash steps were built exactly as designed. Looked fine on the process map. Nobody had checked how stock updates were coming from production.
+SAP SD (Sales and Distribution) runs order-to-cash in SAP: quotation, sales order, delivery, billing and the handoff to finance. On S/4HANA it changes in ways that matter for project scope. Customers become business partners, credit management moves to SAP Credit Management, rebates move to condition contracts, and billing posts straight into the Universal Journal. This guide is for sales operations leads, finance controllers and project managers who need to know what SD does and where it breaks. The short answer on the second point: customer master data, pricing conditions, the availability check and account determination. Test those four with real data before go-live.
+
+In one rollout after a full SAP implementation, the order-to-cash steps were built exactly as designed. They looked fine on the process map. Nobody had checked how stock updates were coming from production.
 
 Sales told customers five days. Manufacturing knew it was closer to ten.
 
 That gap cost more than late deliveries. It cost trust, and trust is harder to rebuild than a configuration setting.
 
-SAP SD is the module that manages your entire sales process from the first customer inquiry to the final payment received. Configured correctly, it connects what sales promises to customers with what operations can actually deliver. Configured badly, it passes the gap directly to your customers.
+## What SAP SD manages
 
-The 2026 picture has shifted from the ECC playbook. On S/4HANA the module is now formally called "Sales" rather than SD, but the FICO and logistics community still calls it SD. Advanced ATP (aATP) replaces classic ATP for new programmes. The Universal Journal eliminates the SD-to-FI reconciliation overhead that ECC implementations carried. Revenue Accounting and Reporting (RAR) handles IFRS 15 revenue recognition natively. Under RISE with SAP and GROW with SAP, clean-core compliance is contractual; the customisation patterns that worked in ECC (Z-tables for pricing routines, custom user exits, ABAP for output determination) now have to move to SAP BTP or be retired.
+SD sits at the front of the logistics chain. It turns a customer's interest into an invoice through a chain of documents:
 
-## What SAP SD actually manages
+1. **Inquiry**: the customer asks for price or availability
+2. **Quotation**: a formal price and delivery offer with a validity period
+3. **Sales order**: the customer commits, the availability check runs and a delivery date is confirmed
+4. **Delivery**: the warehouse picks and packs; goods issue reduces stock
+5. **Billing**: the invoice is created along with its accounting document
+6. **Payment**: finance clears the incoming payment against the open item
 
-SD sits at the front of the logistics chain. It handles the sequence of documents and processes that turn a customer's interest into an invoice.
+Each document references the one before it. That document flow is what makes order-to-cash traceable. If the chain is clean, you can trace every invoice back to the original request. If documents are created out of sequence or bypassed, reporting breaks and disputes follow.
 
-The order-to-cash flow in standard SAP SD:
+<explainer-flow title="Order-to-cash as a chain of documents" caption="Each document references the one before it. Skip one and the trail from invoice back to request breaks." steps="Inquiry|Quotation|Sales order|Delivery|Billing|Payment" notes="Price or availability asked|Formal offer with a validity date|Availability check confirms the date|Pick, pack, goods issue|Invoice and accounting document|Finance clears the open item" result="Every invoice traceable back to the original request"></explainer-flow>
 
-1. **Inquiry** -- customer requests pricing or availability information
-2. **Quotation** -- formal price and delivery offer, with validity period
-3. **Sales order** -- customer commits; availability check runs; delivery date confirmed
-4. **Delivery** -- warehouse picks and packs the goods; goods issue posts inventory reduction
-5. **Billing** -- invoice generated; accounting document created; revenue recognised
-6. **Payment** -- incoming payment matched against open invoice in FI
-
-Each document in the chain references the one before it. That document flow is what makes order-to-cash trackable. If the chain is clean, you can trace every invoice back to the original customer request. If documents get created out of sequence or bypassed, reporting breaks and disputes follow.
+Done well, that chain removes manual handoffs. One manufacturing client cut its order-to-cash cycle by 40% after SD went live, mostly by eliminating handoffs between sales, warehouse and finance.
 
 ## Core components
 
-### Sales order processing
+### Sales orders and the availability check
 
-Sales order processing is where most SD configuration effort lands. It handles order type determination, item category assignment, schedule line configuration, and availability checking.
+Sales order processing is where most SD configuration effort lands: order types, item categories, schedule lines and the availability check.
 
-Available-to-promise (ATP) is the most business-critical element. ATP checks whether the requested delivery date can be met based on current stock, planned receipts, and existing commitments. When ATP is configured properly, sales tells customers what the system can actually commit to. When it is not, sales tells customers what they hope to deliver.
+Available-to-promise (ATP) is the most business-critical piece. It checks whether the requested date can be met from stock, planned receipts and existing commitments. Configured properly, sales tells customers what the system can actually commit to. Configured badly, sales tells customers what it hopes to deliver.
 
-The manufacturing client whose story opened this article had ATP configured but not connected to the production planning run properly. The ATP check was reading static safety stock rather than live planned orders. Sales was quoting from the wrong data.
+In the rollout from the opening, nobody had checked how stock updates were coming from production. Sales was quoting dates the plant could not meet.
 
 ### Pricing and conditions
 
-Pricing is the most underestimated setup in SD. It looks straightforward until your first invoice dispute.
+Pricing is the most underestimated setup in SD. It looks simple until the first invoice dispute.
 
-SAP SD's condition technique allows complex pricing logic: base price, customer-specific discounts, volume breaks, surcharges, freight, tax. Every pricing element is controlled by a condition type and access sequence. The condition record holds the actual value.
+SD's condition technique handles base prices, customer discounts, volume breaks, surcharges, freight and tax. Each element is a condition type with an access sequence, and the condition record holds the value.
 
-The most common pricing problem I see: condition records from go-live that were never updated. A customer who negotiated a 12% discount three years ago still has that condition record active. The business renegotiated to 8%. Nobody updated SD. The customer gets the old rate, the invoice is wrong, and the dispute goes to accounts receivable.
+The most common pricing problem I see: old pricing conditions from go-live that were never updated. The business renegotiates a discount, nobody updates the condition record in SD, the invoice is wrong and the dispute lands in accounts receivable.
 
-Pricing data governance is not a configuration decision. It is a process decision. Someone must own condition record maintenance.
+Pricing governance is a process decision, not a configuration decision. Someone has to own condition record maintenance.
 
-### Shipping and transportation
+### Shipping
 
-Delivery processing in SD covers the picking request, warehouse management handoff, packing, and goods issue. The goods issue is the critical event. It posts the inventory reduction in MM, triggers the billing due list, and stamps the actual delivery date.
+Delivery processing covers picking, packing and goods issue. Goods issue is the critical event: it posts the stock reduction, puts the delivery on the billing due list and records the actual delivery date. Shipping point and route determination control how deliveries are created. Companies with complex distribution networks extend this with SAP Transportation Management (TM).
 
-Shipping point determination, route determination, and transportation planning group configuration control how delivery documents are created and how logistics is managed. For companies with complex distribution networks, SAP Transportation Management (TM) extends SD's native capabilities significantly.
+### Billing, account determination and tax
 
-### Billing and account determination
+Billing turns the delivery into an invoice and creates the accounting document. Account determination maps each billing item to revenue, tax and other G/L accounts, based on the sales organisation, the customer and material account assignment groups and the condition type. When it is wrong, the invoice posts to the wrong account and finance finds out at month-end.
 
-Billing converts the delivery document into an invoice. The billing document triggers the accounting document that posts to FI.
-
-Account determination maps the billing event to the correct revenue account, tax account, and cost of goods sold account. When account determination is wrong, the invoice posts to the wrong GL account. Finance finds out at month-end during the account balance reconciliation, not during UAT.
-
-Tax determination is similarly brittle. Tax codes must align with the customer's tax classification, the material's tax classification, and the delivering plant's tax jurisdiction. A mismatch silently produces a zero-tax invoice in a taxable transaction, or a tax charge on an exempt one.
+Tax determination is just as brittle. It depends on the customer's tax classification, the material's tax classification and the delivering country or jurisdiction. A mismatch can produce a zero-tax invoice on a taxable sale, or tax on an exempt one.
 
 ### Credit management
 
-Credit checks in SD block or flag orders that exceed a customer's credit limit. This is the mechanism that prevents shipping product to a customer whose payment record does not support the exposure.
+Credit checks block or flag orders that would take a customer past their credit limit. It only works if limits are maintained. Static limits set at go-live stop meaning anything as payment behaviour and volumes change.
 
-Credit management only works if credit limits are maintained. Static limits set at go-live become irrelevant within eighteen months as customer payment behaviour and business volumes change. One retail client I worked with discovered during an AR review that eighteen customers had credit limits that had not been updated in two years. Three of them had limits lower than a single standard order. Every order from those customers was being blocked automatically, and the sales team had learned to release the blocks manually rather than escalate for a limit review.
+When a limit falls below a customer's normal order size, every order is blocked automatically. Sales teams then learn to release the blocks rather than ask for a limit review.
 
 That is not credit management. That is a workaround.
 
 ## Organisational structure
 
+These are the SD structure elements and what each one links to.
+
 | Structure element | Purpose in SAP SD | Key linkage |
 |---|---|---|
-| Sales organisation | Top-level sales unit; responsible for product liability and right of recourse | Links SD to company code in FI |
-| Distribution channel | Mechanism through which products reach the customer (wholesale, retail, direct) | Controls pricing, master data, and partner determination |
-| Division | Product group classification within the sales organisation | Material grouping for reporting and output control |
-| Sales area | Combination of sales org, distribution channel, and division; the operative unit for SD | Required for every sales document |
-| Sales office | Geographic sales unit below sales organisation | Regional reporting and partner determination |
-| Sales group | Team within a sales office | Responsible person assignment on orders |
-| Shipping point | Physical location from which goods are shipped | Links SD to WM/EWM and transport |
-| Plant | Producing or supplying unit | Linked to shipping point; source of inventory |
+| Sales organisation | Top-level selling unit, responsible for sales terms and liability | Assigned to a company code in FI |
+| Distribution channel | How products reach the customer (wholesale, retail, direct) | Controls pricing, master data and partner determination |
+| Division | Product group within the sales organisation | Material grouping for reporting and output |
+| Sales area | Sales organisation, distribution channel and division together | Required for every sales document and customer record |
+| Sales office | Geographic sales unit | Regional reporting and partner determination |
+| Sales group | Team within a sales office | Responsible person on orders |
+| Shipping point | Location goods ship from | Links SD to warehouse management and transport |
+| Plant | Producing or supplying unit | Source of stock, linked to shipping point |
 
-The sales area is the operative unit. Every customer master must be maintained at the sales area level. Every sales document is created within a sales area. This is where many migrations fail: customer master records from legacy systems that do not map cleanly to the sales area structure require significant data preparation before loading.
+The sales area is the operative unit. Customer sales data is maintained per sales area, and every sales document is created in one. Many migrations stumble here: legacy customer records that do not map cleanly to sales areas need real preparation before loading.
 
-## How S/4HANA, Advanced ATP, and Joule change SD in 2026
+## What changes on S/4HANA
 
-Four changes from the ECC SD playbook matter for any 2026 programme.
+If you are moving from ECC, these are the SD changes to plan into scope. SAP files the area under "Sales" in its S/4HANA documentation, though most teams still call it SD.
 
-**Advanced ATP (aATP) replaces classic ATP for new implementations.** Advanced ATP adds product allocation, backorder processing, multi-level ATP for complex BOMs, and real-time confirmation refresh. On a European manufacturing programme in 2024 the move from classic ATP to aATP reduced order confirmation latency from minutes to seconds during peak ordering windows. Classic ATP still works on existing S/4HANA installations but new design conversations default to aATP, and it is the model SAP is investing in.
+<explainer-compare title="What changes in SD from ECC to S/4HANA" caption="Each change needs configuration, data migration and testing, so put all six into scope early." options="ECC|S/4HANA" criteria="Customers => Customer master record ; Business partner with a customer role|Credit management => FI-AR-CR ; SAP Credit Management (FIN-FSCM-CR), not optional|Rebates => SD rebate processing, rebuilt from an index ; Condition contracts in Settlement Management|Availability check => Basic product availability check ; Advanced ATP: allocation, backorders, alternative plants|Billing => FI and CO reconciled separately ; One line item in the Universal Journal (ACDOCA)|Revenue recognition => Custom deferral logic on many programmes ; SAP Revenue Accounting and Reporting, licensed separately" highlight="2"></explainer-compare>
 
-**The Universal Journal eliminates SD-to-FI reconciliation.** In ECC, billing documents posted to FI through aggregate tables that required period-end reconciliation. On S/4HANA, billing documents post line items directly to ACDOCA. The reconciliation work disappears. The trade-off: account determination errors create real journal entries that have to be reversed through journal entries, not absorbed in reconciliation.
+1. **Customers are business partners.** Customer master data is maintained through the business partner with a customer role. In a conversion, customer-vendor integration must be set up before the conversion runs.
+2. **Credit management moves to SAP Credit Management.** The ECC credit management (FI-AR-CR) is not available in S/4HANA. SAP Credit Management (FIN-FSCM-CR) is its replacement, so a conversion has to migrate credit data and settings. It is not optional.
+3. **Rebates move to condition contracts.** Classic SD rebate processing is replaced by Settlement Management (condition contract management). Rebate conditions apply immediately instead of being rebuilt from an index.
+4. **Advanced ATP.** S/4HANA's [advanced ATP](https://learning.sap.com/courses/exploring-aatp-in-sap-s-4hana/outlining-advanced-available-to-promise-aatp-in-sap-s-4hana) adds product allocation, backorder processing, alternative-based confirmation across plants, release for delivery and supply assignment. In S/4HANA Cloud these functions are part of the standard licence. On-premise they need a dedicated licence once activated.
+5. **Billing posts into the Universal Journal.** FI, CO and margin analysis share one line item in ACDOCA, which removes the FI-CO reconciliation work of ECC. The trade-off: an account determination error is an immediate posting to the wrong account, visible at line-item level.
+6. **Revenue recognition.** For multi-element contracts, subscriptions or long-term services under IFRS 15, SAP Revenue Accounting and Reporting replaces the custom deferral logic many ECC programmes built. It is separately licensed and needs designing before go-live, not discovering at year-end.
 
-**Revenue Accounting and Reporting (RAR) handles IFRS 15 natively.** For organisations with multi-element arrangements, subscription billing, or long-term contracts, RAR replaces the custom revenue deferral logic that ECC SD programmes typically built. New 2026 programmes use RAR by default; ECC migrations that had custom revenue logic in user exits typically rebuild on RAR during the conversion.
-
-**Joule on SAP Activate accelerates SD fit-gap and configuration.** On standard scope (order types, item categories, basic pricing, output determination) Joule cuts fit-gap and test script authoring 30 to 50 percent. Complex scope (variant configuration, deep RAR, multi-level pricing for distribution networks) still needs senior consultants. Joule on S/4HANA Cloud also surfaces anomalies in order patterns and pricing exceptions, which is useful as a control overlay during go-live stabilisation.
-
-Clean-core under RISE and GROW changes how SD customisation is approached. The Z-tables, custom routines in pricing procedures, and ABAP enhancements that historically lived in the SD configuration now need to move. Most pricing customisations can be replaced by configuration (custom condition types, formula routines that ship as standard, and BAdIs). The few genuine customisations that remain belong on SAP BTP as side-by-side services, not inside the digital core.
+Clean core changes how SD customisation is handled. On public cloud, custom code in the core is not possible. On private cloud and on-premise it is possible but makes every upgrade harder. Most old pricing Z-routines can be replaced with standard condition types, formulas and BAdIs. What genuinely remains belongs in a side-by-side extension on SAP BTP. My [clean core guide](/sap-clean-core-strategy-what-it-means-for-your-business/) covers the decision.
 
 ## Integration points
 
 ### SD with MM
 
-The availability check in SD reads stock from MM. The goods issue at delivery posts an inventory movement in MM. These two transactions are where the SD-MM integration is most visible.
-
-If MM inventory data is inaccurate, the ATP check produces unreliable results. If the goods issue fails because material is not actually available at the shipping point, the delivery cannot be completed and the billing due list stalls.
-
-Keeping these two modules in sync requires both configuration alignment (material master, plant data, MRP settings) and data discipline (no manual stock adjustments that bypass the standard posting logic).
+The availability check reads stock from MM, and goods issue posts the stock movement. If inventory data is wrong, ATP results are unreliable. If goods issue fails because the stock is not really at the shipping point, the delivery cannot complete and billing stalls. Keep both aligned through master data and through discipline: no manual stock adjustments that bypass standard postings.
 
 ### SD with PP
 
-For make-to-order scenarios, sales orders can trigger production orders directly. The confirmed delivery date on the sales order becomes a commitment backed by a production order.
-
-The strategy group in the material master controls how sales orders and production forecasts interact. A wrong strategy group setting means sales orders and planned production run as additive demand rather than netting off. The planning run overestimates requirements. Overproduction follows.
+In make-to-order scenarios, a sales order can drive production directly, so the confirmed date becomes a commitment backed by a production order. The strategy group in the material master controls how sales orders and forecasts interact. Set it wrong and they add up instead of netting off, the planning run overstates demand, and overproduction follows. My [SAP PP guide](/sap-pp-production-planning/) covers the planning side.
 
 ### SD with FI
 
-The billing document is the interface between SD and FI. Every invoice creates an accounting document. In S/4HANA the accounting document posts directly to the Universal Journal (ACDOCA) without an intermediate aggregate table; revenue, tax, and customer open items appear as line items in one record.
+The billing document is the interface. Each invoice creates an accounting document that posts revenue, tax and the customer open item into the Universal Journal. Payment terms on the customer master drive the due date. When sales negotiates terms without telling finance, the system enforces terms finance never agreed.
 
-Revenue Accounting and Reporting (RAR) handles IFRS 15 revenue recognition. For long-term projects, subscriptions, or service contracts, revenue may be deferred and recognised over time rather than at the billing event. RAR must be configured before go-live, not identified during year-end audit. On a US software client in 2023 the original SD design treated all revenue as recognised at billing; the IFRS 15 retrofit added six months to the programme and a seven-figure consultant spend.
-
-Payment terms on the customer master control the due date calculation in FI. Sales negotiating payment terms without coordinating with finance creates terms in the customer master that finance did not agree to.
+If the SD design treats all revenue as recognised at billing and the contracts say otherwise, the retrofit is expensive. Agree revenue recognition with finance before the design is signed off. For the finance side of the integration, see my [SAP FICO guide](/sap-fico/).
 
 ## Where SD implementations break
 
-### Customer master data not ready before go-live
+Four failure points cause most of the post-go-live pain.
 
-Every field in the customer master affects downstream processing. Missing tax classification means wrong tax on invoices. Missing payment terms means FI cannot calculate due dates. Missing shipping conditions means delivery scheduling fails.
+**Customer master not ready.** Every field matters downstream. Missing tax classification means wrong tax. Missing payment terms means FI cannot calculate due dates. Missing shipping conditions break delivery scheduling. Volumes are larger and source data worse than the plan assumes, and cleanup needs business decisions. Start early and treat it as a business workstream, not a technical load. My piece on [why SAP data migration fails](/why-sap-data-migration-fails-and-how-to-fix-it/) covers the method.
 
-Customer master is always underestimated in the project plan. The volume is usually larger than expected. The completeness of source data is usually worse than assumed. The business rules for cleaning it up require business decisions that take time.
+**Pricing conditions not maintained.** Go-live conditions that nobody reviews become invoice disputes within the first year.
 
-Start the customer master workstream early. Do not treat it as a technical migration task.
+**Availability check disconnected from reality.** ATP reading stale data produces promises the business cannot keep. Validate it against real production and stock scenarios, not the clean test data used in unit testing.
 
-### Pricing conditions not maintained
+**Account determination gaps found after go-live.** Test with the actual chart of accounts, tax codes and material groups. Tax codes that do not match can block orders or spark invoice disputes before anyone realises what is wrong.
 
-Pricing conditions from go-live that are never reviewed become a source of invoice disputes within the first year. Set up a process at go-live for ongoing condition record maintenance. Define who owns it, when it is reviewed, and what the change approval process looks like.
-
-### Availability check disconnected from reality
-
-ATP checks reading stale or incorrect data do not protect delivery commitments. They produce promises the business cannot keep. Validate the ATP configuration against real production and stock scenarios, not just the test data used in UAT.
-
-### Account determination gaps found after go-live
-
-Account determination must be tested with the actual chart of accounts, the actual tax codes, and the actual material groups in scope. Test cases written with simplified data miss determination gaps that appear in production. On a European manufacturing programme in 2024 a gap in the tax classification combination for a single product line created six weeks of post-go-live invoice reissuing and a six-figure recovery against the original SoW.
-
-The S/4HANA Universal Journal changes the failure profile here. In ECC, an account determination gap could be absorbed in period-end reconciliation. In S/4HANA, the gap creates an immediate posting to the wrong GL account, visible to auditors at the line-item level. Test account determination with the real chart of accounts before UAT sign-off.
-
-### Credit management becoming a manual workaround
-
-If the sales team routinely releases credit blocks rather than triggering a credit review, the credit management process has broken down. Address this in the first ninety days post-go-live, before the habit is established. SAP Credit Management (FSCM-CR) on S/4HANA adds more sophisticated scoring and integration with external credit bureaus than the classic SD credit management; programmes migrating from ECC should evaluate whether to move to FSCM-CR during the migration rather than carrying classic SD credit logic forward.
-
-## Implementation risk summary
+The table is the checklist I would walk through before UAT sign-off.
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| Incomplete customer master | Invoice errors, delivery failures, FI posting gaps | Start data workstream early; define mandatory field list before migration |
-| Stale pricing conditions | Invoice disputes, incorrect revenue | Establish condition record ownership and review cycle at go-live |
+| Incomplete customer master | Invoice errors, delivery failures, FI posting gaps | Start the data workstream early; define mandatory fields per sales area before migration |
+| Stale pricing conditions | Invoice disputes, incorrect revenue | Name a condition record owner and review cycle at go-live |
 | ATP disconnected from PP or MM | Unreliable delivery promises | Test ATP with live planning scenarios before UAT sign-off |
-| Account determination gaps | Incorrect revenue posting discovered at month-end | Test with actual chart of accounts and full tax code set |
-| Credit management bypass | Uncontrolled exposure, AR disputes | Enforce credit review process; do not accept manual block releases as standard practice |
-| Missing output determination | Invoices and delivery notes not generated automatically | Test all output types with actual printer and email routing in the pre-go-live environment |
-| SD-FI payment terms misalignment | Incorrect due date calculation; cash flow reporting errors | Align terms between sales and finance before customer master is loaded |
+| Account determination gaps | Revenue posted to the wrong accounts | Test with the real chart of accounts and full tax code set |
+| Credit block releases as routine | Uncontrolled exposure, receivables disputes | Enforce limit reviews; track manual releases in the first 90 days |
+| Output not tested | Invoices and delivery notes not sent automatically | Test every output type with real print and email routing before go-live |
+| Payment terms misaligned | Wrong due dates, cash forecasting errors | Agree terms between sales and finance before customer data is loaded |
+
+If the sales team routinely releases credit blocks instead of asking for a review, fix it in the first ninety days, before the habit sets.
 
 ## Frequently asked questions
 
 <details>
 <summary>What is SAP SD and what does it do?</summary>
 
-SAP SD (Sales and Distribution) is the SAP module that manages the order-to-cash process. It handles customer inquiries, quotations, sales orders, delivery, billing, and the handoff to financial accounting.
-
-The core document flow runs from sales order to outbound delivery to billing document to accounting document. Each document references the prior one, which is what makes order-to-cash fully traceable in SAP.
-
-SD integrates tightly with Materials Management (for inventory availability and goods issue), Production Planning (for make-to-order scenarios and ATP reliability), and Financial Accounting (for revenue posting, tax, and credit management).
-
-In S/4HANA, SD sits within the Sales module. The functional scope is broadly consistent with SAP ECC SD. The embedded analytics and simplified data model in S/4HANA reduce some of the complexity in availability checking and billing integration.
+SAP SD (Sales and Distribution) manages order-to-cash: inquiries, quotations, sales orders, deliveries, billing and the handoff to financial accounting. Its document flow links each step to the one before, so every invoice can be traced back to the original order. It integrates with MM for stock and goods issue, PP for make-to-order and availability, and FI for revenue, tax and receivables.
 
 </details>
 
 <details>
 <summary>What is the organisational structure in SAP SD?</summary>
 
-The operative unit in SAP SD is the sales area, which is the combination of sales organisation, distribution channel, and division.
-
-Sales organisation represents the top-level selling entity, linked to a company code in FI. Distribution channel controls how products reach customers (wholesale, retail, direct). Division classifies the product group.
-
-Every sales document is created within a sales area. Every customer master must be maintained at the sales area level for the customer to be visible in sales transactions.
-
-Below the sales area: sales offices represent geographic selling units, and sales groups represent teams within those offices. Both appear on sales documents for reporting and partner determination.
-
-On the logistics side: shipping points represent the physical departure location for deliveries, linked to plants in MM. The combination of plant and shipping point determines where inventory is picked and from where goods move.
-
-Getting this structure right before customer master loading is critical. Retrospective changes to sales area structure after customer master data has been loaded require data migration work and can disrupt pricing and partner determination.
+The operative unit is the sales area: a sales organisation, distribution channel and division together. Every sales document is created in a sales area and customer sales data is maintained per sales area. Sales offices and sales groups sit below for reporting and responsibility. On the logistics side, shipping points and plants determine where goods ship from. Get the structure right before customer data is loaded, because changing it later means reloading data.
 
 </details>
 
 <details>
 <summary>How does pricing work in SAP SD?</summary>
 
-Pricing in SAP SD is controlled by the condition technique. Each pricing element (base price, discount, surcharge, freight, tax) is a condition type. An access sequence defines how the system searches for the valid condition record. The condition record holds the actual value.
-
-A pricing procedure brings condition types together in sequence, with dependencies and calculation rules. Every sales order calls the pricing procedure assigned to the combination of sales area and customer pricing procedure.
-
-Three pricing problems show up most often in practice. First, condition records that were loaded at go-live and never maintained as business terms changed. Second, access sequences that do not reflect the priority of customer-specific versus material-specific pricing. Third, missing condition types for charges or discounts that were not identified in the blueprint.
-
-Pricing disputes almost always trace back to condition record maintenance failures, not configuration errors. Someone agreed to a different commercial term and it was not reflected in SD.
+Pricing uses the condition technique. Each price element is a condition type, an access sequence decides which condition record applies, and a pricing procedure combines the condition types in order. Most pricing disputes trace back to condition records that were not updated when commercial terms changed, not to configuration errors.
 
 </details>
 
 <details>
-<summary>What is availability-to-promise (ATP) in SAP SD?</summary>
+<summary>What is advanced ATP in SAP S/4HANA?</summary>
 
-ATP (available-to-promise) is the check that runs when a sales order is created to determine whether the requested delivery date can be confirmed based on current and planned stock.
-
-The ATP check reads current stock in MM, open purchase orders and production orders, existing sales order commitments, and safety stock requirements. The result is a confirmed quantity and delivery date on the sales order schedule line.
-
-ATP quality depends entirely on the accuracy of the inputs. If production order confirmations are not posted on time, the ATP check reads planned production that has already been consumed. If open sales order quantities are not up to date, the check double-commits inventory.
-
-In S/4HANA, ATP has been enhanced through Advanced ATP (aATP), which adds product allocation, backorder processing, and multi-level ATP for complex supply chains. For most standard manufacturing and distribution scenarios, basic ATP configured correctly is sufficient.
-
-The critical test for ATP before go-live: run it with scenarios that reflect real production and stock volatility, not with the clean test data used in unit testing.
+Advanced available-to-promise (aATP) is S/4HANA's availability check. Beyond the basic product availability check, it adds product allocation, backorder processing, alternative-based confirmation across plants, release for delivery and supply assignment. These functions are included in S/4HANA Cloud and need a dedicated licence on-premise once activated. Use them where supply is constrained or allocation rules matter. For stable supply chains, a well-configured basic check is often enough.
 
 </details>
 
 <details>
 <summary>How does SAP SD integrate with financial accounting?</summary>
 
-The billing document is the integration point between SD and FI. When a billing document is released to accounting, it creates an FI accounting document that posts to revenue accounts, tax accounts, and the customer's open items.
+Through the billing document. Releasing a billing document to accounting creates a journal entry for revenue, tax and the customer open item. Account determination decides the G/L accounts from the sales organisation, account assignment groups and condition type. Tax depends on customer and material tax classifications. Payment terms on the customer master set the due date. For IFRS 15 cases, SAP Revenue Accounting and Reporting defers and recognises revenue over time.
 
-Account determination controls which GL accounts are hit. It depends on the combination of sales organisation, account assignment group on the customer, account assignment group on the material, and the condition type for the revenue item. If any element of this combination is missing or incorrect, the accounting document either fails to post or posts to the wrong account.
+</details>
 
-Tax determination in billing depends on the tax classification on the customer master, the tax classification on the material master, and the tax jurisdiction of the delivering plant. A mismatch produces incorrect tax amounts on the invoice.
+<details>
+<summary>What changes in SAP SD when moving from ECC to S/4HANA?</summary>
 
-Payment terms on the customer master control how FI calculates the due date on the open item. Sales organisations that negotiate payment terms without updating the customer master create a disconnect between what was agreed and what the system enforces.
-
-Revenue recognition in S/4HANA adds another layer: for contracts, services, or long-term deliveries, revenue may be deferred rather than posted at the billing event. This must be configured and tested before go-live, not discovered in the first year-end audit.
+Customers become business partners. Credit management moves from FI-AR-CR to SAP Credit Management, which is mandatory. Rebate processing is replaced by condition contracts in Settlement Management. Advanced ATP becomes available, and billing posts into the Universal Journal. Plan all of these into scope early, because each one needs configuration, data migration and testing.
 
 </details>
 
 <details>
 <summary>What are the most common SAP SD implementation mistakes?</summary>
 
-Five patterns account for most of what goes wrong.
-
-Customer master data underestimated. The volume of customer records is usually larger than expected. The source data completeness is usually worse than assumed. The business rules for cleaning it up require decisions that take time. Treating customer master as a late-phase data task is the most consistent setup for a difficult go-live.
-
-Pricing condition records not governed post-go-live. Commercial terms change. Condition records do not update automatically. Within the first year, stale pricing conditions produce invoice disputes that trace back to the moment someone forgot to update a record.
-
-ATP not validated against real operational scenarios. ATP configured correctly in a clean test environment behaves differently in production where stock is partially committed, production orders are partially confirmed, and delivery priorities conflict. Test ATP with scenarios that reflect real operational complexity before UAT sign-off.
-
-Account determination gaps discovered at month-end. Testing account determination with simplified test data misses gaps that appear when actual material groups, actual tax codes, and actual customer combinations are in play. Use the real chart of accounts in testing.
-
-Output determination not tested end-to-end. Invoice output, delivery note output, and order confirmation output all require printer and email routing to be configured. Gaps in output determination mean documents are not sent automatically. Manual printing becomes a workaround. The workaround becomes permanent.
-
-</details>
-
-<details>
-<summary>How does Advanced ATP differ from classic ATP in S/4HANA?</summary>
-
-Advanced ATP (aATP) is the S/4HANA replacement for classic ATP. It is the model SAP is investing in and the default for new 2026 programmes.
-
-The capability gap is significant on complex scenarios. Classic ATP performs the basic availability check (stock, planned receipts, sales commitments) and produces a confirmed quantity and date. Advanced ATP adds product allocation (the ability to reserve a portion of constrained supply for priority customers or channels), backorder processing (the ability to reprioritise and rerun commitments when supply changes), multi-level ATP (visibility into component availability for BOM-based products), and release for delivery (a separate step that can be controlled by exception rules).
-
-For mid-market manufacturers with stable supply chains, classic ATP configured well is often sufficient. For organisations with constrained supply, allocation requirements, or complex BOM-based commitments, aATP is the right answer.
-
-On migration: classic ATP still works on S/4HANA, but SAP's investment direction is clear. New design conversations should default to aATP unless the business case for staying on classic is explicit and quantified.
-
-</details>
-
-<details>
-<summary>How does clean-core under RISE and GROW change SD customisation?</summary>
-
-Under RISE with SAP and GROW with SAP, custom ABAP in the digital core blocks upgrades and creates regression risk on every quarterly release. The SD customisation patterns that worked in ECC need to move.
-
-Most pricing customisations can be replaced by standard configuration. Custom condition types, formula routines from the standard library, and Business Add-Ins (BAdIs) cover most scenarios that previously required Z-tables or user exits. On a European manufacturing programme in 2024 the SD customisation review eliminated 40 percent of inherited Z-objects through configuration replacement; the remaining 20 percent moved to SAP BTP as side-by-side services.
-
-The customisations that genuinely belong on BTP: complex pricing logic that depends on external data sources, output determination that requires custom integration with third-party document services, partner-specific business rules that vary by region. These extensions interact with S/4HANA through standard APIs and survive every release.
-
-The customisations that do not survive clean-core: Z-tables for pricing routines, custom ABAP in user exits inside the SD configuration, modifications to standard SAP objects. These need to be retired during the migration or rebuilt on BTP. Doing this late in the programme is expensive; doing it during the fit-gap analysis is the difference between a clean migration and a six-figure recovery.
+Five come up again and again. Underestimating customer master data. Leaving pricing conditions without an owner after go-live. Testing ATP only with clean data. Testing account determination with simplified data. Not testing output end to end. The last one is easy to miss. When invoices do not go out automatically, someone starts printing them by hand, and the workaround becomes permanent.
 
 </details>

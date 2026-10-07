@@ -1,455 +1,190 @@
 ---
 title: "Choosing the right toolset for SAP testing and validation"
 metaTitle: "SAP Testing Tools 2026: Tricentis, Xray, Cloud ALM"
-metaDescription: "How to choose between Tricentis Tosca, Xray for Jira, SAP Cloud ALM, and Solution Manager for SAP testing in 2026, and where each one breaks down on real programmes."
-excerpt: "A practical comparison of the SAP testing tools you will actually run into in 2026. Tricentis, Xray, SAP Cloud ALM, and Solution Manager. What each does well, where each falls short, and how I pick between them on real programmes after 21 S/4HANA rollouts."
+metaDescription: "SAP testing tools compared for 2026: SAP Cloud ALM, Tricentis, Xray for Jira and Solution Manager. What each does well, where each breaks, and how to choose."
+excerpt: "A practical comparison of the SAP testing tools you will actually meet in 2026: SAP Cloud ALM, Tricentis, Xray and Solution Manager. What each does well, where each falls short, and how I pick between them."
 slug: "sap-testing-validation-tools-comparison"
 date: "2025-06-07"
-updated: "2026-05-21"
+updated: "2026-10-07"
 lastReviewed: "2026-05-21"
 hero: "/images/wp/2025/06/5.webp"
 heroAlt: "Comparison of SAP testing tool dashboards across Tricentis, Xray, and SAP Cloud ALM"
 category: "erp-consulting-guide"
 tags: ["sap-technical-decisions", "sap-testing", "sap-cloud-alm", "rise-with-sap"]
 author: "Noel D'Costa"
-experienceSource: "Direct experience selecting and operating SAP testing tools across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets, on ECC and S/4HANA, RISE, GROW, and on-premise editions. Anchored case studies: European manufacturing 2023 (Tosca rollout), European retail late 2023 (Xray on agile S/4HANA), European financial services Q1 2024 (Solution Manager for audit), GCC manufacturing 2024 (Cloud ALM transition). 2026 Tricentis Tosca cloud, SAP Cloud ALM, and Joule integration coverage reflects current product positioning."
+experienceSource: "Noel's SAP testing experience as published in the original article: dozens of tool demos, and three case studies (a global manufacturer that rolled out Tosca, a retail company on Xray for Jira, and a financial services institution that used Solution Manager for audit traceability). Tool licensing and maintenance dates (Cloud ALM, Tricentis entitlement with Enterprise Support, Solution Manager 2027) checked against SAP and Tricentis sources in October 2026."
 keyTakeaways:
-  - "Use SAP Cloud ALM as the 2026 default for RISE and GROW. Solution Manager is in extended support through 2027 and is the right answer only for existing on-premise landscapes already running it"
-  - "Use Tricentis Tosca for end-to-end automation across SAP and non-SAP. Once your test models stabilise, regression coverage becomes consistent across releases"
-  - "Do not expect one tool to do both documentation and automation well. Combine them"
-  - "Functional tests do not catch performance bottlenecks. Peak-load testing belongs in a separate cycle"
-  - "Tool fit comes from your release cadence, deployment model (RISE, GROW, on-premise), and audit posture, not from the vendor demo"
-  - "Joule-assisted test generation cuts script authoring time 20 to 40 percent on SAP-native flows. Factor that into 2026 vendor proposals"
-  - "Clean-core compliance shifts the testing target. Custom ABAP in the digital core is the most expensive place to discover a regression"
+  - "Use SAP Cloud ALM for test management on new programmes. Solution Manager's mainstream maintenance ends in 2027"
+  - "SAP Enterprise Support now includes an entry-level Tricentis test automation licence. Check that entitlement before you buy anything"
+  - "Use Tricentis Tosca for process automation across SAP and non-SAP. Once test models stabilise, regression coverage holds across releases"
+  - "Do not expect one tool to do documentation and automation well. Combine them"
+  - "Functional tests do not catch performance bottlenecks. Peak-load testing needs its own cycle"
+  - "Clean core shifts the testing target: SAP BTP extensions need their own regression coverage"
 pullQuote: "I have sat through dozens of tool demos where everything works perfectly. Then in the real project the scripts keep breaking, or the integration never worked the way the vendor showed. That is why feature checklists are not how I pick SAP testing tools."
-mentions: ["SAP S/4HANA", "SAP Solution Manager", "SAP Cloud ALM", "Tricentis Tosca", "Atlassian Jira", "Xray for Jira", "RISE with SAP", "GROW with SAP", "Joule", "SAP Build Code"]
+mentions: ["SAP S/4HANA", "SAP Solution Manager", "SAP Cloud ALM", "Tricentis Tosca", "Atlassian Jira", "Xray for Jira", "RISE with SAP", "GROW with SAP", "Joule"]
 ---
 
-SAP testing should not be just another checkbox during implementation. It is a risk control mechanism. I have seen too many programmes underestimate it, only to run into issues later that could have been avoided with better validation early on.
+For most SAP programmes in 2026, the toolset is SAP Cloud ALM for test management and traceability, a Tricentis product for automation, and a separate tool for performance testing. Cloud ALM carries no licence fee for customers with SAP Enterprise Support or a cloud subscription, and Enterprise Support now includes an entry-level Tricentis automation licence. Xray fits when delivery already runs in Jira. Solution Manager only makes sense where it is already configured, because its mainstream maintenance ends in 2027. This guide is for test leads, programme managers and QA owners choosing tools for an S/4HANA programme. Check what your support contract already entitles you to before you buy anything.
 
-If you are dealing with ECC, S/4HANA, or a connected SAP landscape sitting alongside Oracle or Salesforce, testing keeps the environment stable. But here is the issue. SAP testing is rarely straightforward. The systems are integrated deeply. Business processes stretch across modules. Timelines are tight, and many of the popular testing tools do not fully account for that complexity.
+I have sat through dozens of tool demos where everything works perfectly. Then in the real project the scripts keep breaking, or the integration never works the way the vendor showed. That is why I do not pick SAP testing tools from feature checklists. I pick them from release cadence, deployment model and audit posture.
 
-Over the years, I have watched companies invest in SAP testing tools without knowing what problems they are actually solving. Some need deeper test management. Others want traceability or help with audits. For many, even just documenting tests properly is a challenge.
+## What you are actually testing
 
-This article walks through what the market actually offers. Not just a side-by-side feature comparison, but a way to understand which tool fits your situation. What works for one team rarely works for another.
+SAP testing is a risk control, not a pre-go-live checkbox. It starts in Realize and continues for as long as the system changes. Five layers matter, and none substitutes for another:
 
-## Understanding SAP testing needs
+1. **Unit testing**: developers confirm individual programs and functions behave as expected
+2. **Integration testing**: a sales order moves into delivery and billing, and each handoff posts correctly
+3. **Regression testing**: in an integrated system, small changes break unrelated areas
+4. **User acceptance testing**: finance and operations confirm the system handles real scenarios
+5. **Performance testing**: the system stays responsive at peak volume, which no functional script will tell you
 
-When people think of SAP testing, they often imagine a checklist before go-live. But the reality is that testing begins much earlier and continues well into production. What you are validating is not just software. It is how your business actually works. How transactions move, how data flows, how people rely on the system under pressure.
+<explainer-layers title="Five layers of SAP testing" caption="None of them substitutes for another. Performance is the layer functional scripts never cover." layers="Performance => Responsive at peak volume, in its own test cycle|User acceptance => Finance and operations confirm real scenarios|Regression => Small changes break unrelated areas, so retest them|Integration => Each handoff in a flow posts correctly|Unit => Programs and functions behave as expected" tones="accent||||"></explainer-layers>
 
-### Types of SAP testing
+Automation pays off on frequent regression cycles, large data or interface checks, and predictable flows after each transport. It does not replace judgement. A script will not notice that a screen confuses users or that a workflow makes no practical sense.
 
-In any SAP project, there are different layers of testing. Each one serves a unique purpose. Ignoring one usually creates a gap that surfaces later, sometimes when it is least expected.
+Test what the business needs to protect. Month-end close, revenue-critical processes and anything rolled out across many sites come first. Full coverage tied to nothing is not protection. My guide to [SAP performance testing](/sap-performance-testing-it-leaders/) covers the fifth layer in depth.
 
-1. Unit testing covers individual programs or functions. This is mostly technical. It helps developers confirm that small blocks of code behave as expected.
-2. Integration testing checks how different SAP modules communicate. For example, when a sales order moves into delivery and then billing, each step needs to link correctly.
-3. Regression testing becomes important when system changes occur. Since most SAP environments are interconnected, even small changes can affect unrelated areas.
-4. User acceptance testing (UAT) is about business validation. This is where users from operations or finance confirm whether the system supports real-world scenarios.
-5. Performance testing is one that I see many teams overlook. A system might work fine during testing, but when actual users log in during a peak period, it begins to slow down. Performance testing simulates load, stress, and data volume to make sure the system remains responsive. It can reveal bottlenecks that no functional script will ever catch.
+## The four tools
 
-Each of these serves a different set of SAP testing requirements. You cannot substitute one for another. They work together, not in isolation.
+### SAP Cloud ALM
 
-### Role of test automation in SAP
+SAP's lifecycle management platform links requirements, test plans, test execution and defects to SAP Activate phases and to changes. Customers with Enterprise Support, Product Support for Large Enterprises, or a cloud subscription that includes the "SAP Enterprise Support, cloud editions" service get one tenant with no licence fee. RISE and GROW contracts qualify.
 
-Automation can help, but not everywhere. It works best when the process is stable, the test case repeats often, and the business sees clear value.
+SAP has also added AI to it. Joule-based assistants can draft requirements and generate test cases from documentation, and SAP positions a test management assistant for ECC to S/4HANA migrations that proposes risk-based test scope. Treat the output as a first draft for your test architect to review.
 
-You get real benefits from automation in situations like:
+For any new S/4HANA programme, Cloud ALM is the default backbone for test documentation and traceability.
 
-1. Running frequent regression cycles
-2. Validating large datasets or system interfaces
-3. Rechecking predictable workflows after transport moves
+### Tricentis
 
-But not everything should be automated. Some tests need context, or a user's judgement, to tell if something is truly working. A script will not know if a screen layout confuses users or if a workflow makes practical sense.
+[Tricentis Tosca](https://www.tricentis.com/products/automate-continuous-testing-tosca) uses model-based automation: you build reusable test components visually instead of writing scripts, which suits functional teams. It covers SAP GUI, Fiori and non-SAP applications in one test flow, which is its main advantage for testing whole business processes.
 
-### Aligning SAP testing with business priorities
+SAP and Tricentis have a close partnership. SAP resells Tosca-based products such as SAP Enterprise Continuous Testing by Tricentis, SAP Load Testing by Tricentis and SAP Change Impact Analysis by Tricentis. For budgets, the bigger news is in [SAP's usage rights](https://support.sap.com/en/alm/usage-rights.html). Enterprise Support customers get a term licence for Tricentis Test Automation for SAP integrated with Cloud ALM, currently to 31 December 2027. It is capped at 5 named users, 500 test runs a month and 5 execution agents, so treat it as a starting point rather than a programme-scale tool.
 
-Testing should not exist just to check boxes. It should reflect what the business actually needs to protect.
+Where it struggles: highly dynamic web front ends raise maintenance effort, test data management at scale usually needs extra tooling, and a large module library needs governance from the start.
 
-1. Are there critical deadlines during month-end close?
-2. Do any processes directly affect revenue or customer experience?
-3. Will changes be rolled out globally or in stages?
+### Xray for Jira
 
-I usually tell clients to focus less on testing everything and more on testing what matters most. If your testing strategy is not tied to business goals, then even perfect coverage does not offer real protection.
+[Xray](https://www.getxray.app/) was not built for SAP, but if your delivery runs in Jira it feels like a natural extension. Test cases sit next to user stories and change requests, so coverage becomes part of sprint planning. It supports Cucumber and Gherkin for behaviour-driven tests and plugs into CI pipelines.
 
-## Overview of leading SAP testing tools
+Where it struggles: heavy SAP transactional testing such as batch jobs and deep integration chains, very large test repositories, and complex custom reports, which need add-ons or API work.
 
-I have sat through dozens of tool demos where everything works perfectly. Then, in the real project, it turns out the scripts keep breaking, or the integration never really worked the way we expected. That is why when it comes to SAP testing tools, I always say you cannot just go by feature checklists or vendor slides.
+### SAP Solution Manager
 
-This section covers a few of the more commonly used tools. Not necessarily the best ones in every case, but these are the ones you will run into often, especially in SAP environments that stretch across functions, geographies, and change cycles.
+Solution Manager links requirements, test plans, execution and transports in one place, and integrates with Change Request Management (ChaRM). Its Business Process Change Analyzer narrows test scope to the processes a change actually touches. In regulated environments that audit trail is still valuable.
 
-### 1. Tricentis Tosca
+Its weaknesses are a dated user experience, heavy set-up, automation (CBTA) that only covers SAP user interfaces, and a skill set few teams still have. Mainstream maintenance ends at the end of 2027, with extended maintenance to 2030 for selected functions. Do not bring it in for test management if you are not already using it for change control.
 
-[Tricentis Tosca](https://www.tricentis.com/products/automation/tosca/) comes up early in almost every SAP testing tools comparison. Mainly because it avoids scripting and uses what they call "model-based" testing. That can be helpful if your team is functional and does not want to get into code. You build test components visually, kind of like assembling blocks.
+Other tools fit niches. Worksoft Certify is strong in validated environments such as pharmaceuticals. Katalon can help on lightweight, web-facing SAP projects. Neither is what I usually recommend for a core SAP test programme.
 
-I have seen it perform really well in landscapes where SAP is tightly integrated with other systems. It supports SAP GUI, Fiori, and even non-SAP applications in a single test flow, which is a big deal for end-to-end testing.
+## Side-by-side comparison
 
-| Test area | Where Tricentis works well | Where Tricentis struggles |
+The table compares the four tools on the capabilities that decide fit.
+
+| Capability | SAP Cloud ALM | Tricentis | Xray for Jira | SAP Solution Manager |
+|---|---|---|---|---|
+| Main job | Test management and traceability | Automation across SAP and non-SAP | Test management inside Jira | Test management tied to ChaRM |
+| Requirements traceability | Native, linked to Activate phases | Full, via its own test management | Via Jira links; needs discipline | Native, strongest with ChaRM |
+| Automation | Through integrated Tricentis or partner tools | Core strength, model-based | Through external frameworks | CBTA, SAP interfaces only |
+| Non-SAP applications | Limited | Yes, in the same flow | Yes, via frameworks | No |
+| Audit trail | Strong | Strong | Limited out of the box | Strong, includes transports |
+| Licensing | No fee with Enterprise Support | Entry licence with Enterprise Support; full products priced separately | Per-user add-on to Jira | Included with on-premise maintenance |
+| Outlook | SAP's strategic platform | Deepening SAP partnership | Depends on Jira strategy | Mainstream maintenance ends 2027 |
+
+## How I pick between them
+
+I separate testing into documentation and automation. They solve different problems, and teams that force both into one platform usually struggle.
+
+For documentation and traceability, use Cloud ALM on a new programme. If Solution Manager already runs your change control, extend it until the landscape moves, then migrate. For automation, Tricentis is my usual recommendation for SAP-heavy landscapes with frequent releases. Once the models are stable, execution is consistent and maintenance falls compared with scripted automation. For agile teams building Fiori apps and APIs in Jira, Xray is often enough.
+
+Before choosing, work through these questions with the people who will run the tests.
+
+| Factor | Why it matters | Question to ask |
 |---|---|---|
-| SAP testing | Strong integration with SAP GUI, Fiori, and ECC. Good support for end-to-end business process testing. | Less effective in custom SAP extensions or hybrid environments involving legacy + SAP S/4HANA. |
-| API testing | Tosca supports REST and SOAP APIs with reusable test modules and data-driven approaches. | Limited native support for newer protocols (GraphQL, gRPC); lacks the flexibility of Postman or SoapUI for deep API chaining. |
-| Web and UI automation | Model-based testing works well for stable UIs; visual automation enables cross-browser coverage. | Struggles with highly dynamic JavaScript-heavy apps (React/Angular SPAs); maintenance overhead can grow quickly. |
-| Test management and reporting | qTest provides test case traceability, dashboards, and integration with Jira and CI tools. | UI can feel dated; enterprise reporting is basic compared to ALM tools like Xray or Zephyr. |
-| Mobile app testing | Some support via Tosca Mobile+ and integrations with Appium for basic flows. | Not optimised for complex gestures, real-device testing, or cross-platform app testing at scale. |
-| Data-driven testing | Strong data separation and parameterisation support; integrates well with Excel and databases. | Test data management at scale (masking, provisioning) often requires external tooling. |
-| DevOps integration | Works with Jenkins, Azure DevOps, and Git-based workflows for test orchestration. | Automation pipelines are less flexible than open-source stacks; requires scripting for fine-grained control. |
-| Learning curve | Non-technical users can build tests with minimal coding; visual flow logic is easy to understand. | Test architecture setup and module management require structured governance; onboarding can take time in large teams. |
+| SAP coverage | Tests must drive SAP GUI, Fiori and the interfaces you actually use | Which SAP UI technologies and APIs does it support natively? |
+| Change impact | Knowing what to retest after a transport avoids over-testing and missed risk | Can it link a change to the tests it affects? |
+| CI/CD integration | Automated runs need triggers from your pipeline | Does it work with your build and transport tooling? |
+| Governance | Large programmes need reusable, versioned components | Can tests be modularised, versioned and reused across waves? |
+| Business usability | Functional consultants and key users must review tests | Can non-developers create and read test cases? |
+| Entitlements | Your support contract may already cover part of the need | What do Cloud ALM and the Tricentis entitlement already give us? |
+| Total cost | Set-up, agents and maintenance outweigh the licence | What does year two cost, including model maintenance? |
 
-### 2. Xray for Jira
+## What real programmes taught me
 
-[Xray for Jira](https://www.getxray.app/) was not built for SAP specifically, but if your team already uses Jira, then it can feel like a natural extension. I have seen teams use it for Fiori apps or for interface testing between SAP and third-party platforms.
+**Global manufacturer: Tosca.** The company ran SAP ECC with a heavily customised warehouse system. Quarterly releases kept slipping on long manual regression cycles and defects leaking into production. The team piloted Tosca in inbound logistics and built a library of reusable steps over four weeks. Automated runs were linked to transport approvals, then extended to outbound logistics and production planning. Regression coverage of high-volume transactions rose from 35% to more than 85%, and post-go-live defects fell 40% within two quarters. I remember the pushback during rollout about automating such a custom environment. It stopped once the teams saw production incidents drop and the same models reused across plants.
 
-It lives inside Jira, so your test cases are linked to user stories or change requests. That visibility helps, especially in agile or semi-agile projects.
+**Retail company: Xray.** The company moved to S/4HANA alongside new Fiori apps and cloud integrations, and ran all IT delivery in Jira. Xray tied tests to user stories, let product owners follow progress without switching tools, and supported Gherkin acceptance criteria for the Fiori squads. Test evidence was ready for sprint reviews. It would not have handled heavy transactional or batch testing, but for agile Fiori, API and user-centric work it was enough without adding complexity.
 
-| Test area | Where Xray works well | Where Xray struggles |
-|---|---|---|
-| Test management in Jira | Native Jira experience; issues, requirements, defects, and tests are tightly linked. | Heavy reliance on Jira limits flexibility in complex, non-agile environments or external test teams. |
-| Manual test management | Clear traceability, reusable test cases, versioning, and test sets work well in manual workflows. | No native support for test data-driven iterations; manual step duplication required. |
-| Automation integration | Good support for CI/CD via REST API, Jenkins, Bamboo, GitHub Actions; integrates with frameworks like JUnit, NUnit, and Cucumber. | Test result uploads can be complex to manage at scale; no orchestration layer like Tosca or TestNG Suites. |
-| Reporting and traceability | Built-in coverage reports, requirement traceability, and test execution dashboards are Jira-native. | Complex custom reports need external tools like eazyBI or scripting with REST APIs. |
-| BDD/Gherkin support | First-class support for Cucumber and Gherkin syntax; test cases are version-controlled and linked to user stories. | Gherkin editing and readability in Jira UI is not ideal for business users; lacks native IDE experience. |
-| Scalability | Scales well in mid-sized Jira instances with distributed teams working in agile or SAFe setups. | Performance degrades in large instances with thousands of test cases or frequent API interactions. |
-| Learning curve | Low barrier to entry for Jira users; quick adoption by QA and product teams already in Jira. | Test specialists used to standalone ALM tools (ALM/QC, TestRail) find the Jira-native model restrictive. |
+**Financial services institution: Solution Manager.** A heavily customised landscape across finance, treasury and regulatory reporting faced audit pressure for full traceability. Testing lived in spreadsheets with no link to transports. Linking test plans to ChaRM change documents, time-stamping every execution and using the Business Process Change Analyzer to scope retests changed the conversation. The turning point came when auditors stopped asking for Excel files and validated test history directly in the system.
 
-### 3. SAP Solution Manager (SolMan)
+**Moving from Solution Manager to Cloud ALM.** Migrating test documentation is a project of its own. Do it when the landscape is moving anyway, for example as part of a RISE adoption, and not on its own.
 
-This one often comes up with a sigh. [SAP Solution Manager](https://help.sap.com/docs/SAP_SOLUTION_MANAGER) has been around for a long time, and many companies have it installed but do not use it fully. Still, when it comes to structured SAP testing, especially in regulated or high-control environments, it plays a critical role.
+## Practices that make testing work
 
-SolMan links requirements, test plans, test execution, and transports all in one place. That sounds simple, but in practice, it saves a lot of headaches during audits or system updates.
+Tools do not deliver quality on their own. These practices do, and they hold across tools.
 
-| Test area | Where SolMan works well | Where SolMan struggles |
-|---|---|---|
-| SAP-centric testing | Tight integration with SAP S/4HANA, ECC, and BW. Test Suite understands SAP processes and transports. | Limited value outside SAP ecosystem; poor fit for cross-application testing (Salesforce, custom portals). |
-| Test automation (CBTA) | Component-Based Test Automation works with standard SAP UIs and business processes; scriptless execution is SAP-aware. | CBTA supports only SAP GUI and WebDynpro; lacks modern browser or non-SAP UI coverage. |
-| Business Process Change Analyzer | Detects impacted business processes based on code changes; reduces test effort by narrowing scope. | Requires complete and current business process documentation in Solution Documentation; setup is resource-heavy. |
-| Test planning and execution | Centralised test plan execution; integrates with Change Request Management (ChaRM) and transports. | User experience is dated; managing large-scale test cycles is slow and complex compared to modern tools. |
-| Test documentation | Captures manual test results, screenshots, and audit logs tied to requirements and changes. | Lacks real-time collaboration, version control, or rich formatting options for test artefacts. |
-| Regression testing | Useful for SAP quarterly updates or transport bundles; integrates with Retrofit and Solution Documentation. | CBTA requires significant maintenance for evolving UI elements; no self-healing capabilities. |
-| Tool adoption and skills | Best suited for teams already trained in SAP ALM processes; native for SAP-run environments. | Steep learning curve; CBTA and BPCA are not widely known outside mature SAP Basis/ALM teams. |
-
-### My recommendation on SAP testing tool use
-
-I usually separate SAP testing into two distinct areas: documentation and automation. They solve different problems and need different tools. Trying to do both with one platform rarely works well, and I have seen teams struggle because of that assumption.
-
-#### Use SAP Solution Manager for test documentation and traceability
-
-If you already use Solution Manager for ChaRM or ITSM, it makes sense to extend it for testing documentation. SolMan allows you to map requirements to test cases, track execution, and link results to transports. That visibility is especially valuable in regulated environments or where change tracking is critical.
-
-1. You can control which test case was executed for which change.
-2. Documentation becomes easier to audit and easier to maintain.
-3. Everything stays in one place, tied to system change logs.
-
-I do not recommend bringing in SolMan just for test management if you are not already using it for broader change control. In that case, the overhead tends to outweigh the benefit.
-
-#### Use Tricentis Tosca for SAP test automation
-
-For test automation, Tricentis Tosca remains my recommendation. It handles SAP GUI and Fiori workflows well and supports regression testing across full end-to-end scenarios. Once your test models are stable, execution becomes consistent. You reduce the risk of manual gaps and speed up release cycles without sacrificing depth.
-
-1. Tosca fits especially well in landscapes with frequent releases.
-2. It works across SAP and non-SAP systems without custom scripting.
-3. Test maintenance is lower over time compared to traditional automation.
-
-What I see working best is combining both: SolMan to document and trace, Tosca to automate and execute.
-
-Other tools like Worksoft Certify or Katalon Studio may still fit in niche scenarios. Certify is strong in validated environments like pharma. Katalon can help with lightweight, web-facing SAP projects, but those tools are not what I usually recommend for core SAP test programmes.
-
-### Comparative analysis of SAP testing tools
-
-| Capability | Tricentis | Xray with Jira | SAP Solution Manager |
-|---|---|---|---|
-| Requirements traceability | Full traceability between requirements, test cases, defects, and executions. | Traceability via Jira links but needs discipline. | End-to-end inside SAP, especially with ChaRM. |
-| Version control of test cases | Supports versioning, branching, and reuse. | Limited unless combined with Git. | Versioning available but management is not intuitive. |
-| Mobile testing support | Integrated with Appium, Tosca Mobile+. | Depends on external frameworks. | No support for mobile testing. |
-| Test environment management | Links tests to environments; supports automated provisioning with CI/CD. | No native capability; managed in Jira fields. | Basic environment tags; limited automation. |
-| Training and ecosystem | Good partner ecosystem; training requires licensing. | Broad open ecosystem; low learning curve due to Jira familiarity. | SAP-specific skill set; few community contributors. |
-| Audit and compliance | Full audit trail of test creation, execution, and user actions. | Limited out-of-the-box audit; extensible via plugins. | Strong fit for regulated SAP landscapes; integrates with transport audit. |
-
-## Factors to consider when choosing SAP testing tools
-
-I have often seen SAP teams rush into tool selection without taking a step back to align it with their broader SAP testing strategy. The result is usually the same. They end up with a tool that either gets underused or creates friction in their workflows. Selecting SAP testing tools needs more than a feature comparison. It needs context.
-
-Here are the key factors I usually advise clients to work through before finalising their toolset.
-
-### 1. Alignment with organisational goals
-
-The first question I ask is: what are you really trying to achieve with your SAP testing? Is it faster release cycles? Is it audit trail and compliance? Is it simply making regression easier across global rollouts?
-
-A tool that supports your SAP testing strategy should reflect your broader business and IT priorities. If your landscape changes frequently or involves multiple waves of rollout, your testing tool must support iterative updates. On the other hand, if stability is the goal, focus more on traceability and structured validation.
-
-Without this alignment, even the most powerful tool feels like a mismatch.
-
-### 2. Compatibility with existing systems and workflows
-
-I have seen cases where the testing tool worked perfectly in isolation but created friction when teams tried integrating it into their current process. That happens more often than you might think.
-
-So before selecting SAP testing tools, review how the tool fits into your current ecosystem.
-
-1. Does it integrate with your existing issue tracking system?
-2. Can it support SAP GUI as well as newer interfaces like Fiori?
-3. Will your functional users be able to use it without extra effort?
-
-Sometimes you will find that the tool technically works, but only after adding multiple plugins or workarounds. That tends to add cost and complexity over time.
-
-### 3. Vendor support and community presence
-
-This one gets overlooked often. When evaluating tool selection criteria, I always look at the quality of vendor support. If something breaks during a critical deployment, will your team get a real response quickly?
-
-Also, does the tool have an active community? Are there people out there who have solved the same problems? You do not always need formal support. Sometimes a forum post or shared script can save hours.
-
-### 4. Adaptability and future readiness
-
-Your SAP landscape today may look very different in two years. You might move from ECC to S/4HANA, adopt more cloud services, or bring in third-party platforms. So while selecting SAP testing tools, check how adaptable the tool is.
-
-1. Does it support new UI frameworks like SAPUI5?
-2. Can it be used for both on-premise and cloud-based scenarios?
-3. Will it still be useful if your test strategy changes from waterfall to agile?
-
-I try to avoid locking clients into tools that feel rigid. The flexibility to evolve should be built in, not added later.
-
-| Factor | Why it matters | Questions to ask |
-|---|---|---|
-| SAP ecosystem compatibility | Tools must integrate with SAP modules, transports, Fiori, and S/4HANA components. | Does the tool support Fiori, SAP GUI, and Solution Manager APIs? |
-| Test automation capability | Automation reduces manual effort, improves speed, and ensures repeatability of regression cycles. | What technologies and UI layers does the tool support natively? |
-| Change impact awareness | Knowing what to test after a transport or system change prevents over-testing or missed risks. | Can it link code changes to test scope dynamically? |
-| Integration with CI/CD | Modern pipelines need tools that support automation triggers, API control, and reporting. | Does the tool support Jenkins, Azure DevOps, or GitHub workflows? |
-| Scalability and governance | Enterprise programmes need reusable components, versioning, and access control. | Can tests be modularised, versioned, and reused across projects? |
-| Business user friendliness | Functional consultants or SMEs should be able to validate and contribute to tests. | Can non-developers create, understand, and review test cases? |
-| Licensing and total cost | Tool choice must align with budget, including hidden costs like environment setup or plugin dependencies. | What are the licence tiers, support costs, and deployment overheads? |
-
-## Case studies and real-world applications
-
-Tool selection always feels a bit theoretical until you see what happened on the ground. That is why I often come back to real project examples. They show what worked, where things slowed down, and how teams actually got the benefits they were looking for, sometimes after a few detours.
-
-### Case study 1: Implementing Tricentis Tosca in a European manufacturing firm
-
-In 2023, a large European manufacturing company operating SAP ECC along with a highly customised warehouse management system was facing significant delays in delivering tested, stable releases. Their quarterly release cadence was frequently disrupted due to long regression cycles and high defect leakage into production. Most of the testing was performed manually, which created dependency on a few key testers and made coverage inconsistent across business units.
-
-#### Challenges
-
-1. **Limited test coverage:** Regression tests focused only on critical paths due to time constraints, leaving many configurations and exception flows untested.
-2. **Manual effort dependency:** All test cases were executed manually, often relying on tribal knowledge and spreadsheets that were not version-controlled.
-3. **Low engagement from business users:** Business stakeholders were already overloaded and found it difficult to allocate time to support test case creation or UAT cycles.
-4. **Inconsistent test documentation:** Many test scenarios lacked clear steps or expected results, leading to variability in how tests were executed across locations.
-
-#### Implementation approach
-
-1. **Pilot-first strategy:** Tosca was first introduced in a low-risk functional area (inbound logistics) to validate feasibility and gain early buy-in.
-2. **Model-based test design:** Test cases were developed using reusable components, allowing testers to quickly adapt them for different plants and business units.
-3. **Modular library build:** Over four weeks, the team created a centralised library of reusable test steps aligned with SAP transaction codes and key business processes.
-4. **Integration with transport approvals:** Automated test execution was linked to transport release workflows, ensuring validation before deployment.
-5. **Progressive onboarding:** After the pilot, additional process areas such as outbound logistics and production planning were brought under test automation in phased rollouts.
-
-#### Results
-
-1. **Increased regression coverage:** The test library eventually covered more than 85% of high-volume transactions, compared to just 35% under manual testing.
-2. **Stable release cycles:** Releases became more predictable, with a 40% reduction in post-go-live defects within two quarters.
-3. **Reduced business dependency:** With reusable automation, the need for business user involvement in every regression cycle decreased significantly.
-4. **Better documentation discipline:** Automated scripts enforced clear documentation and helped standardise testing across locations.
-5. **Cross-plant reuse:** Once models were created, they were easily reused across different manufacturing plants with minimal effort.
-
-I remember some pushback during the rollout phase. Teams were sceptical about automating in such a custom environment. But then they saw the drop in production incidents and how easily the same test scripts could be used across plants. The conversation changed completely.
-
-### Case study 2: Using Xray for Jira in a European retail company
-
-A leading European retail company migrated to SAP S/4HANA in late 2023 as part of a broader digital transformation initiative. Alongside ERP modernisation, the business was revamping its customer-facing applications, introducing Fiori-based apps, and integrating with multiple cloud services. The delivery approach across IT was agile, with Jira serving as the single system of record for user stories, backlogs, test tasks, and product releases.
-
-#### Why Xray worked well
-
-1. **Native Jira integration:** Test cases, executions, and defects could be tied directly to user stories, making test coverage part of sprint planning.
-2. **Non-technical user access:** Business analysts and product owners could view test progress from dashboards and filters without switching tools.
-3. **Low overhead:** Teams did not need to maintain separate tools for test case management. Xray fit into existing Jira workflows with minimal friction.
-4. **Support for BDD and Cucumber:** Agile squads building Fiori apps used Gherkin syntax to define acceptance criteria and automated tests in the same place.
-5. **Parallel testing across teams:** Test artefacts could be reused or cloned across teams without losing visibility or traceability.
-
-#### Efficiency gains
-
-1. **Faster sprint testing:** Test cycles were embedded in the sprint rhythm, enabling faster feedback without blocking development.
-2. **Improved visibility:** QA leads and product managers could track execution progress in real time and identify risks early.
-3. **Reduced redundancy:** Teams avoided duplicating test cases by using Jira's built-in linking and labelling features.
-4. **Better sprint reviews:** Test evidence was available during sprint demos, supporting more informed decisions around definition of done.
-
-To be fair, this solution would not work well for heavy SAP transactional testing like batch jobs or integration validations. But for agile testing of Fiori applications, APIs, and user-centric workflows, it delivered just enough without introducing extra complexity.
-
-### Case study 3: Using SAP Solution Manager in a European financial institution
-
-A large European financial services institution, this engagement ran through Q1 2024, operated a highly customised SAP landscape covering finance, treasury, and regulatory reporting. The organisation faced increasing pressure from internal auditors and external compliance bodies to ensure full traceability and accountability of all system changes. Manual test tracking created gaps in visibility, especially when linking tests to transport activities or demonstrating test evidence during audits.
-
-#### Initial pain points
-
-1. **Disparate tracking methods:** Test case execution and status were managed in Excel sheets without a central repository.
-2. **No automated audit trail:** Evidence of who tested what and when had to be recreated manually during reviews or audits.
-3. **No linkage to transports:** Testing was not directly connected to SAP transports, making it difficult to validate what was tested before release.
-4. **High dependency on individuals:** Institutional knowledge was concentrated among a few test coordinators, increasing risk and overhead.
-
-#### How SAP Solution Manager helped
-
-1. **Test plans aligned with ChaRM:** All testing was linked to change requests and change documents through SAP's Change Request Management framework.
-2. **Centralised execution tracking:** All test activities were time-stamped, stored in Solution Manager, and tied to user credentials for clear ownership.
-3. **Automated documentation:** Reports for internal auditors and compliance teams were generated directly from test plans without manual effort.
-4. **Better scope control:** The Business Process Change Analyzer was used to assess the impact of code changes and recommend tests accordingly.
-
-#### Business impact
-
-1. **Audit readiness improved:** Test coverage reports and execution logs could be delivered on demand during audits, reducing prep time significantly.
-2. **Controlled transport approvals:** Approvers had visibility into test status before moving changes to production, increasing operational confidence.
-3. **Reduced compliance risk:** Standardising test processes across teams reduced questions around whether testing had occurred and who was responsible.
-4. **Better alignment with IT governance:** Testing became part of the release lifecycle, rather than a parallel process handled outside core systems.
-
-The turning point came when audit teams stopped asking for Excel files. They were able to validate testing history directly in Solution Manager, which changed how IT and compliance collaborated going forward.
-
-## Best practices for SAP testing and validation
-
-From what I have seen, SAP testing only delivers real value when it is structured, shared, and adaptable. Many projects spend effort on tools or documentation, but miss the habits that actually drive quality. Below are four SAP testing best practices that I have seen work repeatedly in real project settings.
-
-### 1. Define clear objectives and KPIs
-
-Testing without direction usually leads to shallow coverage. It becomes a mechanical step. Before a single test case is written, it helps to ask: what are we trying to protect? What does a successful test cycle mean?
-
-1. Defect leakage rate shows how many issues make it past testing into production. If that number is high, test coverage or design might need review.
-2. Test case reuse ratio gives you a view into the efficiency of your test library. If everything needs to be rewritten each time, that is a sign of misalignment.
-3. Regression completion timeline is important in time-bound releases. Knowing how long it takes to complete a full regression helps set expectations early.
-
-These KPIs are not just for reporting. They help focus energy where it matters.
-
-### 2. Involve cross-functional stakeholders
-
-SAP testing is not a one-team job. Business processes cross modules, and so should your testing plans. I have seen testing strategies fail when they sit in silos, disconnected from business teams.
-
-1. Involve people from procurement, finance, operations, and IT at the planning stage. Each brings a different lens.
-2. Identify and engage process owners. They can point out what often goes wrong or where exceptions usually occur.
-3. Bring business users into the review cycle. They often catch what structured testing misses, just by noticing what feels off.
-
-Testing works better when it reflects how the business actually runs.
-
-### 3. Build feedback loops into testing
-
-No testing plan is perfect on day one. SAP systems change. Data changes. Even user habits change. To keep testing effective, the team needs space to review and adjust continuously.
-
-1. After each cycle, look at what failed. Try to go beyond symptoms and get to the cause.
-2. Update scripts when something is no longer valid or relevant. Do not treat them as fixed assets.
-3. Let the team question the test set itself. Some steps may no longer reflect actual user behaviour.
-
-Without feedback loops, testing becomes routine. That is when risk creeps in quietly.
-
-### 4. Train and upskill test teams regularly
-
-Testing quality comes down to the people doing it. Even with the best tools, if testers do not understand the system or the process, they will miss what matters.
-
-1. Offer training on how to use the testing tool, not just to run tests but to maintain and improve them.
-2. Give exposure to SAP business processes. Even technical testers need to understand what each step in the workflow means.
-3. Share past test failures and what was learned. These lessons tend to stick more than abstract training.
-
-| Best practice | How to apply it |
+| Practice | How to apply it |
 |---|---|
-| Start early in the project lifecycle | Involve QA when requirements are being defined. Have testers work with business analysts to shape testable outcomes. |
-| Test the business process, not just the transaction | Create full test flows that include real-life use, cross-module steps, and exception handling instead of just checking T-codes. |
-| Keep test data under control | Use dedicated test clients or datasets that are reset before each cycle. Avoid production data dumps unless masked. |
-| Make regression testing routine | Automate repeatable flows and run them regularly. Trigger runs with each transport or code merge instead of waiting for cutover. |
-| Prioritise by risk and impact | Test critical processes and frequently updated objects first. Do not aim for 100% coverage. Aim for smart coverage. |
-| Get business involved early | Bring business users into testing workshops. Have them validate test cases before execution starts. Keep feedback loops short. |
-| Link testing with change approvals | Tie test completion status to transport release decisions. No change should move forward without verified tests in place. |
-| Be ready for audits at any time | Use tools that automatically record who tested what and when. Keep logs exportable and aligned with control frameworks. |
+| Start early | Involve test leads while requirements are written, so outcomes are testable |
+| Test the process, not the transaction | Build flows that cross modules and include exceptions |
+| Control test data | Use dedicated, resettable test clients; mask any production data |
+| Make regression routine | Trigger automated runs with each transport, not only before cutover |
+| Prioritise by risk | Critical and frequently changed processes first; aim for smart coverage, not 100% |
+| Bring the business in | Key users validate test cases before execution starts |
+| Link testing to change approvals | No transport moves without verified tests |
+| Stay audit-ready | Record who tested what and when, in exportable form |
 
-## How RISE, Cloud ALM, and AI change SAP testing in 2026
+Track three numbers: defect leakage into production, the share of test cases reused rather than rewritten, and how long a full regression takes. They tell you where to put effort. My article on [SAP quality gates](/sap-quality-gates-implementation/) shows how to tie test results to go/no-go decisions.
 
-Three 2026 shifts change the tool selection conversation that worked in 2023.
+## What changes in 2026
 
-### SAP Cloud ALM is the 2026 default; Solution Manager is legacy
+**Cloud ALM is the default.** New RISE and GROW programmes should make it the test backbone. Existing on-premise landscapes on Solution Manager have time, but not much: plan the move before 2028. Hybrid landscapes will run both for a while. Plan for the overlap.
 
-SAP Cloud ALM became the default application lifecycle management platform for RISE with SAP and GROW with SAP from 2024 onward. SAP Solution Manager mainstream maintenance ended in 2027, with extended support running through 2027. New programmes in 2026 standardise on Cloud ALM for test management, change tracking, and operational monitoring.
+**AI drafts tests.** Joule-based assistants in Cloud ALM generate test cases and requirements from documentation. The savings are in volume work such as regression scripts where variation is mostly data. Edge cases, complex integration logic and performance test design still need senior test architects.
 
-What this means for tool selection:
+**Clean core moves the target.** On public cloud there is no custom code in the core to regress. On private cloud and on-premise, custom ABAP in the core is the most expensive place to find a regression. You fix it, then revalidate it against the next SAP release. Side-by-side extensions on SAP BTP are versioned separately and need their own regression coverage.
 
-1. New RISE or GROW programmes should adopt Cloud ALM as the test documentation and traceability backbone. Cloud ALM ties test plans to Activate phases, change requests, and operations monitoring inside one cloud-native stack.
-2. Existing on-premise S/4HANA or ECC landscapes already running Solution Manager have no immediate forcing function to migrate; Solution Manager remains the right answer until the next major upgrade window.
-3. Hybrid landscapes (on-premise S/4HANA plus RISE workloads) will run both Cloud ALM and Solution Manager in parallel for several years. Plan for that overlap rather than fighting it.
-
-On a GCC manufacturing programme in 2024 we migrated test documentation from Solution Manager to Cloud ALM as part of the RISE adoption. The migration itself took six weeks of dedicated effort across two consultants and produced a cleaner traceability model than the inherited Solution Manager setup. Worth doing once the underlying landscape is moving to RISE; not worth doing as a standalone exercise.
-
-### Joule-assisted test generation
-
-Joule for SAP Activate generates test scripts directly from configuration documents and business process documentation. On the SAP-native flows where it has been deployed, script authoring time drops 20 to 40 percent. The savings concentrate in regression script creation, where the variation is mostly data, not logic.
-
-Tricentis announced Tosca integration with Joule in 2024-2025. The combined flow (Joule drafts the test logic, Tosca executes and maintains it) is the direction most enterprise SAP testing programmes will land on by end of 2026.
-
-What Joule does not yet do well: edge cases, complex integration logic, performance test design. Senior test architects still own those. The acceleration is in volume work, not judgement work.
-
-### Clean-core compliance shifts the testing target
-
-Under RISE and GROW, clean-core compliance is now a contractual posture. The practical implication for testing:
-
-1. Custom ABAP in the digital core is the most expensive place to discover a regression, because the cost of remediation runs both ways (fix the custom code, then revalidate that it survives the next SAP release).
-2. Side-by-side extensions on SAP BTP have their own test lifecycle. BTP services are versioned independently from S/4HANA and need their own regression coverage. Tricentis and the Cloud ALM ecosystem both support BTP-side testing, but the workflows are still maturing.
-3. Joule integrations and AI-driven workflows need new test patterns. Deterministic regression scripts do not test non-deterministic AI behaviour. Expect a separate test class for AI-mediated workflows in 2026 enterprise programmes.
-
-Selecting SAP testing tools is not just about checking features or following trends. It is about finding a fit that works for your processes, your timelines, your deployment model (RISE, GROW, on-premise), and the expectations the business has from testing. The 2026 stack on a new enterprise programme typically looks like this: SAP Cloud ALM for documentation and traceability, Tricentis Tosca for cross-application automation, Joule for SAP Activate to draft scripts faster, and a separate performance toolset for peak-load cycles. Existing landscapes already running Solution Manager and bespoke automation stay on what they have until the next major upgrade. The right answer is shaped by your release cadence and your audit posture, not by the vendor demo.
+**AI steps need new test patterns.** Deterministic regression scripts do not test non-deterministic AI behaviour. Expect a separate test class for Joule and agent-driven steps.
 
 ## Frequently asked questions
 
 <details>
 <summary>What is the best SAP testing tool for automation?</summary>
 
-In my experience, Tricentis Tosca stands out as the most effective tool for SAP test automation. Its model-based approach simplifies the creation and maintenance of test cases, especially in complex SAP environments. Tosca's ability to handle end-to-end testing across various SAP modules makes it a reliable choice for organisations that need maintainable automation at scale.
+For SAP-heavy landscapes, Tricentis Tosca is the tool I most often recommend. Its model-based approach makes tests easier to build and maintain, and it covers SAP and non-SAP applications in one flow. If your team works in Jira and mainly builds Fiori apps in an agile model, Xray with a test framework may fit better. Context decides, not the demo.
 
-That said, the right tool depends on what you are testing. If your team is deeply embedded in Jira and working primarily on Fiori apps in an agile delivery model, Xray may be a better fit. Neither is universally best. Context determines the answer.
+</details>
+
+<details>
+<summary>Is Tricentis included with SAP Enterprise Support?</summary>
+
+Partly. SAP grants a term licence for Tricentis Test Automation for SAP integrated with SAP Cloud ALM, currently until 31 December 2027. It covers customers with Enterprise Support (cloud editions or on-premise) or Product Support for Large Enterprises. It is limited to 5 named users, 500 test runs a month and 5 execution agents. Larger programmes usually need a full Tricentis product, which SAP also resells.
 
 </details>
 
 <details>
 <summary>Can SAP Solution Manager handle test automation?</summary>
 
-SAP Solution Manager offers some automation capabilities through Component-Based Test Automation (CBTA), but it is primarily designed for test management and documentation. CBTA supports SAP GUI and WebDynpro interfaces, but it does not cover modern browser-based applications or non-SAP systems.
-
-For comprehensive test automation, most teams integrate SolMan with Tosca or a third-party tool. SolMan handles traceability and documentation; the automation tool handles execution. That separation tends to work better than trying to stretch SolMan's automation capability beyond what it was built for.
-
-</details>
-
-<details>
-<summary>How does Tricentis Tosca integrate with SAP?</summary>
-
-Tricentis Tosca integrates with SAP through native support for SAP GUI, Fiori, and ABAP-based applications. It allows you to create automated test cases that execute directly within the SAP environment, which means test engineers do not need to write scripts to handle SAP-specific UI behaviour.
-
-Tosca also integrates with SAP Solution Manager for test traceability and with CI/CD pipelines (Jenkins, Azure DevOps) for automated trigger-based execution. In landscapes where SAP coexists with non-SAP applications, Tosca can span both in a single test flow, which is its main structural advantage over tools that only handle one layer.
-
-</details>
-
-<details>
-<summary>Is it necessary to use both Tricentis Tosca and SAP Solution Manager?</summary>
-
-No, it is not strictly necessary. But using both makes sense in regulated environments or complex SAP landscapes where documentation, change control, and automation each matter.
-
-SolMan excels at linking requirements, test plans, transports, and execution records in a way that supports audits. Tosca excels at automating regression cycles efficiently. Together, they cover both dimensions: governance and execution. Trying to handle both with one tool usually means one of those dimensions suffers.
-
-For simpler environments, or where SolMan is not already in use, starting with Tosca alone and adding SolMan later is a reasonable path.
-
-</details>
-
-<details>
-<summary>What are the key benefits of using Tricentis Tosca for SAP testing?</summary>
-
-Three benefits stand out in practice. First, model-based testing simplifies test case creation and maintenance. You build reusable modules rather than writing scripts, which reduces the maintenance burden when the system changes. Second, the tool works across SAP and non-SAP systems in a single test flow, which matters in landscapes where SAP sits alongside Salesforce, legacy systems, or custom applications. Third, once test models are stable, regression coverage becomes consistent without requiring skilled automation engineers to rewrite scripts after every release.
-
-The main cost is setup time and licencing. Tosca is not cheap, and the initial model build takes investment. But over a multi-year programme with frequent release cycles, those upfront costs tend to pay back through fewer production defects and shorter regression windows.
+Only partly. Its Component-Based Test Automation (CBTA) covers SAP user interfaces but not non-SAP applications, and it needs significant maintenance as screens change. Solution Manager is mainly a test management and documentation platform. Most teams pair it with Tricentis or another automation tool, and with mainstream maintenance ending in 2027, new programmes should start on Cloud ALM instead.
 
 </details>
 
 <details>
 <summary>Should I use SAP Cloud ALM or Solution Manager for testing in 2026?</summary>
 
-For new RISE with SAP or GROW with SAP programmes, the answer is Cloud ALM. SAP Cloud ALM is the 2026 default for cloud-edition application lifecycle management and ties testing into Activate phases, change requests, and operational monitoring inside one cloud-native platform.
-
-For existing on-premise S/4HANA or ECC landscapes already running Solution Manager, there is no immediate forcing function to migrate. Solution Manager mainstream maintenance ended in 2027 with extended support running through 2027. Stay with Solution Manager until the next major upgrade or until the landscape itself moves to RISE.
-
-Hybrid landscapes (on-premise S/4HANA plus RISE workloads) will run both for several years. Plan for that overlap rather than fighting it.
-
-The migration effort itself is not trivial. On a GCC manufacturing programme in 2024 the Solution Manager to Cloud ALM migration took roughly six weeks of dedicated effort across two consultants. Worth doing once the landscape is moving to RISE; not worth doing as a standalone exercise.
+Cloud ALM for any new programme, and for RISE and GROW in particular. It ties testing to SAP Activate phases and changes, and carries no licence fee with Enterprise Support. If an existing on-premise landscape already runs Solution Manager well, stay until the landscape moves, but plan the migration before 2028.
 
 </details>
 
 <details>
-<summary>How does SAP Solution Manager support test documentation?</summary>
+<summary>Do I need both a test management tool and an automation tool?</summary>
 
-SAP Solution Manager provides a centralised platform for managing test documentation inside the SAP landscape. You can create test plans, link them to business requirements and process documentation, track execution by tester, and tie results to transport approvals through ChaRM integration.
+On most enterprise programmes, yes. Test management (Cloud ALM or Solution Manager) gives traceability from requirement to test to change, which auditors need. Automation (Tricentis or similar) runs regression cycles efficiently. One tool rarely does both well. For simpler environments, start with Cloud ALM and the included Tricentis entitlement, then add a full automation product when release volume justifies it.
 
-The practical value is in audits and change control. Every test execution is time-stamped and attributed. Compliance teams can see who tested what, against which change, and what the outcome was. In financial services, public sector, or highly regulated manufacturing environments, that audit trail is not optional. It is what turns testing into a governance mechanism rather than just a quality checkpoint.
+</details>
+
+<details>
+<summary>How does SAP testing change with clean core?</summary>
+
+Testing shifts from custom code inside the core to extensions around it. On public cloud there is no core custom code to regress. On private cloud and on-premise, any remaining core modifications need retesting after every SAP release. SAP BTP extensions have their own release cycle and need their own regression suite, and AI steps need test patterns that allow for non-deterministic output.
 
 </details>

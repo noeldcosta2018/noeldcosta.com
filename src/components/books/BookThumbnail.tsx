@@ -100,7 +100,7 @@ export default function BookThumbnail({ book, hasImage }: Props) {
             width: PAGES_W,
             right: -PAGES_W,
             background:
-              "linear-gradient(to right, #faf6f0 0%, #fffdf9 40%, #f4ede4 60%, #fffdf9 80%, #faf6f0 100%)",
+              "linear-gradient(to right, var(--bg2) 0%, var(--panel) 40%, var(--bg) 60%, var(--panel) 80%, var(--bg2) 100%)",
             borderTopRightRadius: 2,
             borderBottomRightRadius: 2,
           }}
@@ -125,8 +125,8 @@ export default function BookThumbnail({ book, hasImage }: Props) {
           transform-style: preserve-3d;
           transform: rotateY(-14deg) rotateX(2deg);
           transition: transform 220ms ease-out;
-          filter: drop-shadow(0 12px 24px rgba(252,152,90,0.18))
-                  drop-shadow(0 24px 40px rgba(14,16,32,0.22));
+          filter: drop-shadow(0 12px 24px rgba(var(--accent-rgb),0.18))
+                  drop-shadow(0 24px 40px rgba(var(--ink-rgb),0.22));
         }
         @media (min-width: 768px) {
           .bt-book {

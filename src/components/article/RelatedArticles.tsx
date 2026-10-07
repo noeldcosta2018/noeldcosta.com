@@ -1,7 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
-import { CATEGORIES, type PostRecord } from "@/lib/content";
-import FadeUp from "@/components/article/FadeUp";
+import { CATEGORIES, type Locale, type PostRecord } from "@/lib/content";
+import { imageAvailable } from "@/components/article/image-available";
+import { translator } from "@/i18n";
+import { localizeHref } from "@/lib/link-repair";
+import { publicPrefixFromContentLocale } from "@/lib/locale-url";
 
 export interface RelatedCandidate {
   slug: string;
@@ -61,100 +64,81 @@ export function pickRelated(
     title: post.frontmatter.title,
     category: post.frontmatter.category,
     excerpt: post.frontmatter.excerpt,
-    hero: post.frontmatter.hero,
+    hero: imageAvailable(post.frontmatter.hero) ? post.frontmatter.hero : undefined,
   }));
 }
 
+const ARTICLES_INDEX = "/best-sap-articles-for-implementation-noel-dcosta/";
+
 /**
- * Block of 3–4 related article cards. Caller supplies the label slot
- * ("Related reading", "Continue reading", "Recommended for IT leaders", …)
- * so the same component can appear mid- and end-article without repeating.
+ * Related reading as a grid of post cards (the same nd-post-card used by the
+ * archives). The caller supplies the eyebrow label so the block can be reused.
+ * With a locale, the interface text goes through the i18n dictionary and the
+ * cards link to the translated article when it is published.
  */
 export default function RelatedArticles({
   label = "Related reading",
+  title = "More from the archive",
   items,
-  columns = 3,
+  locale = "en",
 }: {
   label?: string;
+  title?: string;
   items: RelatedCandidate[];
-  columns?: 2 | 3 | 4;
+  locale?: Locale;
 }) {
   if (!items.length) return null;
-  const colsClass =
-    columns === 4
-      ? "md:grid-cols-4"
-      : columns === 2
-        ? "md:grid-cols-2"
-        : "md:grid-cols-3";
+  const tr = translator(locale);
+  const prefix = publicPrefixFromContentLocale(locale);
+  const href = (h: string) => localizeHref(prefix, h);
 
   return (
-    <section className="mt-16 mb-4 rounded-[20px] bg-gradient-to-br from-cream to-paper border border-corbeau/[0.08] p-8 md:p-10 shadow-[0_2px_20px_rgba(14,16,32,0.04)]">
-      <header className="flex items-baseline justify-between mb-7 pb-5 border-b border-corbeau/[0.08]">
+    <section
+      className="nd-related"
+      data-heading-region="related-articles"
+      aria-labelledby="nd-related-title"
+    >
+      <div className="nd-related-head">
         <div>
-          <p className="font-mono text-[0.72rem] font-medium tracking-[2px] uppercase text-papaya mb-1.5">
-            {label}
-          </p>
-          <h2 className="font-display font-black text-corbeau text-[1.35rem] md:text-[1.5rem] tracking-[-0.025em] leading-[1.1]">
-            More from the archive
+          <p className="nd-eyebrow">{tr(label)}</p>
+          <h2 id="nd-related-title" className="nd-display nd-related-title">
+            {tr(title)}
           </h2>
         </div>
-        <Link
-          href="/"
-          className="hidden md:inline-flex items-center gap-1.5 font-mono text-[0.72rem] font-medium tracking-[2px] uppercase text-corbeau/60 hover:text-papaya transition-colors"
-        >
-          Browse all
-          <span aria-hidden>→</span>
+        <Link href={href(ARTICLES_INDEX)} className="nd-textlink">
+          {tr("Browse all articles")} <span aria-hidden="true">→</span>
         </Link>
-      </header>
-      <div className={`grid grid-cols-1 ${colsClass} gap-4`}>
-        {items.map((r, idx) => {
+      </div>
+      <div className="nd-related-grid">
+        {items.map((r) => {
           const catMeta = CATEGORIES[r.category as keyof typeof CATEGORIES];
-          const href = `/${r.slug}`;
           return (
-            <FadeUp key={r.slug} delay={idx * 140}>
-              <Link
-                href={href}
-                className="group relative flex gap-4 rounded-xl bg-paper border border-corbeau/[0.08] p-4 hover:border-papaya hover:-translate-y-[8px] hover:shadow-[0_24px_56px_rgba(14,16,32,0.18)] transition-all duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]"
-              >
-                <div className="relative flex-shrink-0 w-[92px] h-[92px] md:w-[108px] md:h-[108px] rounded-lg overflow-hidden bg-bone/60 border-2 border-transparent group-hover:border-papaya/40 transition-colors">
-                  {r.hero ? (
-                    <Image
-                      src={r.hero}
-                      alt={r.title}
-                      fill
-                      sizes="108px"
-                      className="object-cover group-hover:scale-[1.12] transition-transform duration-700 ease-out"
-                    />
-                  ) : (
-                    <div
-                      aria-hidden
-                      className="absolute inset-0 flex items-center justify-center font-display font-black text-[1.8rem] text-corbeau/20 tracking-[-0.04em]"
-                      style={{
-                        background:
-                          "linear-gradient(135deg,#faf6f0,#fffdf9)",
-                      }}
-                    >
-                      {r.title.slice(0, 2).toUpperCase()}
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
-                  {catMeta && (
-                    <p className="font-mono text-[0.58rem] font-medium tracking-[2px] uppercase text-papaya mb-1.5">
-                      {catMeta.label}
-                    </p>
-                  )}
-                  <h3 className="font-display font-bold text-corbeau text-[0.98rem] tracking-[-0.02em] leading-[1.25] mb-1.5 group-hover:text-papaya transition-colors line-clamp-3">
-                    {r.title}
-                  </h3>
-                  {r.excerpt && (
-                    <p className="text-night/70 text-[0.8rem] leading-[1.5] line-clamp-2">
-                      {r.excerpt}
-                    </p>
-                  )}
-                </div>
-              </Link>
-            </FadeUp>
+            <Link
+              key={r.slug}
+              href={href(`/${r.slug}/`)}
+              className="nd-card nd-glow nd-post-card"
+            >
+              <div className="thumb">
+                {r.hero ? (
+                  <Image
+                    src={r.hero}
+                    alt={r.title}
+                    fill
+                    sizes="(min-width: 1024px) 370px, (min-width: 640px) 50vw, 100vw"
+                    quality={70}
+                  />
+                ) : (
+                  <span className="ph" aria-hidden="true">
+                    {r.title.slice(0, 2).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div className="inner">
+                {catMeta && <span className="nd-label">{tr(catMeta.label)}</span>}
+                <h3>{r.title}</h3>
+                {r.excerpt && <p className="text">{r.excerpt}</p>}
+              </div>
+            </Link>
           );
         })}
       </div>

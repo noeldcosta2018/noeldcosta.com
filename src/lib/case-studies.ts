@@ -110,7 +110,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     },
     headlineStat: { value: "44%", label: "custom code, cut to near-zero" },
     outcome:
-      "18,000 employees. 1,200+ outlets across 7 countries. A decade of custom ECC code that had become a liability. Brownfield S/4HANA with selective redesign — finance close went from weekends to before lunch.",
+      "18,000 employees. 1,200+ outlets across 7 countries. A decade of custom ECC code that had become a liability. Brownfield S/4HANA with selective redesign. Finance close went from weekends to before lunch.",
     publishedAt: "2025-09-04",
     readingMinutes: 12,
   },
@@ -135,7 +135,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     },
     headlineStat: { value: "15 → 5", label: "day month-end close" },
     outcome:
-      "Multi-entity group running consolidation on spreadsheets across three continents. SAP S/4HANA Group Reporting plus SAC for planning — the CFO could finally act on opportunities weeks earlier.",
+      "Multi-entity group running consolidation on spreadsheets across three continents. SAP S/4HANA Group Reporting plus SAC for planning. The CFO could finally act on opportunities weeks earlier.",
     publishedAt: "2025-08-17",
     readingMinutes: 9,
   },
@@ -160,7 +160,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     },
     headlineStat: { value: "6w → 10d", label: "permit processing time" },
     outcome:
-      "Service Cloud, Customer Data Cloud, Marketing Cloud and Commerce Cloud, scoped surgically. 65% of requests moved online in year one without forcing digital-only — call volume dropped before features even landed.",
+      "Service Cloud, Customer Data Cloud, Marketing Cloud and Commerce Cloud, scoped surgically. 65% of requests moved online in year one without forcing digital-only. Call volume dropped before features even landed.",
     publishedAt: "2025-08-29",
     readingMinutes: 10,
   },
@@ -185,7 +185,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     },
     headlineStat: { value: "$850K", label: "removed before kick-off" },
     outcome:
-      "A 120-page proposal that looked clean and read vague. Three weeks of SOW decomposition surfaced $340K in scope rationalisation, $310K in role reallocation, $200K in contract modifications — all before the CFO signed.",
+      "A 120-page proposal that looked clean and read vague. Three weeks of SOW decomposition surfaced $340K in scope rationalisation, $310K in role reallocation, $200K in contract modifications, all before the CFO signed.",
     publishedAt: "2025-08-28",
     readingMinutes: 11,
   },
@@ -210,7 +210,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     },
     headlineStat: { value: "6 mo", label: "from stalled to relaunched" },
     outcome:
-      "Singapore on Oracle, UK on SAP, numbers that never matched. SAP Analytics Cloud connected live to both — six months from recovery start to a unified reporting model finance and operations actually trusted.",
+      "Singapore on Oracle, UK on SAP, numbers that never matched. SAP Analytics Cloud connected live to both. Six months from recovery start to a unified reporting model finance and operations actually trusted.",
     publishedAt: "2025-08-18",
     readingMinutes: 10,
   },
@@ -235,7 +235,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     },
     headlineStat: { value: "$1.2M", label: "avoided in unnecessary scope" },
     outcome:
-      "Leadership was three demos deep with no evaluation framework. Scripted demos on the client's own data, five-year TCO model, structured voting — they made a clean ERP choice in 12 weeks and went into implementation with confidence.",
+      "Leadership was three demos deep with no evaluation framework. Scripted demos on the client's own data, five-year TCO model, structured voting. They made a clean ERP choice in 12 weeks and went into implementation with confidence.",
     publishedAt: "2025-08-17",
     readingMinutes: 9,
   },
@@ -260,7 +260,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     },
     headlineStat: { value: "35%", label: "faster quote turnaround" },
     outcome:
-      "Customer data sat in three places, none matching. Microsoft Dynamics + Experlogix CPQ + SAP SD integrated via SAP CPI. Quote turnaround dropped 35% — once trust caught up with the technical change.",
+      "Customer data sat in three places, none matching. Microsoft Dynamics + Experlogix CPQ + SAP SD integrated via SAP CPI. Quote turnaround dropped 35%, once trust caught up with the technical change.",
     publishedAt: "2025-04-30",
     readingMinutes: 8,
   },

@@ -1,8 +1,7 @@
 import FadeUp from "@/components/article/FadeUp";
 
 /**
- * Side-by-side comparison card. Two columns, papaya rules between, hover
- * tints. Use when an article weighs two named approaches against each
+ * Side-by-side comparison: two banded cards, one per option. Use when an article weighs two named approaches against each
  * other (Big Bang vs Phased, Greenfield vs Brownfield, Fit-to-standard
  * vs Customisation).
  *
@@ -43,39 +42,30 @@ export default function CompareSplit(props: CompareSplitProps) {
   const leftPoints = splitPoints(props["left-points"]);
   const rightPoints = splitPoints(props["right-points"]);
 
+  // The band colour tells the two options apart: accent for the first,
+  // secondary accent for the second.
+  const sides = [
+    { label: leftLabel, points: leftPoints, band: "var(--accent)" },
+    { label: rightLabel, points: rightPoints, band: "var(--accent2)" },
+  ];
+
   return (
-    <FadeUp as="figure" className="not-prose my-10">
+    <FadeUp as="figure" className="not-prose nd-block">
       {title && (
-        <p className="font-mono text-[0.62rem] font-medium tracking-[2.4px] uppercase text-papaya mb-3">
-          {title}
-        </p>
+        <h2 data-heading-source="CompareSplit" className="nd-block-title">{title}</h2>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {[
-          { label: leftLabel, points: leftPoints, accent: "border-l-papaya" },
-          { label: rightLabel, points: rightPoints, accent: "border-l-corbeau/60" },
-        ].map((side, i) => (
+      <div data-heading-source="CompareSplit" className="nd-compare">
+        {sides.map((side, i) => (
           <div
             key={i}
-            className={[
-              "group rounded-xl bg-paper border border-corbeau/[0.08]",
-              "border-l-[3px]",
-              side.accent,
-              "p-6 transition-colors hover:bg-bone/40",
-            ].join(" ")}
+            className="nd-card nd-glow banded"
+            style={{ ["--band" as string]: side.band }}
           >
-            <h4 className="font-display font-black text-corbeau text-[1.05rem] md:text-[1.15rem] tracking-[-0.02em] mb-4">
-              {side.label}
-            </h4>
-            <ul className="space-y-2.5 text-[0.92rem] md:text-[0.96rem] text-night leading-[1.55]">
+            <span className="nd-card-band" style={{ background: side.band }} aria-hidden="true" />
+            <h3 className="nd-compare-label">{side.label}</h3>
+            <ul className="nd-points-list">
               {side.points.map((p, idx) => (
-                <li key={idx} className="relative pl-5">
-                  <span
-                    aria-hidden
-                    className="absolute left-0 top-[0.6em] w-[6px] h-[6px] rounded-full bg-papaya/70"
-                  />
-                  {p}
-                </li>
+                <li key={idx}>{p}</li>
               ))}
             </ul>
           </div>

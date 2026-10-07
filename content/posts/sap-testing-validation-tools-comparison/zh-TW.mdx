@@ -1,0 +1,196 @@
+---
+title: "為 SAP 測試與驗證選擇合適的工具組"
+h1: "為 SAP 測試與驗證選擇合適的工具組"
+metaTitle: "2026 年 SAP 測試工具：Tricentis、Xray、Cloud ALM"
+metaDescription: "2026 年 SAP 測試工具比較：SAP Cloud ALM、Tricentis、Xray for Jira 與 Solution Manager。各自的強項、弱點，以及如何選擇。"
+excerpt: "實用比較 2026 年您真正會遇到的 SAP 測試工具：SAP Cloud ALM、Tricentis、Xray 與 Solution Manager。各自的強項、不足，以及我如何在它們之間做選擇。"
+slug: "sap-testing-validation-tools-comparison"
+date: "2025-06-07"
+updated: "2026-10-07"
+lastReviewed: "2026-05-21"
+hero: "/images/wp/2025/06/5.webp"
+heroAlt: "Tricentis、Xray 與 SAP Cloud ALM 的 SAP 測試工具儀表板比較"
+category: "erp-consulting-guide"
+tags: ["sap-technical-decisions", "sap-testing", "sap-cloud-alm", "rise-with-sap"]
+author: "Noel D'Costa"
+experienceSource: "Noel's SAP testing experience as published in the original article: dozens of tool demos, and three case studies (a global manufacturer that rolled out Tosca, a retail company on Xray for Jira, and a financial services institution that used Solution Manager for audit traceability). Tool licensing and maintenance dates (Cloud ALM, Tricentis entitlement with Enterprise Support, Solution Manager 2027) checked against SAP and Tricentis sources in October 2026."
+keyTakeaways:
+  - "新專案以 SAP Cloud ALM 做測試管理。Solution Manager 的主流維護將於 2027 年結束"
+  - "SAP Enterprise Support 現在包含入門級的 Tricentis 測試自動化授權。購買任何東西之前，先確認這項授權權益"
+  - "以 Tricentis Tosca 做跨 SAP 與非 SAP 的流程自動化。測試模型一旦穩定，迴歸涵蓋率就能跨版本維持"
+  - "不要期待單一工具能把文件與自動化都做好。把它們組合起來"
+  - "功能測試抓不到效能瓶頸。尖峰負載測試需要自己的週期"
+  - "Clean Core 改變了測試目標：SAP BTP 擴充需要自己的迴歸涵蓋"
+pullQuote: "我看過幾十場一切運作完美的工具展示。結果到了真實專案裡，腳本不斷壞掉，或是整合從來沒有照廠商展示的方式運作。這就是為什麼我不用功能清單來挑選 SAP 測試工具。"
+mentions: ["SAP S/4HANA", "SAP Solution Manager", "SAP Cloud ALM", "Tricentis Tosca", "Atlassian Jira", "Xray for Jira", "RISE with SAP", "GROW with SAP", "Joule"]
+originalUrl: "https://noeldcosta.com/sap-testing-validation-tools-comparison/"
+canonicalUrl: "https://noeldcosta.com/zh-TW/sap-testing-validation-tools-comparison/"
+locale: "zh-TW"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+2026 年多數 SAP 專案的工具組合是：以 SAP Cloud ALM 負責測試管理與可追溯性，以 Tricentis 產品負責自動化，另用一套獨立工具做效能測試。對於擁有 SAP Enterprise Support 或雲端訂閱的客戶，Cloud ALM 不收授權費，而 Enterprise Support 現在也包含入門級的 Tricentis 自動化授權。如果交付流程原本就在 Jira 上運作，Xray 就很合適。Solution Manager 只有在已經設定好的情況下才有意義，因為它的主流維護將於 2027 年結束。這篇指南寫給為 S/4HANA 專案選擇工具的測試主管、計畫經理與品保負責人。在購買任何東西之前，先確認您的支援合約已經賦予您哪些權益。
+
+我看過幾十場一切運作完美的工具展示。結果到了真實專案裡，腳本不斷壞掉，或是整合從來沒有照廠商展示的方式運作。這就是為什麼我不依功能清單來挑選 SAP 測試工具。我是依據發版節奏、部署模式與稽核要求來挑選。
+
+## 您實際上在測試什麼
+
+SAP 測試是一項風險控制，不是上線前打勾的項目。它從 Realize 階段開始，只要系統還在改變，就會持續下去。有五個層次很重要，而且沒有任何一層可以取代另一層：
+
+1. **單元測試**：開發人員確認個別程式與功能的行為符合預期
+2. **整合測試**：銷售訂單進入交貨與開票，每一次交接都正確過帳
+3. **迴歸測試**：在整合的系統中，小小的變更就會弄壞毫不相關的區域
+4. **使用者驗收測試**：財務與營運確認系統能處理真實情境
+5. **效能測試**：系統在尖峰量時仍保持回應，這一點任何功能性腳本都無法告訴您
+
+<explainer-layers title="SAP 測試的五個層次" caption="沒有任何一層可以取代另一層。效能是功能性腳本永遠涵蓋不到的一層。" layers="效能 => 尖峰量時仍保持回應，需要獨立的測試週期|使用者驗收 => 財務與營運確認真實情境|迴歸 => 小變更會弄壞無關的區域，所以要重測|整合 => 流程中的每一次交接都正確過帳|單元 => 程式與功能的行為符合預期" tones="accent||||"></explainer-layers>
+
+自動化在頻繁的迴歸週期、大量資料或介面檢查，以及每次傳輸後可預期的流程上最有回報。它無法取代判斷。腳本不會注意到某個畫面讓使用者困惑，或某個工作流程在實務上毫無道理。
+
+測試業務需要保護的東西。月結、攸關營收的流程，以及要推廣到多個據點的項目，優先處理。不連結任何目標的全面涵蓋，不算保護。我寫的 [SAP 效能測試](/zh-TW/sap-performance-testing-it-leaders/)指南深入談到第五個層次。
+
+## 四種工具
+
+### SAP Cloud ALM
+
+SAP 的生命週期管理平台，把需求、測試計畫、測試執行與缺陷，連結到 SAP Activate 各階段與變更。擁有 Enterprise Support、Product Support for Large Enterprises，或包含「SAP Enterprise Support, cloud editions」服務之雲端訂閱的客戶，可免授權費取得一個租戶（tenant）。RISE 與 GROW 合約都符合資格。
+
+SAP 也已把 AI 加進去。以 Joule 為基礎的助理可以草擬需求，並依文件產生測試案例，SAP 還為 ECC 轉 S/4HANA 的移轉定位了一個測試管理助理，會提出以風險為基礎的測試範圍。請把輸出當成初稿，交給您的測試架構師檢視。
+
+對任何新的 S/4HANA 專案來說，Cloud ALM 都是測試文件與可追溯性的預設骨幹。
+
+### Tricentis
+
+[Tricentis Tosca](https://www.tricentis.com/products/automate-continuous-testing-tosca) 採用以模型為基礎的自動化：您以視覺化方式建構可重複使用的測試元件，而不是撰寫腳本，這很適合功能面的團隊。它能在同一條測試流程中涵蓋 SAP GUI、Fiori 與非 SAP 應用，這是它在測試完整業務流程時的主要優勢。
+
+SAP 與 Tricentis 有密切的合作關係。SAP 轉售以 Tosca 為基礎的產品，例如 SAP Enterprise Continuous Testing by Tricentis、SAP Load Testing by Tricentis 與 SAP Change Impact Analysis by Tricentis。就預算而言，更大的消息在 [SAP 的使用權益](https://support.sap.com/en/alm/usage-rights.html)。Enterprise Support 客戶可取得與 Cloud ALM 整合的 Tricentis Test Automation for SAP 的期限制授權，目前期限至 2027 年 12 月 31 日。授權上限為 5 位具名使用者、每月 500 次測試執行與 5 個執行代理，所以請把它視為起點，而不是專案規模的工具。
+
+它的弱點：高度動態的網頁前端會增加維護工作量；大規模的測試資料管理通常需要額外的工具；龐大的模組庫從一開始就需要治理。
+
+### Xray for Jira
+
+[Xray](https://www.getxray.app/) 不是為 SAP 打造的，但如果您的交付流程在 Jira 上運作，它就像是自然的延伸。測試案例與使用者故事和變更請求並列，所以涵蓋率成了 sprint 規劃的一部分。它支援 Cucumber 與 Gherkin，用於行為驅動的測試，並可串接 CI pipeline。
+
+它的弱點：大量的 SAP 交易測試，例如批次作業與很深的整合鏈、非常龐大的測試庫，以及複雜的自訂報表，這些都需要附加元件或 API 的工作。
+
+### SAP Solution Manager
+
+Solution Manager 把需求、測試計畫、執行與傳輸集中在同一處，並與 Change Request Management（ChaRM）整合。它的 Business Process Change Analyzer 能把測試範圍縮小到變更實際觸及的流程。在受法規管制的環境中，這條稽核軌跡仍然很有價值。
+
+它的弱點是過時的使用者體驗、繁重的設定、只涵蓋 SAP 使用者介面的自動化（CBTA），以及已經很少團隊還具備的技能。主流維護於 2027 年底結束，部分功能的延伸維護到 2030 年。如果您還沒有用它做變更控制，就不要為了測試管理而引進它。
+
+其他工具適合特定利基。Worksoft Certify 在製藥等需要驗證的環境中表現強勁。Katalon 可以協助輕量、面向網頁的 SAP 專案。這兩者都不是我通常會推薦給核心 SAP 測試專案的工具。
+
+## 並排比較
+
+這張表依決定適配度的各項能力，比較這四種工具。
+
+| 能力 | SAP Cloud ALM | Tricentis | Xray for Jira | SAP Solution Manager |
+|---|---|---|---|---|
+| 主要工作 | 測試管理與可追溯性 | 跨 SAP 與非 SAP 的自動化 | 在 Jira 內的測試管理 | 與 ChaRM 綁定的測試管理 |
+| 需求可追溯性 | 原生支援，連結到 Activate 各階段 | 完整，透過自有的測試管理 | 透過 Jira 連結；需要紀律 | 原生支援，搭配 ChaRM 時最強 |
+| 自動化 | 透過整合的 Tricentis 或夥伴工具 | 核心強項，以模型為基礎 | 透過外部框架 | CBTA，僅限 SAP 介面 |
+| 非 SAP 應用 | 有限 | 可以，在同一條流程中 | 可以，透過框架 | 不行 |
+| 稽核軌跡 | 強 | 強 | 預設功能有限 | 強，包含傳輸 |
+| 授權 | 有 Enterprise Support 即免費 | Enterprise Support 附入門授權；完整產品另行計價 | Jira 的按使用者計價附加元件 | 包含在地端維護內 |
+| 展望 | SAP 的策略平台 | 與 SAP 的合作持續深化 | 取決於 Jira 的策略 | 主流維護於 2027 年結束 |
+
+## 我如何在它們之間做選擇
+
+我把測試拆成文件與自動化兩部分。它們解決的是不同的問題，硬把兩者塞進同一個平台的團隊，通常都很吃力。
+
+在文件與可追溯性方面，新專案就用 Cloud ALM。如果 Solution Manager 已經在負責您的變更控制，就沿用到系統環境有異動時，再做移轉。在自動化方面，對於 SAP 為主且頻繁發版的系統環境，我通常推薦 Tricentis。模型一旦穩定，執行就很一致，維護工作量也比腳本式自動化更低。對於在 Jira 中開發 Fiori 應用與 API 的敏捷團隊，Xray 通常就夠了。
+
+在做選擇之前，請與實際執行測試的人一起逐一檢視這些問題。
+
+| 考量因素 | 為什麼重要 | 要問的問題 |
+|---|---|---|
+| SAP 涵蓋範圍 | 測試必須能操作 SAP GUI、Fiori 與您實際使用的介面 | 它原生支援哪些 SAP UI 技術與 API？ |
+| 變更影響 | 知道傳輸之後該重測什麼，可避免過度測試與遺漏風險 | 它能把變更連結到受影響的測試嗎？ |
+| CI/CD 整合 | 自動化執行需要由您的 pipeline 觸發 | 它能與您的建置及傳輸工具搭配運作嗎？ |
+| 治理 | 大型專案需要可重複使用、有版本控管的元件 | 測試能否模組化、版本控管，並跨批次重複使用？ |
+| 業務易用性 | 功能顧問與關鍵使用者必須能審閱測試 | 非開發人員能否建立並閱讀測試案例？ |
+| 授權權益 | 您的支援合約可能已涵蓋部分需求 | Cloud ALM 與 Tricentis 的授權權益已經給了我們什麼？ |
+| 總成本 | 建置、代理與維護的成本高於授權費 | 第二年的成本是多少，包含模型維護？ |
+
+## 真實專案教會我的事
+
+**全球製造商：Tosca。** 這家公司執行 SAP ECC，搭配高度客製化的倉儲系統。季度發版因為冗長的人工迴歸週期，加上缺陷外流到正式環境，一再延誤。團隊在進貨物流先試行 Tosca，花了四週建立一個可重複使用的步驟庫。自動化執行與傳輸核准連結，接著擴展到出貨物流與生產計畫。高交易量交易的迴歸涵蓋率，從 35% 上升到 85% 以上，上線後缺陷在兩季內減少了 40%。我記得推廣期間，有人質疑要把這麼客製化的環境自動化。等到各團隊看到正式環境的事件減少，同樣的模型還能跨工廠重複使用，這些質疑就停了。
+
+**零售公司：Xray。** 這家公司在轉換到 S/4HANA 的同時，推出新的 Fiori 應用與雲端整合，所有 IT 交付都在 Jira 中進行。Xray 把測試連結到使用者故事，讓產品負責人不必切換工具就能追蹤進度，並支援 Fiori 小隊的 Gherkin 驗收準則。測試證據在 sprint 檢討時已經備妥。它處理不了大量的交易或批次測試，但對於敏捷的 Fiori、API 與以使用者為中心的工作，它夠用，又不會增加複雜度。
+
+**金融服務機構：Solution Manager。** 一個橫跨財務、資金管理與法規申報、高度客製化的系統環境，面臨稽核要求完整可追溯性的壓力。測試放在試算表裡，與傳輸沒有任何連結。把測試計畫連結到 ChaRM 變更文件、為每次執行加上時間戳記，並使用 Business Process Change Analyzer 界定重測範圍，扭轉了對話的局面。轉捩點出現在稽核人員不再索取 Excel 檔案，而是直接在系統中驗證測試歷史。
+
+**從 Solution Manager 移轉到 Cloud ALM。** 移轉測試文件本身就是一個專案。要趁系統環境本來就要異動的時候做，例如作為導入 RISE 的一部分，而不是單獨進行。
+
+## 讓測試真正發揮作用的做法
+
+工具本身不會帶來品質。這些做法才會，而且不論用哪種工具都適用。
+
+| 做法 | 如何落實 |
+|---|---|
+| 及早開始 | 在撰寫需求時就讓測試主管參與，讓成果可以被測試 |
+| 測試流程，而不是單一交易 | 建立跨模組並包含例外情況的流程 |
+| 控管測試資料 | 使用專用、可重置的測試 client；遮蔽任何正式環境資料 |
+| 讓迴歸成為例行工作 | 每次傳輸都觸發自動化執行，而不只是在切換前 |
+| 依風險排定優先順序 | 先處理關鍵且經常變更的流程；追求聰明的涵蓋，而不是 100% |
+| 讓業務參與 | 關鍵使用者在執行開始前先驗證測試案例 |
+| 把測試連結到變更核准 | 沒有通過驗證的測試，傳輸就不放行 |
+| 隨時準備好接受稽核 | 以可匯出的形式，記錄誰在何時測試了什麼 |
+
+追蹤三個數字：外流到正式環境的缺陷、被重複使用而不是重寫的測試案例比例，以及一次完整迴歸需要多久。它們會告訴您該把力氣花在哪裡。我寫的 [SAP 品質關卡](/zh-TW/sap-quality-gates-implementation/)一文，說明了如何把測試結果與 go/no-go 決策連結起來。
+
+## 2026 年有哪些改變
+
+**Cloud ALM 是預設選擇。** 新的 RISE 與 GROW 專案應該讓它成為測試骨幹。仍在使用 Solution Manager 的既有地端環境還有時間，但不多：請在 2028 年之前規劃好移轉。混合型環境會有一段時間兩者並行。請為重疊期做好規劃。
+
+**AI 草擬測試。** Cloud ALM 中以 Joule 為基礎的助理，可以依文件產生測試案例與需求。節省之處在於量大的工作，例如變化主要來自資料的迴歸腳本。邊界情況、複雜的整合邏輯與效能測試設計，仍然需要資深的測試架構師。
+
+**Clean Core 改變了測試目標。** 在公有雲上，核心中沒有客製程式碼可以發生迴歸。在私有雲與地端部署上，核心中的客製 ABAP，是發現迴歸問題代價最高的地方。您修好它，接著還得針對下一版 SAP 版本重新驗證。SAP BTP 上的 side-by-side 擴充，版本獨立管理，需要自己的迴歸涵蓋。
+
+**AI 步驟需要新的測試模式。** 確定性的迴歸腳本，無法測試非確定性的 AI 行為。預期要為 Joule 與由代理驅動的步驟，另設一類測試。
+
+## 常見問題
+
+<details>
+<summary>哪一種 SAP 測試工具最適合做自動化？</summary>
+
+對於以 SAP 為主的系統環境，Tricentis Tosca 是我最常推薦的工具。它以模型為基礎的做法，讓測試更容易建立與維護，並且能在同一條流程中涵蓋 SAP 與非 SAP 應用。如果您的團隊在 Jira 中工作，而且主要以敏捷方式開發 Fiori 應用，搭配測試框架的 Xray 可能更適合。要看情境來決定，而不是看展示。
+
+</details>
+
+<details>
+<summary>SAP Enterprise Support 有包含 Tricentis 嗎？</summary>
+
+部分包含。SAP 提供與 SAP Cloud ALM 整合的 Tricentis Test Automation for SAP 期限制授權，目前期限至 2027 年 12 月 31 日。涵蓋擁有 Enterprise Support（雲端版或地端）或 Product Support for Large Enterprises 的客戶。授權限制為 5 位具名使用者、每月 500 次測試執行與 5 個執行代理。較大型的專案通常需要完整的 Tricentis 產品，SAP 也有轉售。
+
+</details>
+
+<details>
+<summary>SAP Solution Manager 能處理測試自動化嗎？</summary>
+
+只能部分處理。它的 Component-Based Test Automation（CBTA）涵蓋 SAP 使用者介面，但不涵蓋非 SAP 應用，而且畫面一改，就需要大量維護。Solution Manager 主要是一個測試管理與文件平台。多數團隊會把它與 Tricentis 或其他自動化工具搭配使用，而主流維護將在 2027 年結束，新專案應該改從 Cloud ALM 開始。
+
+</details>
+
+<details>
+<summary>2026 年做測試，該用 SAP Cloud ALM 還是 Solution Manager？</summary>
+
+任何新專案都選 Cloud ALM，RISE 與 GROW 尤其如此。它把測試連結到 SAP Activate 各階段與變更，而且有 Enterprise Support 就不收授權費。如果既有的地端環境已經把 Solution Manager 運作得很好，就留在那裡，直到系統環境有異動，但要在 2028 年之前規劃好移轉。
+
+</details>
+
+<details>
+<summary>我需要同時有測試管理工具和自動化工具嗎？</summary>
+
+在多數企業專案中，需要。測試管理（Cloud ALM 或 Solution Manager）提供從需求到測試、再到變更的可追溯性，這是稽核人員需要的。自動化（Tricentis 或類似工具）則能有效率地執行迴歸週期。一個工具很少能把兩件事都做好。對於比較單純的環境，可以先從 Cloud ALM 與內含的 Tricentis 授權權益開始，等發版量大到值得時，再加購完整的自動化產品。
+
+</details>
+
+<details>
+<summary>Clean Core 如何改變 SAP 測試？</summary>
+
+測試的重心，從核心內的客製程式碼，轉移到核心周圍的擴充。在公有雲上，核心沒有客製程式碼可以發生迴歸。在私有雲與地端部署上，任何仍留在核心的修改，在每次 SAP 版本更新後都需要重測。SAP BTP 的擴充有自己的發版週期，需要自己的迴歸測試集，而 AI 步驟需要能容許非確定性輸出的測試模式。
+
+</details>

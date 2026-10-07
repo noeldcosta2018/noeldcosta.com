@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import CategoryPage from "@/components/CategoryPage";
+import CategoryPage, { categoryMetadata } from "@/components/CategoryPage";
 import CaseStudyPortfolioPage from "@/components/case-studies/CaseStudyPortfolioPage";
 import { CATEGORIES } from "@/lib/content";
-import { SITE_URL } from "@/lib/seo";
 
 export function generateStaticParams() {
   return Object.keys(CATEGORIES).map((category) => ({ category }));
@@ -10,17 +9,13 @@ export function generateStaticParams() {
 
 export const dynamicParams = false;
 
+// Same title, description and canonical as before; hreflang alternates are
+// added only once a translated archive exists (see localized-interface-routes).
 export async function generateMetadata(
   props: { params: Promise<{ category: string }> }
 ): Promise<Metadata> {
   const { category } = await props.params;
-  const meta = CATEGORIES[category as keyof typeof CATEGORIES];
-  if (!meta) return {};
-  return {
-    title: `${meta.label} | Noel D'Costa`,
-    description: meta.description,
-    alternates: { canonical: `${SITE_URL}/category/${meta.slug}/` },
-  };
+  return categoryMetadata(category, "en");
 }
 
 export default async function Route(

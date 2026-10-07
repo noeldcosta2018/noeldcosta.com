@@ -1,27 +1,18 @@
 import type { Metadata } from "next";
-import { getPage } from "@/lib/content";
-import { buildPageMetadata, SITE_URL } from "@/lib/seo";
-import ToolShell from "@/components/tools/ToolShell";
+import ToolShell, { toolMetadata } from "@/components/tools/ToolShell";
 import ErpCostClient from "./ErpCostClient";
+import { TOOL } from "./tool";
 
-const SLUG = "erp-implementation-cost-calculator";
-const LABEL = "ERP Implementation Cost Calculator";
-const DESCRIPTION =
-  "Vendor-agnostic cost and timeline estimate for an ERP implementation — software, SI fees, data migration, training, and contingency included.";
+// Page text lives in ./tool (shared with the translated route under
+// src/app/(localized)/[locale]/).
 
 export async function generateMetadata(): Promise<Metadata> {
-  const page = getPage(SLUG, "en");
-  if (page) return buildPageMetadata(page);
-  return {
-    title: LABEL,
-    description: DESCRIPTION,
-    alternates: { canonical: `${SITE_URL}/${SLUG}/` },
-  };
+  return toolMetadata(TOOL, "en");
 }
 
 export default async function ErpCostPage() {
   return (
-    <ToolShell slug={SLUG} label={LABEL} description={DESCRIPTION}>
+    <ToolShell slug={TOOL.slug} label={TOOL.label} description={TOOL.description} title={TOOL.title} highlight={TOOL.highlight} group={TOOL.group}>
       <ErpCostClient />
     </ToolShell>
   );

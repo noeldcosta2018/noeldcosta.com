@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import TagPage from "@/components/TagPage";
+import TagPage, { tagMetadata } from "@/components/TagPage";
 import { getAllTagSlugs } from "@/lib/content";
-import { SITE_URL } from "@/lib/seo";
-import { tagInfo, WORDPRESS_TAG_SLUGS } from "@/components/tagMeta";
+import { WORDPRESS_TAG_SLUGS } from "@/components/tagMeta";
 
 function allTagSlugs(): string[] {
   const set = new Set<string>(WORDPRESS_TAG_SLUGS);
@@ -16,21 +15,13 @@ export function generateStaticParams() {
 
 export const dynamicParams = false;
 
+// Same title, description and canonical as before; hreflang alternates are
+// added only once a translated archive exists (see localized-interface-routes).
 export async function generateMetadata(
   props: { params: Promise<{ tag: string }> },
 ): Promise<Metadata> {
   const { tag } = await props.params;
-  const info = tagInfo(tag);
-  const description =
-    info.description ||
-    `Articles tagged ${info.label} from Noel D'Costa — field-tested ERP and AI advisory.`;
-  return {
-    title: `${info.label} | Noel D'Costa`,
-    description,
-    alternates: {
-      canonical: `${SITE_URL}/tag/${tag}/`,
-    },
-  };
+  return tagMetadata(tag, "en");
 }
 
 export default async function Route(

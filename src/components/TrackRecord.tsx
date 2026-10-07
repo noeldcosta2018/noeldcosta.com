@@ -211,7 +211,7 @@ export default function TrackRecord() {
                     {p.badge}
                   </span>
                 </div>
-                <h4 className="font-display text-[1.05rem] font-bold tracking-[-0.02em] mb-1">{p.title}</h4>
+                <h3 className="font-display text-[1.05rem] font-bold tracking-[-0.02em] mb-1">{p.title}</h3>
                 <p className="text-night text-[0.85rem] leading-[1.55]">{p.desc}</p>
               </div>
             ))}

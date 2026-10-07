@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   type CaseStudy,
@@ -23,9 +23,7 @@ import CaseStudyCard from "./CaseStudyCard";
  *     remaining cards reflow.
  *   - 400 ms ease-out-quart per the brief.
  *
- * Empty state: friendly message + "Clear filters" affordance lives in
- * the parent page (not here) so the message can sit in the page rhythm
- * rather than inside the grid container.
+ * Empty state: a coming-soon note with a "Clear filters" action.
  */
 
 interface Props {
@@ -70,6 +68,7 @@ function sortFn(sort: SortValue): (a: CaseStudy, b: CaseStudy) => number {
 export default function CaseStudyGrid({ items, variant, unfiltered }: Props) {
   const reduced = useReducedMotion();
   const params = useSearchParams();
+  const router = useRouter();
 
   const filtered = useMemo(() => {
     if (unfiltered) return items;
@@ -82,38 +81,36 @@ export default function CaseStudyGrid({ items, variant, unfiltered }: Props) {
     return items.filter((c) => matches(c, filters as { industry: Industry[]; service: Service[]; region: Region[] })).sort(sortFn(sort));
   }, [items, params, unfiltered]);
 
-  const isAnchor = variant === "anchor";
-
-  // Empty state — only fires for filtered grids.
+  // Empty state: only for filtered grids. Clearing keeps the sort choice.
   if (!unfiltered && filtered.length === 0) {
+    const clear = () => {
+      const next = new URLSearchParams(params.toString());
+      next.delete("industry");
+      next.delete("service");
+      next.delete("region");
+      const qs = next.toString();
+      router.replace(qs ? `?${qs}` : "?", { scroll: false });
+    };
     return (
-      <div className="text-center py-16 px-6">
-        <p className="font-mono text-[0.72rem] tracking-[2px] uppercase text-eyebrow mb-3">
-          [ No matches ]
-        </p>
-        <h3 className="font-display font-bold text-corbeau text-[1.15rem] mb-2">
-          No case studies match these filters.
-        </h3>
-        <p className="text-night text-[0.92rem]">
-          Try removing one of the active filters above.
-        </p>
+      <div className="nda-empty" role="status">
+        <div className="nd-label">Coming soon</div>
+        <h3>More case studies for this mix are on the way.</h3>
+        <p>New programmes are being written up. Stay tuned, or clear a filter to see related work now.</p>
+        <button type="button" className="nd-btn nd-btn-secondary" onClick={clear}>
+          Clear filters
+        </button>
       </div>
     );
   }
 
   return (
-    <div
-      className={
-        isAnchor
-          ? "grid grid-cols-1 md:grid-cols-2 gap-5"
-          : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-      }
-    >
+    <div className={`nda-cs-grid ${variant}`}>
       <AnimatePresence mode="popLayout" initial={false}>
         {filtered.map((c) => (
           <motion.div
             key={c.slug}
             layout={!reduced}
+            style={{ display: "flex", minWidth: 0 }}
             initial={{ opacity: 0, scale: reduced ? 1 : 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: reduced ? 1 : 0.96 }}

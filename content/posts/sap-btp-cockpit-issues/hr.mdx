@@ -1,0 +1,194 @@
+---
+title: "Problemi sa SAP BTP Cockpitom: pet problema i kako ih riješiti"
+h1: "Problemi sa SAP BTP Cockpitom: pet problema i kako ih riješiti"
+slug: "sap-btp-cockpit-issues"
+date: "2025-06-24"
+updated: "2026-10-07"
+hero: "/images/wp/2025/06/3.webp"
+heroAlt: "Programer viđen s leđa kako tipka kod na stolnom monitoru pokraj prijenosnog računala"
+category: "sap-modules"
+tags: ["sap-technical-decisions", "sap-btp", "sap-cap", "sap-integration-suite"]
+author: "Noel D'Costa"
+metaTitle: "SAP BTP Cockpit 2026.: 5 čestih problema i rješenja"
+metaDescription: "Problemi sa SAP BTP Cockpitom: 401 greške tokena, Internal Server Error u Integration Suiteu, mrtvi linkovi, CAP destination greške i trial aplikacije koje stanu."
+excerpt: "Pet problema sa SAP BTP Cockpitom stalno se ponavlja: 401 greške tokena, greške u Integration Suiteu, mrtvi linkovi, CAP destination greške i trial aplikacije koje stanu preko noći. Evo što prvo provjeriti za svaki."
+experienceSource: "Direct experience working with SAP BTP Cockpit across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets, covering integration, CAP application deployment, and destination configuration in both trial and production subaccount environments. 2026 BTP Cockpit issues verified against current Cloud Foundry runtime."
+lastReviewed: "2026-05-21"
+keyTakeaways:
+  - "401 greške s vjerodajnicama service keya obično su OAuth problem: pogrešan grant type, pogrešan token URL ili nedostajuće ovlasti, a ne pogrešna lozinka"
+  - "Internal Server Errori u Integration Suiteu najčešće se svode na nedostajuće kolekcije uloga ili zastarjelu sesiju: dodijelite uloge, zatim se potpuno odjavite i ponovno prijavite"
+  - "Linkovi boostera i pločica pucaju kad se struktura subaccounta promijeni nakon postavljanja: krećite se kroz stablo Cockpita i spremite izravne URL-ove"
+  - "CAP greške destinationa obično se svode na nepodudaranje naziva u cds.requires ili xs-app.json, nedostajuće vezanje na Destination ili XSUAA ili pogrešan OData kind"
+  - "SAP HANA Cloud instance na trial i free-tier planovima zaustavljaju se svake noći: aplikacija koja je jučer radila možda je jednostavno izgubila bazu podataka"
+pullQuote: "SAP BTP Cockpit daje vrlo malo povratnih informacija kad nešto pukne. Većina otklanjanja grešaka odvija se pokušajima i pogreškama. Poznavanje obrazaca štedi sate."
+mentions:
+  - "SAP BTP"
+  - "SAP Integration Suite"
+  - "SAP CAP"
+  - "SAP HANA"
+  - "Cloud Foundry"
+  - "RISE with SAP"
+originalUrl: "https://noeldcosta.com/sap-btp-cockpit-issues/"
+canonicalUrl: "https://noeldcosta.com/hr/sap-btp-cockpit-issues/"
+locale: "hr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Ako Vam SAP BTP Cockpit baca greške, vjerojatno je riječ o jednoj od pet stvari. 401 od service keya gotovo je uvijek problem u OAuth zahtjevu, a ne u vjerodajnicama. Internal Server Error u Integration Suiteu obično znači kolekcije uloga koje nedostaju ili zastarjelu sesiju. Mrtvi linkovi dolaze od boostera postavljenih prije nego što se subaccount promijenio. CAP destination greške obično su nepodudaranje naziva ili vezanje koje nedostaje. A aplikacija koja je jučer radila na trial računu možda je preko noći izgubila bazu podataka. Ovaj je vodič namijenjen programerima i konzultantima za integraciju koji rade u Cloud Foundry subaccountima. Tablica za trijažu u nastavku govori što prvo provjeriti.
+
+Prvi put kad sam vidio crveni banner s greškom u SAP BTP Cockpitu, pretpostavio sam da sam nešto pogriješio. Pogrešan link, istekla sesija.
+
+Nakon trećeg ili četvrtog puta bilo je jasno da nisam samo ja.
+
+Tijekom sljedećih nekoliko tjedana vodio sam bilježnicu i bilježio svaki put kad bi nešto puklo. Internal Server Errori pri otvaranju Integration Suitea. Destinationi koji su izgledali ispravno, a odbijali su se povezati. Aplikacije koje su jučer radile, a danas se vješaju. Pojavili su se obrasci. Malo ih je bilo igdje korisno dokumentirano, a sam Cockpit daje gotovo ništa s čim se može raditi.
+
+## Trijaža: od simptoma do prve provjere
+
+| Simptom | Najvjerojatniji uzrok | Prvo provjerite |
+|---|---|---|
+| 401 Unauthorized pri pozivu API-ja sa service keyom | Pogrešan grant type, token URL ili nedostajuće ovlasti | Dekodirajte token i pročitajte `aud` i `scope` |
+| Internal Server Error pri otvaranju Integration Suitea | Nedostajuće kolekcije uloga ili zastarjela sesija | Kolekcije uloga na Vašem korisniku, zatim potpuna odjava |
+| Booster ili pločica otvara praznu ili pogrešnu stranicu | Subaccount je promijenjen nakon što je booster pokrenut | Umjesto toga krećite se kroz stablo Cockpita |
+| CAP aplikacija: „destination not found" ili greške autentifikacije | Nepodudaranje naziva, nedostajuće vezanje, pogrešan OData kind | `cds.requires` i `xs-app.json` naspram naziva u Cockpitu |
+| Aplikacija je jučer radila, danas se vješa (trial) | HANA Cloud instanca zaustavljena preko noći | Status instance baze podataka u SAP HANA Cloud Central |
+
+## Što se promijenilo u BTP-u od 2024. do 2026.
+
+Cloud Foundry, Kyma i ABAP okruženje rade na SAP-ovoj multi-cloud osnovi, koja je zadana za nove klijente od 2020. Starije Neo okruženje dobiva samo sigurnosna i regulatorna ažuriranja, a SAP je njegovo gašenje odredio za 31. prosinca 2028. Gotovo svaki problem u nastavku je problem Cloud Foundryja.
+
+Dva preimenovanja i dalje zbunjuju ljude koji čitaju starije vodiče. SAP Launchpad service u siječnju 2023. postao je SAP Build Work Zone, standard edition. A mnoge su pločice i boosteri izgrađeni ispočetka kako je rastao SAP Build, pa se snimke zaslona iz 2022. često više ne podudaraju s onim što vidite.
+
+Na RISE with SAP BTP obično stiže kao pravo korištenja temeljeno na kreditima unutar ugovora. Cockpit je isti. Razlikuje se tko u Vašoj organizaciji kontrolira globalni račun, pa pronađite tu osobu prije nego što Vam zatreba novo pravo korištenja.
+
+## Problem 1: 401 unauthorized s vjerodajnicama service keya
+
+Stvorite instancu servisa, generirate service key, kopirate client ID i secret u Postman, dodate token URL i pošaljete zahtjev. 401. Bez pojedinosti.
+
+Ponovno kopirate secret. I dalje ne radi. Servis je u redu. OAuth tok nije.
+
+**Što provjeriti, redom:**
+
+1. **Grant type.** Tehnički pristup većini BTP API-ja servisa koristi `client_credentials`. Postavite ga izričito u Postmanu. Ne vjerujte zadanoj vrijednosti.
+2. **Token URL.** Uzmite ga iz service keya. Neki ključevi daju `tokenurl`; drugi daju XSUAA `url`, kojem dodajete `/oauth/token`. Nikada ga ne posuđujte iz drugog subaccounta.
+3. **Zaglavlja.** Za izravan poziv tokena pošaljite `Content-Type: application/x-www-form-urlencoded` i `Authorization: Basic <base64(clientid:clientsecret)>`.
+4. **Ovlasti.** S client credentials token nosi samo scopeove dodijeljene toj instanci servisa. Ako API treba ulogu koju instanca nema, i dalje dobijete token, a API i dalje kaže ne. Ispravite to u parametrima instance (na primjer, uloge na instanci API plana Integration Suitea), a ne u zahtjevu.
+5. **Audience.** Ako imate token, a API ga odbija, dekodirajte token i pročitajte `aud` tvrdnju. Ako se ne podudara s API-jem koji pozivate, koristite ključ iz pogrešne instance servisa.
+
+## Problem 2: Internal Server Errori pri otvaranju Integration Suitea
+
+Otvorite Integration Suite i dobijete crveni banner „Internal Server Error". Bez loga. Ponovno učitavanje, drugi preglednik, isti rezultat.
+
+Obično se događa nakon što je servis neko vrijeme bio nekorišten: otvoren ujutro, ostavljen nekoliko sati, ponovno korišten kasnije. SAP-ove community niti i baza znanja upućuju na dva uobičajena uzroka: kolekcije uloga koje nedostaju i zastarjele sesije.
+
+**Što obično riješi problem:**
+
+1. **Provjerite kolekcije uloga.** Vašem korisniku treba `Integration_Provisioner` za postavljanje tenanta i odgovarajuće `PI_` kolekcije uloga (administrator, integracijski programer, poslovni stručnjak) za rad u njemu. Dodijelite ih u subaccountu pod Security.
+2. **Potpuno se odjavite.** Promjene uloga dopiru do Vaše sesije tek nakon nove prijave. Zatvorite sve BTP i Integration Suite kartice, odjavite se, pa se ponovno prijavite.
+3. **Obrišite kolačiće za BTP domene** ako greška preživi novu prijavu. Zastarjeli kolačić sesije može nadživjeti sesiju.
+4. **Koristite jednu Cockpit sesiju.** Više kartica ili profila preglednika na istom subaccountu uzrokuje sukobe sesija koji izgledaju točno kao ova greška.
+
+Pravi je problem vidljivost. Cockpit Vam ne govori ništa o tome što je zakazalo, pa na kraju pogađate. Umjesto toga prođite popis redom. Za širi pogled na to zašto integracijski programi zastaju pogledajte moj tekst o [kašnjenjima isporuke SAP Integration Suitea](/hr/sap-integration-suite-delivery-delays/).
+
+## Problem 3: Pokvarena navigacija i mrtvi linkovi
+
+Kliknete „Go to Application" i dobijete prazan zaslon, generičku početnu stranicu ili preusmjeravanje koje nema smisla.
+
+Slijedi obrasce:
+
+1. Linkovi boostera pucaju kad se postavka subaccounta promijeni nakon što je booster pokrenut. Preusmjeravanje pokazuje nekamo gdje više ne postoji.
+2. Pločice Integration Suitea ponekad rade, ponekad daju grešku, ponekad istekne vrijeme, obično zbog gore navedenih razloga vezanih uz sesije.
+3. Linkovi SAP Build Work Zonea prikazuju „connection denied" kad pretplata postoji, ali Vašem korisniku nedostaje kolekcija uloga za site.
+4. Više kartica ili profila preglednika otvara linkove u isteklim kontekstima.
+
+Što funkcionira: krećite se kroz stablo Cockpita (subaccount, zatim Services, zatim Instances and Subscriptions) i spremite kao bookmark izravne URL-ove za Integration Suite, Destinations i Work Zone. Koristite jednu sesiju u čistom profilu preglednika. Kad link zakaže svaki treći put, prestanete vjerovati platformi i počnete graditi zaobilazna rješenja. Bookmarkovi su najjeftinije zaobilazno rješenje koje postoji. Ako se još snalazite, moj [vodič kroz BTP Cockpit](/hr/master-the-sap-btp-cockpit-simple-steps/) obrađuje osnovnu navigaciju.
+
+## Problem 4: Greške destinationa u CAP aplikacijama
+
+Uvedete CAP aplikaciju, konfigurirate destination u Cockpitu, a zahtjevi i dalje padaju s „destination not found" ili greškama autentifikacije. Destination je naveden. Aplikacija radi. Poruke o greškama ne upućuju ni na što korisno.
+
+[SAP-ova CAP dokumentacija](https://cap.cloud.sap/docs/guides/services/consuming-services) jasna je o tome kako ovo treba biti povezano: udaljeni servis deklarira se pod `cds.requires` u `package.json` (ili `.cdsrc.json`) s `kind`, a naziv destinationa ide pod `credentials.destination`. Aplikaciji su potrebna i vezanja na Destination servis i na XSUAA. Većina grešaka je prekid negdje u tom lancu.
+
+<explainer-flow title="Lanac CAP destinationa" caption="Pogrešan naziv, nedostajuće vezanje ili pogrešan OData kind prekida jednu kariku, a greška rijetko kaže koju." steps="cds.requires|Produkcijski profil|Vezanja servisa|Destination u Cockpitu|Udaljeni servis" notes="Deklarira udaljeni servis, njegov kind i naziv destinationa|Drži vjerodajnice destinationa nakon uvođenja|Aplikacija je vezana na Destination i XSUAA|Isti naziv kao u cds.requires i xs-app.json, uključujući velika i mala slova|odata-v2 za V2 servis, odata za V4" result="Zahtjevi stižu do udaljenog servisa"></explainer-flow>
+
+| Simptom | Rješenje |
+|---|---|
+| Destination je naveden, ali ga aplikacija ne može pronaći | Usporedite naziv u `cds.requires` i u rutama `xs-app.json` s Cockpitom, znak po znak, uključujući velika i mala slova |
+| Radi lokalno, pada nakon uvođenja | Provjerite sadrži li profil `[production]` doista vjerodajnice destinationa i je li aplikacija vezana na Destination i XSUAA |
+| Udaljeni OData V2 servis vraća greške | Postavite `kind` na `odata-v2` za V2 servis i `odata` za V4. Koristite V4 gdje god obje strane dopuštaju |
+| UI5 aplikaciji treba V2, a Vaš CAP servis je V4 | Dodajte plugin `@cap-js-community/odata-v2-adapter`. Stariji `@sap/cds-odata-v2-adapter-proxy` je zastario |
+| Autentifikacija pada s ispravnim vjerodajnicama | Počnite s `OAuth2ClientCredentials` ili `BasicAuthentication`. SAML ili propagaciju principala koristite samo kad scenarij to traži |
+| Niste sigurni je li cilj uopće dostupan | Prije otklanjanja grešaka u aplikaciji upotrijebite „Check Connection" na destinationu u Cockpitu |
+
+Timovi koji to dobro rješavaju drže kratak popis za provjeru destinationa po aplikaciji. Ne zato što je postavljanje složeno. Nego zato što jedna pogrešna pretpostavka o nazivu, vezanju ili OData kindu zakaže tiho i traje mnogo dulje za pronalazak nego za sprječavanje.
+
+## Problem 5: Aplikacije koje stanu preko noći na trialu i free tieru
+
+CAP aplikacija koja je jučer radila sada se vješa. Bez greške. Cockpit pokazuje da radi. Ponovno je pokrenete. Ništa.
+
+Najprije provjerite bazu podataka. SAP-ov vlastiti [tutorial za HANA Cloud trial](https://developers.sap.com/tutorials/hana-cloud-mission-trial-1) navodi da se free-tier instance zaustavljaju svake noći i moraju se ponovno pokretati svaki dan kad radite. Sam trial račun traje do 90 dana ako se redovito prijavljujete. Vaša je aplikacija u redu. Njezina baza podataka spava.
+
+**Što pomaže:**
+
+1. Ponovno pokrenite HANA Cloud instancu iz SAP HANA Cloud Central prije nego što počnete otklanjati greške u kodu.
+2. Koristite CLI (`cf apps`, `cf services`) da vidite upotrebu memorije i servisa. Cockpit UI pokazuje daleko manje.
+3. Obrišite nekorištene instance servisa prije nego što stvorite nove. Trial kvote vrijede za cijeli račun, a ne samo za jednu aplikaciju.
+4. Demo i testna opterećenja držite u zasebnim subaccountima.
+
+Ako Vam treba više od jedne aplikacije i baze podataka koje pouzdano rade, ili stabilan rad za demonstracije, prijeđite na produktivni račun. Free-tier planovi u produktivnom računu mogu se nadograditi na plaćene bez gubitka Vašeg rada, što trial račun ne može.
+
+## Često postavljana pitanja
+
+<details>
+<summary>Zašto dobivam 401 grešku s vjerodajnicama SAP BTP service keya čak i kad izgledaju ispravno?</summary>
+
+Gotovo uvijek je riječ o OAuth zahtjevu, a ne o vjerodajnicama. Uobičajeni uzroci su pogrešan grant type (za tehnički pristup koristite `client_credentials`), token URL koji se ne podudara sa service keyom ili pogrešna zaglavlja na pozivu tokena.
+
+Ako dobijete token, a API ga i dalje odbija, dekodirajte ga. Provjerite podudara li se `aud` tvrdnja s API-jem i provjerite scopeove. S client credentials scopeovi dolaze iz ovlasti dodijeljenih instanci servisa, pa nedostajuće uloge ispravite u parametrima instance.
+
+</details>
+
+<details>
+<summary>Što uzrokuje Internal Server Errore pri otvaranju Integration Suitea u BTP Cockpitu?</summary>
+
+Najčešće kolekcije uloga koje nedostaju ili zastarjela sesija. Provjerite da Vaš korisnik ima `Integration_Provisioner` i `PI_` kolekcije uloga koje trebate. Zatim zatvorite sve BTP kartice, odjavite se i ponovno prijavite, jer se nove uloge primjenjuju tek nakon nove prijave.
+
+Ako se nastavi, obrišite kolačiće za BTP domene i držite se jedne Cockpit sesije. Više kartica na istom subaccountu izaziva istu grešku.
+
+</details>
+
+<details>
+<summary>Zašto se moja CAP aplikacija ne uspijeva povezati na destination koji se u Cockpitu ispravno prikazuje?</summary>
+
+Obično je riječ o nepodudaranju naziva. Naziv destinationa u `cds.requires` i u rutama `xs-app.json` mora se točno podudarati s Cockpitom, uključujući velika i mala slova.
+
+Ako je naziv ispravan, provjerite je li aplikacija vezana i na Destination servis i na XSUAA, nosi li profil `[production]` vjerodajnice i odgovara li `kind` udaljenom servisu: `odata-v2` za V2, `odata` za V4. Upotrijebite „Check Connection" u Cockpitu da potvrdite da je cilj dostupan.
+
+</details>
+
+<details>
+<summary>Zašto moja SAP BTP trial aplikacija preko noći prestane raditi?</summary>
+
+Na trial i free-tier planovima SAP HANA Cloud instance zaustavljaju se svake noći radi uštede resursa. Vaša aplikacija nastavlja raditi, ali ne može doći do svoje baze podataka. Svaki dan prije rada ponovno pokrenite instancu u SAP HANA Cloud Central.
+
+Koristite `cf apps` i `cf services` za provjeru upotrebe memorije i servisa, jer se trial kvote teško vide u Cockpitu. Obrišite nekorištene instance prije stvaranja novih.
+
+</details>
+
+<details>
+<summary>Zašto linkovi unutar boostera i pločica vode na prazne stranice?</summary>
+
+Linkovi boostera pucaju kad se struktura subaccounta promijeni nakon što je booster pokrenut. Preusmjeravanje pokazuje na lokaciju koja više ne postoji ili nikada nije u potpunosti konfigurirana.
+
+Umjesto toga krećite se kroz stablo Cockpita i spremite izravne URL-ove za Integration Suite, Destinations i SAP Build Work Zone. Ne oslanjajte se na navigaciju koju generira booster za bilo što što koristite svaki dan.
+
+</details>
+
+<details>
+<summary>Kada trebam prijeći s BTP trial računa na plaćeni plan?</summary>
+
+Kad Vam ograničenja počnu oduzimati vrijeme. Ako pokrećete više od jedne aplikacije ili baze podataka, ili Vam treba stabilan rad za demonstracije ili testiranje, trial uzrokuje više trenja nego što ga štedi.
+
+Glavni dobici su stabilnost i jasniji uvid u resurse, a ne nove značajke. Produktivni račun s free-tier planovima dobar je srednji korak: te planove kasnije možete nadograditi na plaćene bez ikakve ponovne izgradnje.
+
+</details>

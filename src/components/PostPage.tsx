@@ -3,14 +3,15 @@ import { notFound } from "next/navigation";
 import MdxBody from "@/components/mdx/MdxBody";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
-import ReadingProgress from "@/components/article/ReadingProgress";
-import TableOfContents from "@/components/article/TableOfContents";
+import SideRail from "@/components/site/SideRail";
+import type { Crumb } from "@/components/site/PageBanner";
 import ArticleHero from "@/components/article/ArticleHero";
+import MobileContents from "@/components/article/MobileContents";
 import KeyTakeaways from "@/components/article/KeyTakeaways";
 import PullQuote from "@/components/article/PullQuote";
 import ProductPromoCard from "@/components/article/ProductPromoCard";
 import AuthorBox from "@/components/article/AuthorBox";
-import FadeUp from "@/components/article/FadeUp";
+import CTASection from "@/components/article/CTASection";
 import RelatedArticles, {
   pickRelated,
 } from "@/components/article/RelatedArticles";
@@ -19,14 +20,33 @@ import {
   getAllPosts,
   getPost,
   readingTime,
+  type Locale,
+  type PostRecord,
 } from "@/lib/content";
 import {
   articleJsonLd,
   breadcrumbJsonLd,
   SITE_URL,
 } from "@/lib/seo";
+import { buildLanguageAlternates } from "@/lib/seo-graph";
 import { extractHeadings } from "@/lib/article-headings";
+import { headingsBySegment } from "@/lib/article-heading-ids";
 import { splitAtMidH2 } from "@/lib/article-split";
+import { buildLocalizedPath, publicPrefixFromContentLocale } from "@/lib/locale-url";
+import { getImageDimensions } from "@/lib/image-dimensions";
+import { cleanWordPressArtifacts } from "@/lib/wp-cleanup";
+import { localizeHref, repairLinks } from "@/lib/link-repair";
+import { normalizeHeadingLevels } from "@/lib/md-repair";
+import { imageAvailable } from "@/components/article/image-available";
+import {
+  getArticleCategoryLabel,
+  getArticleMessages,
+} from "@/lib/article-localization";
+import { hasTranslation, translator } from "@/i18n";
+import { readyLocales } from "@/i18n/ready";
+import { localizedArchivePosts } from "@/lib/localized-interface-routes";
+import { CONTACT } from "@/data/site-menu";
+import pageSections from "@/data/page-sections.json";
 
 /**
  * Extract question/answer pairs from HTML <details>/<summary> blocks in the
@@ -45,284 +65,340 @@ function extractFaqItems(body: string): { question: string; answer: string }[] {
   return items;
 }
 
+const ARTICLES_INDEX = "/best-sap-articles-for-implementation-noel-dcosta/";
+
+const SECTION_HREF: Record<string, string> = {
+  Articles: ARTICLES_INDEX,
+  "AI Academy": "/ai-academy/",
+  "Client work": "/case-studies/",
+};
+
+// Group anchors on the articles index page.
+const GROUP_ANCHOR: Record<string, string> = {
+  "Enterprise Applications": "enterprise-applications",
+  "Data & Analytics": "data-analytics",
+  AI: "ai",
+  "Consulting practice": "consulting-practice",
+  "Case studies": "case-studies",
+};
+
+type PageSection = { section: string; group: string };
+const SECTIONS = pageSections as Record<string, PageSection>;
+
+/** "Data & Analytics" -> "Data & analytics"; acronyms such as "AI" stay. */
+function sentenceCase(label: string): string {
+  return label
+    .split(" ")
+    .map((word, i) =>
+      i === 0 || /^[A-Z0-9/]{2,}$/.test(word) ? word : word.toLowerCase(),
+    )
+    .join(" ");
+}
+
 /**
- * Article page shell. Layout is deliberately restrained:
+ * Visible banner breadcrumb. English articles use the site section and group
+ * from page-sections.json (Articles / Enterprise applications), linking to the
+ * group on the articles index. Translated articles keep localized labels: the
+ * localized "Articles" label and the translated category.
+ */
+function bannerCrumbs({
+  locale,
+  slug,
+  sectionsLabel,
+  category,
+  href,
+}: {
+  locale: Locale;
+  slug: string;
+  sectionsLabel: string;
+  category: { label: string; slug: string } | null;
+  /** Points a link at the translated page when it is published. */
+  href: (path: string) => string;
+}): Crumb[] {
+  const entry = locale === "en" ? SECTIONS[`/${slug}/`] : undefined;
+  if (entry && entry.section !== "Index (all articles)") {
+    const anchor =
+      entry.section === "AI Academy" ? "academy" : GROUP_ANCHOR[entry.group];
+    return [
+      { label: entry.section, href: SECTION_HREF[entry.section] ?? ARTICLES_INDEX },
+      {
+        label: sentenceCase(entry.group),
+        href: anchor ? `${ARTICLES_INDEX}#${anchor}` : ARTICLES_INDEX,
+      },
+    ];
+  }
+  const crumbs: Crumb[] = [{ label: sectionsLabel, href: href(ARTICLES_INDEX) }];
+  if (category) {
+    crumbs.push({ label: category.label, href: href(`/category/${category.slug}/`) });
+  }
+  return crumbs;
+}
+
+/**
+ * Article page shell (2026 design system):
  *
- * - Two-column on lg+ (ToC rail + reading column) — NOT a three-column
- *   magazine with competing sidebars. The reading column is the focus.
- * - Single column under lg, with the ToC collapsed into a <details> block
- *   inline with the content.
- * - Breadcrumb is a single line, mono eyebrow style (matches Hero).
- * - Body width capped ~720px so line length stays readable.
+ * - Banner: breadcrumb, H1 in the display face, standfirst, author meta row.
+ * - Frame: sticky side rail on lg+ (back link, numbered H2 contents tracked
+ *   on scroll, contact card) beside a single reading column. Under 1024px
+ *   the rail collapses and an inline <details> contents block takes over.
+ * - Reading column capped at 760px so line length stays readable.
+ *
+ * SEO behaviour is unchanged: metadata comes from the route, and this
+ * component emits the same Article, BreadcrumbList and FAQPage JSON-LD.
  */
 export default function PostPage({
   slug,
+  locale = "en",
+  post: suppliedPost,
 }: {
   slug: string;
+  locale?: Locale;
+  post?: PostRecord & { localizedCategoryLabel?: string };
 }) {
-  const post = getPost(slug, "en");
-  if (!post) notFound();
+  const post: (PostRecord & { localizedCategoryLabel?: string }) | null =
+    suppliedPost ?? getPost(slug, locale);
+  if (!post || post.isFallback) notFound();
 
   const fm = post.frontmatter;
+  const messages = getArticleMessages(locale);
+  const tr = translator(locale);
+  const prefix = publicPrefixFromContentLocale(locale);
+  const lhref = (h: string) => localizeHref(prefix, h);
+  // The end-of-article modules (author, related reading, product cards, call
+  // to action) show on English articles, and on translated articles once the
+  // locale's interface dictionary is ready (then translated).
+  const showEnglishModules =
+    messages.showEnglishArticleModules ||
+    (prefix !== null && (readyLocales() as readonly string[]).includes(prefix));
   const catMeta = CATEGORIES[fm.category as keyof typeof CATEGORIES];
+  // Category name from the interface dictionary when the locale has it.
+  const categoryLabel =
+    catMeta && hasTranslation(locale, catMeta.label)
+      ? tr(catMeta.label)
+      : getArticleCategoryLabel(locale, catMeta?.label ?? fm.category, post.localizedCategoryLabel);
   const rt = readingTime(post.body);
 
-  const headings = extractHeadings(post.body);
-  const [bodyTop, bodyBottom] = splitAtMidH2(post.body);
+  // WordPress export artefacts (icon-font glyphs, plugin shortcodes, slider
+  // clones) are removed before anything reads the body, so the ToC, the
+  // segments and the rendered headings all see the same text. Heading ids
+  // are unaffected: no heading contains those artefacts.
+  const body = normalizeHeadingLevels(repairLinks(cleanWordPressArtifacts(post.body)));
+
+  // ToC ids come from one slug pass over the full body; each rendered
+  // segment is handed its slice so heading ids match the ToC hrefs.
+  const headings = extractHeadings(body);
+  const [bodyTop, bodyBottom] = splitAtMidH2(body);
+  const [headingsTop, headingsBottom] = headingsBySegment(headings, [bodyTop, bodyBottom]);
+  const tocIds = headings.map((h) => h.id);
   const hasSplit = bodyBottom.length > 0;
   const hasToc = headings.length >= 3;
 
-  const pool = getAllPosts("en");
-  const endRelated = pickRelated(post, pool, 4);
+  // Rail entries are the H2s; the body shows the same number above each H2.
+  const railItems = hasToc
+    ? headings
+        .filter((h) => h.level === 2)
+        .map((h) => ({ id: h.id, label: h.text }))
+    : [];
+  const headingNumbers = Object.fromEntries(
+    railItems.map((item, i) => [item.id, String(i + 1).padStart(2, "0")]),
+  );
+
+  const pool = !showEnglishModules
+    ? []
+    : locale === "en"
+      ? getAllPosts(locale).filter((candidate) => !candidate.isFallback)
+      : localizedArchivePosts(prefix ?? "");
+  const endRelated = showEnglishModules ? pickRelated(post, pool, 4) : [];
   const faqItems = extractFaqItems(post.body);
 
+  // Same hreflang map as the route metadata, for the Nav language menu.
+  const languages = buildLanguageAlternates("post", post);
+
   const breadcrumbs = [
-    { name: "Home", url: `${SITE_URL}/` },
+    { name: messages.home, url: `${SITE_URL}${lhref("/")}` },
     catMeta
       ? {
-          name: catMeta.label,
-          url: `${SITE_URL}/category/${catMeta.slug}`,
+          name: categoryLabel,
+          url: `${SITE_URL}${lhref(`/category/${catMeta.slug}/`)}`,
         }
       : null,
-    { name: fm.title, url: `${SITE_URL}/${fm.slug}` },
+    { name: fm.title, url: `${SITE_URL}${buildLocalizedPath(locale, fm.slug)}` },
   ].filter(Boolean) as { name: string; url: string }[];
 
+  // Translated pages label their English-destination links with the
+  // localized "Articles" string.
+  const sectionsLabel = locale === "en" ? "Articles" : messages.category;
+  const crumbs = bannerCrumbs({
+    locale,
+    slug: fm.slug,
+    sectionsLabel,
+    category: catMeta ? { label: categoryLabel, slug: catMeta.slug } : null,
+    href: lhref,
+  });
+
   const deck = fm.deck || fm.excerpt;
+  const hero = imageAvailable(fm.hero) ? fm.hero : undefined;
+  const heroDimensions = getImageDimensions(hero);
 
   return (
     <>
-      <Nav />
-      <ReadingProgress />
+      <Nav locale={locale} languages={languages} />
 
-      <article className="bg-paper pt-24 md:pt-28 pb-16">
-        <div className="max-w-[1200px] mx-auto px-[clamp(1.5rem,5vw,4rem)]">
-          {/* Breadcrumb — single-line mono eyebrow, matches Hero pattern */}
-          <nav aria-label="Breadcrumb" className="mb-10">
-            <ol className="flex flex-wrap gap-x-2 gap-y-1 items-center font-mono text-[0.72rem] font-medium tracking-[2px] uppercase">
-              <li>
-                <Link
-                  href="/"
-                  className="text-eyebrow hover:text-papaya transition-colors"
-                >
-                  Home
-                </Link>
-              </li>
-              {catMeta && (
-                <>
-                  <li aria-hidden className="text-eyebrow/40">/</li>
-                  <li>
-                    <Link
-                      href={`/category/${catMeta.slug}`}
-                      className="text-eyebrow hover:text-papaya transition-colors"
-                    >
-                      {catMeta.label}
+      <main id="main-content" className="nd-main">
+        <article className="nd-article">
+          <ArticleHero
+            crumbs={crumbs}
+            title={fm.h1 || fm.title}
+            deck={deck}
+            date={fm.date}
+            updated={fm.updated}
+            lastReviewed={fm.lastReviewed}
+            readingMinutes={rt}
+            coverImage={hero}
+            locale={locale}
+          />
+
+          <div className="nd-frame nd-article-frame">
+            <SideRail
+              back={{
+                label: locale === "en" ? "All articles" : messages.category,
+                href: lhref(ARTICLES_INDEX),
+              }}
+              label={messages.desktopContents}
+              items={railItems}
+              footer={
+                showEnglishModules ? (
+                  <div className="nd-rail-cta">
+                    <span className="nd-label">{tr("Work with me")}</span>
+                    <p>
+                      {tr(
+                        "Tell me what is going on with your ERP or AI programme. I will tell you straight if I can help.",
+                      )}
+                    </p>
+                    <Link className="nd-btn nd-btn-primary" href={lhref(CONTACT)}>
+                      {tr("Discuss your project")} <span aria-hidden="true">→</span>
                     </Link>
-                  </li>
-                </>
-              )}
-              {/* Post title hidden at < md — at 375 px the title was
-                  truncated to ~200 px which cut most titles mid-word. The
-                  Home / Category trail is enough orientation on mobile;
-                  the full title is the h1 immediately below the breadcrumb. */}
-              <li aria-hidden className="hidden md:inline text-eyebrow/40">/</li>
-              <li
-                aria-current="page"
-                className="hidden md:inline truncate max-w-[360px] text-corbeau/60 normal-case tracking-normal text-[0.68rem]"
-              >
-                {fm.title}
-              </li>
-            </ol>
-          </nav>
+                  </div>
+                ) : undefined
+              }
+            />
 
-          {/*
-            Two-column grid: reading column + sticky ToC rail on the right.
-            On < lg we collapse to a single column; the mobile ToC appears
-            inline inside the content column as a <details> element so users
-            never hit a section without a map.
-          */}
-          <div
-            className={[
-              "grid gap-x-14 gap-y-0",
-              hasToc
-                ? "grid-cols-1 lg:grid-cols-[minmax(0,1fr)_248px]"
-                : "grid-cols-1",
-            ].join(" ")}
-          >
-            {/* Reading column */}
-            <div className="min-w-0 max-w-[720px] w-full mx-auto lg:mx-0">
-              <ArticleHero
-                category={
-                  catMeta
-                    ? { label: catMeta.label, slug: catMeta.slug }
-                    : undefined
-                }
-                title={fm.h1 || fm.title}
-                deck={deck}
-                author={fm.author || "Noel D'Costa"}
-                date={fm.date}
-                updated={fm.updated}
-                lastReviewed={fm.lastReviewed}
-                readingMinutes={rt}
-                heroImage={fm.hero}
-                heroAlt={fm.heroAlt}
-              />
+            <div className="nd-article-body nd-article-main">
+              <div className="nd-article-col">
+                {hero && (
+                  <figure className="nd-figure-hero">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={hero}
+                      alt={fm.heroAlt || fm.h1 || fm.title}
+                      width={heroDimensions?.width}
+                      height={heroDimensions?.height}
+                      fetchPriority="high"
+                      decoding="async"
+                    />
+                  </figure>
+                )}
 
-              {fm.keyTakeaways && fm.keyTakeaways.length > 0 && (
-                <KeyTakeaways items={fm.keyTakeaways} />
-              )}
+                {fm.keyTakeaways && fm.keyTakeaways.length > 0 && (
+                  <KeyTakeaways title={tr("Key takeaways")} items={fm.keyTakeaways} />
+                )}
 
-              {/* Inline ToC for < lg — single disclosure block, not a second
-                  persistent sidebar. Mirrors the desktop numbered spine. */}
-              {hasToc && (() => {
-                let mh2 = 0;
-                const mobileNumbered = headings.map((h) => ({
-                  ...h,
-                  number: h.level === 2 ? String(++mh2).padStart(2, "0") : null,
-                }));
-                return (
-                  <details className="lg:hidden mb-10 rounded-xl border border-corbeau/[0.08] bg-paper p-5 group">
-                    <summary className="cursor-pointer font-mono text-[0.62rem] font-medium tracking-[2.4px] uppercase text-corbeau/60 list-none flex items-center justify-between">
-                      <span>Contents</span>
-                      <span
-                        aria-hidden
-                        className="text-corbeau/40 group-open:rotate-180 transition-transform"
-                      >
-                        ▾
-                      </span>
-                    </summary>
-                    <ul className="mt-5 space-y-0.5">
-                      {mobileNumbered.map((h) => {
-                        const isH3 = h.level === 3;
-                        return (
-                          <li key={h.id}>
-                            <a
-                              href={`#${h.id}`}
-                              className={[
-                                "flex items-start gap-3 py-1.5 leading-[1.4]",
-                                isH3 ? "pl-8" : "",
-                              ].join(" ")}
-                            >
-                              {!isH3 && (
-                                <span
-                                  aria-hidden
-                                  className="font-mono text-[0.68rem] tabular-nums pt-[0.18rem] text-corbeau/30 flex-shrink-0 w-5"
-                                >
-                                  {h.number}
-                                </span>
-                              )}
-                              {isH3 && (
-                                <span
-                                  aria-hidden
-                                  className="mt-[0.65rem] w-1 h-1 rounded-full bg-corbeau/20 flex-shrink-0"
-                                />
-                              )}
-                              <span
-                                className={
-                                  isH3
-                                    ? "text-[0.82rem] text-night/60"
-                                    : "text-[0.9rem] text-night/80"
-                                }
-                              >
-                                {h.text}
-                              </span>
-                            </a>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </details>
-                );
-              })()}
+                {hasToc && (
+                  <MobileContents headings={headings} label={messages.contents} />
+                )}
 
-              {/* Article body — first half */}
-              <div className="prose-noel">
-                <MdxBody source={bodyTop} />
-              </div>
+                {/* Article body, first half */}
+                <div className="prose-noel">
+                  <MdxBody
+                    source={bodyTop}
+                    headings={headingsTop}
+                    reservedHeadingIds={tocIds}
+                    headingNumbers={headingNumbers}
+                    isImageAvailable={imageAvailable}
+                    locale={locale}
+                  />
+                </div>
 
-              {/* Mid-article Command Centre reference — dark card with dashboard screenshot */}
-              {hasSplit && (
-                <ProductPromoCard
-                  tone="dark"
-                  kicker="Built by Noel"
-                  title="Command Centre"
-                  description="Executive visibility, risk posture, and decision governance for ERP and SAP programmes. See where delivery is actually bleeding — before it hits the steering committee."
-                  href="https://commandcc.io"
-                  cta="Try Command Centre free"
-                  external
-                  image="/images/wp/2025/02/dashboard.webp"
-                />
-              )}
+                {/* Mid-article Command Centre reference */}
+                {hasSplit && showEnglishModules && (
+                  <ProductPromoCard
+                    tone="dark"
+                    kicker={tr("Built by Noel")}
+                    title="Command Centre"
+                    description={tr(
+                      "Executive visibility, risk posture, and decision governance for ERP and SAP programmes. See where delivery is actually bleeding before it hits the steering committee.",
+                    )}
+                    href="https://commandcc.io"
+                    cta={tr("Try Command Centre free")}
+                    external
+                  />
+                )}
 
-              {hasSplit && fm.pullQuote && (
-                <FadeUp>
+                {hasSplit && fm.pullQuote && (
                   <PullQuote attribution={fm.pullQuoteAttribution}>
                     {fm.pullQuote}
                   </PullQuote>
-                </FadeUp>
-              )}
+                )}
 
-              {/* Article body — second half */}
-              {hasSplit && (
-                <div className="prose-noel">
-                  <MdxBody source={bodyBottom} />
-                </div>
-              )}
+                {/* Article body, second half */}
+                {hasSplit && (
+                  <div className="prose-noel">
+                    <MdxBody
+                      source={bodyBottom}
+                      headings={headingsBottom}
+                      reservedHeadingIds={tocIds}
+                      headingNumbers={headingNumbers}
+                      isImageAvailable={imageAvailable}
+                      locale={locale}
+                    />
+                  </div>
+                )}
 
-              {/* ERPCV reference — dark tone, matches Command Centre format */}
-              <ProductPromoCard
-                tone="dark"
-                kicker="Tool · Free to start"
-                title="Build a professional ERP CV in minutes"
-                description="Turn years of SAP, Oracle, and Microsoft programme work into a polished CV structured by role, modules, and outcomes. Used by senior ERP consultants across the Middle East, Europe, and North America."
-                href="https://erpcv.com"
-                cta="Generate your ERP CV"
-                external
-              />
+                {/* ERPCV reference */}
+                {showEnglishModules && (
+                  <ProductPromoCard
+                    tone="light"
+                    kicker={tr("Tool · Free to start")}
+                    title={tr("Build a professional ERP CV in minutes")}
+                    description={tr(
+                      "Turn years of SAP, Oracle, and Microsoft programme work into a polished CV structured by role, modules, and outcomes. Used by senior ERP consultants across the Middle East, Europe, and North America.",
+                    )}
+                    href="https://erpcv.com"
+                    cta={tr("Generate your ERP CV")}
+                    external
+                  />
+                )}
 
-              {/* Combined author + advisory CTA card */}
-              <FadeUp>
-                <AuthorBox />
-              </FadeUp>
+                {showEnglishModules && <AuthorBox locale={locale} />}
 
-              <RelatedArticles
-                label="Continue reading"
-                items={endRelated}
-                columns={2}
-              />
+                {showEnglishModules && (
+                  <RelatedArticles label="Continue reading" items={endRelated} locale={locale} />
+                )}
+
+                {showEnglishModules && <CTASection locale={locale} />}
+              </div>
             </div>
-
-            {/* Right rail — sticky ToC only. We deliberately do NOT render a
-                second "advisory" card here: the end-of-article CTA already
-                makes the advisory offer, and a persistent sidebar CTA while
-                reading feels needy. */}
-            {hasToc && (
-              <aside className="hidden lg:block">
-                <div className="sticky top-24 pt-2">
-                  <TableOfContents headings={headings} />
-                </div>
-              </aside>
-            )}
           </div>
-        </div>
-      </article>
+        </article>
+      </main>
 
-      <Footer />
+      <Footer locale={locale} />
 
-      {/* JSON-LD — Article */}
+      {/* JSON-LD: Article */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(articleJsonLd(post)),
         }}
       />
-      {/* JSON-LD — Breadcrumb */}
+      {/* JSON-LD: Breadcrumb */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(breadcrumbJsonLd(breadcrumbs)),
         }}
       />
-      {/* JSON-LD — FAQPage (only when article contains <details>/<summary> blocks) */}
+      {/* JSON-LD: FAQPage (only when article contains <details>/<summary> blocks) */}
       {faqItems.length > 0 && (
         <script
           type="application/ld+json"

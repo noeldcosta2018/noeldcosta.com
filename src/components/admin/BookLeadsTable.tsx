@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 
 /**
@@ -51,16 +51,7 @@ export default function BookLeadsTable({
   const [loading, setLoading] = useState(false);
   const limit = initialLimit;
 
-  // Debounced refetch on filter change.
-  useEffect(() => {
-    const handle = setTimeout(() => {
-      void refetch();
-    }, 300);
-    return () => clearTimeout(handle);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, book, sort, dir, offset]);
-
-  async function refetch() {
+  const refetch = useCallback(async () => {
     setLoading(true);
     const params = new URLSearchParams();
     if (q) params.set("q", q);
@@ -82,7 +73,15 @@ export default function BookLeadsTable({
     } finally {
       setLoading(false);
     }
-  }
+  }, [book, dir, limit, offset, q, sort]);
+
+  // Debounced refetch on filter change.
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      void refetch();
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [refetch]);
 
   async function signOut() {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -170,6 +169,7 @@ export default function BookLeadsTable({
         <div className="flex items-center gap-2">
           <a
             href="/api/admin/leads/export"
+            download
             className="inline-flex items-center justify-center bg-papaya text-corbeau font-bold text-[0.85rem] px-4 py-2.5 min-h-[44px] rounded-[8px] no-underline transition-all hover:bg-[#fb8843]"
           >
             Export CSV

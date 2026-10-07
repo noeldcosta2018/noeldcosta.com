@@ -1,773 +1,228 @@
 ---
-title: "SAP SD-fouten die uw verkoopproces kunnen verstoren"
+title: "SAP SD: wat het doet en waar implementaties vastlopen"
+h1: "SAP SD: wat het doet en waar implementaties vastlopen"
 slug: "sap-sd-sales-and-distribution"
-date: "2025-04-08 20:07:46"
-updated: "2025-10-17 07:39:20"
+date: "2025-04-08"
+updated: "2026-10-07"
 hero: "/images/wp/2025/04/What-You-Must-Know-Before-Starting-SAP-SD-Implementation.webp"
+heroAlt: "Diagram van het SAP SD order-to-cash-proces met de documentenstroom van verkooporder, levering en facturering"
 category: "sap-modules"
-tags: ["sap-technical-decisions"]
-author: "noeldcosta"
+tags: ["sap-technical-decisions", "sap-sd", "order-to-cash", "rise-with-sap"]
+author: "Noel D'Costa"
+metaTitle: "SAP SD in 2026: wat het doet en waar het vastloopt"
+metaDescription: "SAP SD in 2026: order-to-cash op S/4HANA, prijsbepaling, advanced ATP, kredietbeheer, FI-integratie en de vier plekken waar SD-implementaties vastlopen."
+excerpt: "SAP SD verbindt wat sales belooft met wat operations kan leveren. Deze gids behandelt de order-to-cash-keten, wat er verandert op S/4HANA en de vier plekken waar SD-implementaties meestal vastlopen."
+experienceSource: "Noel's SAP SD experience as published in the original article: the rollout where sales quoted five days and manufacturing knew it was ten, the manufacturing client that cut its order-to-cash cycle by 40%, and the data governance problems (old pricing conditions, incomplete customer masters, mismatched tax codes). S/4HANA SD facts (business partner, SAP Credit Management, condition contracts, advanced ATP licensing, RAR) checked against SAP documentation in October 2026."
+lastReviewed: "2026-05-21"
+keyTakeaways:
+  - "SAP SD draait order-to-cash: offerte, verkooporder, levering, facturering en de overdracht aan finance"
+  - "Sales vertelde klanten vijf dagen terwijl productie wist dat het tien waren. Een beschikbaarheidscontrole die de verkeerde data las, kostte klantvertrouwen, niet alleen leverprestaties"
+  - "Conditierecords voor prijsbepaling hebben na de go-live een eigenaar nodig. Verouderde condities leveren verkeerde facturen en geschillen op"
+  - "In S/4HANA worden klanten business partners, verhuist kredietbeheer naar SAP Credit Management en gaan rebates naar conditiecontracten"
+  - "Test rekeningbepaling en belasting met het echte rekeningschema en de echte belastingcodes vóór de UAT-goedkeuring"
+pullQuote: "SAP SD verbindt de verkoopbelofte met de operationele werkelijkheid. Is die verbinding fout, dan ziet de klant het als eerste."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP SD"
+  - "SAP MM"
+  - "SAP PP"
+  - "SAP FI"
+  - "SAP ECC"
+  - "SAP TM"
+  - "SAP Credit Management"
+  - "SAP Revenue Accounting and Reporting"
+  - "RISE with SAP"
 originalUrl: "https://noeldcosta.com/sap-sd-sales-and-distribution/"
-h1: "SAP SD-fouten die uw verkoopproces kunnen verstoren"
-metaDescription: "Beheer verkoop, verzending en facturering met SAP SD. Ontdek de belangrijkste componenten, uitdagingen en best practices. Laten we uw SAP-processen vandaag nog verbeteren."
-excerpt: "Beheer verkoop, verzending en facturering met SAP SD. Ontdek de belangrijkste componenten, uitdagingen en best practices. Laten we uw SAP-processen vandaag nog verbeteren."
-metaTitle: "SAP SD-fouten die uw verkoopproces kunnen verstoren"
 canonicalUrl: "https://noeldcosta.com/nl/sap-sd-sales-and-distribution/"
 locale: "nl"
 translatedFrom: "en"
-translationSource: "gtranslate-scrape-cleanup"
+translationSource: "reviewed-en-2026-10"
 ---
 
-### SAP-modules
+SAP SD (Sales and Distribution) draait order-to-cash in SAP: offerte, verkooporder, levering, facturering en de overdracht aan finance. Op S/4HANA verandert het op manieren die ertoe doen voor de projectscope. Klanten worden business partners, kredietbeheer verhuist naar SAP Credit Management, rebates verhuizen naar conditiecontracten en facturering boekt rechtstreeks in de Universal Journal. Deze gids is voor leads sales operations, financial controllers en projectmanagers die willen weten wat SD doet en waar het vastloopt. Het korte antwoord op het tweede punt: klantstamgegevens, prijscondities, de beschikbaarheidscontrole en rekeningbepaling. Test die vier met echte data vóór de go-live.
 
-# SAP SD-fouten die uw verkoopproces kunnen verstoren
+In één uitrol na een volledige SAP-implementatie waren de order-to-cash-stappen precies zo gebouwd als ontworpen. Op het processchema zagen ze er prima uit. Niemand had gecontroleerd hoe voorraadupdates uit productie binnenkwamen.
 
+Sales vertelde klanten vijf dagen. Productie wist dat het dichter bij tien lag.
 
-### Noel D'Ostas
+Dat gat kostte meer dan late leveringen. Het kostte vertrouwen, en vertrouwen is moeilijker te herstellen dan een configuratie-instelling.
 
-*   Laatste update : 8 april 2025
+## Wat SAP SD beheert
 
-Ik heb in verkoop- en operationele vergaderingen gezeten waar [SAP](https://www.sap.com) SD draaide, de bestellingen stroomden prima door het systeem, maar klanten waren nog steeds boos. Niet omdat het systeem faalde, maar omdat de beloofde leverdata nooit realistisch waren.
+SD staat vooraan in de logistieke keten. Het maakt van de interesse van een klant een factuur, via een keten van documenten:
 
-Bij één uitrol na een [volledige SAP-implementatie](https://noeldcosta.com/nl/mastering-sap-implementation-a-step-by-step-guide-for-2025/)De order-to-cash-stappen waren precies zoals gepland. Ze zagen er geweldig uit op de proceskaart. Maar niemand controleerde hoe de voorraadupdates vanuit de productie binnenkwamen. De verkoopafdeling gaf klanten "vijf dagen" aan. De productieafdeling wist dat het eerder tien dagen zou zijn. Die vertraging kostte meer dan alleen late leveringen — het kostte ook vertrouwen.
+1. **Aanvraag**: de klant vraagt om een prijs of beschikbaarheid
+2. **Offerte**: een formeel prijs- en leveringsaanbod met een geldigheidsperiode
+3. **Verkooporder**: de klant verbindt zich, de beschikbaarheidscontrole draait en een leverdatum wordt bevestigd
+4. **Levering**: het magazijn pickt en verpakt; goederenuitgifte verlaagt de voorraad
+5. **Facturering**: de factuur wordt aangemaakt, samen met het boekhouddocument
+6. **Betaling**: finance clearet de binnenkomende betaling tegen de openstaande post
 
-Ik heb ook gezien wat er gebeurt als [gegevensbeheer](https://noeldcosta.com/nl/sap-project-scope-template-management-and-control/) Oude prijsvoorwaarden, ontbrekende sleutelvelden in klantgegevens, niet-overeenkomende belastingcodes... dit soort kleine dingen kunnen bestellingen blokkeren of tot geschillen over facturen leiden voordat iemand beseft wat er mis is.
+Elk document verwijst naar het vorige. Die documentenstroom maakt order-to-cash traceerbaar. Is de keten schoon, dan kunt u elke factuur terugvoeren naar het oorspronkelijke verzoek. Worden documenten buiten de volgorde aangemaakt of omzeild, dan breekt de rapportage en volgen geschillen.
 
-Soms zit de echte verbetering niet in het toevoegen van meer SD-configuratie. Het gaat erom SD te verbinden met de processen eromheen. Als u verkoopt aan de overheid of gereguleerde klanten, [naleving van de publieke sector](https://noeldcosta.com/nl/sap-implementation-public-sector-compliance/) moet vanaf het begin worden ingebed. En als financiën en verkoop niet op elkaar zijn afgestemd wat betreft de betalingsvoorwaarden, kun je uiteindelijk producten verzenden zonder een duidelijk plan om betaald te krijgen.
+<explainer-flow title="Order-to-cash als keten van documenten" caption="Elk document verwijst naar het vorige. Sla er één over en het spoor van factuur terug naar verzoek breekt." steps="Aanvraag|Offerte|Verkooporder|Levering|Facturering|Betaling" notes="Prijs of beschikbaarheid gevraagd|Formeel aanbod met een geldigheidsdatum|Beschikbaarheidscontrole bevestigt de datum|Picken, verpakken, goederenuitgifte|Factuur en boekhouddocument|Finance clearet de openstaande post" result="Elke factuur traceerbaar tot het oorspronkelijke verzoek"></explainer-flow>
 
-Het gaat er niet om SD 'technischer' te maken. Het gaat erom het in de praktijk te laten werken. In de rest van dit artikel bespreek ik waar verkoopprocessen vaak mislukken, hoe je ze snel kunt oplossen en welke gewoontes ervoor zorgen dat de hele ordercyclus soepel verloopt.
+Goed uitgevoerd haalt die keten handmatige overdrachten weg. Een productieklant verkortte zijn order-to-cash-cyclus met 40% nadat SD live ging, vooral door overdrachten tussen sales, magazijn en finance te schrappen.
 
+## Kerncomponenten
 
-#### SAP SD beheert het gehele verkoopproces, van de klantvraag tot de uiteindelijke factuur.  
-Het zorgt voor een soepele integratie van de verkoop-, logistieke en financiële activiteiten binnen een bedrijf.
+### Verkooporders en de beschikbaarheidscontrole
 
-[Praat met Noel – Gratis 15 minuten gesprek om u te helpen!](mailto:solutions@noeldcosta.com)
+Verkooporderverwerking is waar de meeste SD-configuratie-inspanning landt: ordersoorten, positiecategorieën, schedule lines en de beschikbaarheidscontrole.
 
-## 10 belangrijkste leerpunten over SAP SD (Sales en Distribution)
+Available-to-promise (ATP) is het meest bedrijfskritische onderdeel. Het controleert of de gevraagde datum haalbaar is vanuit voorraad, geplande ontvangsten en bestaande toezeggingen. Goed ingericht vertelt sales klanten wat het systeem echt kan waarmaken. Slecht ingericht vertelt sales klanten wat het hoopt te leveren.
 
-1.  **Bekijk het hele order-to-cash-verhaal** – Wanneer SAP SD direct tijdens uw [SAP-implementatie](https://noeldcosta.com/nl/mastering-sap-implementation-a-step-by-step-guide-for-2025/)Je kunt een order volgen vanaf het moment dat deze is aangemaakt tot het moment dat de betaling binnenkomt. Geen blinde vlekken.
+In de uitrol uit de inleiding had niemand gecontroleerd hoe voorraadupdates uit productie binnenkwamen. Sales noemde data die de fabriek niet kon halen.
 
-2.  **Houd klantgegevens schoon** – Verouderde adressen, ontbrekende belastingnummers of oude contacten vertragen alles. Goed [gegevensbeheer](https://noeldcosta.com/nl/sap-project-scope-template-management-and-control/) betekent minder telefoontjes om basisfouten te herstellen.
+### Prijsbepaling en condities
 
-3.  **Prijzen werken alleen als ze worden gehandhaafd** – SAP SD kan complexe prijsbepalingen aan, maar als de tarieven niet regelmatig worden herzien als onderdeel van [ERP-beheer](https://noeldcosta.com/nl/mastering-sap-implementation-a-step-by-step-guide-for-2025/), dan krijg je ruzies die je niet nodig hebt.
+Prijsbepaling is de meest onderschatte inrichting in SD. Het lijkt simpel tot het eerste factuurgeschil.
 
-4.  **Beloof data die je kunt nakomen** – Leveringsafspraken zijn gebaseerd op gegevens over de levende voorraad en de productie. Dat betekent nauwe banden met [plannings- en productieprocessen](https://noeldcosta.com/nl/sap-implementation-public-sector-compliance/).
+De conditietechniek van SD regelt basisprijzen, klantkortingen, volumekortingen, toeslagen, vracht en belasting. Elk element is een conditiesoort met een toegangsvolgorde, en het conditierecord bevat de waarde.
 
-5.  **Blijf synchroon met MM en PP** – Verkoop is geen eiland. Als materiaal- en productiegegevens onjuist zijn, geeft SAP SD die fouten rechtstreeks door aan de klant.
+Het meest voorkomende prijsprobleem dat ik zie: oude prijscondities uit de go-live die nooit zijn bijgewerkt. De business heronderhandelt een korting, niemand werkt het conditierecord in SD bij, de factuur is fout en het geschil belandt bij debiteurenbeheer.
 
-6.  **Weet waar de zending is** – Met de juiste opstelling kunt u zien waar de goederen zich bevinden en de klant waarschuwen voordat hij erom hoeft te vragen.
+Governance van prijsbepaling is een procesbesluit, geen configuratiebesluit. Iemand moet eigenaar zijn van het onderhoud van conditierecords.
 
-7.  **Rekening meteen goed** – SAP SD-feeds [financiën](https://noeldcosta.com/nl/case-study-finance-process-modernization/) direct. Verkeerde belastingcodes of accountkoppelingen kunnen facturen blokkeren, dus [nalevingsafstemming](https://noeldcosta.com/nl/sap-implementation-public-sector-compliance/) is essentieel.
+### Verzending
 
-8.  **Gebruik kredietlimieten verstandig** – Kredietcontroles in SAP SD helpen om slechte schulden te voorkomen, maar alleen als de kredietgegevens actueel worden gehouden.
+Leveringsverwerking omvat picken, verpakken en goederenuitgifte. Goederenuitgifte is de kritieke gebeurtenis: die boekt de voorraadvermindering, zet de levering op de lijst van te factureren leveringen en legt de werkelijke leverdatum vast. Verzendpunt en routebepaling sturen hoe leveringen worden aangemaakt. Bedrijven met complexe distributienetwerken breiden dit uit met SAP Transportation Management (TM).
 
-9.  **Voldoe aan alle regels die van toepassing zijn** – In gereguleerde sectoren moet SAP SD de documentatie en rapporten verwerken die in deze documenten worden behandeld. [naleving van de publieke sector](https://noeldcosta.com/nl/sap-implementation-public-sector-compliance/).
+### Facturering, rekeningbepaling en belasting
 
-10.  **Laat de data voor u werken** – SAP SD-gegevens kunnen nuttige verkoop- en leveringsrapporten opleveren als ze gekoppeld zijn aan uw bredere [rapportagestructuren](https://noeldcosta.com/nl/sap-project-scope-template-management-and-control/).
+Facturering maakt van de levering een factuur en creëert het boekhouddocument. Rekeningbepaling koppelt elke factureringspositie aan opbrengst-, belasting- en andere grootboekrekeningen, op basis van de verkooporganisatie, de rekeningtoewijzingsgroepen van klant en materiaal en de conditiesoort. Is het fout, dan boekt de factuur op de verkeerde rekening en komt finance het bij de maandafsluiting te weten.
 
-## Wat is SAP-SD?
+Belastingbepaling is even kwetsbaar. Die hangt af van de belastingclassificatie van de klant, die van het materiaal en het leverende land of rechtsgebied. Een mismatch kan een factuur zonder belasting opleveren bij een belaste verkoop, of belasting bij een vrijgestelde.
 
-In principe is SAP SD (Sales and Distribution) een [module binnen het ERP-systeem van SAP](https://noeldcosta.com/nl/ai-insights-shiftgearx-noeldcosta/erp-implementation-cost-calculator/) die het gehele verkoopproces van een bedrijf afhandelt. 
+### Kredietbeheer
 
-Het regelt alles, van de eerste klantvragen tot offertes, orderverwerking, verzending, levering en facturering. Het belangrijkste doel is om [stroomlijn uw activiteiten](https://noeldcosta.com/nl/ai-insights-shiftgearx-noeldcosta/) en uw leven gemakkelijker maken.
+Kredietcontroles blokkeren of markeren orders die een klant over zijn kredietlimiet zouden tillen. Het werkt alleen als limieten worden onderhouden. Statische limieten die bij de go-live zijn gezet, betekenen niets meer zodra betalingsgedrag en volumes veranderen.
 
-SAP SD bestaat al sinds de jaren 1990, toen SAP zijn R/3-systeem introduceerde. Destijds was het vrij eenvoudig vergeleken met de huidige versie. 
+Als een limiet onder de normale ordergrootte van een klant zakt, wordt elke order automatisch geblokkeerd. Salesteams leren dan de blokkades vrij te geven in plaats van om een limietreview te vragen.
 
-In de loop der jaren is het aanzienlijk geëvolueerd, vooral met de [overstap naar SAP ECC](https://noeldcosta.com/nl/the-50-billion-erp-failure-why-cfos-still-reach-for-excel-instead/) en nu S/4HANA. Elke iteratie heeft meer functionaliteit en betere integratiemogelijkheden toegevoegd.
+Zo werkt kredietbeheer niet. Dat is een omweg.
 
-Binnen [SAP-ecosysteem, SD werkt niet](https://noeldcosta.com/nl/5-best-crm-systems-for-sap-in-2024/) in isolatie. Het is nauw verbonden met andere [modules zoals Materials Management](https://noeldcosta.com/nl/sap-job-description-generator/) (MM), productieplanning (PP) en financiële boekhouding (FI). 
+## Organisatiestructuur
 
-Uw inventaris, productieschema's en financiële gegevens blijven allemaal synchroon met uw verkoopactiviteiten. Deze integratie maakt uw leven een stuk eenvoudiger.  
+Dit zijn de structuurelementen van SD en waar elk aan gekoppeld is.
 
-Ik heb dit met eigen ogen gezien bij een productieklant die [hun order-to-cash cyclus verkort](https://noeldcosta.com/nl/sap-manufacturing-industry-secrets/) met 40% na de implementatie van SAP SD. Hun salesteam stopte met het najagen van papierwerk en richtte zich op klanten. Hun verzendafdeling wist altijd wat er verzonden moest worden. 
+| Structuurelement | Doel in SAP SD | Belangrijkste koppeling |
+|---|---|---|
+| Verkooporganisatie | Verkoopeenheid op het hoogste niveau, verantwoordelijk voor verkoopvoorwaarden en aansprakelijkheid | Toegewezen aan een company code in FI |
+| Distributiekanaal | Hoe producten bij de klant komen (groothandel, retail, direct) | Stuurt prijsbepaling, stamgegevens en partnerbepaling |
+| Divisie | Productgroep binnen de verkooporganisatie | Materiaalgroepering voor rapportage en output |
+| Verkoopgebied | Verkooporganisatie, distributiekanaal en divisie samen | Vereist voor elk verkoopdocument en elk klantrecord |
+| Verkoopkantoor | Geografische verkoopeenheid | Regionale rapportage en partnerbepaling |
+| Verkoopgroep | Team binnen een verkoopkantoor | Verantwoordelijke persoon op orders |
+| Verzendpunt | Locatie van waaruit goederen worden verzonden | Koppelt SD aan magazijnbeheer en transport |
+| Vestiging | Producerende of leverende eenheid | Bron van voorraad, gekoppeld aan het verzendpunt |
 
-En boekhouders werden sneller betaald. Dat is pas écht impact op de business.
+Het verkoopgebied is de operationele eenheid. Verkoopgegevens van klanten worden per verkoopgebied onderhouden en elk verkoopdocument wordt in een verkoopgebied aangemaakt. Veel migraties struikelen hier: legacy klantrecords die niet netjes op verkoopgebieden aansluiten, vragen echte voorbereiding vóór het laden.
 
-#### Wat is SAP SD (Sales en Distribution)
+## Wat verandert er op S/4HANA
 
-De Omgeving
+Gaat u van ECC over, dan zijn dit de SD-wijzigingen die u in de scope moet plannen. SAP rubriceert het gebied in zijn S/4HANA-documentatie onder “Sales”, al noemen de meeste teams het nog steeds SD.
 
-Beschrijving
+<explainer-compare title="Wat verandert er in SD van ECC naar S/4HANA" caption="Elke wijziging vraagt configuratie, datamigratie en testen, dus neem alle zes vroeg op in de scope." options="ECC|S/4HANA" criteria="Klanten => Klantstamrecord ; Business partner met een klantrol|Kredietbeheer => FI-AR-CR ; SAP Credit Management (FIN-FSCM-CR), niet optioneel|Rebates => SD-rebateverwerking, opnieuw opgebouwd uit een index ; Conditiecontracten in Settlement Management|Beschikbaarheidscontrole => Basiscontrole van productbeschikbaarheid ; Advanced ATP: allocatie, backorders, alternatieve vestigingen|Facturering => FI en CO afzonderlijk afgestemd ; Eén regelitem in de Universal Journal (ACDOCA)|Omzeterkenning => Maatwerklogica voor uitstel van opbrengsten bij veel programma's ; SAP Revenue Accounting and Reporting, apart gelicenseerd" highlight="2"></explainer-compare>
 
-Rol in het bedrijfsproces
+1. **Klanten zijn business partners.** Klantstamgegevens worden onderhouden via de business partner met een klantrol. Bij een conversie moet de customer-vendor-integratie zijn ingericht voordat de conversie draait.
+2. **Kredietbeheer verhuist naar SAP Credit Management.** Het ECC-kredietbeheer (FI-AR-CR) is niet beschikbaar in S/4HANA. SAP Credit Management (FIN-FSCM-CR) is de vervanger, dus een conversie moet kredietdata en -instellingen migreren. Het is niet optioneel.
+3. **Rebates verhuizen naar conditiecontracten.** Klassieke SD-rebateverwerking wordt vervangen door Settlement Management (beheer van conditiecontracten). Rebatecondities gelden direct in plaats van opnieuw te worden opgebouwd uit een index.
+4. **Advanced ATP.** De [advanced ATP](https://learning.sap.com/courses/exploring-aatp-in-sap-s-4hana/outlining-advanced-available-to-promise-aatp-in-sap-s-4hana) van S/4HANA voegt productallocatie, backorderverwerking, op alternatieven gebaseerde bevestiging over vestigingen heen, vrijgave voor levering en supply assignment toe. In S/4HANA Cloud maken deze functies deel uit van de standaardlicentie. On-premise hebben ze een aparte licentie nodig zodra ze zijn geactiveerd.
+5. **Facturering boekt in de Universal Journal.** FI, CO en margeanalyse delen één regelitem in ACDOCA, wat het FI-CO-afstemmingswerk van ECC wegneemt. De keerzijde: een fout in de rekeningbepaling is een directe boeking op de verkeerde rekening, zichtbaar op regelitemniveau.
+6. **Omzeterkenning.** Voor contracten met meerdere elementen, abonnementen of langlopende diensten onder IFRS 15 vervangt SAP Revenue Accounting and Reporting de maatwerklogica voor uitstel die veel ECC-programma's bouwden. Het heeft een aparte licentie en moet vóór de go-live worden ontworpen, niet bij het jaareinde worden ontdekt.
 
-Verkooporderbeheer
+Clean core verandert hoe SD-maatwerk wordt behandeld. In de public cloud is maatwerkcode in de core niet mogelijk. In de private cloud en on-premise kan het wel, maar het maakt elke upgrade moeilijker. De meeste oude Z-routines voor prijsbepaling kunnen worden vervangen door standaard conditiesoorten, formules en BAdI's. Wat echt overblijft, hoort in een side-by-side extensie op SAP BTP. Mijn [gids over clean core](/nl/sap-clean-core-strategy-what-it-means-for-your-business/) behandelt het besluit.
 
-Verwerkt de volledige ordercyclus, van orderinvoer tot levering en facturering.
+## Integratiepunten
 
-Zorgt voor een nauwkeurige orderverwerking, prijsbepaling en tracking ten behoeve van klanttevredenheid en facturering.
+### SD met MM
 
-Prijzen en voorwaarden
+De beschikbaarheidscontrole leest voorraad uit MM en goederenuitgifte boekt de voorraadbeweging. Zijn de voorraaddata fout, dan zijn ATP-resultaten onbetrouwbaar. Faalt goederenuitgifte omdat de voorraad niet echt op het verzendpunt ligt, dan kan de levering niet worden afgerond en stokt de facturering. Houd beide op één lijn via stamgegevens en via discipline: geen handmatige voorraadcorrecties die standaardboekingen omzeilen.
 
-Beheert prijsstructuren, waaronder kortingen, toeslagen, belastingen en klantspecifieke voorwaarden.
+### SD met PP
 
-Ondersteunt flexibele prijsstrategieën die aansluiten op verkoopcontracten en promoties.
+In make-to-order-scenario's kan een verkooporder rechtstreeks productie aansturen, zodat de bevestigde datum een toezegging wordt die door een productieorder wordt gedekt. De strategiegroep in het materiaalstamrecord bepaalt hoe verkooporders en prognoses op elkaar inwerken. Staat die verkeerd, dan worden ze opgeteld in plaats van tegen elkaar weggestreept, overschat de planningsrun de vraag en volgt overproductie. Mijn [gids over SAP PP](/nl/sap-pp-production-planning/) behandelt de planningskant.
 
-Beschikbaarheidscontrole (ATP)
+### SD met FI
 
-Controleert real-time de productbeschikbaarheid voordat bestellingen worden bevestigd.
+Het factuurdocument is de interface. Elke factuur creëert een boekhouddocument dat opbrengst, belasting en de openstaande post van de klant in de Universal Journal boekt. Betalingsvoorwaarden in de klantstam bepalen de vervaldatum. Als sales voorwaarden afspreekt zonder finance in te lichten, dwingt het systeem voorwaarden af waar finance nooit mee heeft ingestemd.
 
-Voorkomt overbeloftes, verbetert de leverbetrouwbaarheid en ondersteunt de planningsnauwkeurigheid.
+Behandelt het SD-ontwerp alle omzet als erkend bij facturering terwijl de contracten iets anders zeggen, dan is achteraf aanpassen duur. Stem de omzeterkenning af met finance voordat het ontwerp wordt goedgekeurd. Voor de financiële kant van de integratie, zie mijn [gids over SAP FICO](/nl/sap-fico/).
 
-Verzending
+## Waar SD-implementaties vastlopen
 
-Omvat het verzamelen, verpakken, routeplanning en leveringsbevestiging.
+Vier faalpunten veroorzaken het merendeel van de pijn na de go-live.
 
-Zorgt voor tijdige en conforme productdistributie naar klanten.
+**Klantstam niet gereed.** Elk veld doet er verderop toe. Een ontbrekende belastingclassificatie betekent verkeerde belasting. Ontbrekende betalingsvoorwaarden betekenen dat FI vervaldata niet kan berekenen. Ontbrekende verzendcondities breken de leveringsplanning. De volumes zijn groter en de brondata slechter dan het plan veronderstelt, en opschonen vraagt bedrijfsbesluiten. Begin vroeg en behandel het als een business-werkstroom, niet als een technische lading. Mijn artikel over [waarom SAP-datamigratie mislukt](/nl/why-sap-data-migration-fails-and-how-to-fix-it/) behandelt de methode.
 
-Facturering en facturering
+**Prijscondities niet onderhouden.** Condities uit de go-live die niemand beoordeelt, worden binnen het eerste jaar factuurgeschillen.
 
-Genereert facturen op basis van leverings- of verkooporders en integreert met FI voor de boekhouding.
+**Beschikbaarheidscontrole los van de werkelijkheid.** ATP die verouderde data leest, levert beloftes op die de business niet kan nakomen. Valideer het tegen echte productie- en voorraadscenario's, niet tegen de schone testdata uit unittests.
 
-Zorgt voor nauwkeurige boeking van inkomsten en financiële afstemming.
+**Gaten in rekeningbepaling die pas na de go-live worden gevonden.** Test met het echte rekeningschema, de echte belastingcodes en materiaalgroepen. Belastingcodes die niet kloppen, kunnen orders blokkeren of factuurgeschillen aanwakkeren voordat iemand doorheeft wat er mis is.
 
-Credit Management
+De tabel is de checklist die ik doorloop voordat UAT wordt goedgekeurd.
 
-Houdt toezicht op de kredietlimieten van klanten en blokkeert bestellingen als deze worden overschreden.
+| Risico | Impact | Maatregel |
+|---|---|---|
+| Onvolledige klantstam | Factuurfouten, leveringsproblemen, gaten in FI-boekingen | Begin vroeg met de datawerkstroom; bepaal vóór de migratie verplichte velden per verkoopgebied |
+| Verouderde prijscondities | Factuurgeschillen, onjuiste omzet | Benoem bij de go-live een eigenaar van conditierecords en een reviewcyclus |
+| ATP losgekoppeld van PP of MM | Onbetrouwbare leverbeloftes | Test ATP met live planningsscenario's vóór de UAT-goedkeuring |
+| Gaten in rekeningbepaling | Omzet geboekt op de verkeerde rekeningen | Test met het echte rekeningschema en de volledige set belastingcodes |
+| Vrijgave van kredietblokkades als routine | Ongecontroleerde blootstelling, geschillen over vorderingen | Dwing limietreviews af; volg handmatige vrijgaven in de eerste 90 dagen |
+| Output niet getest | Facturen en leveringsbonnen worden niet automatisch verzonden | Test elke outputsoort met echte print- en e-mailroutering vóór de go-live |
+| Betalingsvoorwaarden niet op elkaar afgestemd | Verkeerde vervaldata, fouten in liquiditeitsprognoses | Stem voorwaarden tussen sales en finance af voordat klantdata wordt geladen |
 
-Vermindert financiële risico's door het handhaven van kredietbeleid tijdens de orderverwerking.
+Geeft het salesteam kredietblokkades routinematig vrij in plaats van om een review te vragen, los het dan op in de eerste negentig dagen, voordat de gewoonte zich zet.
 
-Retourneren en klachten
+## Veelgestelde vragen
 
-Beheert retourorders, creditnota's en klachten van klanten.
+<details>
+<summary>Wat is SAP SD en wat doet het?</summary>
 
-Ondersteunt de aftersales-service en zorgt ervoor dat de klanttevredenheid op peil blijft.
+SAP SD (Sales and Distribution) beheert order-to-cash: aanvragen, offertes, verkooporders, leveringen, facturering en de overdracht aan de financiële boekhouding. De documentenstroom koppelt elke stap aan de vorige, zodat elke factuur kan worden teruggevoerd naar de oorspronkelijke order. Het integreert met MM voor voorraad en goederenuitgifte, PP voor make-to-order en beschikbaarheid, en FI voor omzet, belasting en vorderingen.
 
-Partnerbepaling
+</details>
 
-Identificeert rollen zoals verkocht aan, verzonden aan, gefactureerd aan en betaler voor elke transactie.
+<details>
+<summary>Wat is de organisatiestructuur in SAP SD?</summary>
 
-Zorgt voor een correcte transactiestroom en documentverwerking in de verkoopcyclus.
+De operationele eenheid is het verkoopgebied: een verkooporganisatie, distributiekanaal en divisie samen. Elk verkoopdocument wordt in een verkoopgebied aangemaakt en verkoopgegevens van klanten worden per verkoopgebied onderhouden. Verkoopkantoren en verkoopgroepen zitten daaronder voor rapportage en verantwoordelijkheid. Aan de logistieke kant bepalen verzendpunten en vestigingen waar goederen vandaan worden verzonden. Zorg dat de structuur klopt voordat klantdata wordt geladen, want later wijzigen betekent data opnieuw laden.
 
-Integratie met MM en FI
+</details>
 
-SD integreert nauw met [Materiaalbeheer en financiële boekhouding](https://noeldcosta.com/nl/sap-implementation/sap-modules/).
+<details>
+<summary>Hoe werkt prijsbepaling in SAP SD?</summary>
 
-Ondersteunt voorraadcontroles, kostenboeking en het complete order-to-cashproces.
+Prijsbepaling gebruikt de conditietechniek. Elk prijselement is een conditiesoort, een toegangsvolgorde bepaalt welk conditierecord van toepassing is en een prijsbepalingsprocedure combineert de conditiesoorten in volgorde. De meeste prijsgeschillen zijn terug te voeren op conditierecords die niet zijn bijgewerkt toen commerciële voorwaarden veranderden, niet op configuratiefouten.
 
-## Wat maakt SAP SD mogelijk? Dit zijn de componenten
+</details>
 
+<details>
+<summary>Wat is advanced ATP in SAP S/4HANA?</summary>
 
-Oké, wat is SAP SD precies? Ik zal je de belangrijkste componenten uitleggen.wat er werkelijk toe doet voor uw bedrijf.
+Advanced available-to-promise (aATP) is de beschikbaarheidscontrole van S/4HANA. Naast de basiscontrole van productbeschikbaarheid voegt het productallocatie, backorderverwerking, op alternatieven gebaseerde bevestiging over vestigingen heen, vrijgave voor levering en supply assignment toe. Deze functies zijn inbegrepen in S/4HANA Cloud en vragen on-premise om een aparte licentie zodra ze zijn geactiveerd. Gebruik ze waar het aanbod beperkt is of allocatieregels ertoe doen. Voor stabiele supply chains is een goed ingerichte basiscontrole vaak genoeg.
 
-#### **1\. Het begint allemaal met het verwerken van verkooporders.** 
+</details>
 
-Dit is de echte [kern van SAP](https://noeldcosta.com/nl/sap-clean-core-strategy-what-it-means-for-your-business/) SD. Wanneer iemand bij u iets koopt, worden alle gegevens verzameld: producten, hoeveelheden, leverdata en speciale verzoeken. 
+<details>
+<summary>Hoe integreert SAP SD met de financiële boekhouding?</summary>
 
-Het beste is dat zodra u deze informatie eenmaal invoert, deze doorstroomt naar alle afdelingen van het bedrijf, wat betekent dat er geen behoefte is aan duplicaten [gegevens invoeren of detective spelen](https://noeldcosta.com/nl/ai-governance-services/) om de details van uw bestelling te vinden.
+Via het factuurdocument. Het vrijgeven van een factuurdocument naar de boekhouding creëert een journaalpost voor opbrengst, belasting en de openstaande post van de klant. Rekeningbepaling bepaalt de grootboekrekeningen uit de verkooporganisatie, rekeningtoewijzingsgroepen en conditiesoort. Belasting hangt af van de belastingclassificaties van klant en materiaal. Betalingsvoorwaarden in de klantstam bepalen de vervaldatum. Voor IFRS 15-gevallen stelt SAP Revenue Accounting and Reporting omzet uit en erkent die in de loop van de tijd.
 
-#### **2\. Prijzen en voorwaarden zijn waarschijnlijk het meest onderschatte onderdeel.** 
+</details>
 
-Weet je hoe frustrerend het is als verschillende verkoopkanalen verschillende prijzen aanbieden? Dit lost dat probleem volledig op. 
+<details>
+<summary>Wat verandert er in SAP SD bij de overstap van ECC naar S/4HANA?</summary>
 
-U kunt al uw prijsregels, kortingen, speciale promoties en klantspecifieke aanbiedingen op één plek instellen. Bedrijven komen erachter dat ze feitelijk geld weggaven voordat ze dit hadden opgelost.
+Klanten worden business partners. Kredietbeheer verhuist van FI-AR-CR naar SAP Credit Management, wat verplicht is. Rebateverwerking wordt vervangen door conditiecontracten in Settlement Management. Advanced ATP komt beschikbaar en facturering boekt in de Universal Journal. Plan dit alles vroeg in de scope, want elk onderdeel vraagt configuratie, datamigratie en testen.
 
-#### **3\. Verzending en transport zorgen voor alles nadat de klant op 'kopen' heeft geklikt.** 
+</details>
 
-Het systeem bepaalt de verzendmethoden, maakt alle benodigde documentatie aan, plant de beste routes en houdt iedereen op de hoogte van de status van alles.
+<details>
+<summary>Wat zijn de meest gemaakte fouten bij SAP SD-implementaties?</summary>
 
-Uw magazijnmedewerkers krijgen wat ze nodig hebben, de verzendteams ontvangen hun documenten en klanten weten wanneer hun spullen arriveren.
+Vijf komen steeds terug. Klantstamdata onderschatten. Prijscondities na de go-live zonder eigenaar laten. ATP alleen met schone data testen. Rekeningbepaling testen met vereenvoudigde data. Output niet end-to-end testen. Die laatste mist u makkelijk. Als facturen niet automatisch uitgaan, begint iemand ze met de hand af te drukken, en de omweg wordt blijvend.
 
-#### **4\. Met facturering en betalingsverwerking worden automatisch facturen aangemaakt op basis van wat er is verzonden of besteld.** 
-
-Het kan alle ingewikkelde scenario's aan: deelleveringen, retouren, creditnota's, noem maar op. En dit is het punt: het spreekt rechtstreeks tot je [boekhoudsysteem](https://noeldcosta.com/nl/create-and-manage-sap-universal-id-link-s-user-and-p-user-ids/), zodat verkoop en financiën eindelijk op één lijn blijven.
-
-#### **5\. Met kredietbeheer vermijdt u ongemakkelijke situaties waarin u zich afvraagt: waar is mijn geld?**
-
-Het controleert de kredietlimieten voordat orders worden geaccepteerd en kan risicovolle orders markeren, zodat u deze kunt bekijken. Hiermee voorkomt u de frustrerende cyclus waarin u betalingen moet navragen bij klanten die al te veel betaald hebben.
-
-#### **6\. Met het Sales Information System krijgt u de echte inzichten die u nodig hebt om slimme beslissingen te nemen.**
-
-Wilt u weten wie uw bestsellers zijn? Wie uw meest winstgevende klanten zijn? Welke verkopers leveren daadwerkelijk resultaat? Zo heb je die informatie direct binnen handbereik.
-
-Wanneer deze componenten samenwerken, zorgen ze voor een soepele reis vanaf het moment dat een bestelling binnenkomt tot het moment dat het geld op je bankrekening staat. Het dicht de gaten waar dingen normaal gesproken mislukken.
-
-#### Belangrijkste componenten van SAP SD (verkoop en distributie)
-
-Bestanddeel
-
-Functie
-
-Zakelijke rol
-
-Verwerking van verkooporders
-
-Maakt en beheert verkoopdocumenten zoals offertes, bestellingen en contracten.
-
-Beheert de belangrijkste transactiestromen in de order-to-cash-cyclus.
-
-Prijzen en voorwaarden
-
-Beheert conditietypen, prijsbepalingsprocedures en kortings-/toeslaglogica.
-
-Definieert flexibele prijsstrategieën voor verschillende klanten en markten.
-
-Facturatie Gegevens
-
-Genereert factuurdocumenten op basis van leveringen en verkooporders; integreert met FI.
-
-Stuurt opbrengstherkenning en financiële boekingen naar het grootboek.
-
-Verzending
-
-Omvat het plannen van verzendingen, het verzamelen, verpakken en het posten van goederenuitgiftes.
-
-Zorgt voor een nauwkeurige logistieke uitvoering en ondersteunt naleving van leveringsvoorschriften.
-
-Credit Management
-
-Monitort kredietrisico, beheert limieten en integreert met FI-AR.
-
-Vermindert het kredietrisico door kredietcontroles uit te voeren op het niveau van verkooporders en leveringen.
-
-Beschikbaarheidscontrole (ATP)
-
-Voert realtime controle uit op de beschikbaarheid van het product voordat de bestelling wordt bevestigd.
-
-Voorkomt overbelasting en verhoogt de leverbetrouwbaarheid.
-
-Tekst- en uitvoerbeheer
-
-Beheert klantcommunicatie en documentuitvoer (PDF, EDI, afdrukken).
-
-Automatiseert orderbevestigingen, facturen en verzendberichten.
-
-Partnerbepaling
-
-Wijst automatisch klantrollen toe (verkocht aan, verzend aan, facturer aan, betaler) in transacties.
-
-Zorgt voor een correcte stroom van documenten en boekhoudkundige boekingen.
-
-Verkoopinformatiesysteem (SIS)
-
-Biedt analytische rapportages over verkoopvolumes, opbrengsten en prestaties.
-
-Ondersteunt verkoopplanning en prestatieregistratie met historische en realtime gegevens.
-
-Retourneren en klachtenafhandeling
-
-Verwerkt geretourneerde goederen, creditnota's en serviceklachten.
-
-Ondersteunt aftersalesactiviteiten en follow-up van klanttevredenheid.
-
-## Binnen de meest kritische submodules van SAP SD
-
-Laten we eens kijken naar de [gespecialiseerde submodules in SAP](https://noeldcosta.com/nl/sap-manufacturing-industry-secrets/) SD waar u meer over moet weten. Deze staan misschien niet altijd in de schijnwerpers, maar afhankelijk van uw bedrijf kunnen ze een totale game-changer zijn.
-
-#### **1\. Basisfuncties omvatten alle basiselementen die u zeker zult gebruiken, ongeacht uw branche.**
-
-In wezen heb je de controle over de master [gegevensbeheer](https://noeldcosta.com/nl/sap-license-negotiation-10-key-points-to-consider-in-2024/), waar u uw klantgegevens, materiaaldetails en prijsgegevens opslaat.
-
-Dit is in feite uw enige bron van waarheid. Het omvat ook de outputbepaling die uw orderbevestigingen, facturen, pakbonnen en alle andere documentatiebehoeften afhandelt.
-
-#### **2\. Buitenlandse handel is een noodzaak als u over de internationale grenzen heen verkoopt.**
-
-Er is papierwerk, nalevingsproblemen en regelgeving die constant verandert. Deze module behandelt de complexe export-/importdocumentatie, berekent invoerrechten en belastingen en helpt ervoor te zorgen dat u niet per ongeluk handelswetten overtreedt.
-
-Als uw zending ooit vastzat bij de douane, weet u al waarom dit belangrijk is.
-
-#### **3\. Transport is veel gedetailleerder dan gewone verzendfuncties.**
-
-Het helpt bij de complexe zaken: het plannen van routes met meerdere fasen, het berekenen van de werkelijke verzendkosten, het vinden van de meest efficiënte bezorgmethoden en het in de gaten houden van uw zendingen.
-
-Voor bedrijven met grote logistieke behoeften kan dit op de lange termijn veel geld besparen.
-
-#### **4\. Facturatie is bedoeld voor situaties waarin eenvoudige facturering niet voldoende is.**
-
-Misschien heeft u mijlpaalfacturering nodig voor projecten, of abonnementsfacturering voor diensten, of complexe kortingsberekeningen. Als uw prijsstelling en facturering niet eenvoudig zijn, zult u deze zeker waarderen.
-
-#### Submodules van SAP SD (Verkoop en Distributie)
-
-Submodule
-
-Kernfunctionaliteit
-
-Zakelijk gebruik
-
-Verkoopondersteuning (SD-CAS)
-
-Beheert klantvragen, offertes en verkoopactiviteiten met CRM-achtige hulpmiddelen.
-
-Ondersteunt presalesactiviteiten, volgt leads en verbetert de klantenwerving.
-
-Verkoop (SD-SLS)
-
-Verwerkt het aanmaken van verkooporders, contracten en voorwaarden op artikelniveau.
-
-Stuurt de belangrijkste verkoopcyclus en orderafhandelingsprocessen aan.
-
-Verzending (SD-SHP)
-
-Beheert de planning van leveringen, transport en goederenuitgifte.
-
-Zorgt voor tijdige verzending en nauwkeurige logistieke uitvoering.
-
-Facturatie (SD-BIL)
-
-Maakt facturen, credit-/debetnota's en integreert met de financiële boekhouding.
-
-Automatiseert het vastleggen van inkomsten en zorgt ervoor dat u voldoet aan het financiële beleid.
-
-Kredietmanagement (SD-CM)
-
-Voert kredietcontroles uit en bewaakt de kredietlimieten van klantrekeningen.
-
-Voorkomt kredietrisico's en past financiële controles toe in de bestel- en leveringsfase.
-
-Buitenlandse handel/export (SD-FTT)
-
-Zorgt voor naleving van wet- en regelgeving voor internationale handel, inclusief exportvergunningen en documentatie.
-
-Zorgt voor naleving van internationale handelsregels en nauwkeurigheid van documentatie voor grensoverschrijdende verkopen.
-
-Vervoer (SD-TBA)
-
-Plant verzendingen, routes en vervoerderselectie geïntegreerd met de leveringsverwerking.
-
-Optimaliseert uitgaande logistiek en verlaagt vrachtkosten.
-
-Elektronische gegevensuitwisseling (SD-EDI)
-
-Maakt automatische verzending van documenten zoals bestellingen, facturen en verzendberichten mogelijk.
-
-Verbetert de transactiesnelheid en vermindert fouten bij handmatige gegevensinvoer bij partners.
-
-Conditietechniek (SD-BF)
-
-Beheert prijzen, kortingen, toeslagen en belastingconfiguraties met behulp van toegangsreeksen en conditierecords.
-
-Maakt dynamische prijslogica en complexe commerciële scenario's mogelijk.
-
-## De echte redenen waarom SAP SD succesvolle bedrijven stimuleert
-
-
-Waarom zou je dat dan eigenlijk doen? [geven om SAP SD](https://noeldcosta.com/nl/system-implementation-sap/)? Ik zal uitleggen waarom dit van belang is voor uw winst.
-
-#### **1\. Ten eerste transformeert het uw verkoopprocessen volledig.**
-
-Alles, van bestelling tot betaling, wordt gestroomlijnd. Die handmatige overdrachten tussen afdelingen? Weg. 
-
-De tijd die je team besteedt aan het zoeken naar orderinformatie? Geen tijd meer. Ik heb bedrijven hun orderverwerking zien verminderen. [verwerkingstijd met 60% verminderen door simpelweg te implementeren](https://noeldcosta.com/nl/sap-project-risk-assessment-matrix-and-mitigation-strategies/) dit goed.
-
-#### **2\. Dan is er nog voorraadbeheer. SAP SD werkt rechtstreeks met uw voorraadsystemen, zodat u altijd precies weet wat u te koop hebt.**
-
-U hoeft geen producten meer te beloven die u niet hebt, of verkoopkansen te missen omdat u niet wist dat iets op voorraad was.
-
-#### **3\. Uw klanten zullen het verschil ook merken.**
-
-Ze krijgen nauwkeurige leveringsdata, consistente prijzen en snellere responstijden. Wanneer er problemen ontstaan (en dat gebeurt altijd), heb je alle informatie binnen handbereik om ze snel op te lossen.
-
-#### **4\. De gegevens die je krijgt zijn waarschijnlijk mijn favoriete onderdeel.**
-
-Je ziet precies welke producten je het meeste geld opleveren, welke klanten het meest waardevol zijn en waar je verkoopproces hapert. Echte inzichten, geen giswerk.
-
-#### **5\. Ten slotte blijft uw hele bedrijf synchroon dankzij de integratie met andere SAP-modules.**
-
-Verkoop, inkoop, productie, financiën – ze werken allemaal met dezelfde informatie. Alleen al die afstemming is de investering waard.
-
-### Gerelateerde onderwerpen: SAP SD & Orderverwerking
-
-[
-
-Planning
-
-### Productieplanning en SD-integratie
-
-Bekijk hoe SD-ordergegevens in de productieplanning worden opgenomen om de uitvoering te stroomlijnen.
-
-](https://noeldcosta.com/nl/sap-pp-production-planning/)[
-
-Logistiek
-
-### Magazijn essentials in SD Flow
-
-Ontdek hoe EWM zorgt voor een tijdige goederenbeweging voor in SD geleverde verkooporders.
-
-](https://noeldcosta.com/nl/sap-enterprise-warehouse-management-sap-ewm-essentials/)[
-
-Migratie
-
-### Valkuilen bij de migratie van verkoopgegevens
-
-Wat er misgaat bij het migreren van SD-stamgegevens en hoe voorkomt u dit?
-
-](https://noeldcosta.com/nl/why-sap-data-migration-fails-and-how-to-fix-it/)[
-
-Architectuur
-
-### Schone kern in SD-aanpassing
-
-Hoe je aangepaste SD-logica levert zonder de kern te breken of upgrades uit te voeren.
-
-](https://noeldcosta.com/nl/sap-clean-core-strategy-what-it-means-for-your-business/)
-
-## Waar SAP SD-projecten misgaan en hoe u dit kunt voorkomen
-
-#### Waar SAP SD-projecten misgaan
-
-Faalgebied
-
-Veroorzaken
-
-Resulterende impact
-
-Onvolledige bedrijfsprocesmapping
-
-De vereisten zijn niet volledig vastgelegd en niet afgestemd op de daadwerkelijke verkoopactiviteiten.
-
-Systeemafstemming op bedrijfsbehoeften, herbewerkingen en afwijzing door gebruikers.
-
-Verkeerd geconfigureerde prijsbepalingsprocedures
-
-Fouten in conditietypen, sequenties of toegangsrecords.
-
-Onjuiste prijzen, verlies van marge en geschillen met klanten.
-
-Overmaatwerk
-
-Het bouwen van onnodige Z-tabellen, exits en verbeteringen zonder duidelijke ROI.
-
-Hoge onderhoudskosten, upgradeproblemen en instabiele processen.
-
-Ineffectieve gegevensmigratie
-
-Stamgegevens tussen oudere en SAP-systemen zijn onvolledig, gedupliceerd of niet op elkaar afgestemd.
-
-Fouten bij de orderverwerking, vertragingen in de verzending en onjuiste facturering.
-
-Gebrek aan integratietesten
-
-Onvoldoende testen met MM-, FI- en logistieke modules.
-
-Verstoringen in de order-to-cash-stroom tijdens de livegang.
-
-Onvoldoende gebruikerstraining
-
-Eindgebruikers worden niet goed opgeleid in nieuwe SD-processen of -transacties.
-
-Handmatige oplossingen, lage acceptatie en meer supporttickets.
-
-Het negeren van wettelijke en fiscale naleving
-
-Belastingcodes, exportregels of landspecifieke logica zijn niet correct geconfigureerd.
-
-Boetes voor niet-naleving, juridische procedures en afwijzing van facturen.
-
-Onrealistische tijdlijn en budget
-
-Onderschatting van de complexiteit van verkoopprocessen en afhankelijkheden tussen modules.
-
-Gemiste deadlines, beperkte scope en verminderde kwaliteit van oplossingen.
-
-Kijk, ik ga het niet mooier maken dan het is – [SAP implementeren](https://noeldcosta.com/nl/2024-sap-timeline-planning-implementation-guide-essentials/) SD brengt een aantal echte problemen met zich mee waar u rekening mee moet houden.
-
-#### **1\. Implementatieprojecten kunnen heel gemakkelijk ontsporen.**
-
-Ik heb jarenlang bedrijven in een implementatiehel zien belanden, omdat ze niet duidelijk konden krijgen wat ze nu eigenlijk nodig hadden. 
-
-Ze probeerden alles tot in de puntjes aan te passen en verzandden in complexiteit. Je moet superrealistisch zijn over je must-haves en je nice-to-haves.
-
-#### **2\. Je team meekrijgen? Dat is nog een grote uitdaging. Je verkopers hebben al hun eigen manier van werken.**
-
-Ze hebben hun spreadsheets, hun workarounds, hun comfortzones. Nu laat je ze dit nieuwe systeem opdringen dat op het eerste gezicht ingewikkeld lijkt.
-
-Als ze geen gedegen training krijgen en niet helder krijgen hoe het hen persoonlijk helpt, zullen ze het maar rekken of manieren vinden om ermee om te gaan.
-
-#### **3\. Integratie wordt echt lastig. Uw SAP SD moet goed samenwerken met al het andere in uw technologische ecosysteem.**
-
-Als u nog oudere systemen hebt (en wie heeft dat niet?), kan het lastig zijn om alles soepel met elkaar te verbinden. Dat kan een technische puzzel zijn waar uw IT-team nachtmerries van krijgt.
-
-#### **4\. Je bestaande gegevens overzetten? Wat een gedoe.**
-
-Al uw klantgegevens, productgegevens, prijsstructuren: alles moet correct worden overgezet.
-
-Als er onzindata in gaat, krijg je onzinresultaten. Ik heb bedrijven te laat zien beseffen dat hun data een puinhoop was.
-
-#### **5\. En laten we het even over geld hebben. Deze implementaties zijn duur.**
-
-Naast de voor de hand liggende zaken als softwarelicenties en consultantkosten, heb je ook nog de tijd van je team, mogelijke verstoringen van de bedrijfsvoering wanneer je overstapt en doorlopende kosten. [ondersteuningskosten](https://noeldcosta.com/nl/contact-noel-erp-support/) Dat kan in de loop van de tijd behoorlijk oplopen.
-
-
-### Kijk hoe ik jouw ERP en AI Systeemselectie of implementatie die bij u past.
-
-**ERP- en AI-systeemselectie** – Identificeer en kies het juiste ERP- of AI-platform dat past bij uw zakelijke behoeften.
-
-**Projectondersteuning en herstel** – Houd uw project op schema of breng falende implementaties weer onder controle.
-
-**ERP-modernisering** – Transformeer bestaande ERP-systemen naar moderne, efficiënte en schaalbare ERP-omgevingen.
-
-[Neem contact met ons op.](mailto:so*******@********ta.com "Dit contact is gecodeerd door Anti-Spam door CleanTalk. Klik om te decoderen. Zorg ervoor dat JavaScript is ingeschakeld in uw browser om het decoderen te voltooien.")
-
-## Wat u moet weten voordat u begint met de SAP SD-implementatie
-
-
-Dus je denkt aan [SAP implementeren](https://noeldcosta.com/nl/best-sap-technical-change-management-tools-2025/) SD? Wacht even. Er zijn een paar dingen waar je echt eerst over na moet denken. Ik heb te veel bedrijven zien overhaasten en er later spijt van krijgen.
-
-#### **1\. Begin met heel duidelijk te krijgen wat je daadwerkelijk nodig hebt.**
-
-Waarom doe je dit eigenlijk? Welke specifieke problemen kwellen je momenteel? Doe het niet zomaar. [SAP implementeren](https://noeldcosta.com/nl/how-to-avoid-scope-creep-in-an-sap-implementation/) Omdat uw concurrenten dat doen of omdat het indrukwekkend klinkt.
-
-#### **2\. Neem de tijd om in kaart te brengen hoe uw verkoopproces er vandaag de dag uitziet en stel vast waar de problemen precies liggen.**
-
-Dit huiswerk zal later zeker zijn vruchten afwerpen.
-
-#### **3\. Hoe zit het met jouw team? Zijn zij klaar voor dit soort veranderingen?**
-
-De meesten niet, eerlijk gezegd. Je zult moeten budgetteren voor een serieuze training en misschien zelfs een paar mensen inschakelen die al eerder met SAP hebben gewerkt. De realiteit is dat het jouw team is die dit project maakt of breekt.
-
-#### **4\. Wees realistisch over hoe lang dit zal duren.**
-
-Als iemand je vertelt dat hij je binnen een paar maanden aan de slag kan hebben, is hij of zij waarschijnlijk niet eerlijk tegen je. Afhankelijk van de complexiteit van uw wensen, kan het 6 tot 12 maanden duren voor een succesvolle implementatie.
-
-#### **5\. Kijk wat financiën betreft niet alleen naar het prijskaartje.**
-
-Er zijn doorlopende onderhoudskosten, ondersteuningskosten en toekomstige upgrades om rekening mee te houden. Kijk eens wat dit ding je over vijf jaar gaat kosten om een volledig beeld te krijgen.
-
-#### **6\. Het kiezen van de juiste partner is van groot belang.**
-
-Zoek iemand die dit in jouw omgeving heeft gedaan [industrie voor – niet zomaar iemand met een SAP](https://noeldcosta.com/nl/top-sap-implementation-partners-in-the-usa-2025-by-tier/) certificering. En als ze je referenties geven, bel ze dan ook eens op en stel de lastige vragen.
-
-## Best practices om uw SAP SD-investering te maximaliseren
-
-Ik wil graag wat praktische wijsheid delen die ik heb opgedaan door beide te bekijken [succesvolle en mislukte SAP](https://noeldcosta.com/nl/sap-training-strategies-for-employees-to-drive-adoption/) SD-projecten door de jaren heen.
-
-#### **1\. Het allerbelangrijkste: je hebt heel duidelijke doelen nodig.**
-
-Niet alleen vage dingen als "de verkoop verbeteren". Ik heb het over specifieke doelen zoals "we willen de tijd tussen bestelling en betaling met 30% verkorten" of "verzendingsfouten met 50% verminderen".
-
-Schrijf deze ergens prominent op. Wanneer je zes maanden in de implementatie zit en voor moeilijke beslissingen staat, zorgen deze doelen ervoor dat je gefocust blijft op wat er echt toe doet.
-
-#### **2\. Bespaar niet op training.**
-
-Echt waar. Ik heb bedrijven miljoenen zien uitgeven aan [implementatie en probeer vervolgens op te slaan](https://noeldcosta.com/nl/sap-negotiation-advisors-reduce-cost/) centen op training. Grote fout.
-
-Je team heeft een gedegen initiële training nodig, maar ook ondersteuning wanneer ze het systeem voor echt werk gaan gebruiken. De slimste bedrijven die ik heb gezien, creëren interne [SAP-experts](https://noeldcosta.com/nl/sap-negotiation-advisors-reduce-cost/) – vaste medewerkers die extra trainingen krijgen en aanspreekpunten worden als collega’s ergens vastlopen.
-
-#### **3\. Dat gedoe met datamigratie? Begin er veel eerder mee dan je denkt.**
-
-Uw huidige gegevens zijn waarschijnlijk rommeliger dan u denkt. Begin maanden voordat u ze moet verplaatsen met opschonen. Voer testmigraties uit. Voer ze vervolgens opnieuw uit. Slechte gegevens kunnen uw nieuwe systeem nog sneller kapotmaken dan wat dan ook.
-
-#### **4\. Overweeg om dit gefaseerd uit te voeren in plaats van in één keer.**
-
-Begin misschien met je belangrijkste productlijn of je grootste bedrijfseenheid. Leer van die ervaring voordat je uitbreidt. Deze aanpak heeft veel bedrijven grote kopzorgen bespaard.
-
-#### **5\. Plan na livegang regelmatig controles voor uw systeem.**
-
-Wacht niet tot er iets kapotgaat. Technologie verandert, uw bedrijf evolueert en uw SAP-systeem moet met de tijd meegaan. Kwartaalreviews sporen problemen op zodra ze nog klein en oplosbaar zijn.
-
-#### Best practices om uw SAP SD-investering te maximaliseren
-
-Best Practice
-
-Uitvoeringsbenadering
-
-Waarde geleverd
-
-Standaardiseer verkoopprocessen
-
-Zorg dat bedrijfsteams consistente SD-configuraties en documentstromen hanteren.
-
-Verbetert de efficiëntie, vermindert fouten en vereenvoudigt systeemonderhoud.
-
-Effectief gebruik van de conditietechniek
-
-Gebruik prijsbepalingsprocedures en conditiegegevens die het werkelijke commerciële beleid weerspiegelen.
-
-Maakt flexibele, schaalbare prijzen mogelijk zonder aangepaste ontwikkeling.
-
-Integreer met Financiën en Logistiek
-
-Zorg ervoor dat SD volledig is aangesloten op MM, FI en EWM voor een volledige O2C-stroom.
-
-Elimineert proceshiaten en zorgt voor naadloze orderuitvoering en facturering.
-
-Optimaliseer Master Data Management
-
-Zorg dat de stamgegevens van klanten, materialen en prijzen schoon en gevalideerd zijn.
-
-Vermindert transactiemislukkingen en verbetert rapportage en besluitvorming.
-
-Implementeer ATP (Available-to-Promise) logica
-
-Configureer ATP om de beschikbaarheid en de juiste leverdata te bevestigen bij het invoeren van de order.
-
-Verbetert het vertrouwen van de klant en vermindert problemen met de uitvoering.
-
-Gebruik outputmanagement strategisch
-
-Automatiseer bevestigingen, facturen en leveringsbonnen met behulp van slimme formulieren of EDI.
-
-Versnelt de communicatie, vermindert handmatige tussenkomst en verbetert de traceerbaarheid.
-
-Train verkoop- en klantenserviceteams
-
-Bied praktische training en SOP's voor SD-transacties en het afhandelen van uitzonderingen.
-
-Verhoogt de acceptatie, vermindert fouten en verbetert de respons op de behoeften van de klant.
-
-Belangrijke SD-statistieken bewaken
-
-Houd bij hoe vaak bestellingen worden gevuld, hoe lang de factureringscyclus duurt, hoe vaak er wordt geretourneerd en hoeveel bestellingen er worden geblokkeerd.
-
-Identificeert knelpunten in processen en draagt bij aan continue verbetering.
-
-Beperk aangepaste ontwikkeling
-
-Maak gebruik van standaard SAP-functionaliteit en breid deze alleen uit waar er sprake is van bedrijfskritische tekortkomingen.
-
-Zorgt voor eenvoudigere upgrades, lagere TCO en stabiliteit van het systeem op de lange termijn.
-
-### Gerelateerde onderwerpen: SAP SD, klantgegevens en risico
-
-[
-
-AI
-
-### Conversatie-AI in SAP CX
-
-Hoe chatgestuurde workflows de reactietijd van SAP SD-klanten kunnen verbeteren.
-
-](https://noeldcosta.com/nl/sap-conversational-ai-and-successfactors-for-hr-in-2025/)[
-
-Integratie
-
-### Wanneer ERP-CRM-integratie mislukt
-
-Uitleg over mislukte verkoopordersynchronisatie, met name relevant voor SD-Salesforce-stromen.
-
-](https://noeldcosta.com/nl/why-erp-integration-with-salesforce-fails-and-how-to-fix-it/)[
-
-Risico
-
-### Risicobeoordeling van het verkoopproces
-
-Belangrijkste risico's verbonden aan prijzen, beschikbaarheid en leveringsblokken in SAP SD.
-
-](https://noeldcosta.com/nl/sap-project-risk-assessment-matrix-and-mitigation-strategies/)[
-
-Case Study
-
-### Klantinfo-architectuur voor SD
-
-Een SAP-voorbeeld uit de praktijk waarbij schone klantenstamgegevens de verkooporderstroom beïnvloedden.
-
-](https://noeldcosta.com/nl/my-journey-with-customer-information-solutions-defense/)
-
-## Conclusie
-
-
-SAP SD kan een gamechanger zijn voor uw verkoopactiviteiten, maar alleen als u het op de juiste manier aanpakt.
-
-De onderdelen, voordelen en uitdagingen waar we het over hadden, geven u een goed beeld van waar u aan begint.
-
-De SAP-wereld blijft evolueren: betere e-commercefuncties, mobiele toegang en slimmere analyses komen eraan. Er staan ons spannende ontwikkelingen te wachten nu AI ook in deze systemen zijn intrede begint te doen.
-
-Als uw huidige verkoopproces u hoofdpijn bezorgt, is het misschien tijd om SAP SD eens serieus onder de loep te nemen. Begin met het achterhalen wat er daadwerkelijk mis is met uw huidige systeem.
-
-[Implementatie is een reis](https://noeldcosta.com/nl/sap-erp-consultant-my-story-noel-dcosta/) Met wat hobbels onderweg, maar met een goede planning en de juiste hulp kom je er wel. En geloof me, als het eenmaal goed werkt, vraag je je af hoe je het ooit zonder hebt gedaan.
-
-#### Als u vragen heeft of een situatie wilt bespreken die u ervaart bij uw ERP-implementatie, neem dan gerust contact met ons op!
-
-### Gerelateerde onderwerpen: SAP SD-ondersteuning en -beheer
-
-[
-
-Training
-
-### Verkoopteams trainen voor SAP SD
-
-Hoe u eindgebruikers kunt bijscholen op het gebied van orderinvoer, levering en facturering in SD-modules.
-
-](https://noeldcosta.com/nl/sap-training-strategies-for-employees-to-drive-adoption/)[
-
-Bestuur
-
-### Governance voor klantstamgegevens
-
-Beveilig en standaardiseer SD-kritieke gegevens zoals partnerfuncties en kredietlimieten.
-
-](https://noeldcosta.com/nl/ai-governance-in-sap-implementations-compliance-security/)[
-
-Tools
-
-### Het volgen van SD-projectmijlpalen
-
-Gebruik hulpmiddelen voor projecttracking om ervoor te zorgen dat de SD-configuratie en testfases op schema blijven.
-
-](https://noeldcosta.com/nl/top-sap-project-tracking-tools-2025/)[
-
-BTP
-
-### BTP-connectiviteitsproblemen die SD beïnvloeden
-
-Begrijp hoe onbetrouwbare BTP-koppelingen van invloed kunnen zijn op orderupdates en SD API's.
-
-](https://noeldcosta.com/nl/sap-btp-cockpit-issues/)
-
-## Vragen die u mogelijk heeft...
-
-### 1\. Wat is SAP SD?
-
-SAP SD (Sales en Distribution) is de module in [SAP ERP dat het beheer van klantorders afhandelt](https://noeldcosta.com/nl/best-sap-technical-change-management-tools-2025/), verzending, facturering en facturatie. Het omvat de volledige verkoopcyclus, van offerte tot betaling.
-
-### 2\. Wat is de rol van SD bij SAP?
-
-De SD [rol richt zich op het beheer](https://noeldcosta.com/nl/sap-stakeholder-management-strategy/) Verkooporders, leveringen, facturen en klantrelatiegegevens. Het omvat ook het instellen van prijzen, kredietlimieten en logistiek voor goederenvervoer.
-
-### 3\. Is SAP SD een goede carrière?
-
-Ja. SAP SD-consultants zijn gewild, vooral in sectoren met sterke verkoop-, distributie- en logistieke activiteiten. Je carrièregroei is gestaag als je ook integratiepunten leert met FI, MM en nieuwere cloud-oplossingen. [modules zoals SAP S/4HANA](https://noeldcosta.com/nl/sap-project-scope-template-management-and-control/) Verkoop.
-
-### 4\. Is SAP SD gemakkelijk of moeilijk?
-
-SAP SD is matig moeilijk. De basisprincipes zoals verkooporders en facturering zijn eenvoudig. Complexiteiten ontstaan in prijsbepalingsprocedures, cross-module-integratie en echte aanpassingsbehoeften.
-
-### 5\. Is SAP SD nog steeds gewild?
-
-Ja. Bedrijven die upgraden naar S/4HANA hebben nog steeds behoefte aan SD-experts. De vraag is groter. [consultants die zowel SAP begrijpen](https://noeldcosta.com/nl/top-sap-implementation-partners-in-the-usa-2025-by-tier/) ECC- en S/4HANA-versies.
-
-### 6\. Vereist SAP SD codering?
-
-Nee, niet voor functionele rollen. Basiskennis van ABAP helpt bij het schrijven van specificaties voor ontwikkelaars, maar coderen is geen basisvereiste voor SD-consultants.
-
-### 7\. Wat is het salaris van SAP SD?
-
-Consultants op instapniveau verdienen doorgaans $ 60,000 tot $ 80,000 per jaar. Consultants op middenniveau en senior niveau kunnen tussen $ 90,000 en $ 140,000 verdienen, afhankelijk van ervaring, locatie en [projectgrootte](https://noeldcosta.com/nl/creating-an-effective-sap-project-steering-committee/).
-
-### 8\. Welke SAP-module is het beste?
-
-Er is geen universeel 'beste'. Het hangt af van je carrièredoelen. SD is sterk voor mensen die geïnteresseerd zijn in [verkoopprocessen](https://noeldcosta.com/nl/my-journey-with-customer-information-solutions-defense/), logistiek en klantgerichte functies. FI is beter voor financiële carrières, MM voor inkoop, PP voor productie.
-
-### 9\. Wat is de taak van SAP SD?
-
-De belangrijkste taak is het configureren, ondersteunen en [optimaliseer de SAP](https://noeldcosta.com/nl/sap-negotiation-advisors-reduce-cost/) Verkoop- en distributieprocessen. Dit omvat orderverwerking, verzending, facturering, kredietbeheer en klantgegevens. [gegevensbeheer](https://noeldcosta.com/nl/sap-license-negotiation-10-key-points-to-consider-in-2024/).
-
-### 10\. Wat is een vereiste in SAP SD?
-
-Goed begrip van [bedrijfsprocessen](https://noeldcosta.com/nl/creating-an-effective-sap-project-steering-committee/) in verkoop, verzending en facturering. Kennis van basis SAP-navigatie, SD-configuratie (SPRO-instellingen) en integratie met FI- en MM-modules is belangrijk. Sterke documentatie- en communicatievaardigheden zijn eveneens vereist.
-
-### 11\. Wie gebruikt SAP SD?
-
-Grote en middelgrote bedrijven in de volgende sectoren: productie, detailhandel, automobielindustrie, consumptiegoederen, farmaceutica, gebruik [SAP SD om te beheren](https://noeldcosta.com/nl/best-sap-technical-change-management-tools-2025/) hun verkoop- en distributieactiviteiten. Functionele consultants, businessanalisten en eindgebruikers op verkoopafdelingen werken rechtstreeks met SAP SD.
-
-#### Hulpmiddelen om uw SAP-implementatietraject te vereenvoudigen
-
-#### **SAP-implementatiekostencalculator**
-
-Met deze tool kunt u de geschatte kosten van uw [SAP-implementatie](https://noeldcosta.com/nl/sap-quality-gates-implementation/). 
-
-#### **Generator voor SAP-resourcefunctiebeschrijvingen**
-
-U kunt deze tool gebruiken om een functiebeschrijving te genereren als u iemand inhuurt voor een SAP-project. 
-
-#### **Inspannings- en kostenraming voor gegevensmigratie**
-
-Met deze tool kunt u bepalen welke data-objecten u nodig hebt en welke kosten er verbonden zijn aan de datamigratie. 
-
-#### **Eenvoudig te gebruiken ERP-implementatiekostencalculator**
-
-Krijg een snelle inschatting van uw geschatte ERP-kosten en planning. Het is niet perfect, maar het geeft u een goed beeld van de kosten.
-
-#### **SAP Solution Builder en Roadmap Generator**
-
-Met deze tool kunt u bepalen welke SAP-modules u in uw SAP-systeem nodig hebt. [SAP-implementatie](https://noeldcosta.com/nl/sap-implementation-vs-rollout-differences-challenges-best-practices/).
+</details>

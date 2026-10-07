@@ -74,9 +74,9 @@ function VideoCard({ video }: { video: YouTubeVideo }) {
         )}
       </div>
       <div className="px-[18px] py-4">
-        <h4 className="font-display text-[0.95rem] font-bold tracking-[-0.02em] leading-[1.3] mb-1.5 line-clamp-2">
+        <h3 className="font-display text-[0.95rem] font-bold tracking-[-0.02em] leading-[1.3] mb-1.5 line-clamp-2">
           {video.title}
-        </h4>
+        </h3>
         {video.description && (
           <p className="font-mono text-[0.72rem] text-eyebrow tracking-[0.3px] line-clamp-2">
             {video.description}

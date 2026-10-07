@@ -1,0 +1,167 @@
+---
+title: "SAP Clean Core 策略：意義與落實方式"
+h1: "SAP Clean Core 策略：意義與落實方式"
+slug: "sap-clean-core-strategy-what-it-means-for-your-business"
+date: "2025-04-24"
+updated: "2026-10-07"
+hero: "/images/wp/2025/04/Standard-SEO-Agencies-10-1.webp"
+heroAlt: "主講人在翻頁板前主持工作坊，同事們圍坐在桌旁聆聽"
+category: "erp-strategy"
+tags: ["sap-technical-decisions", "clean-core", "rise-with-sap", "sap-btp"]
+author: "Noel D'Costa"
+metaTitle: "SAP Clean Core：5 大原則、A 至 D 級與起步點"
+metaDescription: "SAP Clean Core 對 S/4HANA 意味著什麼：SAP 的五大原則、A 至 D 級的擴充層級、ECC 的維護期限，以及我會從哪裡著手進行評估。"
+excerpt: "Clean Core 決定了您的 S/4HANA 升級要花幾週還是幾個月。本文說明 SAP 的五大原則與 A 至 D 級擴充層級對您的系統意味著什麼，以及我會從哪裡開始。"
+experienceSource: "Noel's published WordPress article (published 2025-04-24, modified 2025-10-17) and its project examples, pending Noel's confirmation. Product facts checked against SAP sources on 2026-10-07 (see docs/claude/revamp-working-plan.md, section 8, and docs/claude/eeat/register-b.md)."
+lastReviewed: "2026-05-21"
+keyTakeaways:
+  - "Clean Core 是指讓 S/4HANA 盡量貼近標準，並透過已發布的介面來建置擴充，包括使用 ABAP Cloud 的 on-stack，或在 SAP BTP 上的 side-by-side"
+  - "SAP 的五大 Clean Core 原則是流程、擴充性、資料、整合與營運"
+  - "自 2025 年 8 月起，SAP 把擴充分為 A 至 D 四個層級；D 級（修改、隱含增強、寫入 SAP 資料表）是要最先清除的技術債"
+  - "SAP ERP 6.0 EHP 6 至 8 將在 2027 年 12 月 31 日退出主流維護；可選的延伸維護至 2030 年 12 月 31 日"
+  - "在 Private Edition 與地端部署中，Clean Core 是一項治理決策；Public Edition 則在技術上強制執行"
+pullQuote: "跳過 Clean Core 的團隊並沒有避開這些工作。他們只是把它延後了，後來它以升級受阻、以及沒人看得懂的客製程式碼的形式回來。"
+mentions:
+  - "SAP S/4HANA"
+  - "SAP BTP"
+  - "SAP ECC"
+  - "RISE with SAP"
+  - "GROW with SAP"
+  - "ABAP Cloud"
+  - "SAP Build"
+  - "ABAP test cockpit"
+  - "SAP Readiness Check"
+  - "Joule"
+originalUrl: "https://noeldcosta.com/sap-clean-core-strategy-what-it-means-for-your-business/"
+canonicalUrl: "https://noeldcosta.com/zh-TW/sap-clean-core-strategy-what-it-means-for-your-business/"
+locale: "zh-TW"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Clean Core 決定了 S/4HANA 升級要花六週還是六個月。如果您的系統滿是對 SAP 標準物件的修改，每一次發行版本都會變成一個回歸測試專案。如果您的客製邏輯都放在已發布的介面之後，升級就會變成例行維護。
+
+我看過一些公司，在 S/4HANA 專案開始之前就套用 Clean Core 原則，把升級時程縮短了 40%。有一家消費品公司，把舊有的定價邏輯，換成在核心之外打造的模組化 Fiori 應用程式，之後的升級就不再破壞這套邏輯。
+
+自從我在 2025 年 4 月第一次寫這篇文章以來，已經有很多改變。SAP 現在用五大指導原則來描述 Clean Core，並且自 2025 年 8 月起，把每一項擴充歸類到四個層級之一。ECC 的期限也更明確了。這個版本反映了這些改變。
+
+## Clean Core 在實務上的意義
+
+Clean Core 是指在業務允許的範圍內，讓您的 S/4HANA 系統盡可能貼近 SAP 標準，並以能撐過升級的方式來打造任何額外的東西。
+
+您仍然可以客製化。但客製化必須使用 SAP 已發布、並承諾維持穩定的介面。SAP 提供兩種做法：
+
+- **On-stack，使用 ABAP Cloud。** 擴充執行於 S/4HANA 內部，但只使用已發布的 API 與擴充點。
+- **Side-by-side，在 SAP BTP 上。** 擴充以獨立的應用程式執行，並透過 API 或事件與 S/4HANA 溝通。
+
+SAP 自己的指引是依使用情境選擇，BTP 優先。依我的經驗，程式碼在哪裡執行，不如需求究竟需不需要程式碼來得重要。
+
+對任何跑過 ECC 的人來說，不乾淨的核心看起來都很眼熟：被修改過的標準程式、被直接寫入的 Z 資料表、讀取 SAP 內部結構的介面、沒人記錄的隱含增強。這些在當時建置時都沒有錯。只是它們不是為了每一兩年就升級一次的系統而建的。
+
+## SAP 的五大 Clean Core 原則
+
+SAP 圍繞五大指導原則來組織 Clean Core。本文先前的版本列的是不同的標題。以下是 SAP 所使用的原則，以及我在每一項中最先看的東西：
+
+| 原則 | SAP 的意思 | 我先檢查什麼 |
+|---|---|---|
+| 流程 | 盡可能貼近 SAP 標準流程 | 哪些流程變體之所以存在，只是因為「我們一向都是這樣做」 |
+| 擴充性 | 透過已發布的 API 讓擴充與核心脫鉤，並對採用哪種選項進行治理 | 有多少客製程式碼、有多少在使用中，以及它們位於哪個層級 |
+| 資料 | 乾淨、合規，且有既定治理模式的資料 | 重複與不完整的主檔資料、沒人解釋得出來的客製欄位 |
+| 整合 | 以受支援的技術建構、標準化且安全的連線 | 直接讀取資料表的點對點介面 |
+| 營運 | 維持其他四項到位的治理、人員、流程與工具 | 誰核准擴充，以及什麼能阻止下一次修改 |
+
+多數團隊從擴充性開始，也在擴充性結束，因為它最容易衡量。依我的經驗，流程與資料造成的延誤更多。客製程式碼通常是症狀。背後的流程才是原因。
+
+## A 至 D 級：您的客製程式碼位於哪裡
+
+2025 年 8 月，SAP 以 [Clean Core 層級概念](https://news.sap.com/2025/08/extend-sap-s4hana-cloud-right-way-clean-clear/)取代了先前的三層擴充性模型。每一項擴充，都依其建置方式、與核心脫鉤的程度，以及升級的容易程度來評估。
+
+| 層級 | SAP 的說明 | 對您的升級意味著什麼 |
+|---|---|---|
+| A | 以 SAP Build 擴充。只使用公開發布、穩定的介面，可採用 ABAP Cloud 的 on-stack，或 BTP 上的 side-by-side | 風險最低。SAP 以穩定性合約為這些介面背書 |
+| B | 同時使用 SAP 的傳統 API 與技術 | 一般來說升級穩定，但超出雲端開發模型 |
+| C | 存取 SAP 內部物件 | 部分合規。每次升級都需要檢查；SAP 計畫為內部物件提供變更紀錄 |
+| D | 不建議：修改、寫入 SAP 資料表、隱含增強、明確列為不建議的物件 | 要最先清除的技術債 |
+
+這比舊有的「乾淨或不乾淨」之爭更有用。它讓您可以為每個物件設定目標。並不是所有東西都需要達到 A 級。在升級之前，把您的 D 級物件移到 B 或 C，就已經是風險的實質降低。
+
+<explainer-compare title="Clean Core 的 A 至 D 級" caption="升級風險從 A 到 D 逐級升高。並非所有東西都要達到 A，但 D 是要最先清除的債務。" options="A 級|B 級|C 級|D 級" criteria="使用什麼 => 只使用公開發布、穩定的介面 ; 另外使用 SAP 的傳統 API ; SAP 內部物件 ; 修改、寫入 SAP 資料表、隱含增強|升級風險 => [0] 最低，有穩定性合約支撐 ; [1] 一般來說升級穩定 ; [2] 每次升級都需要檢查 ; [3] 最高|該怎麼決定 => 任何新建項目的預設選項 ; 接受，並記錄原因 ; 附原因接受，每次升級重新檢查 ; 最先移除，或移到 B 或 C" highlight="4" source="SAP Clean Core 層級概念，SAP News，2025 年 8 月"></explainer-compare>
+
+## 我會從哪裡開始
+
+如果您請我下個月評估您的系統，我會依這個順序進行。
+
+1. **找出哪些在使用中。** 執行 SAP Readiness Check（隨您的維護合約提供），並蒐集客製程式碼的使用資料。在一個專案中，我們用 smartShift 進行分析，把客製物件從 18,000 個減到 3,200 個。其餘多數只是根本沒在使用。
+2. **把剩下的歸類到 A 至 D 級。** ABAP test cockpit 是 SAP 用於程式碼層級檢查的工具。在 RISE 之下，RISE with SAP Methodology 儀表板會回報 Clean Core 的採用情況。
+3. **逐一物件做決定。** 淘汰它、移到已發布的介面、在 BTP 上重建，或附上有文件記錄的原因保留它。從每天都在執行的程式碼開始。一個區域團隊一年只用兩次的報表，可以等。
+4. **讓業務人員進場。** 我合作過的一位財務主管，是在 45 分鐘的逐步說明之後，才真正理解他們新的 Fiori 應用程式。那一場說明，為 UAT 省下了兩週的來回往返。
+5. **挑戰「我們的流程不一樣」。** 在一次銷售團隊的工作坊中，那個「獨特」的流程，結果有 80% 是多餘的舊有行政作業。一旦拿掉那些變通做法，標準的 SAP 反而改善了他們的客戶體驗。
+6. **及早開始資料工作。** 有一位零售客戶要整理超過 15,000 個客製欄位。依我的經驗，資料移轉占導入工作量的 30% 至 40%，而且是多數計畫最容易低估的部分。我在[為什麼 SAP 資料移轉會失敗](/zh-TW/why-sap-data-migration-fails-and-how-to-fix-it/)中談到了原因。
+7. **在上線前就把治理建立起來。** 設計權責小組（design authority）應該審查每一項新的擴充。過去預設的問題是「為什麼這不能放在 BTP 上？」如今我會問「為什麼這不能是 A 級？如果不能，我們接受的是哪一級，原因是什麼？」
+
+技能和工具一樣重要。沒有 ABAP Cloud 或 BTP 經驗的 ABAP 團隊，在學習期間會拖慢專案。我合作過的一家製造商，在 S/4HANA 專案開始之前，先進行了為期三個月的內部 BTP 計畫，這在建置階段減少了意外，是值得的。
+
+## Clean Core、RISE 與 AI：哪些是必要的，哪些不是
+
+在我談到這個主題的幾乎每一場對話中，都會冒出三個問題。
+
+**在 RISE with SAP 之下，Clean Core 是強制的嗎？** 並非一體適用的規則。在 S/4HANA Cloud Public Edition 中，您只能透過已發布的介面擴充，所以由系統強制執行。在 Private Edition 與地端部署中，您仍然可以修改核心。在那裡，Clean Core 是一個治理上的選擇，SAP 透過 RISE 方法論儀表板追蹤它。如果系統整合商告訴您這是合約規定，請他們把條款拿給您看。
+
+**ECC 我還有多久？** 對於增強套件（enhancement package）6 至 8 的 SAP ERP 6.0，[主流維護將於 2027 年 12 月 31 日結束](https://news.sap.com/2020/02/sap-s4hana-maintenance-2040-clarity-choice-sap-business-suite-7/)。可選的延伸維護，需額外付費，延續到 2030 年 12 月 31 日，而 SAP 要求客戶在 2027 年第三季前訂購。更早的增強套件已於 2025 年底退出主流維護。2030 年之後，[SAP ERP, private edition, transition option](https://news.sap.com/2025/08/rise-with-sap-journey-sap-erp-private-edition-transition-option-updates/) 涵蓋 2031 至 2033 年。它只適用於在 2030 年底之前，已經移到 SAP HANA 上的 SAP ERP, private edition 的大型系統，而且只搭配 SAP 的 max success plan。請把 2033 年視為例外路線，而不是規劃日期。我的 [ECC 移轉到 S/4HANA 指南](/zh-TW/ecc-to-s4hana-migration/)談到了路線的選擇。
+
+**Clean Core 對 AI 有影響嗎？** SAP 把它的 AI 功能（包括 Joule）建構在其標準流程與資料模型之上。Joule for developers 會針對已發布的 API 產生 ABAP Cloud 程式碼。我目前的看法很簡單：您的流程與資料越貼近標準，這些功能對您發揮作用之前，需要的調整就越少。被大幅修改的流程，是 AI 功能最難採用的地方。
+
+跳過 Clean Core 的團隊並沒有避開這些工作。他們只是把它延後了，後來它以升級受阻、回歸測試馬拉松，以及沒人看得懂的客製程式碼的形式回來。
+
+如果您即將簽署 S/4HANA 或 RISE 合約，請在議定範圍之前，要求您的系統整合商針對現有客製程式碼提供 A 至 D 級的分類。如果他們提供不出來，這就說明了那份估算的一些問題。您可以用我的 [ECC 移轉到 S/4HANA 評估](/zh-TW/sap-s4hana-migration-strategy-greenfield-vs-brownfield/)來測試您的移轉選項，或[預約通話](/zh-TW/contact-noel-erp-support/)，我們可以一起看看您的情況。
+
+## 常見問題
+
+<details>
+<summary>什麼是 SAP Clean Core？</summary>
+
+Clean Core 是指讓 S/4HANA 盡量貼近 SAP 標準，並且只透過 SAP 已發布、並承諾維持穩定的介面來建置擴充。擴充可以在 ABAP Cloud 的 on-stack 執行，或在 SAP BTP 的 side-by-side 執行。目標是讓升級不會破壞您的客製邏輯。
+
+</details>
+
+<details>
+<summary>SAP Clean Core 的五個面向是什麼？</summary>
+
+SAP 稱之為 Clean Core 的五大指導原則：流程、擴充性、資料、整合與營運。流程貼近標準。擴充使用已發布的 API。資料在治理模式下保持乾淨。整合使用標準化、受支援的技術。營運涵蓋維持其他四項到位的治理、人員與工具。
+
+</details>
+
+<details>
+<summary>SAP Clean Core 的 A、B、C、D 級是什麼？</summary>
+
+自 2025 年 8 月起，SAP 把擴充分為四個層級。A 級只使用公開發布、穩定的介面。B 級另外使用 SAP 傳統 API。C 級存取 SAP 內部物件，每次升級都需要檢查。D 級涵蓋修改、寫入 SAP 資料表、隱含增強與其他不建議的技術，風險最高。
+
+</details>
+
+<details>
+<summary>在 RISE with SAP 之下，Clean Core 是強制的嗎？</summary>
+
+並非一體適用的規則。S/4HANA Cloud Public Edition 只允許透過已發布的介面擴充，因此在技術上強制執行 Clean Core。在 Private Edition 中，您仍然可以修改核心，所以 Clean Core 是一項治理決策。SAP 透過 RISE with SAP Methodology 儀表板回報 Clean Core 的採用情況。
+
+</details>
+
+<details>
+<summary>SAP ECC 的支援何時結束？</summary>
+
+對於增強套件 6 至 8 的 SAP ERP 6.0，主流維護於 2027 年 12 月 31 日結束，可選的延伸維護需額外付費，延續到 2030 年 12 月 31 日。更早的增強套件已於 2025 年底退出主流維護。SAP ERP, private edition, transition option 延伸到 2033 年，但只適用於在 2030 年底之前，已移到 SAP HANA 上的 SAP ERP, private edition 的合格大型系統。
+
+</details>
+
+<details>
+<summary>我要如何評估 SAP 系統的 Clean Core 就緒度？</summary>
+
+先從 SAP Readiness Check 與客製程式碼的使用資料開始。把仍在使用的歸類到 A 至 D 級，並用 ABAP test cockpit 做程式碼層級的檢查。接著逐一物件決定要淘汰、移到已發布的介面、在 SAP BTP 上重建，或附上有文件記錄的原因保留它。同時檢視流程與資料，因為它們通常能解釋程式碼為何存在。
+
+</details>
+
+<details>
+<summary>SAP BTP 在 Clean Core 策略中扮演什麼角色？</summary>
+
+SAP BTP 是 side-by-side 擴充執行的地方。BTP 上的應用程式透過 API 與事件連接到 S/4HANA，因此核心保持原封不動。SAP 建議以 BTP 優先，當邏輯需要貼近資料或交易時，才採用 on-stack 的 ABAP Cloud 擴充。
+
+</details>

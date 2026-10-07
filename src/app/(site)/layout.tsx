@@ -1,35 +1,30 @@
 import type { Metadata } from "next";
-import { Epilogue, Sora, JetBrains_Mono } from "next/font/google";
 import { personJsonLd, websiteJsonLd } from "@/lib/seo";
 import "../globals.css";
+import "../nd-theme.css";
+import "../nd-articles.css";
+import "../nd-archives.css";
+import "../nd-pages.css";
+import { fontVariables } from "@/components/site/fonts";
+import ThemeScript from "@/components/site/ThemeScript";
+import PointerLayer from "@/components/site/PointerLayer";
+import ChatWidget from "@/components/site/ChatWidget";
+import { chatCopy } from "@/components/site/chat-copy";
 
-const epilogue = Epilogue({
-  variable: "--font-epilogue",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-  style: ["normal", "italic"],
-  display: "swap",
-});
 
-const sora = Sora({
-  variable: "--font-sora",
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
-  display: "swap",
-  // Epilogue is the primary display face; Sora is a CSS fallback only.
-  // Skip the auto-preload so the 4 .woff2 preloads above the fold drop
-  // to those genuinely used in the LCP frame (Epilogue + JetBrains Mono).
-  preload: false,
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  display: "swap",
-});
+// Search console ownership tags, set per environment in Vercel:
+// GOOGLE_SITE_VERIFICATION (Google Search Console HTML tag content) and
+// BING_SITE_VERIFICATION (Bing Webmaster Tools msvalidate.01 content).
+const verification: Metadata["verification"] = {
+  ...(process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : {}),
+  ...(process.env.BING_SITE_VERIFICATION
+    ? { other: { "msvalidate.01": process.env.BING_SITE_VERIFICATION } }
+    : {}),
+};
+const OG_IMAGE = { url: "/og-image.png", width: 1200, height: 630, alt: "Noel D'Costa: enterprise applications, data and AI" };
 
 export const metadata: Metadata = {
+  verification,
   metadataBase: new URL("https://noeldcosta.com"),
   title: {
     default: "Noel D'Costa | ERP, Data & AI",
@@ -58,9 +53,11 @@ export const metadata: Metadata = {
     url: "https://noeldcosta.com",
     siteName: "Noel D'Costa",
     type: "website",
+    images: [OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
+    images: [OG_IMAGE.url],
     title: "Noel D'Costa | ERP, Data & AI",
     description:
       "25+ years delivering SAP, Oracle, and AI programmes across aviation, government, finance, retail, and manufacturing.",
@@ -76,9 +73,15 @@ export default function SiteRootLayout({
     <html
       lang="en"
       dir="ltr"
-      className={`${epilogue.variable} ${sora.variable} ${jetbrainsMono.variable}`}
+      className={fontVariables}
+      data-theme="dark"
+      suppressHydrationWarning
     >
+      <head>
+        <ThemeScript />
+      </head>
       <body>
+        <PointerLayer />
         {/* Site-wide WebSite + Person JSON-LD — emitted on every page so
             branded search picks up the entity graph and the about-the-author
             authority signal travels with every URL, not just the post page. */}
@@ -95,6 +98,7 @@ export default function SiteRootLayout({
           }}
         />
         {children}
+        <ChatWidget copy={chatCopy("en")} />
       </body>
     </html>
   );

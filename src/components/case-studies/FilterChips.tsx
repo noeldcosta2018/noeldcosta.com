@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronDown, X, SlidersHorizontal } from "lucide-react";
 import {
@@ -19,15 +19,15 @@ import {
  *  - Three chip dropdowns: Industry, Service, Region. Multi-select.
  *  - Active filters mirror to URL query params (?industry=defence,manufacturing)
  *    so URLs are shareable.
- *  - Active-filter pills sit below the chip bar with × to remove.
+ *  - Active-filter pills sit below the chip bar with a remove button.
  *  - "All" clears every filter.
  *  - Sort dropdown (Recent / Industry / Region).
  *
- * Glass surface — matches the nav's blur token. Sticks to top: 64
- * (under the fixed Nav) once scrolled past the hero.
+ * Glass surface matching the nav. Sticks under the fixed nav (top: var(--nav))
+ * while the archive is on screen.
  *
- * Mobile (≤ md): chips collapse into a single "Filters" button. Tap
- * opens a bottom sheet listing all options at once.
+ * Mobile (< 768px): chips collapse into a single "Filters" button that opens
+ * a bottom sheet listing every option.
  */
 
 const INDUSTRIES: { value: Industry; label: string }[] = (
@@ -80,6 +80,7 @@ interface PopoverProps {
 function ChipPopover({ label, options, selected, onChange }: PopoverProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
+  const panelId = useId();
 
   // Close on outside click + Escape.
   useEffect(() => {
@@ -106,59 +107,56 @@ function ChipPopover({ label, options, selected, onChange }: PopoverProps) {
   const count = selected.length;
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} style={{ position: "relative" }}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        aria-haspopup="listbox"
-        className={[
-          "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-[0.85rem] font-medium transition-all duration-200 min-h-[44px]",
-          count > 0
-            ? "border-papaya bg-papaya/10 text-corbeau"
-            : "border-corbeau/15 bg-paper text-corbeau hover:border-corbeau/30",
-        ].join(" ")}
+        aria-controls={panelId}
+        className={count > 0 ? "nda-fbtn on" : "nda-fbtn"}
       >
         {label}
-        {count > 0 && (
-          <span className="font-mono text-[0.7rem] tabular-nums opacity-70">
-            ({count})
-          </span>
-        )}
-        <ChevronDown
-          size={14}
-          aria-hidden
-          className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-        />
+        {count > 0 && <span className="count">{count}</span>}
+        <ChevronDown size={14} aria-hidden />
       </button>
 
       {open && (
-        <div
-          role="listbox"
-          aria-multiselectable
-          aria-label={label}
-          className="absolute z-30 mt-2 left-0 w-[260px] rounded-xl border border-corbeau/10 bg-paper shadow-[0_12px_40px_rgba(14,16,32,0.10)] p-1.5"
-        >
-          {options.map((opt) => {
-            const isSel = selected.includes(opt.value);
-            return (
-              <label
-                key={opt.value}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-cream/60 transition-colors"
-              >
-                <input
-                  type="checkbox"
-                  className="accent-papaya w-4 h-4 cursor-pointer"
-                  checked={isSel}
-                  onChange={() => toggle(opt.value)}
-                />
-                <span className="text-corbeau text-[0.88rem]">{opt.label}</span>
-              </label>
-            );
-          })}
+        <div id={panelId} role="group" aria-label={label} className="nda-pop">
+          {options.map((opt) => (
+            <label key={opt.value} className="nda-opt">
+              <input type="checkbox" checked={selected.includes(opt.value)} onChange={() => toggle(opt.value)} />
+              <span>{opt.label}</span>
+            </label>
+          ))}
         </div>
       )}
     </div>
+  );
+}
+
+function MobileFilterSection({
+  title,
+  options,
+  selected,
+  onToggle,
+}: {
+  title: string;
+  options: { value: string; label: string }[];
+  selected: string[];
+  onToggle: (v: string) => void;
+}) {
+  return (
+    <fieldset className="grp" style={{ border: 0, margin: 0 }}>
+      <legend className="nd-label" style={{ padding: "0 0 6px" }}>
+        {title}
+      </legend>
+      {options.map((opt) => (
+        <label key={opt.value} className="nda-opt">
+          <input type="checkbox" checked={selected.includes(opt.value)} onChange={() => onToggle(opt.value)} />
+          <span>{opt.label}</span>
+        </label>
+      ))}
+    </fieldset>
   );
 }
 
@@ -167,134 +165,68 @@ function MobileSheet({
   services,
   regions,
   onChange,
+  onClear,
   onClose,
 }: {
   industries: string[];
   services: string[];
   regions: string[];
   onChange: (kind: "industry" | "service" | "region", next: string[]) => void;
+  onClear: () => void;
   onClose: () => void;
 }) {
-  // Body scroll lock so the page doesn't drift under the sheet.
+  // Body scroll lock so the page doesn't drift under the sheet; Escape closes.
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prev;
+      document.removeEventListener("keydown", onKey);
     };
-  }, []);
+  }, [onClose]);
 
-  const Section = ({
-    title,
-    options,
-    selected,
-    onToggle,
-  }: {
-    title: string;
-    options: { value: string; label: string }[];
-    selected: string[];
-    onToggle: (v: string) => void;
-  }) => (
-    <div className="px-5 py-4 border-t border-corbeau/8 first:border-t-0">
-      <p className="font-mono text-[0.72rem] tracking-[2px] uppercase text-eyebrow mb-3">
-        {title}
-      </p>
-      <div className="grid grid-cols-1 gap-2">
-        {options.map((opt) => {
-          const isSel = selected.includes(opt.value);
-          return (
-            <label
-              key={opt.value}
-              className="flex items-center gap-3 py-2.5 cursor-pointer"
-            >
-              <input
-                type="checkbox"
-                className="accent-papaya w-5 h-5 cursor-pointer"
-                checked={isSel}
-                onChange={() => onToggle(opt.value)}
-              />
-              <span className="text-corbeau text-[0.95rem]">{opt.label}</span>
-            </label>
-          );
-        })}
-      </div>
-    </div>
-  );
+  const toggleIn = (list: string[], v: string) =>
+    list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
 
   return (
-    <div className="md:hidden fixed inset-0 z-50 flex flex-col">
-      {/* Scrim */}
-      <button
-        type="button"
-        aria-label="Close filters"
-        onClick={onClose}
-        className="flex-1 bg-corbeau/40 backdrop-blur-sm"
-      />
-      {/* Sheet */}
-      <div className="bg-paper rounded-t-2xl max-h-[80vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-corbeau/8 sticky top-0 bg-paper">
-          <p className="font-display font-bold text-corbeau text-[1.05rem]">
+    <div className="nda-sheet" role="dialog" aria-modal="true" aria-label="Filter case studies">
+      <button type="button" aria-label="Close filters" onClick={onClose} className="scrim" />
+      <div className="panel">
+        <div className="top">
+          <span className="nd-label" style={{ color: "var(--ink)" }}>
             Filters
-          </p>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close filters"
-            className="inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-cream transition-colors"
-          >
+          </span>
+          <button type="button" onClick={onClose} aria-label="Close filters" className="nda-icon-btn">
             <X size={18} aria-hidden />
           </button>
         </div>
-        <Section
+        <MobileFilterSection
           title="Industry"
           options={INDUSTRIES}
           selected={industries}
-          onToggle={(v) =>
-            onChange(
-              "industry",
-              industries.includes(v) ? industries.filter((x) => x !== v) : [...industries, v]
-            )
-          }
+          onToggle={(v) => onChange("industry", toggleIn(industries, v))}
         />
-        <Section
+        <MobileFilterSection
           title="Service"
           options={SERVICES}
           selected={services}
-          onToggle={(v) =>
-            onChange(
-              "service",
-              services.includes(v) ? services.filter((x) => x !== v) : [...services, v]
-            )
-          }
+          onToggle={(v) => onChange("service", toggleIn(services, v))}
         />
-        <Section
+        <MobileFilterSection
           title="Region"
           options={REGIONS}
           selected={regions}
-          onToggle={(v) =>
-            onChange(
-              "region",
-              regions.includes(v) ? regions.filter((x) => x !== v) : [...regions, v]
-            )
-          }
+          onToggle={(v) => onChange("region", toggleIn(regions, v))}
         />
-        <div className="sticky bottom-0 bg-paper border-t border-corbeau/8 p-4 flex gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              onChange("industry", []);
-              onChange("service", []);
-              onChange("region", []);
-            }}
-            className="flex-1 py-3 rounded-lg border border-corbeau/15 text-corbeau text-[0.92rem] font-semibold hover:bg-cream transition-colors"
-          >
+        <div className="bottom">
+          <button type="button" onClick={onClear} className="nd-btn nd-btn-secondary">
             Clear all
           </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 py-3 rounded-lg bg-corbeau text-bone text-[0.92rem] font-semibold hover:bg-night transition-colors"
-          >
+          <button type="button" onClick={onClose} className="nd-btn nd-btn-primary">
             Show results
           </button>
         </div>
@@ -316,7 +248,7 @@ export default function FilterChips() {
 
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // useRouter.replace avoids polluting history — every checkbox tick
+  // useRouter.replace avoids polluting history: every checkbox tick
   // shouldn't add a back-button entry.
   const update = (patch: Record<string, string | null>) => {
     const url = buildUrl(new URLSearchParams(params.toString()), patch);
@@ -338,28 +270,12 @@ export default function FilterChips() {
 
   return (
     <>
-      <div
-        className="sticky top-16 z-20 border-b border-corbeau/[0.06]"
-        style={{
-          background: "rgba(244, 237, 228, 0.85)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-        }}
-      >
-        <div className="max-w-[1200px] mx-auto px-[clamp(1.5rem,5vw,4rem)] py-3 flex items-center justify-between gap-3">
+      <div className="nda-filter">
+        <div className="nda-wrap row">
           {/* Desktop chip row */}
-          <div className="hidden md:flex items-center gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={clearAll}
-              disabled={totalActive === 0}
-              className={[
-                "inline-flex items-center px-3.5 py-2 rounded-full border text-[0.85rem] font-medium transition-all duration-200 min-h-[44px]",
-                totalActive === 0
-                  ? "border-corbeau bg-corbeau text-bone cursor-default"
-                  : "border-corbeau/15 bg-paper text-corbeau hover:border-corbeau/30",
-              ].join(" ")}
-            >
+          <div className="chips nda-only-d" role="group" aria-label="Filter case studies">
+            <span className="lbl">Filter</span>
+            <button type="button" onClick={clearAll} aria-pressed={totalActive === 0} className="nda-fbtn">
               All
             </button>
             <ChipPopover
@@ -386,33 +302,25 @@ export default function FilterChips() {
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="md:hidden inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-corbeau/15 bg-paper text-corbeau text-[0.9rem] font-semibold min-h-[44px]"
+            aria-haspopup="dialog"
+            className={totalActive > 0 ? "nda-fbtn on nda-only-m" : "nda-fbtn nda-only-m"}
           >
             <SlidersHorizontal size={16} aria-hidden />
             Filters
-            {totalActive > 0 && (
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-papaya text-corbeau font-mono text-[0.7rem] font-bold">
-                {totalActive}
-              </span>
-            )}
+            {totalActive > 0 && <span className="badge">{totalActive}</span>}
           </button>
 
-          {/* Sort — desktop and mobile both, smaller on mobile */}
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="hidden md:inline font-mono text-[0.7rem] tracking-[1.5px] uppercase text-eyebrow">
+          {/* Sort */}
+          <div className="nda-sort">
+            <label htmlFor="cs-sort" className="lbl nda-only-d">
               Sort
-            </span>
+            </label>
             <select
+              id="cs-sort"
+              aria-label="Sort"
               value={sort}
               onChange={(e) => update({ sort: e.target.value === "recent" ? null : e.target.value })}
-              aria-label="Sort case studies"
-              className="appearance-none bg-paper border border-corbeau/15 rounded-full pl-3.5 pr-8 py-2 text-[0.85rem] font-medium text-corbeau cursor-pointer hover:border-corbeau/30 transition-colors min-h-[44px]"
-              style={{
-                backgroundImage:
-                  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%230e1020' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>\")",
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "right 10px center",
-              }}
+              className="nda-select"
             >
               {SORTS.map((s) => (
                 <option key={s.value} value={s.value}>
@@ -423,9 +331,9 @@ export default function FilterChips() {
           </div>
         </div>
 
-        {/* Active-filter pill row — only when there's something to show */}
+        {/* Active-filter pills, only when there's something to show */}
         {totalActive > 0 && (
-          <div className="max-w-[1200px] mx-auto px-[clamp(1.5rem,5vw,4rem)] pb-3 flex flex-wrap items-center gap-2">
+          <div className="nda-wrap nda-active">
             {industries.map((v) => (
               <Pill key={`i-${v}`} label={INDUSTRY_LABEL[v as Industry] ?? v} onRemove={() => removePill("industry", v)} />
             ))}
@@ -435,11 +343,7 @@ export default function FilterChips() {
             {regions.map((v) => (
               <Pill key={`r-${v}`} label={REGION_LABEL[v as Region] ?? v} onRemove={() => removePill("region", v)} />
             ))}
-            <button
-              type="button"
-              onClick={clearAll}
-              className="font-mono text-[0.7rem] tracking-[1.5px] uppercase text-eyebrow hover:text-papaya transition-colors px-2 py-1"
-            >
+            <button type="button" onClick={clearAll} className="nda-clear">
               Clear all
             </button>
           </div>
@@ -452,6 +356,7 @@ export default function FilterChips() {
           services={services}
           regions={regions}
           onChange={setFilter}
+          onClear={clearAll}
           onClose={() => setMobileOpen(false)}
         />
       )}
@@ -461,15 +366,10 @@ export default function FilterChips() {
 
 function Pill({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1 rounded-full bg-papaya/15 border border-papaya/30 text-corbeau text-[0.78rem] font-medium">
+    <span className="nda-pill-x">
       {label}
-      <button
-        type="button"
-        onClick={onRemove}
-        aria-label={`Remove ${label} filter`}
-        className="inline-flex items-center justify-center w-5 h-5 rounded-full hover:bg-papaya/30 transition-colors"
-      >
-        <X size={11} aria-hidden />
+      <button type="button" onClick={onRemove} aria-label={`Remove ${label} filter`}>
+        <X size={12} aria-hidden />
       </button>
     </span>
   );

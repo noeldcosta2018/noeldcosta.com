@@ -1,0 +1,210 @@
+---
+title: "Testiranje performansi SAP-a: što IT čelnici moraju znati"
+h1: "Testiranje performansi SAP-a: što IT čelnici moraju znati"
+metaTitle: "Testiranje performansi SAP-a: što IT čelnici moraju znati"
+metaDescription: "Testiranje performansi SAP-a za IT čelnike: kada početi, što testirati, kako postaviti kriterije prihvaćanja i tko je za što odgovoran na RISE-u i S/4HANA Cloudu 2026."
+excerpt: "Problemi s performansama SAP-a gotovo su uvijek predvidljivi i gotovo uvijek se otkriju nakon puštanja u rad. Testirajte ih od dizajna nadalje, prema kriterijima dogovorenima prije prvog izvođenja."
+slug: "sap-performance-testing-it-leaders"
+date: "2025-07-12"
+updated: "2026-10-07"
+lastReviewed: "2026-05-21"
+hero: "/images/wp/2025/07/1-1.webp"
+heroAlt: "Brzinomjer s natpisom performanse i kazaljkom koja pokazuje prema maksimumu"
+category: "erp-consulting-guide"
+tags: ["sap-technical-decisions", "performance-testing", "s4hana-implementation", "rise-with-sap"]
+author: "Noel D'Costa"
+experienceSource: "Direct experience leading and recovering SAP performance testing on 21 S/4HANA and ECC programmes across manufacturing, financial services, public sector, and retail in Europe, GCC, US, and UK markets. The five-background-jobs-clashed story is anchored to a GCC manufacturing programme in 2024. RISE / GROW / Joule coverage reflects 2024-2025 SAP product positioning."
+keyTakeaways:
+  - "Rizik performansi nastaje u dizajnu: oblik izvještaja, lanci poslova i dizajn OData servisa odlučuju o ishodu prije nego što je napisan kod"
+  - "Vršne prijave pri promjeni smjene, neograničeni Z-izvještaji i preklapajući poslovi zatvaranja najčešći su neuspjesi i svi su predvidljivi"
+  - "Testiranje volumena prečac je koji programi najčešće uzimaju i zbog kojeg najviše žale"
+  - "Vlasništvo nad performansama treba voditelja na razini programa s ovlastima da ospori dizajn, a ne samo QA"
+  - "Na RISE-u SAP posjeduje infrastrukturu; klijent i partner posjeduju performanse aplikacije, integracija i procesa"
+  - "Ako je sustav prošao jer su korisnici u UAT-u rekli da djeluje brz, imate mišljenje, a ne kriterij prihvaćanja"
+pullQuote: "Rizici performansi posijani su u dizajnu, kroz arhitektonske odluke, način strukturiranja izvještaja i količinu logike potisnute u ABAP. Ako čekate da sustav bude u potpunosti izgrađen, testirate posljedice. Do tada je prerada skupa."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Fiori"
+  - "SAP CPI"
+  - "SAP BTP"
+  - "SAP Solution Manager"
+  - "SAP Cloud ALM"
+  - "RISE with SAP"
+  - "GROW with SAP"
+  - "Joule"
+  - "LoadRunner"
+  - "Tricentis NeoLoad"
+originalUrl: "https://noeldcosta.com/sap-performance-testing-it-leaders/"
+canonicalUrl: "https://noeldcosta.com/hr/sap-performance-testing-it-leaders/"
+locale: "hr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Testiranje performansi SAP-a dokazuje, prije puštanja u rad, da kritične transakcije, pozadinski poslovi i sučelja zadovoljavaju dogovorena vremena odziva pod produkcijskim volumenima. Započnite ga u dizajnu, provodite testove volumena i opterećenja u fazi Realize kada je konfiguracija stabilna, dovršite ciklus prije korisničkog prihvaćanja (UAT) i rezultate učinite vratima za prijelaz (cutover gate). Ovaj je vodič za CIO-e, direktore programa i voditelje testiranja na S/4HANA programima, uključujući RISE with SAP. Obuhvaća što testirati, tko je za to odgovoran, kako napisati kriterije prihvaćanja i što se mijenja u oblaku. Počnite s tablicom kriterija prihvaćanja: ako je ne možete popuniti, niste spremni za testiranje.
+
+Problemi s performansama u SAP programima gotovo se uvijek otkriju nakon puštanja u rad. Fiori pločice istječu kada se 300 korisnika prijavi pri promjeni smjene. Z-izvještaji se zamrzavaju jer je netko pokrenuo neograničeni upit za fiskalnu godinu nad tablicom s 50 milijuna zapisa. Pozadinski poslovi se preklapaju tijekom mjesečnog zatvaranja i izvođenje knjiženja se prekida.
+
+Problemi s performansama u SAP programima rijetko stižu kao iznenađenje. Većina ih je bila predvidljiva, samo nisu bili planirani. Uobičajeni obrazac: funkcionalno testiranje bilo je temeljito. Testiranje volumena bilo je planirano, a zatim odgođeno kada se vremenski plan sažeo. Posljedice su stigle u prvim tjednima produkcijskog rada.
+
+To nisu rubni slučajevi. Predvidljivi su. Jedino je pitanje je li program testirao za njih ili poslovanje na njih nailazi dok teku stvarne narudžbe.
+
+![Infrastruktura podatkovnog centra koja podržava okruženja za testiranje performansi SAP-a i produkcijska opterećenja pod istodobnim opterećenjem korisnika](https://images.pexels.com/photos/5480781/pexels-photo-5480781.jpeg)
+
+<stepper title="Testiranje performansi kroz SAP Activate" steps="Explore|Realize|Prije UAT-a|Cutover|Hypercare" bodies="Prepoznajte rizike performansi u dizajnu. Arhitektura i oblik izvještaja odlučuju o ishodu prije nego što je napisan kod.|Provodite testove volumena i opterećenja kako se konfiguracija stabilizira. Djelomična konfiguracija daje zavaravajuće rezultate.|Dovršite puni ciklus performansi prije UAT-a, a ne kao dio njega.|Odobrite cutover prema unaprijed dogovorenim kriterijima prihvaćanja, a ne prema mišljenju.|Pratite žive KPI-jeve 30 do 60 dana. Većina regresija izlazi na vidjelo u prvom ciklusu zatvaranja."></stepper>
+
+## Zašto je S/4HANA promijenio testiranje performansi
+
+U ECC sustavu na tradicionalnoj bazi podataka testiranje performansi značilo je testiranje opterećenja aplikacijskog poslužitelja i baze podataka: ABAP runtime, SQL performanse, raspoređivanje poslova. Prednji sloj bio je SAP GUI, koji rijetko koga iznenadi.
+
+Na S/4HANA, s Fiori prednjim slojem, proširenjima na SAP BTP-u i integracijom preko SAP Cloud Integration (CPI), performanse ovise o više slojeva istodobno. Spora Fiori pločica može biti dugotrajan ABAP poziv, istek vremena gatewaya, OData servis koji nije dizajniran za istodobne zahtjeve ili mrežna latencija u hibridnom okruženju. Testiranje samo pozadinskog sustava to neće pronaći. Testiranje cijelog puta hoće.
+
+<explainer-flow title="Gdje se može skrivati spora Fiori pločica" caption="Svaki sloj može proći sam za sebe. Testiranje od početka do kraja prati cijeli put, a upravo na to korisnik zapravo čeka." steps="Pokretanje pločice|OData poziv|ABAP obrada|Čitanje iz baze podataka|Prikaz" notes="Navala prijava na početku smjene|Istek vremena gatewaya, servisi nisu građeni za istodobnost|Dugotrajni ABAP pozivi|Neograničeni odabiri na velikim tablicama|Plus mrežna latencija za udaljene lokacije" result="Jedno vrijeme odziva, mjereno od početka do kraja"></explainer-flow>
+
+Integracijski tokovi dodaju vlastiti rizik. Tokovi koji su radili u razvoju i QA-u s pojedinačnim testnim porukama mogu se zagušiti ili tiho pasti pri produkcijskim volumenima. Ako redovi poruka nisu dimenzionirani za stvarno opterećenje, kašnjenja se nakupljaju. Simptomi izgledaju kao nešto drugo: povremeni neuspjesi narudžbi, nepodudaranja računa, podaci prisutni u jednom sustavu i nedostajući u drugom.
+
+## Četiri testa koja su važna
+
+1. **Testiranje opterećenja (load testing)** provjerava ponašanje pod očekivanim volumenom. Ključna riječ je očekivanim. Trebaju Vam stvarni volumeni transakcija, broj korisnika i istodobne sesije. Mnogi testovi opterećenja ne uspiju jer su koristili procjene volumena za koje su svi već znali da su optimistične.
+2. **Stres testiranje (stress testing)** gura iznad projektiranih granica kako bi pronašlo gdje se sustav lomi. Ako će se volumeni udvostručiti za osamnaest mjeseci, govori Vam hoće li se arhitektura nositi s time i postaje li dimenzioniranje problem prije sljedećeg pregleda infrastrukture.
+3. **Dugotrajno testiranje (soak testing)** pokreće stalno opterećenje tijekom duljeg razdoblja kako bi otkrilo probleme koji se nakupljaju s vremenom: curenje memorije, fragmentaciju i sukobe lanaca poslova kroz ponovljena izvođenja. To je test koji se najčešće preskače i onaj koji bi uhvatio neuspjeh mjesečnog zatvaranja opisan niže.
+4. **Testiranje od početka do kraja (end-to-end)** prati cijeli put koji korisnik prolazi: pokretanje pločice, OData poziv, ABAP obrada, čitanje iz baze podataka, prikaz. To je jedini način da se pronađu problemi koji su nevidljivi kada se svaki sloj testira zasebno.
+
+## Scenariji visokog rizika
+
+**Promjena smjene i vršne prijave.** Kada 200 korisnika u 8 ujutro otvori Fiori launchpad, autentifikacija i prikaz launchpada naglo skaču. Sustav koji je u redu izvan vršnih sati može biti neupotrebljiv u tom prozoru ako istodobne prijave nikad nisu testirane. U proizvodnji, maloprodaji i financijskim uslugama navale prijava izazivaju najvidljivije pritužbe prvog dana.
+
+**Mjesečno i godišnje zatvaranje.** Scenarij s najvišim rizikom na većini programa: knjiženja velikog volumena, lanci poslova sa strogim redoslijedom i financijski tim koji se utrkuje s fiksnim rokom. Pokrenite lance poslova zatvaranja od početka do kraja uz volumene razdoblja zatvaranja, a ne prosječne dnevne količine.
+
+Batch poslovi obično se testiraju izolirano, što ne odražava stvarnost. Pri mjesečnom zatvaranju pozadinska obrada doseže vrhunac, a mnogo programa radi paralelno na istim resursima. Jedan loše optimiziran posao može blokirati pet drugih, a zatvaranje prelazi svoj prozor.
+
+**Konverzija s ECC-a na S/4HANA.** Stabilan ECC kod ponaša se drukčije na HANA-i. Mnogi programi postaju znatno brži; neki daju neočekivane profile na određenim obrascima podataka. Regresijsko testiranje specifično za konverziju nije neobavezno. Moj [vodič za migraciju s ECC-a na S/4HANA](/hr/ecc-to-s4hana-migration/) obrađuje gdje se to uklapa u plan konverzije.
+
+**Korisnici u više regija.** Mrežna latencija utječe na svaku transakciju. Prodajna narudžba koja traje dvije sekunde u zemlji hostinga može djelovati pokvareno 3.000 milja dalje ako nitko nije testirao odande. RISE prenosi hosting na SAP, ali latencija i dalje ovisi o regiji koju odaberete i usmjeravanju prema Vašim korisnicima.
+
+## Kriteriji prihvaćanja prema kojima možete testirati
+
+Kriterije dogovorite s poslovnom stranom u fazi Prepare, prije nego što se pokrene ijedan test. Svaki imenuje transakciju ili posao, opterećenje i prag. Ovi primjeri pokazuju oblik; vlastite brojeve postavite prema operativnim potrebama:
+
+| Stavka | Uvjet opterećenja | Prag prolaza | Vlasnik |
+|---|---|---|---|
+| Kreiranje prodajne narudžbe (VA01 ili Fiori aplikacija) | 150 istodobnih korisnika unosa narudžbi | Ispod 3 sekunde za 95 posto transakcija | Vlasnik procesa od narudžbe do naplate |
+| Prvo učitavanje Fiori launchpada na početku smjene | Vršne istodobne prijave za najveću smjenu | Ispod 5 sekundi za 95 posto korisnika | Voditelj IT operacija |
+| Lanac poslova mjesečnog zatvaranja | Volumeni razdoblja zatvaranja, cijeli slijed | Završava unutar dogovorenog prozora zatvaranja bez prekida | Financijski kontroler |
+| Sučelje za dolazne narudžbe | Vršni satni volumen poruka | Nema zaostatka u redu starijeg od 15 minuta | Voditelj integracija |
+| Prilagođeni izvještaj velikog volumena | Puni volumen produkcijskih podataka, tipičan odabir | Ispod 60 sekundi; neograničeni odabiri blokirani | Vlasnik izvještaja |
+
+Tvrdnja „sustav treba biti dovoljno brz za poslovne operacije” ne može se ni testirati ni prihvatiti. Mijenjanje kriterija nakon što rezultati stignu poništava smisao njihova postojanja.
+
+## Što IT čelnici trebaju očekivati od svojih timova
+
+Zatražite svaku od ovih stavki po imenu:
+
+| Očekivanje | Što treba isporučiti | Zašto je važno |
+|---|---|---|
+| Razine usluge performansi | Pragovi po transakciji, sučelju i poslu, s prolazom i padom | Sprječava da mišljenje iz UAT-a nadjača dokaze |
+| Opseg temeljen na riziku | Prioritizacija prema broju korisnika, integracijskim točkama i ovisnosti o podacima | Usmjerava cikluse testiranja na opterećenja koja su važna |
+| Sudjelovanje svih timova | Basis, infrastruktura, funkcionalni, sigurnosni i integracijski timovi prisutni tijekom izvođenja | Sprječava prebacivanje krivnje kada se pojave praznine |
+| Alati i okruženja spremni | Generatori opterećenja (OpenText LoadRunner, Tricentis NeoLoad, Apache JMeter), nadzor i osvježavanje podataka postavljeni prije početka ciklusa | Čini simulaciju realističnom |
+| Realistični testni podaci | Matični podaci produkcijskog volumena, stvarni pozivi sučelja, reprezentativna mješavina transakcija | Čini rezultate prediktivnima za ponašanje pri puštanju u rad |
+| Izvještavanje o performansama | Mješavina opterećenja, vremena odziva, CPU i memorija, trajanja poslova, stope pogrešaka | Daje odobrenju cutovera dokaznu osnovu |
+| Plan nadzora nakon puštanja u rad | KPI-jevi za praćenje prvih 30 do 60 dana | Potvrđuje da živi sustav ostaje unutar testiranih granica |
+
+## Česte pogreške
+
+Četiri pogreške javljaju se najčešće, čak i u velikim poduzećima sa zrelim modelima isporuke.
+
+**Funkcionalno testiranje smatrati testiranjem performansi.** Funkcionalni testovi dokazuju da transakcija daje ispravan rezultat. Ne govore ništa o 150 ljudi koji je pokreću istodobno.
+
+**Testiranje s malim volumenima podataka.** Kupac s 200.000 otvorenih stavki narudžbi ponaša se drukčije od onoga s 5.000. Filteri koji u testu odmah vrate rezultat u produkciji istječu. Napunite volumen za područja visokog rizika.
+
+**Prepuštanje performansi timu za Basis.** Basis je odgovoran za dimenzioniranje i raspoređivanje poslova. Nije odgovoran za dizajn izvještaja, arhitekturu OData servisa ni dizajn integracijskih tokova, a upravo oni pokreću performanse aplikacije.
+
+**Vlasništvo samo za QA.** QA izvodi testove i izvještava o rezultatima. Odluke koje uzrokuju probleme s performansama donose funkcionalni, tehnički i Basis timovi u dizajnu. Voditelj testiranja ili arhitekt na razini programa treba ovlasti da rano ospori te odluke, a RACI matrica treba reći tko može blokirati puštanje u rad zbog performansi.
+
+## Što se mijenja uz RISE, GROW i AI
+
+### RISE dijeli odgovornost
+
+Uz RISE with SAP, SAP je vlasnik infrastrukture: dimenzioniranja, regije hiperskalera, mreže i dostupnosti platforme. Klijent i partner vlasnici su aplikacijskog sloja. SAP-ov [dokument o ulogama i odgovornostima u RISE-u](https://assets.cdn.sap.com/agreements/product-policy/hec/roles-responsibilities/rise-with-sap-s4hana-cloud-private-edition-and-sap-erp-pce-roles-and-responsibilities-english-v7-2024a.pdf) to jasno kaže: pronalaženje i podešavanje skupih SQL naredbi ostaje na kupcu, osim ako kupite SAP-ove dodatne aplikacijske usluge.
+
+Čest neuspjeh na RISE programima je pretpostavka da će SAP uhvatiti probleme s performansama jer vodi infrastrukturu. Uhvatit će probleme s infrastrukturom. Neće uhvatiti loše dizajniran OData servis, neučinkovit ABAP posao ni integracijski tok koji se ne skalira. Podjelu upišite u povelju i plan testiranja:
+
+1. **SAP:** dostupnost infrastrukture i odziv na razini platforme
+2. **Partner:** performanse aplikacije pod definiranim opterećenjem, uključujući proširenja i integracijske tokove
+3. **Klijent:** ishodi na razini procesa, poput trajanja zatvaranja i protoka narudžbi, te odluka o prihvaćanju
+
+### Public Edition i GROW sužavaju opseg
+
+Na S/4HANA Cloud Public Edition, koji se obično kupuje preko GROW with SAP, SAP provodi testiranje performansi na svojoj višenajamnoj platformi kao dio vlastitog standarda proizvoda i ne očekuje da kupci testiraju opterećenje zajedničkog sustava. Vaše testiranje prelazi na ono što je Vaše: prilagođene integracije, proširenja, izvještaje i analitiku velikog volumena, slijed zatvaranja i konsolidacije te mrežni put s Vaših lokacija. Problemi s performansama same platforme idu SAP podršci.
+
+### AI pomaže sa skriptama, ne s arhitekturom
+
+Dobavljači alata za testiranje opterećenja dodaju AI za održavanje skripti i analizu rezultata, što pomaže na programima gdje se aplikacija mijenja između ciklusa. Tvrdnje provjerite na vlastitom krajoliku prije nego što ih platite. SAP Cloud ALM može pomoći u generiranju testnih slučajeva i zahtjeva, a AI asistenti mogu izraditi nacrte scenarija iz opisa procesa.
+
+Ništa od toga ne popravlja arhitekturu. AI Vam neće reći da je OData servis trebalo drukčije dizajnirati ni da je izvještaj pretežak za svoje volumene. Te odluke i dalje donose ljudi, u dizajnu, prije nego što se pokrene ijedan test.
+
+Većina programa s problemima performansi u produkciji nije potpuno preskočila testiranje. Testirali su bez dogovorenih kriterija ili su testirali pa prihvatili praznine kao poznate probleme pod pritiskom rasporeda. Disciplina je u kriterijima i njihovu provođenju, a ne u alatu. Gdje se performanse uklapaju među druge vrste testova, pogledajte moju [usporedbu SAP alata za testiranje i validaciju](/hr/sap-testing-validation-tools-comparison/) i moj vodič o [SAP kontrolnim točkama kvalitete (quality gates)](/hr/sap-quality-gates-implementation/).
+
+## Često postavljana pitanja
+
+<details>
+<summary>Što je testiranje performansi SAP-a i zašto je važno?</summary>
+
+Provjerava kako se SAP ponaša pod realističnim opterećenjem: vremena odziva za korisničke transakcije, trajanja pozadinskih poslova, propusnost sučelja i potrošnju resursa pri istodobnom radu.
+
+Funkcionalna ispravnost i performanse različita su svojstva. Transakcija koja je ispravna za jednog korisnika može isteći za 200. Posao koji traje deset minuta na testnim podacima može trajati satima na produkcijskim volumenima. Otkrivanje toga nakon puštanja u rad remeti poslovanje, prisiljava na hitne promjene i narušava povjerenje korisnika kada je usvajanje najkrhkije.
+
+</details>
+
+<details>
+<summary>Kada u SAP programu treba započeti testiranje performansi?</summary>
+
+Prepoznavanje rizika počinje u fazi Explore, jer arhitektonski izbori određuju ishod performansi. Aktivno testiranje počinje u fazi Realize, kada je konfiguracija dovoljno stabilna da rezultati nešto znače. Djelomična konfiguracija daje zavaravajuće brojke.
+
+Završni ciklus dovršite prije UAT-a, a ne tijekom njega. Nedostaci performansi pronađeni u UAT-u stišću preostali raspored i stvaraju pritisak da ih se prihvati kao poznate probleme.
+
+</details>
+
+<details>
+<summary>Tko treba biti vlasnik testiranja performansi SAP-a?</summary>
+
+Program, a ne samo QA. QA izvodi testove i izvještava, ali odluke koje pokreću performanse donose se u dizajnu kroz funkcionalne, tehničke i Basis timove. Središnji arhitekt ili voditelj testiranja programa treba ovlasti da rano ospori te odluke.
+
+Neka bude izričito u RACI matrici: tko odobrava kriterije prihvaćanja, tko je vlasnik otklanjanja kada kriteriji ne prođu i tko može blokirati puštanje u rad zbog performansi.
+
+</details>
+
+<details>
+<summary>Kako RISE with SAP mijenja odgovornost za testiranje performansi?</summary>
+
+SAP je vlasnik infrastrukture: dimenzioniranja, regije, mreže i dostupnosti platforme. Klijent i partner vlasnici su performansi aplikacije: konfiguracije, proširenja, OData i Fiori dizajna, integracijskih tokova i procesnih KPI-jeva. SAP-ov dokument o ulogama i odgovornostima u RISE-u ostavlja podešavanje SQL-a kupcu, osim ako se kupe dodatne SAP usluge.
+
+Podjelu upišite u kriterije prihvaćanja kako bi svaki prag imao vlasnika.
+
+</details>
+
+<details>
+<summary>Koji su najčešći problemi s performansama SAP Fiori?</summary>
+
+Četiri obrasca pokrivaju većinu. Navale prijava na početku smjene, kada autentifikacija i prikaz launchpada naglo skaču. OData servisi koji vraćaju velike skupove rezultata ili upućuju nekoliko poziva pozadinskom sustavu po interakciji. Gateway sloj koji sam postaje usko grlo, pa ga treba pratiti tijekom testova. I prilagođene ili jako izmijenjene aplikacije, gdje standardne pretpostavke o performansama ne vrijede.
+
+</details>
+
+<details>
+<summary>Kako definirati kriterije prihvaćanja performansi za SAP?</summary>
+
+Imenujte transakciju, opterećenje i prag. Na primjer: „Kreiranje narudžbe završava za manje od 3 sekunde za 95 posto transakcija uz 150 istodobnih korisnika u ulozi unosa narudžbi.” To je moguće testirati.
+
+„Sustav treba biti dovoljno brz” nije. Kriterije dogovorite s poslovnom stranom u fazi Prepare, na temelju stvarnih operativnih potreba, i ne mijenjajte ih nakon što rezultati stignu.
+
+</details>
+
+<details>
+<summary>Što se događa ako se testiranje performansi preskoči ili sabije?</summary>
+
+Problemi izlaze u produkciji: poslovi koji prekoračuju svoje prozore i blokiraju druge, Fiori aplikacije koje istječu u vršnim satima, mjesečno zatvaranje koje traje dvostruko dulje i propušta rokove izvještavanja, redovi sučelja koji se zagušuju.
+
+Korisnici koji naiđu na probleme s performansama u prvim tjednima stvaraju negativan stav o sustavu koji je teško preokrenuti. A hitno otklanjanje u živom radu košta više nego što bi koštalo testiranje, jer ono što je u fazi Realize bila odluka o dizajnu postaje hitna arhitektonska promjena.
+
+</details>

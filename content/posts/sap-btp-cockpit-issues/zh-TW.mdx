@@ -1,0 +1,194 @@
+---
+title: "SAP BTP Cockpit 常見問題：五個問題與解決方式"
+h1: "SAP BTP Cockpit 常見問題：五個問題與解決方式"
+slug: "sap-btp-cockpit-issues"
+date: "2025-06-24"
+updated: "2026-10-07"
+hero: "/images/wp/2025/06/3.webp"
+heroAlt: "從背後看一位開發人員在桌上型螢幕前寫程式，旁邊放著一台筆記型電腦"
+category: "sap-modules"
+tags: ["sap-technical-decisions", "sap-btp", "sap-cap", "sap-integration-suite"]
+author: "Noel D'Costa"
+metaTitle: "2026 年 SAP BTP Cockpit 問題：5 個常見狀況與解法"
+metaDescription: "SAP BTP Cockpit 問題與解法：401 權杖錯誤、Integration Suite 的 Internal Server Error、失效連結、CAP 的 Destination 失敗，以及試用帳戶中停止運作的應用程式。"
+excerpt: "SAP BTP Cockpit 有五個問題一再出現：401 權杖錯誤、Integration Suite 錯誤、失效連結、CAP 的 Destination 失敗，以及一夜之間停擺的試用應用程式。以下說明每一種該先檢查什麼。"
+experienceSource: "Direct experience working with SAP BTP Cockpit across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets, covering integration, CAP application deployment, and destination configuration in both trial and production subaccount environments. 2026 BTP Cockpit issues verified against current Cloud Foundry runtime."
+lastReviewed: "2026-05-21"
+keyTakeaways:
+  - "使用服務金鑰（service key）憑證卻出現 401 錯誤，通常是 OAuth 的問題：授權類型錯誤、權杖 URL 錯誤或缺少權限（authorities），而不是密碼錯誤"
+  - "Integration Suite 的 Internal Server Error 多半源自缺少角色集合（role collection）或過期的工作階段：指派角色，然後完整登出再重新登入"
+  - "當子帳戶結構在設定之後改變，Booster 與圖磚的連結就會失效：請透過 Cockpit 樹狀結構導覽，並把直接網址加入書籤"
+  - "CAP 的 destination 失敗通常是 cds.requires 或 xs-app.json 中的名稱不一致、缺少 Destination 或 XSUAA 繫結，或是 OData kind 設錯"
+  - "試用與免費方案的 SAP HANA Cloud 執行個體每晚都會停止：昨天還能運作的應用程式，可能只是失去了它的資料庫"
+pullQuote: "SAP BTP Cockpit 在出問題時給的回饋很少。大部分的除錯都靠反覆試錯。了解這些模式，就能省下好幾個小時。"
+mentions:
+  - "SAP BTP"
+  - "SAP Integration Suite"
+  - "SAP CAP"
+  - "SAP HANA"
+  - "Cloud Foundry"
+  - "RISE with SAP"
+originalUrl: "https://noeldcosta.com/sap-btp-cockpit-issues/"
+canonicalUrl: "https://noeldcosta.com/zh-TW/sap-btp-cockpit-issues/"
+locale: "zh-TW"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+如果 SAP BTP Cockpit 一直對您丟出錯誤，原因大概是這五種之一。服務金鑰（service key）出現 401，幾乎都是 OAuth 請求的問題，而不是憑證本身。Integration Suite 出現 Internal Server Error，通常表示缺少角色集合（role collection）或工作階段已過期。失效的連結，來自子帳戶變更之前所設定的 Booster。CAP 的 destination 失敗，通常是名稱不一致或缺少繫結。而昨天還能運作的試用帳戶應用程式，可能在一夜之間失去了它的資料庫。這份指南寫給在 Cloud Foundry 子帳戶中工作的開發人員與整合顧問。下方的分流表會告訴您該先檢查什麼。
+
+我第一次在 SAP BTP Cockpit 看到紅色錯誤橫幅時，以為是我哪裡做錯了。連結錯了，或是工作階段過期了。
+
+到了第三、四次，就很清楚不只是我的問題。
+
+接下來的幾週，我準備了一本筆記本，每次有東西壞掉就記下來。開啟 Integration Suite 時的 Internal Server Error。看起來有效、卻拒絕連線的 destination。昨天還能運作、今天卻卡住的應用程式。模式慢慢浮現。其中很少有文件寫在有用的地方，而 Cockpit 本身幾乎沒給您什麼線索。
+
+## 分流：從症狀到第一個檢查項目
+
+| 症狀 | 最可能的原因 | 先檢查 |
+|---|---|---|
+| 使用服務金鑰呼叫 API 時出現 401 Unauthorized | 授權類型、權杖 URL 錯誤，或缺少權限 | 解碼權杖並查看 `aud` 與 `scope` |
+| 開啟 Integration Suite 時出現 Internal Server Error | 缺少角色集合或工作階段過期 | 先看您使用者的角色集合，再完整登出 |
+| Booster 或圖磚開啟空白頁或錯誤的頁面 | Booster 執行後，子帳戶發生了變更 | 改為透過 Cockpit 樹狀結構導覽 |
+| CAP 應用程式：「destination not found」或驗證錯誤 | 名稱不一致、缺少繫結、OData kind 錯誤 | 對照 Cockpit 中的名稱，檢查 `cds.requires` 與 `xs-app.json` |
+| 昨天還能運作，今天卻卡住（試用） | HANA Cloud 執行個體在一夜之間停止 | 在 SAP HANA Cloud Central 查看資料庫執行個體狀態 |
+
+## 2024 至 2026 年間，BTP 有什麼改變
+
+Cloud Foundry、Kyma 與 ABAP 環境都運行在 SAP 的多雲基礎架構上，這自 2020 年起就是新客戶的預設選項。較舊的 Neo 環境只提供安全性與法遵更新，SAP 已把它的終止日訂在 2028 年 12 月 31 日。下列幾乎每個問題，都是 Cloud Foundry 的問題。
+
+有兩項更名，仍然會讓閱讀舊指南的人困惑。SAP Launchpad service 在 2023 年 1 月更名為 SAP Build Work Zone, standard edition。而且隨著 SAP Build 的擴展，許多圖磚與 Booster 都被重新建置，所以 2022 年的螢幕截圖，常常已經和您現在看到的不一樣。
+
+在 RISE with SAP 上，BTP 通常以合約內的點數制權利（credit-based entitlement）形式提供。Cockpit 是一樣的。不同的是貴組織中誰控制全域帳戶，所以請在需要新權利之前，就先找出那個人。
+
+## 問題 1：使用服務金鑰憑證出現 401 unauthorized
+
+您建立服務執行個體、產生服務金鑰、把 client ID 與 secret 複製到 Postman、加上權杖 URL，然後送出請求。401。沒有任何細節。
+
+您再複製一次 secret。還是失敗。服務沒有問題。有問題的是 OAuth 流程。
+
+**依序檢查：**
+
+1. **授權類型（grant type）。** 對多數 BTP 服務 API 的技術存取，使用的是 `client_credentials`。請在 Postman 中明確設定。不要相信預設值。
+2. **權杖 URL。** 從服務金鑰中取得。有些金鑰會給 `tokenurl`；有些則給 XSUAA 的 `url`，需要在後面加上 `/oauth/token`。切勿借用其他子帳戶的。
+3. **標頭。** 直接呼叫權杖時，請送出 `Content-Type: application/x-www-form-urlencoded` 與 `Authorization: Basic <base64(clientid:clientsecret)>`。
+4. **權限（authorities）。** 使用 client credentials 時，權杖只帶有授予該服務執行個體的範圍（scope）。如果 API 需要執行個體所沒有的角色，您仍然會拿到權杖，API 仍然會拒絕。請在執行個體參數中修正（例如 Integration Suite API 方案執行個體上的角色），而不是在請求中。
+5. **對象（audience）。** 如果您拿到權杖卻被 API 拒絕，請解碼權杖並查看 `aud` 宣告。如果它與您呼叫的 API 不符，代表您用的是錯誤服務執行個體的金鑰。
+
+## 問題 2：開啟 Integration Suite 時出現 Internal Server Error
+
+您開啟 Integration Suite，看到紅色的「Internal Server Error」橫幅。沒有日誌。重新載入、換瀏覽器，結果都一樣。
+
+這通常發生在服務閒置一段時間之後：早上開啟、擱了幾個小時、稍後再用。SAP 的社群討論串與知識庫指向兩個常見原因：缺少角色集合，以及過期的工作階段。
+
+**通常能解決問題的做法：**
+
+1. **檢查角色集合。** 您的使用者需要 `Integration_Provisioner` 來設定租戶（tenant），以及相關的 `PI_` 角色集合（管理員、整合開發人員、業務專家）才能在其中工作。請在子帳戶的 Security 下指派。
+2. **完整登出。** 角色變更只有在重新登入後，才會套用到您的工作階段。關閉所有 BTP 與 Integration Suite 的分頁，登出，再重新登入。
+3. **清除 BTP 網域的 cookie**（如果重新登入後錯誤依然存在）。過期的工作階段 cookie，可能比工作階段本身存活得更久。
+4. **只使用一個 Cockpit 工作階段。** 在同一個子帳戶上開多個分頁或瀏覽器設定檔，會造成與這個錯誤一模一樣的工作階段衝突。
+
+真正的問題在於可視性。Cockpit 完全沒告訴您是什麼失敗了，所以您只能猜。請改為依序處理上面的清單。若想更全面了解整合專案為何停滯，請參閱我談 [SAP Integration Suite 交付延誤](/zh-TW/sap-integration-suite-delivery-delays/)的文章。
+
+## 問題 3：導覽損壞與失效連結
+
+您按下「Go to Application」，得到空白畫面、一個通用的登陸頁，或是毫無道理的重新導向。
+
+這有規律可循：
+
+1. Booster 的連結，會在 Booster 執行後子帳戶的設定改變時失效。重新導向指向一個已不存在的地方。
+2. Integration Suite 的圖磚有時能用、有時出錯、有時逾時，通常是前面說的工作階段原因。
+3. 當訂閱存在、但您的使用者缺少該站台的角色集合時，SAP Build Work Zone 的連結會顯示「connection denied」。
+4. 多個分頁或瀏覽器設定檔，會在已過期的情境中開啟連結。
+
+有用的做法：透過 Cockpit 樹狀結構導覽（子帳戶，然後是 Services，再到 Instances and Subscriptions），並把 Integration Suite、destination 與 Work Zone 的直接網址加入書籤。在乾淨的瀏覽器設定檔中使用單一工作階段。當一個連結每三次就失敗一次，您就會不再信任這個平台，開始想辦法繞過。書籤是最便宜的變通辦法。如果您還在摸索環境，我的 [BTP Cockpit 導覽](/zh-TW/master-the-sap-btp-cockpit-simple-steps/)涵蓋了基本的導覽方式。
+
+## 問題 4：CAP 應用程式中的 Destination 失敗
+
+您部署了 CAP 應用程式，在 Cockpit 中設定了 destination，但請求仍然失敗，出現「destination not found」或驗證錯誤。destination 有列出來。應用程式在執行。錯誤訊息卻沒有指向任何有用的地方。
+
+[SAP 的 CAP 文件](https://cap.cloud.sap/docs/guides/services/consuming-services)清楚說明了這應該如何串接：遠端服務在 `package.json`（或 `.cdsrc.json`）的 `cds.requires` 下宣告，並指定 `kind`，destination 名稱則放在 `credentials.destination` 之下。應用程式還需要同時繫結到 Destination 服務與 XSUAA。多數失敗，都是這條鏈中某處斷了。
+
+<explainer-flow title="CAP 的 destination 鏈" caption="名稱錯誤、缺少繫結或 OData kind 設錯，都會讓其中一環斷掉，而錯誤訊息很少告訴您是哪一環。" steps="cds.requires|production 設定檔|服務繫結|Cockpit 中的 Destination|遠端服務" notes="宣告遠端服務、它的 kind 與 destination 名稱|部署後保存 destination 憑證|應用程式已繫結到 Destination 與 XSUAA|名稱與 cds.requires 及 xs-app.json 中的相同，包含大小寫|V2 服務用 odata-v2，V4 用 odata" result="請求抵達遠端服務"></explainer-flow>
+
+| 症狀 | 解法 |
+|---|---|
+| Destination 有列出，但應用程式找不到 | 逐字元比對 `cds.requires` 與 `xs-app.json` 路由中的名稱和 Cockpit 中的名稱，包含大小寫 |
+| 本機可以，部署後失敗 | 檢查 `[production]` 設定檔是否真的保存了 destination 憑證，以及應用程式是否繫結到 Destination 與 XSUAA |
+| 遠端 OData V2 服務傳回錯誤 | V2 服務把 `kind` 設為 `odata-v2`，V4 則設為 `odata`。只要雙方都允許，就使用 V4 |
+| UI5 應用程式需要 V2，但您的 CAP 服務是 V4 | 加入 `@cap-js-community/odata-v2-adapter` 外掛。較舊的 `@sap/cds-odata-v2-adapter-proxy` 已被淘汰 |
+| 憑證有效，驗證卻失敗 | 先從 `OAuth2ClientCredentials` 或 `BasicAuthentication` 開始。只有在情境需要時，才使用 SAML 或主體傳遞（principal propagation） |
+| 不確定目標是否可連線 | 在對應用程式除錯之前，先在 Cockpit 對該 destination 使用「Check Connection」 |
+
+處理得好的團隊，會為每個應用程式維護一份簡短的 destination 檢查清單。不是因為設定很複雜，而是因為對名稱、繫結或 OData kind 的一個錯誤假設會默默失敗，找出它所花的時間，遠比預防它要長。
+
+## 問題 5：在試用與免費方案中一夜之間停擺的應用程式
+
+一個昨天還能運作的 CAP 應用程式，現在卡住了。沒有錯誤。Cockpit 顯示它正在執行。您重新啟動它。沒有用。
+
+先檢查資料庫。SAP 自己的 [HANA Cloud 試用教學](https://developers.sap.com/tutorials/hana-cloud-mission-trial-1)指出，免費方案的執行個體每晚都會停止，您工作的每一天都必須重新啟動。試用帳戶本身，只要您定期登入，最長可維持 90 天。您的應用程式沒問題。它的資料庫在睡覺。
+
+**有幫助的做法：**
+
+1. 在開始對程式碼除錯之前，先從 SAP HANA Cloud Central 重新啟動 HANA Cloud 執行個體。
+2. 使用 CLI（`cf apps`、`cf services`）來查看記憶體與服務的使用量。Cockpit UI 顯示的少得多。
+3. 在建立新的服務執行個體之前，先刪除未使用的。試用配額是套用在整個帳戶上，而不只是單一應用程式。
+4. 把展示與測試的工作負載放在不同的子帳戶中。
+
+如果您需要多於一個應用程式與資料庫穩定運行，或是展示需要穩定的運行時間，請改用正式帳戶。正式帳戶中的免費方案可以升級為付費方案而不遺失您的工作，試用帳戶則做不到。
+
+## 常見問題
+
+<details>
+<summary>為什麼 SAP BTP 服務金鑰憑證看起來正確，卻仍出現 401 錯誤？</summary>
+
+幾乎都是 OAuth 請求的問題，而不是憑證。常見原因是授權類型錯誤（技術存取請使用 `client_credentials`）、權杖 URL 與服務金鑰不符，或權杖呼叫的標頭有誤。
+
+如果您拿到了權杖，API 仍然拒絕，請解碼它。檢查 `aud` 宣告是否與 API 相符，並檢查範圍（scope）。使用 client credentials 時，範圍來自授予服務執行個體的權限，因此請在執行個體參數中修正缺少的角色。
+
+</details>
+
+<details>
+<summary>是什麼原因讓 BTP Cockpit 中開啟 Integration Suite 時出現 Internal Server Error？</summary>
+
+最常見的是缺少角色集合或工作階段過期。請確認您的使用者擁有 `Integration_Provisioner` 以及您需要的 `PI_` 角色集合。接著關閉所有 BTP 分頁、登出，再重新登入，因為新的角色只有在重新登入後才會生效。
+
+如果問題持續，請清除 BTP 網域的 cookie，並只維持單一 Cockpit 工作階段。在同一個子帳戶上開多個分頁，會觸發相同的錯誤。
+
+</details>
+
+<details>
+<summary>為什麼我的 CAP 應用程式無法連到 Cockpit 中看起來正確的 destination？</summary>
+
+通常是名稱不一致。`cds.requires` 與您 `xs-app.json` 路由中的 destination 名稱，必須與 Cockpit 完全一致，包含大小寫。
+
+如果名稱正確，請檢查應用程式是否同時繫結到 Destination 服務與 XSUAA、`[production]` 設定檔是否帶有憑證，以及 `kind` 是否與遠端服務相符：V2 用 `odata-v2`，V4 用 `odata`。請使用 Cockpit 中的「Check Connection」確認目標可連線。
+
+</details>
+
+<details>
+<summary>為什麼我的 SAP BTP 試用應用程式一夜之間就不能用了？</summary>
+
+在試用與免費方案中，SAP HANA Cloud 執行個體每晚都會停止以節省資源。您的應用程式仍在執行，卻連不到它的資料庫。每天工作之前，請先在 SAP HANA Cloud Central 重新啟動執行個體。
+
+請使用 `cf apps` 與 `cf services` 檢查記憶體與服務的使用量，因為試用配額在 Cockpit 中很難看到。在建立新的執行個體之前，先刪除未使用的。
+
+</details>
+
+<details>
+<summary>為什麼 Booster 與圖磚中的連結會導向空白頁？</summary>
+
+當子帳戶結構在 Booster 執行後改變時，Booster 的連結就會失效。重新導向指向一個已不存在或從未完整設定的位置。
+
+請改為透過 Cockpit 樹狀結構導覽，並把 Integration Suite、destination 與 SAP Build Work Zone 的直接網址加入書籤。凡是日常使用的東西，都不要倚賴 Booster 產生的導覽。
+
+</details>
+
+<details>
+<summary>我應該何時從 BTP 試用帳戶轉為付費方案？</summary>
+
+當這些限制開始耗費您的時間時。如果您執行多於一個應用程式或資料庫，或是展示或測試需要穩定的運行時間，試用帳戶造成的摩擦，會多過它省下的。
+
+主要的好處是穩定性與更清楚的資源可視性，而不是新功能。附有免費方案的正式帳戶是一個不錯的中間步驟：您日後可以把這些方案升級為付費，而不必重新建置任何東西。
+
+</details>

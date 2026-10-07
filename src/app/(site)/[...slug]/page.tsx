@@ -16,9 +16,12 @@ import {
 } from "@/lib/content";
 import {
   SITE_URL,
+  buildArchiveMetadata,
   buildPostMetadata,
   buildPageMetadata,
 } from "@/lib/seo";
+import { buildLanguageAlternates } from "@/lib/seo-graph";
+import { NESTED_PREFIXES } from "@/lib/nested-routes";
 
 // Reserved single-segment slugs handled by dedicated routes
 // (e.g. /about/page.tsx). The catch-all skips these at depth 1 so the
@@ -71,7 +74,7 @@ function pathSegmentsFromOriginalUrl(url: string | undefined): string[] | null {
   }
 }
 
-export function generateStaticParams() {
+function collectParams(): { slug: string[] }[] {
   const postSlugs = getAllPostSlugs();
   const allPageSlugs = getAllPageSlugs();
   const pageSlugs = allPageSlugs.filter((s) => !RESERVED_SLUGS.has(s));
@@ -119,6 +122,16 @@ export function generateStaticParams() {
   return params;
 }
 
+// Nested English URLs under NESTED_PREFIXES are served by dedicated routes
+// (src/app/(site)/<prefix>/[...slug]/page.tsx). A two-segment English path
+// would otherwise be claimed by the localized /[locale]/[...slug] route and
+// 404. Same URLs, same rendering; only the owning route differs.
+export function generateStaticParams() {
+  return collectParams().filter(
+    (p) => !(p.slug.length > 1 && NESTED_PREFIXES.has(p.slug[0])),
+  );
+}
+
 export const dynamicParams = false;
 
 export async function generateMetadata(
@@ -130,22 +143,28 @@ export async function generateMetadata(
   // Category metadata wins for slugs that match a known category id.
   if (slug.length === 1 && isCategorySlug(lastSlug)) {
     const meta = CATEGORIES[lastSlug];
-    return {
+    return buildArchiveMetadata({
       title: `${meta.label} | Noel D'Costa`,
       description: meta.description,
-      alternates: { canonical: `${SITE_URL}/category/${meta.slug}/` },
-    };
+      canonical: `${SITE_URL}/category/${meta.slug}/`,
+    });
   }
 
   // Flat /case-studies/ index URL — borrows the sap-case-studies category
-  // metadata since both URLs render the same portfolio page.
+  // metadata since both URLs render the same portfolio page. Its translated
+  // variants (/de/case-studies/ etc.) are published, so it carries the same
+  // reciprocal hreflang set they do.
   if (slug.length === 1 && lastSlug === CASE_STUDIES_INDEX_SLUG) {
     const meta = CATEGORIES["sap-case-studies"];
-    return {
+    const casePage = getPage(CASE_STUDIES_INDEX_SLUG, "en");
+    return buildArchiveMetadata({
       title: `${meta.label} | Noel D'Costa`,
       description: meta.description,
-      alternates: { canonical: `${SITE_URL}/${CASE_STUDIES_INDEX_SLUG}/` },
-    };
+      canonical: `${SITE_URL}/${CASE_STUDIES_INDEX_SLUG}/`,
+      languages: casePage
+        ? buildLanguageAlternates("page", casePage)
+        : undefined,
+    });
   }
 
   const post = getPost(lastSlug, "en");

@@ -1,4 +1,5 @@
 import BookLeadsTable from "@/components/admin/BookLeadsTable";
+import Link from "next/link";
 import { requireAdmin } from "@/lib/supabase/auth";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { getAllBooks } from "@/lib/books";
@@ -43,12 +44,12 @@ function AccessDenied({ reason }: { reason?: string }) {
             ? "You need to sign in to see this page."
             : "This account does not have access."}
         </p>
-        <a
+        <Link
           href="/admin/login"
           className="inline-flex items-center justify-center bg-papaya text-corbeau font-bold text-[0.9rem] px-5 py-3 min-h-[44px] rounded-[10px] no-underline transition-all hover:bg-[#fb8843]"
         >
           Go to sign in
-        </a>
+        </Link>
       </div>
     </main>
   );

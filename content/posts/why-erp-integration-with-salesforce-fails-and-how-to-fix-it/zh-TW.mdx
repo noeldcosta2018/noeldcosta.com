@@ -1,0 +1,168 @@
+---
+title: "ERP 與 Salesforce 整合為何失敗，以及如何修正"
+h1: "ERP 與 Salesforce 整合為何失敗，以及如何修正"
+slug: "why-erp-integration-with-salesforce-fails-and-how-to-fix-it"
+date: "2025-04-07"
+updated: "2026-10-07"
+hero: "/images/wp/2025/04/ERP-Integratioin-with-CRM.webp"
+heroAlt: "戴著耳機的客服人員沿著共用桌面使用筆記型電腦工作"
+category: "erp-strategy"
+tags: ["sap-technical-decisions", "sap-integration", "salesforce-integration", "sap-integration-suite"]
+author: "Noel D'Costa"
+metaTitle: "2026 年 ERP 與 Salesforce 整合為何失敗與修正方法"
+metaDescription: "SAP 與 Salesforce 整合為何會失敗：資料同步過時、資料品質不佳、點對點整合氾濫，以及沒有人負責整個流程。附修正方法、中介軟體選項與規格範本。"
+excerpt: "多數 SAP 與 Salesforce 整合失敗的原因出在商業面而非技術面：資料太舊、太髒，或沒有人負責這條資料流。本文談失敗的模式、中介軟體選項，以及一份能預防這些問題的一頁規格範本。"
+experienceSource: "Direct experience advising on SAP-Salesforce integration projects across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets, including SAP Integration Suite engagements, middleware governance reviews, and post-go-live integration troubleshooting across manufacturing, financial services, and retail. Anchored stories: European B2B distributor 2023 (four-hour batch sync losing deals), European manufacturing 2024 (point-to-point integration unmanageable at five systems), GCC retail RISE 2024 (Integration Suite migration from PI/PO). Product facts (PI/PO maintenance, MuleSoft, Boomi) checked October 2026."
+lastReviewed: "2026-05-21"
+keyTakeaways:
+  - "最常見的失敗，是整合在技術上運作正常，在商業上卻是壞的。每隔幾小時批次同步一次的庫存資料，雖然是上線運作中的，對業務團隊卻毫無用處"
+  - "整合之前，先修正資料品質。Salesforce 中不良的客戶記錄，會變成 SAP 中不良的客戶記錄"
+  - "點對點整合一開始便宜，之後昂貴。超過三個系統，就會變得難以管理"
+  - "中介軟體（SAP Integration Suite、MuleSoft、Boomi）需要負責人與治理。若只把它當成管線，就會失敗"
+  - "每一次 Salesforce 發布與每一次 SAP 更新，都可能弄壞整合。沒有整合迴歸測試套件，您就會在正式環境中才發現"
+  - "明確規定同步失敗時會發生什麼。多數整合只針對成功路徑而設計"
+pullQuote: "技術上上線，不等於商業上能運作。即使系統之間只有一小時的落差，也可能造成報價錯誤，讓交易泡湯。"
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Integration Suite"
+  - "SAP BTP"
+  - "SAP SD"
+  - "Salesforce"
+  - "MuleSoft"
+  - "Boomi"
+  - "RISE with SAP"
+originalUrl: "https://noeldcosta.com/why-erp-integration-with-salesforce-fails-and-how-to-fix-it/"
+canonicalUrl: "https://noeldcosta.com/zh-TW/why-erp-integration-with-salesforce-fails-and-how-to-fix-it/"
+locale: "zh-TW"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP 與 Salesforce 整合通常因業務因素而失敗，而不是技術因素。同步照常執行，但資料對使用者要做的決策而言太舊，兩套系統對哪一筆客戶記錄才正確各執一詞，或是更新弄壞整合時，沒有人負責這條資料流。解法是從使用者的決策往回設計、先清理資料、選擇符合您規模的中介軟體，並讓每一條資料流都有負責人與失敗應變計畫。
+
+本文寫給把 Salesforce 連接到 SAP 的 CIO、銷售營運與整合負責人。內容涵蓋四種失敗模式、整合選項、可靠整合所需的條件，以及一份規格範本。
+
+我合作過一些企業，即使兩套系統之間只有一小時的落差，也造成報價錯誤而丟掉訂單。通常的原因，是沒有人問過業務代表要根據庫存資料報價，資料需要多新。
+
+整合可以是技術上運作正常，卻在商業上是壞的。這個區別，就是起點。
+
+## 為什麼 SAP 與 Salesforce 整合會失靈
+
+### 同步頻率與決策不符
+
+批次同步對某些資料沒問題。但對可承諾量庫存、價格或訂單狀態就不行，因為客戶期待立刻得到答案。
+
+失敗模式：整合團隊依對資料量在技術上方便的方式去建置，並以技術理由設定批次間隔。業務端沒有人去查這個頻率是否支撐使用者要做的決策。
+
+在規格化任何東西之前，先問一個問題：資料最舊可以到什麼程度，仍然有用？客戶主檔更新，每日一次可能就夠。對 B2B 銷售中的庫存可用量來說，超過十五分鐘就是問題。
+
+<explainer-flow title="每一條資料流需要多新鮮" caption="數值取自下方規格範本，僅供說明。請與使用資料的人，約定您自己的數值。" steps="客戶主檔|價格表|庫存可用量|成交商機|訂單狀態|發票與付款" notes="SAP 到 Salesforce，24 小時|SAP 到 Salesforce，1 小時|SAP 到 Salesforce，15 分鐘|Salesforce 到 SAP，即時|SAP 到 Salesforce，15 分鐘|SAP 到 Salesforce，24 小時" result="報價、訂單與發票一致"></explainer-flow>
+
+### 資料品質不一致
+
+如果 Salesforce 中的公司名稱，格式與 SAP 客戶主檔不同，每次同步都會產生需要人工修正的不一致。
+
+我合作過的團隊，每週花好幾個小時在 Salesforce 與 ERP 之間核對基本的客戶資訊，我也見過一些專案，光是對應客戶階層就花了好幾週，因為兩套系統對「account」的定義不同。這些系統多年來各自維護，已在沒有人對應過的地方漸行漸遠。
+
+整合之前先清理資料。聽起來顯而易見。它卻是最常被跳過的步驟。
+
+### 架構與規模不符
+
+點對點整合適用於兩個系統、少數資料流與穩定流程。它是最便宜的起步方式。
+
+它無法擴展。加上一個 SAP 模組、一個新的 Salesforce 事業單位或第三個系統，連線就會倍增。每一條都必須分別維護、測試與排除故障。
+
+中介軟體（SAP Integration Suite、MuleSoft、Boomi 或類似產品）提供一個受治理的單一層，具有集中監控與錯誤處理。取捨是需要在架構與治理上預先投資。部署了中介軟體卻沒有指定負責人的公司，最後的問題與點對點相同，外加一個沒有人了解的平台。
+
+### 缺乏整合治理
+
+每一次 Salesforce 發布與每一個 SAP 支援套件，都可能弄壞一條資料流：API 變更、新的驗證規則、欄位變更、新的認證要求。建好就被遺忘的整合，會在第一次沒有人做迴歸測試的升級中失敗。這是我最常看到的上線後失敗。
+
+## 整合選項
+
+**SAP Integration Suite**。SAP 在 SAP BTP 上的整合平台，也是以 SAP 為核心的系統環境中的自然選擇。它擅長處理 IDoc、BAPI、OData 與 SAP 訊息格式，並提供針對常見 SAP 情境的預建內容。複雜的業務流程仍需要客製的整合流程與真正的整合技能。如果您仍在使用 SAP PI/PO，請注意其[主流維護將於 2027 年底結束](https://sapinsider.org/blogs/sap-extends-maintenance-for-sap-netweaver-7-5-and-sap-bw-4hana/)，因此不應在其上建置新的 Salesforce 資料流。在 RISE 上，購買更多之前，先確認您的合約已包含哪些 SAP BTP 使用權。
+
+**MuleSoft**。自 2018 年起由 Salesforce 擁有，擁有廣泛的連接器程式庫、官方的 [SAP S/4HANA 連接器](https://docs.mulesoft.com/sap-s4hana-cloud-connector/latest/)，以及針對 SAP 訂單到收款的加速器範本。若您已經擁有，那是不錯的選擇。對以 SAP 為主的組織來說，問題在於：MuleSoft 是另一套技能組合，而執行您 SAP 專案的團隊，大概不是該設計您 MuleSoft 架構的團隊。
+
+**Boomi**。一個雲端整合平台（自 2021 年起脫離 Dell 獨立），具有 SAP 與 Salesforce 連接器，進入門檻比 MuleSoft 低。適合想要受治理的中介軟體、但不想承受 MuleSoft 的成本或複雜度的中型市場組織。
+
+**點對點 API**。在 Salesforce 與 SAP 之間直接呼叫 REST 或 SOAP，可避開中介軟體的成本。它們需要有紀律的 API 版本管理、每次發布時的迴歸測試，以及一個了解兩套系統的團隊。適用於簡單、穩定的情況。對任何複雜的情況，則是技術債的累積器。
+
+我的 [SAP CPI 與 Integration Suite 指南](/zh-TW/sap-cpi/)更深入介紹了 SAP 端的平台，而[適用於 SAP 的五種 CRM 選項](/zh-TW/5-best-crm-systems-for-sap-in-2024/)則比較了 CRM 本身。
+
+## 可靠的整合需要什麼
+
+1. **每一條資料流都有規格**：欄位、方向、頻率、鍵值對應，以及兩套系統意見不一致時該怎麼辦。
+2. **明確的失敗設計**。同步失敗時，傳輸中的資料會怎樣？重試幾次？誰收到警示？人工復原怎麼做？多數整合在這方面設計不足。
+3. **每次升級前的迴歸測試**。Salesforce 每年發布三次大版本，SAP 也有自己的支援套件與更新。涵蓋關鍵資料流的自動化測試套件，應在每一次之前執行。
+4. **附有警示的監控**。無聲的失敗，比大聲的失敗更糟。累積了好幾天的錯誤，比幾分鐘內就抓到的錯誤難修得多。
+5. **一位負責人**。一個知道整合在做什麼、看得出何時壞掉、並有權限與權力修復它的人。
+
+## 一頁式整合規格
+
+在任何人撰寫規格文件之前，每一條資料流填寫一列。只要有一格空白，這條資料流就還沒準備好建置。下列數值僅為示意；請與使用資料的人約定您自己的數值。
+
+| 資料流 | 方向 | 觸發條件與頻率 | 可接受的最舊資料 | 記錄系統 | 失敗時 | 負責人 |
+|---|---|---|---|---|---|---|
+| 客戶主檔 | SAP 到 Salesforce | 變更時 | 24 小時 | SAP | 重試，然後通知資料管理員 | 客戶主檔資料負責人 |
+| 庫存可用量 | SAP 到 Salesforce | 依請求或近即時 | 15 分鐘 | SAP | 顯示「請向營運部確認」標記 | 供應鏈系統負責人 |
+| 價格表與條件 | SAP 到 Salesforce | 變更時 | 1 小時 | SAP | 價格過期時封鎖報價 | 定價經理 |
+| 成交商機轉銷售訂單 | Salesforce 到 SAP | 結案時 | 即時 | 訂單建立前以 Salesforce 為準，之後以 SAP 為準 | 排入佇列並通知銷售營運 | 銷售營運負責人 |
+| 訂單與交貨狀態 | SAP 到 Salesforce | 每個里程碑 | 15 分鐘 | SAP | 重試，然後通知整合支援 | 整合負責人 |
+| 發票與付款狀態 | SAP 到 Salesforce | 每日 | 24 小時 | SAP | 通知財務系統 | 財務系統負責人 |
+
+「可接受的最舊資料」這一欄，是多數團隊從來不填的。請與做決策的使用者一起約定它，而不是只由整合團隊自己決定。如果您已經落後進度，[SAP Integration Suite 交付延誤](/zh-TW/sap-integration-suite-delivery-delays/)談了常見的原因。
+
+## 常見的失敗情境與對策
+
+**客戶記錄不一致**。原因：兩套客戶主檔從未對齊。對策：上線前先核對，讓 SAP 成為客戶資料的記錄系統，並在整合中強制執行對應。
+
+**訂單狀態沒有在 Salesforce 中更新**。原因：整合涵蓋報價到訂單，卻沒有涵蓋狀態回呼。對策：在每個訂單里程碑，把狀態更新從 SAP SD 送回 Salesforce。
+
+**報價單價格與發票價格不同**。原因：價格在 Salesforce 中以人工維護，逐漸偏離 SAP 的定價條件。對策：讓 SAP 成為價格主檔，並透過整合把價格拉進 Salesforce。
+
+**SAP 更新後整合壞掉**。原因：升級計畫中沒有整合迴歸測試。對策：把整合迴歸測試納入每一次 SAP 更新的範圍。
+
+## 常見問題
+
+<details>
+<summary>Salesforce 能與 SAP 整合嗎？</summary>
+
+可以，透過 SAP Integration Suite、MuleSoft、Boomi、其他整合平台，或直接使用 API。典型的資料流包括客戶主檔同步、成交商機轉銷售訂單、把訂單與交貨狀態回傳給 Salesforce、把價格送進 Salesforce 供報價使用，以及發票與付款狀態。客戶主檔同步很簡單。若要做完整的報價到收款，涉及複雜定價、多個公司代碼與即時庫存，則是一項重大專案。
+
+</details>
+
+<details>
+<summary>Salesforce 是 ERP 還是 CRM？</summary>
+
+是 CRM。它管理銷售漏斗、商機、客戶互動、行銷與服務。它不會過帳會計分錄，也不管理庫存。SAP 才是負責財務、採購、庫存與生產的 ERP。整合得宜時，業務代表能在 Salesforce 中看到庫存與付款狀態，財務則在 SAP 中看到交易金額。
+
+</details>
+
+<details>
+<summary>ERP 與 CRM 整合失敗的主要原因是什麼？</summary>
+
+需求是從技術而非使用者的決策來定義。整合依據一份錯誤的規格被正確地建出來：四小時前的資料、與發票對不上的價格、延遲的狀態更新。在撰寫技術規格之前，先記錄各使用者群組用這些資料做哪些決策，以及資料需要多新。
+
+</details>
+
+<details>
+<summary>如何長期維護 ERP 與 Salesforce 的整合？</summary>
+
+在每次 Salesforce 發布與每次 SAP 更新之前，針對關鍵資料流執行自動化迴歸測試。以失敗當下就觸發的警示來監控每一條關鍵資料流，而不是放在每日結束的報告裡。指定一位負責人，讓他能存取監控，並參與兩套系統的變更規劃。
+
+</details>
+
+<details>
+<summary>何時該用 SAP Integration Suite 來做 Salesforce 整合？</summary>
+
+當 SAP 是主導系統、您有 SAP BTP 使用權，而且資料流涉及 IDoc、BAPI 或 SAP 訊息格式等 SAP 特有內容時。如果您已在 MuleSoft 或 Boomi 上大量投資、團隊缺乏 SAP 整合技能，或 SAP 只是以非 SAP 為主的資料流中的次要參與者，那它就是較弱的選擇。對於範疇內包含 Salesforce 的新 RISE 專案，它是自然的起點。
+
+</details>
+
+<details>
+<summary>ERP 與 Salesforce 整合專案需要多久？</summary>
+
+使用預建內容的標準範疇（客戶主檔同步、報價到訂單與基本訂單狀態），從範疇界定到上線，通常需要 8 到 16 週，前提是資料乾淨，且有專責的整合開發人員。含複雜定價、多個實體、信用管理與即時庫存的完整報價到收款，通常需要 4 到 9 個月。專案中途發現的資料問題，以及建置期間新增的資料流，是超支的常見原因，因此請在建置開始前先做資料品質評估。
+
+</details>

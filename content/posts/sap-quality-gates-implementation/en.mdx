@@ -2,27 +2,25 @@
 title: "SAP quality gates: how to set them up and where they fail"
 slug: "sap-quality-gates-implementation"
 date: "2024-12-26"
-updated: "2026-05-21"
+updated: "2026-10-07"
 hero: "/images/wp/2024/12/sap-quality-gates-implementation-1.webp"
-heroAlt: "SAP project team reviewing quality gate checklist at phase transition whiteboard session"
+heroAlt: "Red quality stamp on a whiteboard with a caption about SAP quality gates"
 category: "erp-consulting-guide"
 tags: ["sap-implementation-strategies", "sap-governance", "quality-gates", "rise-with-sap"]
 author: "Noel D'Costa"
 metaTitle: "SAP Quality Gates: How to Set Them Up and Where They Fail"
-metaDescription: "SAP quality gates from real experience. Activate phases, entry and exit criteria, RISE-era additions, tooling, common failure modes, and the discipline."
-excerpt: "A consumer goods company in Singapore rushed testing to hit a deadline. No structured quality gates. Within days of go-live: missing setups, broken workflows, completely wrong data. The post-launch chaos lasted weeks. The problems were visible before go-live. Nobody stopped to check. Quality gates are not optional. They are the mechanism that separates controlled delivery from expensive improvisation. This guide covers the SAP Activate framework, the 2026 clean-core gate additions, and what makes gates actually work."
-experienceSource: "Direct experience implementing SAP quality gate frameworks on 21 programmes across discrete manufacturing, retail, healthcare, consumer goods, and public sector clients in Europe, GCC, US, UK, and Singapore. Anchored stories: Singapore consumer goods 2023 (skipped gates), European manufacturing 2024 (vague criteria fix), GCC retail 2023 (no gate owner authority), European retail 2024 (CIO overrode gate, retail buffer week practice), GCC retail 2024 (40% test cases not actually executed), European consumer goods 2024 (Atlassian-based gate tracking). RISE / clean-core / AI gate guidance reflects 2024-2025 SAP product positioning."
+metaDescription: "How to set up SAP quality gates: gates per SAP Activate phase, measurable exit criteria, gate owners with authority, tools, and the reasons gates fail."
+excerpt: "A quality gate is a checkpoint with the authority to stop a project. How to set gates against SAP Activate phases, write criteria that give yes-or-no answers, and keep them from becoming rubber stamps."
+experienceSource: "Noel's published WordPress article (published 2024-12-26) and its client examples (Singapore consumer goods rollout, manufacturing integration flaw, vague criteria, the CIO override, the 40% unexecuted test cases, the buffer week, the SharePoint gate). Tool and maintenance facts checked against SAP Support pages on 2026-10-07."
 lastReviewed: "2026-05-21"
 keyTakeaways:
-  - "Quality gates catch problems when they are cheap to fix. Post-go-live, the same problem costs three to five times more to resolve"
-  - "On a Singapore consumer goods rollout in 2023, the team skipped quality gates and rushed to go-live. The post-launch chaos cost three months of recovery"
-  - "On a European manufacturing programme in 2024, a quality gate review caught a critical integration flaw during design. Fixing it then cost one week. Discovering it after go-live would have shut production for a month"
-  - "On a GCC retail programme in 2024, 40% of 'completed' test cases had not actually been executed. Discovered via Solution Manager reporting before the gate, not after"
-  - "Rubber-stamp reviews are worse than no reviews. They create false confidence while real problems accumulate"
-  - "Quality gate criteria must be specific and measurable. 'Testing complete' is not a criterion. '95% of test cases executed with all P1 defects resolved' is"
-  - "RISE with SAP adds a clean-core compliance gate to the existing Activate framework. Every customisation must be on SAP BTP, not in-system"
-  - "SAP Cloud ALM is the 2026 default tool for cloud-edition gate management. SAP Solution Manager remains for on-premise but is in extended maintenance through 2027"
-pullQuote: "Rubber-stamp quality gates are worse than no quality gates. They create false confidence while real problems accumulate underneath. If the gate has no teeth, it cannot protect you."
+  - "A quality gate is a formal checkpoint between phases with the authority to stop the project; a status meeting is not a gate"
+  - "Place gates at SAP Activate phase transitions and write exit criteria that give a yes-or-no answer"
+  - "Give every gate one named owner with documented authority to delay, and get executive sign-off on the framework before pressure hits"
+  - "Gate evidence must come from the system of record; one client found 40% of 'completed' test cases had never run"
+  - "SAP Cloud ALM is included with SAP cloud subscriptions and Enterprise Support; Solution Manager 7.2 mainstream maintenance ends in 2027"
+  - "Track defect leakage, first-attempt pass rate and go-live incidents to see whether your gates have teeth"
+pullQuote: "Rubber-stamp quality gates are worse than no quality gates. They create false confidence while real problems pile up underneath."
 mentions:
   - "SAP S/4HANA"
   - "SAP Activate"
@@ -30,291 +28,175 @@ mentions:
   - "SAP Cloud ALM"
   - "Tricentis Tosca"
   - "ServiceNow"
+  - "Jira"
   - "RISE with SAP"
-  - "GROW with SAP"
   - "SAP BTP"
-  - "Joule"
-  - "clean-core"
 ---
 
-On a Singapore consumer goods rollout in 2023, the team rushed through testing to hit deadlines. User acceptance testing barely happened. Executives pushed for the launch anyway.
+A quality gate is a formal checkpoint between project phases. Before the team moves on, it has to show that agreed criteria are met. Pass, and you move forward. Fail, and you fix the problems first. On an SAP programme, the gates sit at the SAP Activate phase transitions, each with a named owner who has the authority to say "not ready".
 
-Within days of go-live: missing setups, broken workflows, data completely wrong.
+One major consumer goods company in Singapore was rolling out SAP globally. The team rushed through testing to hit deadlines. I watched this disaster unfold. User testing barely happened, but executives pushed for the launch anyway. Within days, problems showed up: missing setups, broken workflows, data completely wrong. The weeks of post-launch chaos were caused by problems that had been visible before go-live. Nobody stopped to check.
 
-The problems were not surprises. They were visible before go-live. Nobody stopped to check. The weeks they saved cost three months of recovery.
+I never skip quality gate reviews. No shortcuts, no rubber stamps. It takes more time upfront and saves months of cleanup later.
 
-That is what happens without quality gates. Across 21 SAP programmes that I have led, rescued, or watched go sideways, the programmes that held their schedules and budgets all enforced quality gates as hard stops, not negotiable status updates.
+A gate is a decision point with a written standard, documented sign-off and real authority to delay the project. It is not a progress review or a steering committee status update.
 
-## What quality gates actually are
+Without that authority, reviews become rubber stamps. And rubber-stamp gates are worse than none, because they create false confidence. One retail client ran "reviews" that were basically rubber stamps. Six months in, they were hopelessly behind schedule because nobody had dealt with the issues those reviews should have caught.
 
-A quality gate is a formal checkpoint between project phases. Before the team progresses, they must demonstrate that specific criteria have been met. Pass the gate, move forward. Fail the gate, fix the problems first.
+## Quality gates across the SAP Activate phases
 
-In SAP Activate, the framework defines six phases: Discover, Prepare, Explore, Realize, Deploy, and Run. Each phase transition is a natural gate point. The entry criteria define what must be true before the phase begins. The exit criteria define what must be proven before the phase closes.
+SAP Activate has six phases: Discover, Prepare, Explore, Realize, Deploy and Run. Each transition is a natural gate. This is what I expect each gate to check.
 
-Quality gates are not progress reviews. They are not status meetings. They are decision points with defined standards, documented sign-off, and real authority to delay the project when standards are not met.
-
-Without them, reviews become rubber stamps. And rubber-stamp quality gates are worse than no quality gates. They create false confidence while real problems accumulate.
-
-## The SAP Activate quality gate framework
-
-| Phase | Quality focus | Key deliverables | Approval criteria |
+| Phase gate | Quality focus | Evidence to see | Pass when |
 |---|---|---|---|
-| Discover | Business case validation, executive alignment | Business case document, high-level roadmap | Signed-off business case, executive buy-in confirmed |
-| Prepare | Governance setup, resource allocation, risk assessment | Project charter, governance framework, risk register | Project charter approved, risk mitigation plan agreed, team onboarded |
-| Explore | Fit-gap analysis, process design, backlog prioritisation | Fit-gap report, process diagrams, integration architecture | Approved fit-gap report, validated integration approach, process owners signed off |
-| Realize | Configuration validation, integration testing | Configured system, test cases, defect resolution reports | Unit and integration tests passed, critical defects resolved, UAT sign-off |
-| Deploy | Data migration validation, cutover readiness | Data migration reports, training completion logs, cutover plan | Migration testing successful, training validated, go-live checklist completed |
-| Run | Post-go-live monitoring, system stabilisation | Performance reports, issue logs, improvement roadmap | Stable performance, minimal high-priority incidents, operational handover complete |
+| Discover | Business case, executive alignment | Business case, high-level roadmap | Business case signed, sponsor committed |
+| Prepare | Governance, team, risks | Charter, governance model, risk register | Charter approved, risk owners named, team onboarded |
+| Explore | Fit-to-standard, design, integration approach | Fit-gap decisions, process designs, integration architecture | Process owners signed off; every gap has a decision |
+| Realize | Configuration, integration testing | Test execution reports, defect log | Test thresholds met, critical defects closed |
+| Deploy | Data, training, cutover readiness | Migration reconciliation, training records, cutover plan | Dress rehearsal done, rollback plan agreed |
+| Run | Stabilisation and handover | Incident log, performance reports | Incidents within agreed limits, support handover signed |
 
-Entry and exit criteria for every gate should be agreed and documented in the project charter before the project starts. Defining criteria under deadline pressure, mid-project, produces criteria shaped by what the team can currently demonstrate, not by what the project actually requires.
+In practice, Explore, Realize and Deploy carry the most risk. A problem that clears one of those three costs the most when it surfaces after go-live.
 
-## What a quality gate needs to work
+<explainer-flow title="What each SAP Activate gate has to prove" caption="Six gates, each a yes-or-no decision. Explore, Realize and Deploy carry the most risk." steps="Discover|Prepare|Explore|Realize|Deploy|Run" notes="Business case signed, sponsor committed|Charter approved, risk owners named|Every gap has a decision|Test thresholds met, critical defects closed|Dress rehearsal done, rollback agreed|Incidents within limits, handover signed" result="Each gate signed by one owner with the authority to say not ready"></explainer-flow>
 
-### Specific, measurable criteria
+Write entry and exit criteria for every gate into the project charter before configuration starts. Criteria written under deadline pressure describe what the team can currently show, not what the project needs. I had a client try to combine phases to "save time". They ended up redoing weeks of work.
 
-"Testing complete" is not a quality gate criterion. It generates arguments.
+## What a working gate needs
 
-"95% of test cases executed, all Priority 1 defects resolved, no open Priority 2 defects older than five days" is a criterion. It generates answers.
+### Criteria that give a yes-or-no answer
 
-On a European manufacturing programme in 2024, I worked with a client whose quality gate criteria were too vague. Nobody knew whether they had actually passed or not. Every phase transition turned into a negotiation. When we replaced the criteria with measurable thresholds, the arguments stopped. The gates worked.
+"Testing complete" is not a criterion. It starts arguments. I worked with a retail client whose gate simply said "UAT completed". Half the team read that as all tests executed; the other half as all defects fixed.
 
-### Named ownership
+"95% of test cases executed, all priority 1 defects resolved, no open priority 2 defects older than five days" is a criterion. It produces an answer.
 
-Every gate needs a named owner with the authority to delay the project. Not a committee. One person.
+One manufacturing client's gates failed because the criteria were too vague. Nobody knew whether they had actually passed. Once the criteria became measurable thresholds, the phase-transition arguments stopped.
 
-On a GCC retail programme in 2023, I watched a project crash because nobody had the power to say "we are not ready". The project manager wanted to delay. The programme director was under pressure from the business. Nobody had been given a formal mandate to hold the gate. The project moved forward unprepared.
+### One owner with authority to delay
 
-The gate owner's job is not to slow things down. It is to protect the project from expensive mistakes. That job requires real authority, documented in the project charter.
+Every gate needs a named owner who can delay the project. One person, not a committee. I saw one project crash because nobody had the power to delay the next phase, even though the team was not ready.
 
-### Executive backing before the pressure hits
+The opposite works. One retail client appointed a senior director as gate owner. When he said "not ready", everyone listened. Put that authority in the charter.
 
-Executives support quality gates right up until they create a deadline conflict. Then the instinct is to override.
+### Executive backing before the pressure arrives
 
-On a European retail programme in 2024, the CIO overruled a failed quality gate to meet a quarterly target. The resulting go-live issues cost twice what the delay would have. I have seen this pattern enough times that I now make executive sign-off on the gate framework a condition of engagement. If leadership is not committed to honouring the gates under pressure, the gates will not hold when it matters.
+Executives love quality gates until a gate threatens a deadline. One CIO overruled a failed gate to meet a quarterly target. The resulting issues cost twice what the delay would have. I have seen this pattern repeat many times, so I now ask for executive sign-off on the gate framework before the project starts.
 
-### Documented evidence
+### Evidence from the system of record
 
-Gate decisions need supporting documentation. Test execution reports, defect logs, process sign-off sheets, data migration validation results.
+Gate decisions need evidence: test execution reports, defect logs, process sign-offs, migration reconciliations. Pull it from the tool, not from what people say is done. One of my clients discovered through Solution Manager reports that 40% of its "completed" test cases had never been executed. They caught it before the gate, not after.
 
-On a GCC retail programme in 2024, the client's Solution Manager reporting showed that 40% of their "completed" test cases had not actually been executed. They discovered this before the quality gate, not after. The documentation discipline caught the gap. Without it, they would have proceeded on a false assumption.
+## How to set up quality gates, step by step
 
-## How RISE, clean-core, and AI change quality gates in 2026
+1. **Map gates to phase transitions.** For SAP Activate, at minimum after Prepare, Explore, Realize and Deploy. One energy client created random checkpoints in between and ended up with a mess.
+2. **Define entry and exit criteria before configuration starts.** Agree test coverage, defect thresholds and the process owners who must sign. Put them in the charter and get the sponsor's signature.
+3. **Schedule gates with buffer.** Put each gate on the calendar as an activity, not just a milestone. One of my retail clients set aside a full week before each gate just for cleanup.
+4. **Choose reviewers who can decide.** Business leads sign off processes. Technical leads sign off configuration and integration. Consultants never sign for the business.
+5. **Keep the evidence in one place.** Six months later, an auditor will ask who signed off the data migration. The answer should take minutes to find.
+6. **Make the results visible.** One client put its gate dashboard on the wall of the project room. It was impossible to ignore.
 
-The SAP Activate gate framework still works. RISE with SAP and the 2024-2025 platform changes added three considerations that gate design needs to absorb.
+### Example exit criteria for the two gates that matter most
 
-### Clean-core compliance becomes a gate criterion
+**Realize gate:**
 
-Clean-core compliance is mandatory across SAP Cloud editions since 2024-2025. Every customisation must live on SAP BTP, not as in-system modification. The implication for quality gates: clean-core compliance is now a measurable gate criterion that did not exist on pre-2024 programmes.
+1. Test execution at or above the agreed threshold, with results stored in the test tool.
+2. No open priority 1 defects; priority 2 defects within the agreed age limit.
+3. Every critical process signed off by its named process owner.
+4. Integration tests run across full process chains, with documented results.
+5. Every custom development approved against the clean core rule set for the programme.
 
-Add to the Explore gate: every identified customisation has a documented decision on whether it can be configured (no extension), built as a BTP extension (clean-core compliant), or rejected. Add to the Realize gate: 100% of customisations live on SAP BTP under clean-core principles, with no in-system modifications introduced during configuration.
+**Deploy gate:**
 
-For on-premise programmes where clean-core is recommended but not enforced, the gate criterion should still apply as a voluntary discipline. The technical debt that builds when clean-core is bypassed surfaces at the first major upgrade.
+1. Data migration dress rehearsal completed and reconciliation signed by the data lead.
+2. Training completion by role at or above the agreed threshold.
+3. Cutover plan rehearsed, with timings and go/no-go decision points.
+4. Rollback plan documented and tested.
+5. Hypercare team named, with escalation paths and severity definitions agreed.
 
-### RISE adds an SAP customer success engagement gate
+If the Deploy gate shows unresolved reconciliation exceptions or untrained users and the business still wants to proceed, make it a documented decision with a named signatory. Not a default because nobody wanted to say no.
 
-Under RISE with SAP, SAP holds infrastructure responsibility and runs a customer success cadence. The Prepare phase gate should include confirmation that the SAP customer success contact is named, the escalation path into SAP is documented, and the customer success engagement cadence is agreed. Without this, platform issues that should escalate to SAP get held inside the project team for too long.
+## Clean core, SAP Cloud ALM and other tools
 
-### Joule for SAP Activate accelerates gate evidence preparation
+Two things have changed how I design gates on current programmes.
 
-The 2024-2025 AI rollout reached gate preparation work. Joule for SAP Activate drafts test execution summaries, defect resolution reports, and fit-gap status updates from source SAP Cloud ALM data. Microsoft Copilot drafts steering committee gate review packs from prepared evidence.
+**Clean core is now a gate criterion.** SAP classifies extensions from level A (released interfaces only) to level D (modifications and direct table writes). At the Explore gate, every gap should have a decision: configure it, build it as a released-API extension, or reject it. At the Realize gate, check that no new level D objects crept in. Public Edition enforces this technically. Private Edition and on-premise do not, so the gate is what enforces it.
 
-The honest assessment: AI accelerates the production of gate evidence by 30-50% on programmes with clean source data. It does not change the standard required to pass the gate. The evidence still has to meet the criteria; AI just makes producing the evidence faster.
+**SAP Cloud ALM is the default tool.** It is included in SAP cloud subscriptions with Enterprise Support, cloud edition, and in SAP Enterprise Support for on-premise customers ([SAP Support](https://support.sap.com/en/alm/sap-cloud-alm.html)). It covers fit-to-standard, task assignment, test orchestration and traceability. SAP Solution Manager 7.2 mainstream maintenance ends at the end of 2027, and SAP recommends moving to Cloud ALM before then ([SAP Support](https://support.sap.com/en/alm/solution-manager.html)). If you are mid-programme on Solution Manager, finish there. Plan new programmes around Cloud ALM.
 
-### SAP Cloud ALM is the 2026 default tool
+### Tools for managing gates
 
-For new programmes in 2026 on RISE with SAP, GROW with SAP, or any S/4HANA Cloud variant, SAP Cloud ALM is the default gate management tool. It is included free with most SAP cloud subscriptions and provides phase checklists, quality metrics, and approval workflows natively.
+The tool matters less than the discipline. One retail client built a clean SharePoint gate process that worked beautifully for a mid-sized implementation. I have also seen gates fail on a full Solution Manager setup because the team kept parallel spreadsheets.
 
-SAP Solution Manager remains functional for on-premise programmes through 2027 (end-of-mainstream-maintenance was 2025, extended support to 2027). For programmes already on Solution Manager, continuing through delivery is appropriate; new programmes should plan around Cloud ALM.
+| Tool | Role in gate management | Best for |
+|---|---|---|
+| SAP Cloud ALM | Fit-to-standard, tasks, tests, traceability | New S/4HANA programmes, cloud or on-premise |
+| SAP Solution Manager 7.2 | Project tracking, test and defect management | Programmes already running on it |
+| Jira and Confluence | Tasks, defects, gate criteria and evidence | Teams already using Atlassian tools |
+| Tricentis Tosca | Test automation and coverage reporting | Programmes with heavy test automation |
+| ServiceNow | Approval workflows and audit trail | Companies already running ServiceNow |
 
-## Step-by-step setup
+Whichever you choose, it has to be the single source of truth. A parallel spreadsheet always shows the version the team wants to show. My comparison of [SAP testing and validation tools](/sap-testing-validation-tools-comparison/) goes deeper on the test side.
 
-### 1. Align gates to SAP Activate phases
+## Why quality gates fail, and how to tell if yours work
 
-Map your quality gates to the natural phase transitions in your implementation methodology. For SAP Activate: after Prepare, after Explore, after Realize, and after Deploy.
+**Skipped under schedule pressure.** When projects slip, gates are the first thing cut. On one project the reviews became rubber stamps, and the go-live was a nightmare: systems crashed, orders got stuck, and they rolled back completely. The three weeks they "saved" cost them three months of recovery.
 
-Do not create arbitrary checkpoints between phases. Gates at natural transition points carry more weight. They align with the project's momentum and give teams a clear target to build toward.
+**Vague criteria.** Covered above. If a criterion needs interpretation, it is a conversation starter.
 
-### 2. Define entry and exit criteria before the project starts
+**Reviewers with no time.** When key reviewers are spread across several projects, reviews become box-ticking. A Realize gate review on a mid-size programme should take at least half a day, with evidence read in advance.
 
-Work with business leads, technical leads, and executive sponsors to define the criteria before configuration begins. What test coverage percentage is required? What defect thresholds are acceptable? Which business process owners must sign off? For RISE programmes, what clean-core compliance threshold applies?
+**Culture.** Teams used to rushing milestones look for ways around gates. That changes when an executive says at kickoff that gates are mandatory, then proves it by refusing to override the first one that causes a delay.
 
-Write these down. Include them in the project charter. Have them signed by sponsors. When deadline pressure hits, you need documented standards, not verbal agreements made under stress.
+### Three numbers that show whether gates work
 
-### 3. Build gates into the project schedule with buffer
+Track these to see whether gates are protecting the project or only looking like they do.
 
-Each quality gate needs time in the project plan, not just as a milestone but as an activity. Include buffer before the gate for issue resolution. On a European retail programme in 2024, the client allocated a full week before each gate purely for cleanup. That buffer saved them from three compressed test cycles.
+1. **Defect leakage:** the share of defects found after a gate that the gate should have caught.
+2. **First-attempt pass rate:** if every gate passes first time, the criteria probably have no teeth.
+3. **Go-live incidents:** high-priority incidents in the first 30 days are a direct verdict on the Deploy gate.
 
-### 4. Assign reviewers with decision authority
-
-Gate reviews need the right people. Business leads who can sign off on process. Technical leads who can sign off on configuration and integration. And a gate owner with authority to delay.
-
-Do not let IT sign off on business process acceptance. Do not let consultants sign off for the business. The sign-off must come from the people who will live with the outcome.
-
-### 5. Store evidence centrally
-
-Whether you use SAP Cloud ALM, SAP Solution Manager, Jira, or another tool, all gate evidence should live in one place. When an auditor asks six months later who signed off on the data migration validation, the answer should be retrievable in under five minutes.
-
-## Common failures
-
-### Skipping gates under schedule pressure
-
-Every time a gate gets skipped to hit a deadline, the problems that gate would have caught get deferred to go-live. At go-live, fixing them costs three to five times more. The time saved is borrowed at a high interest rate.
-
-The pattern repeats so consistently that I treat it as a go-live risk on sight. When a project accelerates into the Deploy phase without evidence of a proper Realize gate, that risk applies regardless of what the status report says.
-
-### Vague criteria
-
-Ambiguous statements like "UAT completed" or "configuration done" create arguments. Half the team thinks "UAT completed" means all tests executed. The other half thinks it means all defects fixed. When the gate review happens, no one agrees on whether it has been passed.
-
-Define criteria in language that produces a binary answer. Either the threshold has been met or it has not.
-
-### Resource constraints
-
-When key reviewers are spread across multiple projects, gate reviews become superficial. I have seen gate reviews conducted in thirty minutes with three people who had also attended four other meetings that day. They were checking boxes, not reviewing work.
-
-Quality gate reviews are not quick. A Realize gate review for a mid-size SAP implementation should take at least half a day, with prepared evidence reviewed in advance. Build that time into the project plan.
-
-### Cultural resistance
-
-Teams used to rushing through milestones resent quality gates. The instinct is to find ways around them rather than through them.
-
-Changing this is harder than implementing the technical framework. It starts with executive tone at kickoff: quality gates are mandatory, they protect the project, and bypassing them is not an option. When an executive communicates this at the start and demonstrates it by refusing to override the first gate that causes a delay, the culture shifts.
-
-## Tooling and measurement
-
-### Tooling for quality gate management
-
-| Tool | Role in gate management | SAP integration | Best for |
-|---|---|---|---|
-| SAP Cloud ALM | Phase checklists, task management, quality metrics | Native | RISE and cloud S/4HANA programmes (2026 default) |
-| SAP Solution Manager | Native gate tracking, KPI dashboards, defect workflows | Native | On-premise programmes still running it (extended support through 2027) |
-| Jira and Confluence (with Atlassian Intelligence) | Issue tracking and gate evidence documentation | API-based | Agile-delivery teams with existing Atlassian tooling |
-| Azure DevOps | Pipeline approvals, traceability, gate workflows | Custom via APIs | Microsoft-stack shops with DevOps-led delivery |
-| Tricentis Tosca / NeoLoad | Test coverage enforcement for gate criteria | Certified SAP support | Programmes with high automation and test coverage requirements |
-| ServiceNow | Approval workflows, audit-ready sign-off | Via adapters | Organisations already running ServiceNow for ITSM |
-| Micro Focus ALM | Requirements traceability, defect governance | Via middleware | Larger programmes in regulated industries needing full audit trails |
-
-The tool matters less than the discipline. I have seen quality gates work on SharePoint with a well-structured approval list. I have seen them fail with full Solution Manager implementation because nobody had been trained to use it and the team kept parallel spreadsheets.
-
-Whatever tool is chosen, it needs to be the single source of truth. Parallel tracking in spreadsheets undermines the gate, because the spreadsheet always shows the version the team wants to show.
-
-On a European consumer goods programme in 2024, the client used Jira with Atlassian Intelligence overlays for a global rollout and maintained clear gate status dashboards across all workstreams. The AI overlay automated summary generation for steering committee gate reviews, which freed up the project office to focus on issue resolution rather than report production.
-
-### Measuring whether gates are working
-
-Three metrics indicate gate health.
-
-**Defect leakage rate.** The percentage of defects found after a gate that should have been caught before it. A high leakage rate means the gate criteria were too loose or the reviews were too superficial.
-
-**Quality gate pass rate on first attempt.** If every gate passes on the first attempt, the criteria are probably not strict enough. Some first-attempt failures are healthy; they show the gates are catching real problems. A pass rate of 100% should prompt a review of whether the criteria have any teeth.
-
-**Go-live incident rate.** The volume of high-priority incidents in the first thirty days post-go-live is a retrospective measure of gate effectiveness. A clean go-live is the result of gates that worked. A chaotic go-live is evidence that problems cleared gates they should not have.
-
-These three numbers tell you whether quality gates are protecting the project or providing the appearance of protection.
+Gates belong in the charter from day one. My [project charter guide](/how-to-create-an-sap-implementation-project-charter/) shows where they fit, and the [steering committee guide](/creating-an-effective-sap-project-steering-committee/) covers who should hold the authority to enforce them.
 
 ## Frequently asked questions
 
 <details>
 <summary>What is a quality gate in SAP projects?</summary>
 
-A quality gate is a formal checkpoint between project phases. Before the team can progress to the next phase, they must demonstrate that specific, measurable criteria have been met. Pass the gate, move forward. Fail the gate, fix the problems first.
-
-In SAP Activate, gate points occur at natural phase transitions: after Prepare, after Explore, after Realize, and after Deploy. Each gate has defined entry criteria (what must be true before the phase begins) and exit criteria (what must be demonstrated before the phase closes).
-
-Quality gates are not status meetings or progress reviews. They are decision points with documented standards and named authority to delay the project when those standards are not met.
-
-The difference between a working quality gate and a rubber stamp is the exit criteria. Vague criteria like "testing complete" cannot be objectively verified and produce arguments at every gate. Specific criteria like "95% of test cases executed with all Priority 1 defects resolved" produce binary answers.
+A formal checkpoint between project phases. The team has to show that specific, measurable criteria are met before moving on. Each gate has a named owner with authority to delay the project. In SAP Activate, gates sit at the phase transitions, especially after Explore, Realize and Deploy.
 
 </details>
 
 <details>
 <summary>What are the quality gates in SAP Activate?</summary>
 
-SAP Activate defines six phases, each with a corresponding gate: Discover, Prepare, Explore, Realize, Deploy, and Run.
-
-The Discover gate validates the business case and executive alignment before the project formally begins. The Prepare gate confirms governance, resource allocation, and risk assessment. The Explore gate confirms that fit-gap analysis is complete, business processes are designed and signed off, and integration architecture is validated. The Realize gate verifies that configuration and integration testing meet defined coverage and defect thresholds. The Deploy gate confirms data migration, training completion, and cutover readiness. The Run gate validates stable post-go-live performance and operational handover.
-
-In practice, the most critical gates are Explore (before build begins), Realize (before UAT begins), and Deploy (before cutover). Problems that clear these three gates carry the highest cost if they surface after go-live.
-
-Entry and exit criteria for each gate should be documented in the project charter and signed by sponsors before the project starts. Defining criteria under deadline pressure produces criteria shaped by what is convenient, not by what the project requires.
+SAP Activate has six phases (Discover, Prepare, Explore, Realize, Deploy and Run), and each transition is a gate. Discover checks the business case. Prepare checks governance and the charter. Explore checks design sign-off and gap decisions. Realize checks test results and defects. Deploy checks data, training and cutover readiness. Run checks stabilisation and handover.
 
 </details>
 
 <details>
-<summary>How do RISE and clean-core change quality gates in 2026?</summary>
+<summary>What should SAP quality gate criteria include?</summary>
 
-Two specific gate additions for RISE with SAP and GROW with SAP programmes.
-
-Clean-core compliance as a gate criterion. Every customisation must live on SAP BTP, not as in-system modification. Add to the Explore gate: every customisation has a documented decision on whether to configure, build as BTP extension, or reject. Add to the Realize gate: 100% of customisations on BTP under clean-core principles.
-
-SAP customer success engagement as a gate criterion. The Prepare gate should include confirmation that the SAP customer success contact is named, the escalation path into SAP is documented, and the engagement cadence is agreed. Without this, platform issues that should escalate to SAP get held inside the project team for too long.
-
-For on-premise programmes where clean-core is recommended but not enforced, the gate criterion still applies as a voluntary discipline. The technical debt that builds when clean-core is bypassed surfaces at the first major upgrade.
-
-</details>
-
-<details>
-<summary>What should quality gate criteria include?</summary>
-
-Quality gate criteria must be specific enough to produce a binary answer: met or not met. Criteria that require interpretation are not criteria. They are conversation starters.
-
-For the Realize gate, criteria might include: test case execution coverage above a defined threshold, maximum number of open defects by severity, all critical business processes signed off by named process owners, integration tests completed with documented results, performance test results against defined SLA thresholds, and clean-core compliance rate for any customisations built.
-
-For the Deploy gate: data migration dry run completed with reconciliation sign-off, training completion rates by role, cutover plan approved, go-live checklist completed, hypercare resource plan confirmed.
-
-Every criterion should have an owner responsible for producing evidence, a reviewer responsible for verifying it, and a gate owner with authority to rule on whether the criterion has been met. Criteria without ownership do not get measured.
-
-Document all gate criteria in the project charter before configuration starts. Criteria defined mid-project are often shaped by what the team can demonstrate at that moment rather than by what the project genuinely requires.
+Criteria that give a yes-or-no answer. For Realize: test execution thresholds, open defects by priority, process owner sign-offs and integration test results. For Deploy: migration reconciliation, training completion by role, a rehearsed cutover plan, a tested rollback plan and a staffed hypercare team. Each criterion needs an owner who produces the evidence.
 
 </details>
 
 <details>
 <summary>Why do quality gates fail in SAP implementations?</summary>
 
-Four failure patterns account for most quality gate problems.
-
-Vague criteria. When exit criteria are ambiguous, gate reviews become negotiations. Teams argue over what "done" means rather than presenting evidence against a defined standard. Specific, measurable criteria eliminate the argument.
-
-Rubber-stamp reviews. When gate reviews are scheduled for thirty minutes with no prepared evidence, they produce approvals without examination. A Realize gate review for a mid-size implementation should take at least half a day, with supporting documentation reviewed in advance.
-
-Executive override. Executives support quality gates until the first one conflicts with a deadline. At that point, the instinct is to override. Every override communicates that gates are optional when inconvenient. The project pays for this at go-live.
-
-Resource constraints. When key reviewers are split across multiple projects, they attend gate reviews without adequate preparation time. Reviews become superficial and sign-offs are given on incomplete evidence.
-
-The root cause across all four patterns is that quality gates are treated as process overhead rather than project protection. Teams that understand what a failed go-live costs are much more disciplined about gate enforcement than teams that only see the time cost of doing the review properly.
+They get skipped under schedule pressure, the criteria are vague, reviewers have no time to prepare, or an executive overrides a failed gate. The root cause is treating gates as overhead rather than protection.
 
 </details>
 
 <details>
-<summary>What tools are used to manage SAP quality gates?</summary>
+<summary>Which tool should I use to manage SAP quality gates?</summary>
 
-SAP Cloud ALM is the 2026 default for new programmes on RISE with SAP, GROW with SAP, or any S/4HANA Cloud variant. It is included free with most SAP cloud subscriptions and provides phase checklists, quality metrics, and approval workflows natively.
-
-SAP Solution Manager remains the on-premise option, in extended support through 2027. For programmes already running on it, continuing through delivery is appropriate. New programmes should plan around Cloud ALM.
-
-For teams using Atlassian tooling, Jira and Confluence work well: Jira tracks defects and tasks against gate criteria, Confluence stores gate evidence and sign-off records. The 2024-2025 Atlassian Intelligence overlay accelerates summary generation for steering committee gate reviews.
-
-Tricentis Tosca and NeoLoad are useful where test coverage enforcement is part of gate criteria. They track test execution status and coverage rates, feeding directly into gate pass/fail decisions. Azure DevOps handles pipeline approvals and traceability for Microsoft-stack programmes.
-
-ServiceNow works for approval workflows in organisations that already use it for ITSM: gate sign-offs can be routed and timestamped through existing approval chains.
-
-The tool matters less than the discipline. The gate evidence must live in one place, everyone must use it, and it must produce a single version of the truth. Parallel spreadsheets undermine the gate regardless of what tool is nominally in use.
+For new programmes, SAP Cloud ALM. It is included with SAP cloud subscriptions and Enterprise Support, and supports fit-to-standard, testing and traceability. SAP Solution Manager 7.2 leaves mainstream maintenance at the end of 2027. Jira, Tricentis Tosca and ServiceNow work well where a company already runs them. The rule is one source of truth.
 
 </details>
 
 <details>
-<summary>How should go-live readiness be assessed at the final quality gate?</summary>
+<summary>How do you assess go-live readiness at the final quality gate?</summary>
 
-The Deploy phase gate is the final checkpoint before cutover begins. It should answer one question: is the team ready to run production on the new system, and are the contingency plans in place if something goes wrong?
-
-The evidence required at this gate covers several areas. Data migration: dry run completed, reconciliation reports reviewed and signed off by the data lead, exception handling confirmed for open items. Training: completion rates by role at or above the defined threshold, knowledge assessment scores for critical roles, training materials signed off. Cutover: documented cutover plan with step-by-step sequence, timing, and decision points; rehearsal completed; rollback plan documented and tested. Hypercare: named support team confirmed and available for the first thirty days; escalation paths documented; incident severity classification agreed.
-
-For RISE programmes, add: SAP customer success engagement confirmed for the hypercare period; clean-core compliance verified across all customisations.
-
-The gate owner should be someone with authority to delay go-live. That authority must be established before the gate, not asserted for the first time at it. If the gate reveals that data migration reconciliation has unresolved exceptions or that a critical user population has not completed training, the decision to proceed anyway must be a conscious, documented business decision with named sign-off, not a default because nobody wants to delay.
-
-Go-live readiness is not a feeling. It is a checklist with evidence against each item.
+Check five things with evidence: data migration rehearsed and reconciled, training complete for each role, cutover plan rehearsed with go/no-go points, rollback plan tested, and hypercare staffed with escalation paths. If any fails and the business still wants to proceed, record it as a signed business decision.
 
 </details>
-
-The best SAP quality gates in 2026 are not the most elaborate framework or the most automated tool. They are the gates whose exit criteria were defined in the project charter before configuration started, whose owners had documented authority to delay the project, whose evidence lived in a single source of truth (SAP Cloud ALM for new cloud programmes), and whose first failed gate was actually allowed to fail. Most quality gate frameworks collapse at the first deadline conflict because the executive override expectation was set during a calm moment and broken during a pressure moment. Build for the pressure moment from the start.

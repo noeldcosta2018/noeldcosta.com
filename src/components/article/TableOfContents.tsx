@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import type { HeadingEntry } from "@/lib/article-headings";
 
 /**
@@ -21,8 +22,10 @@ import type { HeadingEntry } from "@/lib/article-headings";
  */
 export default function TableOfContents({
   headings,
+  label = "Table of contents",
 }: {
   headings: HeadingEntry[];
+  label?: string;
 }) {
   // Group into sections keyed by the H2 heading. H3s that appear before any
   // H2 go into an "orphan" prelude group that's always expanded.
@@ -47,22 +50,22 @@ export default function TableOfContents({
 
   const firstId = headings[0]?.id ?? "";
   const [activeId, setActiveId] = useState(firstId);
-  const lastForcedRef = useRef<number>(0);
-  const [reduced, setReduced] = useState(false);
+  const forcedActiveRef = useRef(false);
+  const forcedReleaseRef = useRef<number | null>(null);
+  const reduced = usePrefersReducedMotion();
 
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(mq.matches);
-    const update = () => setReduced(mq.matches);
-    mq.addEventListener?.("change", update);
-    return () => mq.removeEventListener?.("change", update);
+    return () => {
+      if (forcedReleaseRef.current !== null) {
+        window.clearTimeout(forcedReleaseRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
     if (!headings.length) return;
-    const ids = headings.map((h) => h.id);
-    const elements = ids
-      .map((id) => document.getElementById(id))
+    const elements = headings
+      .map((h) => document.getElementById(h.id))
       .filter((el): el is HTMLElement => el !== null);
     if (!elements.length) return;
 
@@ -78,7 +81,7 @@ export default function TableOfContents({
         }
         if (visible.size > 0) {
           const topId = [...visible.entries()].sort((a, b) => a[1] - b[1])[0][0];
-          if (Date.now() - lastForcedRef.current > 600) setActiveId(topId);
+          if (!forcedActiveRef.current) setActiveId(topId);
         }
       },
       { rootMargin: "-80px 0px -70% 0px", threshold: 0 }
@@ -101,7 +104,14 @@ export default function TableOfContents({
   if (!headings.length) return null;
 
   const onClickEntry = (id: string) => {
-    lastForcedRef.current = Date.now();
+    forcedActiveRef.current = true;
+    if (forcedReleaseRef.current !== null) {
+      window.clearTimeout(forcedReleaseRef.current);
+    }
+    forcedReleaseRef.current = window.setTimeout(() => {
+      forcedActiveRef.current = false;
+      forcedReleaseRef.current = null;
+    }, 600);
     setActiveId(id);
   };
 
@@ -111,14 +121,22 @@ export default function TableOfContents({
 
   return (
     <nav
-      aria-label="Table of contents"
+      aria-label={label}
       className="rounded-xl bg-corbeau overflow-hidden"
+      // Long ToCs scroll inside the sticky rail instead of running off-screen.
+      style={{ maxHeight: "calc(100dvh - 8rem)", overflowY: "auto" }}
     >
       {/* Header */}
       <div className="px-5 pt-5 pb-4 border-b border-bone/[0.08]">
         <p className="font-display font-black text-bone text-[1.05rem] leading-[1.2]">
-          Table of{" "}
-          <span className="cc-emphasis-italic">contents</span>
+          {label === "Table of contents" ? (
+            <>
+              Table of{" "}
+              <span className="cc-emphasis-italic">contents</span>
+            </>
+          ) : (
+            label
+          )}
         </p>
       </div>
 
@@ -176,6 +194,9 @@ export default function TableOfContents({
               {hasChildren && (
                 <div
                   aria-hidden={!isActive}
+                  // Collapsed groups are visually hidden; keep their links
+                  // out of the tab order as well.
+                  inert={!isActive ? true : undefined}
                   className={[
                     "grid pl-8",
                     isActive ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",

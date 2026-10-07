@@ -1,0 +1,149 @@
+import type { FieldDef } from "@/components/tools/ToolForm";
+
+// SAP Implementation Cost Calculator: page text and form fields.
+// Browser-safe (the client widget imports it) and server-importable (the
+// English and translated routes read it; the server translates the labels
+// for translated pages). Field names and option values are the tool API
+// contract and never change with the locale.
+
+export const TOOL = {
+  slug: "sap-implementation-cost-calculator",
+  label: "SAP Implementation Cost Calculator",
+  description:
+    "SAP-specific cost, licence model and timeline estimate for RISE, GROW, on-premise or brownfield. Includes Fiori, ABAP, BTP and migration costs.",
+  title: "SAP implementation",
+  highlight: "cost calculator.",
+  group: "Calculators",
+};
+
+export const HEADING = "Enter your SAP programme details";
+export const SUBMIT = "Estimate my SAP cost";
+
+export const FIELDS: FieldDef[] = [
+  {
+    kind: "select",
+    name: "sector",
+    label: "Industry sector",
+    options: [
+      { value: "manufacturing", label: "Manufacturing" },
+      { value: "retail", label: "Retail" },
+      { value: "finance-banking", label: "Finance & Banking" },
+      { value: "aviation-transport", label: "Aviation & Transport" },
+      { value: "government-public", label: "Government & Public Sector" },
+      { value: "utilities-energy", label: "Utilities & Energy" },
+      { value: "telecom", label: "Telecom" },
+      { value: "healthcare", label: "Healthcare" },
+      { value: "oil-gas", label: "Oil & Gas" },
+      { value: "construction-real-estate", label: "Construction & Real Estate" },
+      { value: "professional-services", label: "Professional Services" },
+      { value: "other", label: "Other" },
+    ],
+  },
+  {
+    kind: "select",
+    name: "companySize",
+    label: "Company size",
+    options: [
+      { value: "small-50-250", label: "Small (50–250 employees)" },
+      { value: "mid-250-1000", label: "Mid-size (250–1,000)" },
+      { value: "large-1000-5000", label: "Large (1,000–5,000)" },
+      { value: "enterprise-5000-plus", label: "Enterprise (5,000+)" },
+    ],
+  },
+  {
+    kind: "select",
+    name: "edition",
+    label: "SAP edition / deployment model",
+    options: [
+      { value: "s4hana-cloud-public-grow", label: "S/4HANA Cloud Public (GROW with SAP)" },
+      { value: "s4hana-cloud-private-rise", label: "S/4HANA Cloud Private (RISE with SAP)" },
+      { value: "s4hana-on-premise", label: "S/4HANA On-Premise" },
+      { value: "ecc-brownfield-to-s4hana", label: "ECC Brownfield → S/4HANA Conversion" },
+      { value: "unsure", label: "Not sure yet" },
+    ],
+  },
+  {
+    kind: "text",
+    name: "currentSystem",
+    label: "Current system",
+    placeholder: "e.g. SAP ECC 6.0, Oracle EBS, custom legacy",
+    maxLength: 120,
+    required: true,
+  },
+  {
+    // SAP-expert module picker: search + categorised groups across
+    // Finance, Procurement, Supply Chain, Sales/CX, HCM, Projects,
+    // Analytics, Platform, Industry. Replaces the older free-text
+    // tags input so the cost estimate is grounded in specific named
+    // modules (Group Reporting separate from FI-GL, Treasury separate
+    // from FSCM, etc.). The downstream LLM-driven cost estimator
+    // receives human-readable module labels with codes.
+    kind: "modulePicker",
+    name: "modules",
+    label: "SAP modules in scope",
+  },
+  {
+    kind: "select",
+    name: "fioriScope",
+    label: "SAP Fiori / UI scope",
+    options: [
+      { value: "minimal", label: "Minimal (standard delivered apps only)" },
+      { value: "selected-personas", label: "Selected personas (custom Fiori for key roles)" },
+      { value: "full-coverage", label: "Full coverage (all users on Fiori)" },
+    ],
+  },
+  {
+    kind: "boolean",
+    name: "cleanCore",
+    label: "Committing to clean-core / no ABAP customisation",
+  },
+  {
+    kind: "text",
+    name: "industrySolution",
+    label: "Industry solution (optional)",
+    placeholder: "e.g. IS-Retail, IS-Oil, A&D, IS-U",
+    maxLength: 120,
+  },
+  {
+    kind: "number",
+    name: "userCount",
+    label: "Named / concurrent user count",
+    min: 1,
+    max: 500000,
+    step: 1,
+    placeholder: "e.g. 800",
+  },
+  {
+    kind: "multiselect",
+    name: "regions",
+    label: "Deployment regions",
+    options: [
+      { value: "uae", label: "UAE" },
+      { value: "saudi-arabia", label: "Saudi Arabia" },
+      { value: "gcc-other", label: "GCC (other)" },
+      { value: "united-kingdom", label: "UK" },
+      { value: "europe-other", label: "Europe (other)" },
+      { value: "north-america", label: "North America" },
+      { value: "apac", label: "APAC" },
+      { value: "africa", label: "Africa" },
+      { value: "latam", label: "LATAM" },
+    ],
+  },
+  {
+    kind: "number",
+    name: "timelineMonths",
+    label: "Target go-live timeline (months)",
+    min: 3,
+    max: 120,
+    step: 1,
+    placeholder: "e.g. 18",
+  },
+  {
+    kind: "textarea",
+    name: "notes",
+    label: "Additional context (optional)",
+    placeholder: "Integration landscape, legacy ABAP volume, compliance requirements…",
+    maxLength: 2000,
+    rows: 3,
+  },
+];

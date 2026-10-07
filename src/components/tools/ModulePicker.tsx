@@ -9,6 +9,7 @@ import {
   type SapModule,
   type SapModuleCategory,
 } from "@/lib/sap-modules";
+import { TOOL_COPY_EN, fill, type ToolCopy } from "@/components/tools/tool-copy";
 
 /**
  * SAP module picker designed for CFO / CIO assessing implementation
@@ -25,11 +26,13 @@ export interface ModulePickerProps {
   label: string;
   value: string[];
   onChange: (next: string[]) => void;
+  /** Widget text, already translated on translated pages. Defaults to English. */
+  copy?: ToolCopy;
 }
 
 const CORE_IDS = getCoreModules().map((m) => m.id);
 
-export default function ModulePicker({ label, value, onChange }: ModulePickerProps) {
+export default function ModulePicker({ label, value, onChange, copy = TOOL_COPY_EN }: ModulePickerProps) {
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<Set<SapModuleCategory>>(
     // Open Finance by default; the rest collapsed so the page is scannable
@@ -106,11 +109,11 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
     <div>
       {/* Label + counters */}
       <div className="flex items-baseline justify-between mb-2.5">
-        <label className="font-display font-semibold text-corbeau text-[0.95rem]">
+        <p className="nda-tool-label" style={{ marginBottom: 0 }}>
           {label}
-        </label>
-        <span className="font-mono text-[0.68rem] tracking-[1.6px] uppercase text-corbeau/55">
-          {value.length} selected
+        </p>
+        <span className="font-mono text-[0.68rem] tracking-[1.6px] uppercase text-eyebrow">
+          {fill(copy.selected, { count: value.length })}
         </span>
       </div>
 
@@ -121,33 +124,34 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search modules (e.g. Treasury, Payroll, EWM, Group Reporting)…"
-            className="w-full rounded-md border border-corbeau/15 bg-paper px-3.5 py-2.5 text-sm font-medium text-corbeau placeholder:text-corbeau/35 focus:outline-none focus:border-papaya focus:ring-2 focus:ring-papaya/20 transition-colors"
+            aria-label={fill(copy.search, { label })}
+            placeholder={copy.searchModules}
+            className="w-full px-3.5 py-2.5 text-[15px]"
           />
         </div>
-        <div className="flex gap-2 shrink-0">
+        <div className="flex flex-wrap gap-2 shrink-0">
           <button
             type="button"
             onClick={addCoreFinance}
-            className="rounded-md border border-papaya/40 bg-papaya/8 px-3 py-2 text-xs font-semibold text-papaya hover:bg-papaya/15 transition-colors"
-            title="Add the core Finance modules most ERPs start with"
+            className="nd-btn nd-btn-secondary" style={{ padding: "8px 14px", fontSize: 13 }}
+            title={copy.addCoreFinanceTitle}
           >
-            + Add core finance
+            {copy.addCoreFinance}
           </button>
           <button
             type="button"
             onClick={clearAll}
             disabled={value.length === 0}
-            className="rounded-md border border-corbeau/15 px-3 py-2 text-xs font-semibold text-night/70 hover:border-corbeau/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="nd-btn nd-btn-secondary" style={{ padding: "8px 14px", fontSize: 13 }}
           >
-            Clear
+            {copy.clear}
           </button>
         </div>
       </div>
 
       {/* Selected chips — quick removal */}
       {value.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-4 p-3 rounded-md bg-cream border border-corbeau/8">
+        <div className="flex flex-wrap gap-1.5 mb-4 p-3 rounded-[10px] bg-[var(--surface-overlay)] border border-corbeau/10" lang={copy.englishLang}>
           {value.map((id) => {
             const m = SAP_MODULES.find((x) => x.id === id);
             if (!m) return null;
@@ -156,8 +160,8 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
                 key={id}
                 type="button"
                 onClick={() => toggleModule(id)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-papaya text-corbeau text-[0.72rem] font-semibold hover:bg-[#fda66e] transition-colors"
-                title={`Remove ${m.label}`}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-papaya text-corbeau text-[0.72rem] font-semibold hover:brightness-110 transition-colors"
+                title={fill(copy.remove, { label: m.label })}
               >
                 {m.code ? <span className="font-mono text-[0.66rem] opacity-70">{m.code}</span> : null}
                 <span>{m.label}</span>
@@ -168,7 +172,8 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
         </div>
       )}
 
-      {/* Category groups */}
+      {/* Category groups. The SAP module catalogue (category, module names and
+          descriptions) stays English and is marked lang="en" on translated pages. */}
       <div className="space-y-2">
         {SAP_MODULE_CATEGORIES.map((cat) => {
           const modules = byCategory.get(cat.id) ?? [];
@@ -206,13 +211,13 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
                   }}
                   aria-label={
                     bulkState === "all"
-                      ? `Deselect all ${cat.label} modules`
-                      : `Select all ${cat.label} modules`
+                      ? fill(copy.deselectAllIn, { label: cat.label })
+                      : fill(copy.selectAllIn, { label: cat.label })
                   }
                   title={
                     bulkState === "all"
-                      ? `All ${catTotal} ${cat.label.toLowerCase()} modules selected · click to clear`
-                      : `Select all ${catTotal} ${cat.label.toLowerCase()} modules`
+                      ? fill(copy.allSelectedTitle, { count: catTotal, label: cat.label.toLowerCase() })
+                      : fill(copy.selectAllTitle, { count: catTotal, label: cat.label.toLowerCase() })
                   }
                   className="shrink-0 flex items-center justify-center px-3 hover:bg-papaya/8 transition-colors group"
                 >
@@ -243,21 +248,21 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
                 >
                   <div className="flex-1 min-w-0">
                     <p className="font-display font-bold text-corbeau text-[0.95rem] tracking-[-0.01em]">
-                      {cat.label}
+                      {copy.englishLang ? <span lang={copy.englishLang}>{cat.label}</span> : cat.label}
                       {selectedInCat > 0 && (
                         <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-papaya text-corbeau font-mono text-[0.68rem] font-bold align-middle">
                           {selectedInCat}
                         </span>
                       )}
-                      <span className="ml-2 font-mono text-[0.62rem] font-normal tracking-[1.4px] uppercase text-corbeau/40 align-middle">
-                        of {catTotal}
+                      <span className="ml-2 font-mono text-[0.62rem] font-normal tracking-[1.4px] uppercase text-eyebrow align-middle">
+                        {fill(copy.ofCount, { count: catTotal })}
                       </span>
                     </p>
-                    <p className="text-[0.78rem] text-night/60 mt-0.5">{cat.blurb}</p>
+                    <p className="text-[0.78rem] text-eyebrow mt-0.5" lang={copy.englishLang}>{cat.blurb}</p>
                   </div>
                   <span
                     aria-hidden
-                    className={`shrink-0 text-corbeau/40 text-sm transition-transform pr-3 ${open ? "rotate-180" : ""}`}
+                    className={`shrink-0 text-eyebrow text-sm transition-transform pr-3 ${open ? "rotate-180" : ""}`}
                   >
                     ▾
                   </span>
@@ -283,21 +288,21 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-baseline gap-2 flex-wrap">
-                            <span className="font-display font-semibold text-corbeau text-[0.92rem]">
+                            <span className="font-display font-semibold text-corbeau text-[0.92rem]" lang={copy.englishLang}>
                               {m.label}
                             </span>
                             {m.code && (
-                              <span className="font-mono text-[0.7rem] text-corbeau/55 bg-cream px-1.5 py-0.5 rounded">
+                              <span className="font-mono text-[0.7rem] text-eyebrow bg-cream px-1.5 py-0.5 rounded">
                                 {m.code}
                               </span>
                             )}
                             {m.core && (
                               <span className="font-mono text-[0.62rem] uppercase tracking-[1.4px] text-papaya">
-                                Core
+                                {copy.core}
                               </span>
                             )}
                           </div>
-                          <p className="text-[0.8rem] text-night/65 mt-0.5 leading-[1.45]">
+                          <p className="text-[0.8rem] text-eyebrow mt-0.5 leading-[1.45]" lang={copy.englishLang}>
                             {m.description}
                           </p>
                         </div>
@@ -311,13 +316,11 @@ export default function ModulePicker({ label, value, onChange }: ModulePickerPro
         })}
 
         {query.trim() && filtered.length === 0 && (
-          <div className="rounded-lg border border-corbeau/10 bg-paper px-4 py-6 text-center">
-            <p className="text-sm text-night/65">
-              No modules match <span className="font-semibold text-corbeau">&quot;{query}&quot;</span>.
-            </p>
-            <p className="text-[0.78rem] text-night/45 mt-1">
-              Try shorter terms like &quot;treasury&quot;, &quot;payroll&quot;, &quot;ariba&quot;, or &quot;ewm&quot;.
-            </p>
+          <div className="nda-empty" role="status" style={{ padding: "24px 16px" }}>
+            <h3 style={{ marginTop: 0 }}>
+              {copy.noMatch} <span className="text-papaya">&quot;{query}&quot;</span>.
+            </h3>
+            <p>{copy.noMatchHint}</p>
           </div>
         )}
       </div>

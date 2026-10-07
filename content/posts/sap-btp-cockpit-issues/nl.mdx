@@ -1,559 +1,194 @@
 ---
-title: "Top 5 SAP BTP Cockpit-problemen waar ontwikkelaars mee worstelen"
+title: "SAP BTP Cockpit-problemen: vijf kwesties en hoe u ze oplost"
+h1: "SAP BTP Cockpit-problemen: vijf kwesties en hoe u ze oplost"
 slug: "sap-btp-cockpit-issues"
-date: "2025-06-24 19:49:23"
-updated: "2026-01-11 19:49:16"
+date: "2025-06-24"
+updated: "2026-10-07"
 hero: "/images/wp/2025/06/3.webp"
+heroAlt: "Ontwikkelaar van achteren gezien die code typt op een desktopmonitor naast een laptop"
 category: "sap-modules"
-tags: ["sap-technical-decisions"]
-author: "noeldcosta"
+tags: ["sap-technical-decisions", "sap-btp", "sap-cap", "sap-integration-suite"]
+author: "Noel D'Costa"
+metaTitle: "SAP BTP Cockpit-problemen in 2026: 5 fixes die werken"
+metaDescription: "SAP BTP Cockpit-problemen en oplossingen: 401-tokenfouten, Internal Server Errors, dode links, CAP-destinationfouten en trial-apps die stoppen."
+excerpt: "Vijf problemen met de SAP BTP Cockpit keren steeds terug: 401-tokenfouten, fouten in Integration Suite, dode links, CAP-destinationfouten en trial-apps die 's nachts stoppen. Dit controleert u per probleem als eerste."
+experienceSource: "Direct experience working with SAP BTP Cockpit across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets, covering integration, CAP application deployment, and destination configuration in both trial and production subaccount environments. 2026 BTP Cockpit issues verified against current Cloud Foundry runtime."
+lastReviewed: "2026-05-21"
+keyTakeaways:
+  - "401-fouten met service key-inloggegevens zijn meestal een OAuth-probleem: verkeerd grant type, verkeerde token-URL of ontbrekende authorities, geen verkeerd wachtwoord"
+  - "Internal Server Errors in Integration Suite komen meestal door ontbrekende role collections of een verouderde sessie: wijs rollen toe en log daarna volledig uit en weer in"
+  - "Links van boosters en tegels breken wanneer de subaccountstructuur na de setup verandert: navigeer via de Cockpit-boom en bewaar directe URL's als bladwijzer"
+  - "CAP-destinationfouten komen meestal door een naamverschil in cds.requires of xs-app.json, een ontbrekende Destination- of XSUAA-binding of het verkeerde OData-kind"
+  - "SAP HANA Cloud-instances op trial en free tier stoppen elke nacht: een app die gisteren werkte, kan simpelweg zijn database kwijt zijn"
+pullQuote: "De SAP BTP Cockpit geeft heel weinig feedback wanneer er iets stukgaat. Het meeste debuggen gebeurt door uitproberen. Wie de patronen kent, bespaart zich de uren."
+mentions:
+  - "SAP BTP"
+  - "SAP Integration Suite"
+  - "SAP CAP"
+  - "SAP HANA"
+  - "Cloud Foundry"
+  - "RISE with SAP"
 originalUrl: "https://noeldcosta.com/sap-btp-cockpit-issues/"
-h1: "Top 5 frustraties waar ontwikkelaars mee te maken krijgen met SAP BTP Cockpit"
-metaDescription: "Krijgt u te maken met willekeurige fouten in SAP BTP Cockpit? Ontdek waarom ze optreden en hoe u problemen zoals servicefouten, verbroken links en toegangsproblemen kunt oplossen."
-excerpt: "Krijgt u te maken met willekeurige fouten in SAP BTP Cockpit? Ontdek waarom ze optreden en hoe u problemen zoals servicefouten, verbroken links en toegangsproblemen kunt oplossen."
-metaTitle: "Top 5 SAP BTP Cockpit-problemen waar ontwikkelaars mee worstelen"
 canonicalUrl: "https://noeldcosta.com/nl/sap-btp-cockpit-issues/"
 locale: "nl"
 translatedFrom: "en"
-translationSource: "gtranslate-scrape-cleanup"
+translationSource: "reviewed-en-2026-10"
 ---
 
-### SAP-artikelen
+Gooit de SAP BTP Cockpit fouten naar u toe, dan is het waarschijnlijk een van vijf dingen. Een 401 van een service key is bijna altijd het OAuth-verzoek, niet de inloggegevens. Een Internal Server Error in Integration Suite betekent meestal ontbrekende role collections of een verouderde sessie. Dode links komen van boosters die zijn ingesteld voordat het subaccount veranderde. CAP-destinationfouten zijn meestal een naamverschil of een ontbrekende binding. En een app die gisteren werkte op een trial-account, kan 's nachts zijn database zijn kwijtgeraakt. Deze gids is voor ontwikkelaars en integratieconsultants die in Cloud Foundry-subaccounts werken. De triagetabel hieronder vertelt u wat u als eerste controleert.
 
-# Top 5 frustraties waar ontwikkelaars mee te maken krijgen met SAP BTP Cockpit
+De eerste keer dat ik de rode foutbanner in de SAP BTP Cockpit zag, nam ik aan dat ik iets verkeerd had gedaan. Verkeerde link, verlopen sessie.
 
+Na de derde of vierde keer was duidelijk dat het niet alleen mij overkwam.
 
-### Noel D'Ostas
+In de weken daarna hield ik een notitieboekje bij waarin ik opschreef wanneer er iets stukging. Internal Server Errors bij het openen van Integration Suite. Destinations die er geldig uitzagen en toch geen verbinding wilden maken. Apps die gisteren werkten en vandaag vastliepen. Er ontstonden patronen. Weinig ervan stond ergens bruikbaar gedocumenteerd, en de Cockpit zelf geeft u bijna niets om mee te werken.
 
-*   Laatste update : 24 juni 2025
+## Triage: van symptoom naar eerste controle
 
-SAP BTP Cockpit klinkt alsof het je leven makkelijker moet maken. Je verwacht één plek om services te beheren, apps te implementeren, toegang te regelen en gewoon verder te gaan zonder al te veel problemen. Dat is tenminste de bedoeling. Maar SAP BTP Cockpit-problemen kunnen pijnlijk zijn! 
+| Symptoom | Meest waarschijnlijke oorzaak | Controleer eerst |
+|---|---|---|
+| 401 Unauthorized bij het aanroepen van een API met een service key | Verkeerd grant type, verkeerde token-URL of ontbrekende authorities | Decodeer het token en lees `aud` en `scope` |
+| Internal Server Error bij het openen van Integration Suite | Ontbrekende role collections of verouderde sessie | Role collections van uw gebruiker, daarna volledig uitloggen |
+| Booster of tegel opent een lege of verkeerde pagina | Subaccount is veranderd nadat de booster liep | Navigeer in plaats daarvan via de Cockpit-boom |
+| CAP-app: “destination not found” of authenticatiefouten | Naamverschil, ontbrekende binding, verkeerd OData-kind | `cds.requires` en `xs-app.json` naast de naam in de Cockpit |
+| App werkte gisteren, hangt vandaag (trial) | HANA Cloud-instance 's nachts gestopt | Status van de database-instance in SAP HANA Cloud Central |
 
-Maar zodra je ermee aan de slag gaat, voelt het onhandig. Sommige pagina's laden nooit. Inloggegevens werken niet zonder duidelijke reden. Je volgt een link en komt ergens terecht waar je geen zin in hebt, of helemaal nergens.
+## Wat er in BTP veranderde van 2024 tot 2026
 
-Het is niet altijd duidelijk wat er mis is gegaan. Je controleert je instellingen nog een keer, ervan uitgaande dat je een stap hebt gemist. Dan controleer je het opnieuw. Nog steeds niets. Na een tijdje voelt het alsof je de helft van je tijd besteedt aan het proberen om basisdingen werkend te krijgen.
+Cloud Foundry, Kyma en de ABAP environment draaien op het multi-cloudfundament van SAP, dat sinds 2020 de standaard is voor nieuwe klanten. De oudere Neo-omgeving krijgt alleen nog beveiligings- en compliance-updates, en SAP heeft de uitfasering vastgesteld op 31 december 2028. Vrijwel elk probleem hieronder is een Cloud Foundry-probleem.
 
-Hier zijn enkele veelvoorkomende SAP BTP Cockpit-problemen die steeds weer terugkomen:
+Twee hernoemingen verwarren nog steeds mensen die oudere gidsen lezen. SAP Launchpad service werd in januari 2023 SAP Build Work Zone, standard edition. En veel tegels en boosters zijn herbouwd naarmate SAP Build groeide, dus screenshots uit 2022 komen vaak niet meer overeen met wat u ziet.
 
-*   Inloggen met servicegegevens mislukt, zelfs als deze correct zijn
-*   Verbindingen in de cockpit zijn verbroken of worden omgeleid naar irrelevante plaatsen
-*   Diensten zoals Integration Suite veroorzaken interne serverfouten, soms urenlang
-*   CAP-bestemmingsinstellingen zijn onduidelijk, vooral bij het schakelen tussen OData-versies
-*   Bij gratis accounts of proefaccounts worden apps zonder veel uitleg beperkt
+Bij RISE with SAP komt BTP meestal als een creditgebaseerde entitlement binnen het contract. De Cockpit is hetzelfde. Wat verschilt is wie in uw organisatie het global account beheert, dus zoek die persoon op voordat u een nieuwe entitlement nodig hebt.
 
-In dit bericht worden vijf van de meest voorkomende frustraties met [SAP](https://www.sap.com) BTP Cockpit. Dit zijn problemen waar mensen constant mee te maken krijgen. Sommige zijn gewoon irritant. Andere zorgen ervoor dat projecten abrupt worden stopgezet. Hoe dan ook, weten wat je kunt verwachten, helpt enorm.
+## Probleem 1: 401 unauthorized met service key-inloggegevens
 
-### "SAP BTP Cockpit geeft vaak vage fouten weer zonder duidelijke uitleg, maar in de meeste gevallen, Door de cache van de browser te wissen, de rechten opnieuw te controleren en de service handmatig opnieuw te koppelen aan het subaccount, kunt u het probleem meestal oplossen."
+U maakt een service-instance aan, genereert een service key, kopieert de client-ID en het secret naar Postman, voegt de token-URL toe en verstuurt het verzoek. 401. Geen details.
 
-[Praat met Noel – Gratis 15 minuten gesprek om u te helpen!](mailto:solutions@noeldcosta.com)
+U kopieert het secret opnieuw. Nog steeds mis. De service is in orde. De OAuth-flow niet.
 
-## Probleem #1: Verwarring over inloggen en inloggegevens
+**Wat u controleert, in volgorde:**
 
+1. **Grant type.** Technische toegang tot de meeste BTP-service-API's gebruikt `client_credentials`. Stel dat expliciet in Postman in. Vertrouw niet op de standaardwaarde.
+2. **Token-URL.** Neem hem over uit de service key. Sommige keys geven een `tokenurl`; andere geven de XSUAA-`url`, waaraan u `/oauth/token` toevoegt. Leen er nooit een van een ander subaccount.
+3. **Headers.** Stuur bij een directe tokenaanroep `Content-Type: application/x-www-form-urlencoded` en `Authorization: Basic <base64(clientid:clientsecret)>`.
+4. **Authorities.** Bij client credentials bevat het token alleen de scopes die aan die service-instance zijn toegekend. Heeft de API een rol nodig die de instance niet heeft, dan krijgt u toch een token en zegt de API toch nee. Los het op in de instanceparameters (bijvoorbeeld de rollen op een instance van het API-plan van Integration Suite), niet in het verzoek.
+5. **Audience.** Hebt u een token en wijst de API het af, decodeer het token dan en lees de `aud`-claim. Komt die niet overeen met de API die u aanroept, dan gebruikt u een key van de verkeerde service-instance.
 
-In deze [SAP BTP Cockpit-probleem](https://noeldcosta.com/nl/sap-btp-cockpit-issues/) komt vaker voor dan de meeste mensen verwachten. Je maakt een service-instance aan in BTP, genereert een servicesleutel, opent de JSON en haalt de client-ID en het geheim op. Alles ziet er goed uit.
+## Probleem 2: Internal Server Errors bij het openen van Integration Suite
 
-Je plugt die in Postman of je app. Voeg de token-URL toe. Doe de aanvraag. Dan krijg je een 401. Dat is alles. Geen details. Gewoon ongeautoriseerd.
+U opent Integration Suite en krijgt een rode banner “Internal Server Error”. Geen log. Herladen, andere browser, hetzelfde resultaat.
 
-Je gaat terug. Je controleert de client-ID nog een keer. Misschien kopieer je het geheim nog een keer voor de zekerheid. Het lukt nog steeds niet. Op dit punt begin je je misschien af te vragen of de service kapot is, maar meestal is dat niet het geval.
+Het gebeurt meestal nadat de service een tijd ongebruikt is gebleven: 's ochtends geopend, een paar uur met rust gelaten, later weer gebruikt. De communitythreads en kennisbank van SAP wijzen op twee gebruikelijke oorzaken: ontbrekende role collections en verouderde sessies.
 
-Dit gebeurt vaak met API's, vooral wanneer u probeert [verbinding maken met ABAP-proef](https://noeldcosta.com/nl/erp-modernization-mistakes/) of services zoals Integration Suite. De flow lijkt in de documentatie eenvoudig, maar verschillende kleine dingen kunnen deze verstoren.
+**Wat het meestal oplost:**
 
+1. **Controleer de role collections.** Uw gebruiker heeft `Integration_Provisioner` nodig om de tenant in te richten en de relevante `PI_`-role collections (administrator, integration developer, business expert) om erin te werken. Wijs ze toe in het subaccount onder Security.
+2. **Log volledig uit.** Rolwijzigingen bereiken uw sessie pas na een nieuwe aanmelding. Sluit elk BTP- en Integration Suite-tabblad, meld u af en meld u daarna opnieuw aan.
+3. **Wis de cookies voor de BTP-domeinen** als de fout een nieuwe aanmelding overleeft. Een verouderde sessiecookie kan de sessie zelf overleven.
+4. **Gebruik één Cockpit-sessie.** Meerdere tabbladen of browserprofielen op hetzelfde subaccount veroorzaken sessieconflicten die er precies zo uitzien als deze fout.
 
-#### Dit is wat u zorgvuldig moet doornemen:
+Het echte probleem is zichtbaarheid. De Cockpit vertelt u niets over wat er is mislukt, dus u gaat gokken. Loop in plaats daarvan de lijst in volgorde af. Voor een bredere blik op waarom integratieprogramma's vastlopen, zie mijn stuk over [vertragingen bij de oplevering van SAP Integration Suite](/nl/sap-integration-suite-delivery-delays/).
 
-*   Bevestig eerst de **subsidietype** is correct. De meeste BTP-services gebruiken _klantgegevens_Kies dat expliciet in Postman. Sommige mensen zien dat over het hoofd en proberen per ongeluk iets anders.
+## Probleem 3: kapotte navigatie en dode links
 
-*   Ten tweede, de **token-URL** Moet rechtstreeks vanuit de servicesleutel-JSON worden gekopieerd. Zelfs een kleine wijziging kan het verstoren. Als je het raadt of vanuit een andere omgeving kopieert, mislukt het.
+U klikt op “Go to Application” en krijgt een leeg scherm, een generieke landingspagina of een redirect die nergens op slaat.
 
-*   Ten derde, controleer de **headers**Wanneer u een directe oproep naar de token-URL doet, moet u `Content-Type` naar `application/x-www-form-urlencoded`. De `Authorization` De header moet de client-ID en het geheim bevatten, base64-gecodeerd als één enkele tekenreeks.
+Het volgt patronen:
 
-*   Ten vierde, let op **scopes of xsappname**Soms heeft de tokenaanvraag een extra veld nodig, afhankelijk van de service. Als uw token de vereiste scopes mist, kunt u er mogelijk nog steeds een terugkrijgen, maar dit werkt niet bij het aanroepen van de API zelf.
+1. Boosterlinks breken wanneer de subaccountinrichting verandert nadat de booster liep. De redirect wijst naar een plek die niet meer bestaat.
+2. Integration Suite-tegels werken soms, geven soms een fout, lopen soms op een time-out, meestal om de sessieredenen hierboven.
+3. Links naar SAP Build Work Zone tonen “connection denied” wanneer het abonnement bestaat maar uw gebruiker de role collection voor de site mist.
+4. Meerdere tabbladen of browserprofielen openen links in verlopen contexten.
 
-*   Ten vijfde, controleer de **service-instantie is actief**Op proefaccounts worden services inactief of afgesloten. Dat leidt tot vreemde fouten en vaak geen duidelijke melding. Controleer vanuit de BTP Cockpit of de instance nog actief is.
+Wat werkt: navigeer via de Cockpit-boom (subaccount, dan Services, dan Instances and Subscriptions) en bewaar de directe URL's voor Integration Suite, destinations en Work Zone als bladwijzer. Gebruik één sessie in een schoon browserprofiel. Wanneer een link elke derde keer faalt, houdt u op het platform te vertrouwen en begint u omwegen te bouwen. Bladwijzers zijn de goedkoopste omweg die er is. Zoekt u nog uw weg, dan behandelt mijn [rondleiding door de BTP Cockpit](/nl/master-the-sap-btp-cockpit-simple-steps/) de basisnavigatie.
 
-*   Als u ten slotte nog steeds een token ontvangt, maar de API faalt, decodeer deze dan op [jwt.io](https://jwt.io)Kijk naar de claim van het publiek. Als deze niet overeenkomt met de API die u aanroept, kan dat het probleem zijn.
+## Probleem 4: destinationfouten in CAP-apps
 
-Dit soort problemen kost veel tijd omdat het systeem nauwelijks feedback geeft. Het meeste debuggen gebeurt door middel van trial-and-error. Maar zodra je deze controles hebt uitgevoerd, begint het meestal te werken. Nog steeds frustrerend, maar je weet tenminste waar je op moet letten.
+U deployt een CAP-app, configureert een destination in de Cockpit en verzoeken falen nog steeds met “destination not found” of authenticatiefouten. De destination staat in de lijst. De app draait. De foutmeldingen wijzen nergens bruikbaar naartoe.
 
-### Problemen met SAP BTP-servicesleutel-aanmeldingsfouten oplossen
+[De CAP-documentatie van SAP](https://cap.cloud.sap/docs/guides/services/consuming-services) is duidelijk over hoe dit gekoppeld hoort te zijn: de remote service wordt gedeclareerd onder `cds.requires` in `package.json` (of `.cdsrc.json`) met een `kind`, en de destinationnaam komt onder `credentials.destination`. De app heeft ook bindings nodig met zowel de Destination-service als XSUAA. De meeste fouten zijn een breuk ergens in die keten.
 
-Wat te controleren?
+<explainer-flow title="De CAP-destinationketen" caption="Een verkeerde naam, een ontbrekende binding of het verkeerde OData-kind verbreekt één schakel, en de foutmelding zegt zelden welke." steps="cds.requires|Productieprofiel|Service-bindings|Destination in de Cockpit|Remote service" notes="Declareert de remote service, het kind en de destinationnaam|Bevat de destination-inloggegevens na deployment|De app is gebonden aan Destination en XSUAA|Dezelfde naam als in cds.requires en xs-app.json, inclusief hoofdletters|odata-v2 voor een V2-service, odata voor V4" result="Verzoeken bereiken de remote service"></explainer-flow>
 
-Hoe te repareren of valideren
+| Symptoom | Oplossing |
+|---|---|
+| Destination staat in de lijst maar de app vindt hem niet | Vergelijk de naam in `cds.requires` en in de routes van `xs-app.json` teken voor teken met de Cockpit, inclusief hoofdletters |
+| Werkt lokaal, faalt na deployment | Controleer of het `[production]`-profiel de destination-inloggegevens echt bevat en of de app is gebonden aan Destination en XSUAA |
+| Remote OData V2-service geeft fouten | Zet `kind` op `odata-v2` voor een V2-service en op `odata` voor V4. Gebruik V4 waar beide kanten het toelaten |
+| Een UI5-app heeft V2 nodig maar uw CAP-service is V4 | Voeg de plugin `@cap-js-community/odata-v2-adapter` toe. De oudere `@sap/cds-odata-v2-adapter-proxy` is deprecated |
+| Authenticatie faalt met geldige inloggegevens | Begin met `OAuth2ClientCredentials` of `BasicAuthentication`. Gebruik SAML of principal propagation alleen wanneer het scenario dat vraagt |
+| Onzeker of het doel überhaupt bereikbaar is | Gebruik “Check Connection” op de destination in de Cockpit voordat u de app debugt |
 
-Toekenningstype dat wordt gebruikt bij authenticatie
+Teams die dit goed aanpakken, houden per app een korte destinationchecklist bij. Niet omdat de setup complex is. Maar omdat één verkeerde aanname over naam, binding of OData-kind stilletjes faalt en veel meer tijd kost om te vinden dan om te voorkomen.
 
-Zorg ervoor dat u "client\_credentials" gebruikt in Postman of uw code. De meeste SAP BTP-services verwachten dit type toekenning, geen autorisatiecode of wachtwoordstromen.
+## Probleem 5: apps die 's nachts stoppen in trial en free tier
 
-Token-URL van servicesleutel
+Een CAP-app die gisteren werkte, hangt nu. Geen fout. De Cockpit toont dat hij draait. U herstart hem. Niets.
 
-Kopieer de token-URL exact zoals deze in de JSON van de servicesleutel staat. Zelfs kleine wijzigingen of het gebruik van een andere URL van de omgeving kunnen ervoor zorgen dat de aanvraag mislukt.
+Controleer eerst de database. De eigen [tutorial voor de HANA Cloud-trial](https://developers.sap.com/tutorials/hana-cloud-mission-trial-1) van SAP stelt dat free-tier-instances elke nacht worden gestopt en elke dag dat u werkt opnieuw moeten worden gestart. Het trial-account zelf duurt maximaal 90 dagen als u regelmatig inlogt. Uw app is in orde. De database slaapt.
 
-HTTP-headers in tokenaanvraag
+**Wat helpt:**
 
-Stel "Content-Type" in op "application/x-www-form-urlencoded" en gebruik "Authorization: Basic" "als u handmatig verzendt. Postman zal dit automatisch toepassen als het correct is geconfigureerd.
+1. Herstart de HANA Cloud-instance vanuit SAP HANA Cloud Central voordat u code gaat debuggen.
+2. Gebruik de CLI (`cf apps`, `cf services`) om geheugen- en servicegebruik te zien. De Cockpit-UI toont veel minder.
+3. Verwijder ongebruikte service-instances voordat u nieuwe aanmaakt. Trialquota gelden voor het hele account, niet voor één app.
+4. Houd demo- en testworkloads in aparte subaccounts.
 
-Vereiste scopes of xsappname
+Hebt u meer dan één app en database nodig die betrouwbaar draaien, of stabiele uptime voor demo's, stap dan over op een productief account. Free-tierplannen in een productief account kunnen worden opgewaardeerd naar betaald zonder dat u uw werk kwijtraakt, wat met een trial-account niet kan.
 
-Sommige services vereisen een scope in de tokenaanvraag. Controleer de servicesleutel op een veld zoals 'xsappname' of 'scope' en voeg dit indien van toepassing toe.
+## Veelgestelde vragen
 
-Service-instance-activiteit
+<details>
+<summary>Waarom krijg ik een 401-fout met SAP BTP service key-inloggegevens terwijl ze er correct uitzien?</summary>
 
-Bij proefaccounts kunnen inactieve services stille fouten veroorzaken. Controleer of de instance actief is in de BTP Cockpit. Start de instance opnieuw of maak deze opnieuw aan indien nodig.
+Bijna altijd het OAuth-verzoek, niet de inloggegevens. De gebruikelijke oorzaken zijn het verkeerde grant type (gebruik `client_credentials` voor technische toegang), een token-URL die niet overeenkomt met de service key of verkeerde headers bij de tokenaanroep.
 
-Tokengeldigheid en publieksclaim
+Krijgt u een token en wijst de API het toch af, decodeer het dan. Controleer of de `aud`-claim overeenkomt met de API en controleer de scopes. Bij client credentials komen scopes uit de authorities die aan de service-instance zijn toegekend, dus los ontbrekende rollen op in de instanceparameters.
 
-Gebruik jwt.io om het token te inspecteren. Zorg ervoor dat de "aud"-claim overeenkomt met de API of service die u probeert te benaderen.
+</details>
 
+<details>
+<summary>Wat veroorzaakt Internal Server Errors bij het openen van Integration Suite in de BTP Cockpit?</summary>
 
-### Kijk hoe ik jouw ERP en AI Systeemselectie of implementatie die bij u past.
+Meestal ontbrekende role collections of een verouderde sessie. Zorg dat uw gebruiker `Integration_Provisioner` heeft, plus de `PI_`-role collections die u nodig hebt. Sluit daarna elk BTP-tabblad, meld u af en weer aan, want nieuwe rollen gelden pas na een nieuwe aanmelding.
 
-**ERP- en AI-systeemselectie** – Identificeer en kies het juiste ERP- of AI-platform dat past bij uw zakelijke behoeften.
+Blijft het probleem, wis dan de cookies voor de BTP-domeinen en houd het bij één Cockpit-sessie. Meerdere tabbladen op hetzelfde subaccount veroorzaken dezelfde fout.
 
-**Projectondersteuning en herstel** – Houd uw project op schema of breng falende implementaties weer onder controle.
+</details>
 
-**ERP-modernisering** – Transformeer bestaande ERP-systemen naar moderne, efficiënte en schaalbare ERP-omgevingen.
+<details>
+<summary>Waarom maakt mijn CAP-app geen verbinding met een destination die in de Cockpit correct lijkt te staan?</summary>
 
-[Neem contact met ons op.](mailto:so*******@********ta.com "Dit contact is gecodeerd door Anti-Spam door CleanTalk. Klik om te decoderen. Zorg ervoor dat JavaScript is ingeschakeld in uw browser om het decoderen te voltooien.")
+Meestal een naamverschil. De destinationnaam in `cds.requires` en in uw `xs-app.json`-routes moet exact overeenkomen met de Cockpit, inclusief hoofdletters.
 
-## Probleem #2: Gebroken navigatie en dode links
+Klopt de naam, controleer dan of de app is gebonden aan zowel de Destination-service als XSUAA, of het `[production]`-profiel de inloggegevens bevat en of het `kind` overeenkomt met de remote service: `odata-v2` voor V2, `odata` voor V4. Gebruik “Check Connection” in de Cockpit om te bevestigen dat het doel bereikbaar is.
 
+</details>
 
-Op een gegeven moment klikt bijna iedereen ergens op in de BTP Cockpit en staart uiteindelijk naar een leeg scherm of wordt doorgestuurd naar een plek die er totaal niets mee te maken heeft. Het overvalt je de eerste keer. Je verwacht dat het werkt, want dat zou het ook moeten doen. Dit is een van de meest voorkomende [SAP BTP Cockpit-problemen](https://noeldcosta.com/nl/sap-btp-cockpit-issues/).
+<details>
+<summary>Waarom stopt mijn SAP BTP trial-app 's nachts met werken?</summary>
 
-Een van de meest voorkomende plaatsen waar dit gebeurt, is direct na het instellen van een service of het gebruiken van een booster. Je klikt op "Ga naar applicatie" of "Openen in Cockpit" en verwacht dat je direct naar je bestemming wordt gebracht. In plaats daarvan geeft de pagina een foutmelding of opent een algemeen landingsscherm. Soms laadt er helemaal niets.
+Op trial- en free-tierplannen worden SAP HANA Cloud-instances elke nacht gestopt om resources te besparen. Uw app blijft draaien maar kan zijn database niet bereiken. Herstart de instance elke dag in SAP HANA Cloud Central voordat u gaat werken.
 
-Het voelt alsof bepaalde links ongevraagd zijn opgezet. Dat is misschien niet zo, maar op dat moment voelt het zeker zo.
+Gebruik `cf apps` en `cf services` om geheugen- en servicegebruik te controleren, want trialquota zijn in de Cockpit moeilijk te zien. Verwijder ongebruikte instances voordat u nieuwe aanmaakt.
 
+</details>
 
-#### Er zijn een paar patronen die dit probleem kenmerken:
+<details>
+<summary>Waarom leiden links in boosters en tegels naar lege pagina's?</summary>
 
-*   Links binnenin **boosters** Vaak kapot, vooral als de subaccountinstellingen halverwege veranderen. Een redirect kan je terugsturen naar de homepage of je helemaal op de verkeerde plek laten belanden.
+Boosterlinks breken wanneer de subaccountstructuur verandert nadat de booster liep. De redirect wijst naar een locatie die niet meer bestaat of nooit volledig is geconfigureerd.
 
-*   **Integratiesuite** is een andere lastige. Erop klikken vanuit de service-instantie werkt soms, maar leidt soms tot een "interne fout" en af en toe tot een time-out.
+Navigeer in plaats daarvan via de Cockpit-boom en bewaar directe URL's voor Integration Suite, destinations en SAP Build Work Zone als bladwijzer. Vertrouw voor alles wat u dagelijks gebruikt niet op navigatie die door boosters is gegenereerd.
 
-*   **Workzone- en Launchpad-koppelingen** Geeft vaak de foutmelding "verbinding geweigerd" of toegang. Zelfs als de rechten aanwezig zijn, lijkt de routering willekeurig te worden verbroken.
+</details>
 
-*   Als de cockpit in meerdere tabbladen of browserprofielen geopend is, kunnen sessies desynchroniseren. Dit kan ertoe leiden dat links worden geopend in een tabblad dat al verlopen is.
+<details>
+<summary>Wanneer moet ik van een BTP trial-account overstappen naar een betaald plan?</summary>
 
-Deze problemen lijken klein totdat je een deadline haalt of iemand nieuw aanneemt. Dan vertragen ze alles. Ze verstoren de flow. Je klikt, het mislukt, en dan ben je de volgende paar minuten bezig met uitzoeken wat er misging, terwijl de taak eigenlijk maar 30 seconden had moeten duren.
+Wanneer de beperkingen u tijd gaan kosten. Draait u meer dan één app of database, of hebt u stabiele uptime nodig voor demo's of tests, dan veroorzaakt de trial meer frictie dan hij oplevert.
 
-#### Er zijn een paar oplossingen, maar geen daarvan lost het probleem volledig op:
+De belangrijkste winst is stabiliteit en duidelijker inzicht in resources, geen nieuwe functies. Een productief account met free-tierplannen is een goede tussenstap: u kunt die plannen later upgraden naar betaald zonder iets opnieuw op te bouwen.
 
-*   Houden **directe URL's als bladwijzer opgeslagen** Voor de tools die u vaak gebruikt. Denk hierbij aan Integration Suite, Destination Management en Launchpad. Vertrouw niet te veel op in-app links.
-
-*   Gebruik de **Cockpit navigatieboom handmatig**Ga naar uw subaccount en navigeer vervolgens naar Services > Instanties > Abonnementen. Klik niet op snelkoppelingen op serviceniveau.
-
-*   Open er maar één **Cockpit-sessie** tegelijk in een schoon browserprofiel. Het klinkt overbodig, maar het voorkomt een hoop problemen met contextverlies.
-
-Het grotere probleem hier is voorspelbaarheid. Een platform als dit zou je in staat moeten stellen je op je werk te concentreren. Als een link om de drie keer uitvalt, slijt het vertrouwen in het platform langzaam. Je begint gewoontes te ontwikkelen om eromheen te werken in plaats van erdoorheen te werken. Dat is niet ideaal, maar eerlijk gezegd is dat wat veel mensen uiteindelijk doen.
-
-### Veelvoorkomende navigatieproblemen in SAP BTP Cockpit
-
-Waar het breekt
-
-Wat u eraan kunt doen?
-
-Links in boosters worden verkeerd doorverwezen of openen lege schermen
-
-Als de subaccountinstellingen halverwege veranderen, kunnen sommige boosters niet correct koppelen. Ga handmatig terug naar het subaccount en krijg vanaf daar toegang tot de services.
-
-Integration Suite genereert een "interne fout" wanneer deze vanaf de tegel wordt gestart
-
-Gebruik de directe Integration Suite-URL of open deze via het Cockpit-navigatiepad in plaats van de snelkoppelingtegel.
-
-Workzone- of Launchpad-links geven 'verbinding geweigerd' weer, zelfs als services wel zijn toegestaan
-
-Controleer de rechten en start vervolgens vanuit Abonnementen in plaats van het hoofddashboard. Vertrouw niet op snelkoppelingen bij de eerste installatie.
-
-Het openen van services van verlopen sessies op meerdere tabbladen veroorzaakt stille fouten
-
-Werk in een schone browsersessie en vermijd het openen van meerdere Cockpit-tabbladen. Dit voorkomt contextmismatch en verouderde sessies.
-
-Algemene onbetrouwbaarheid van in-app navigatie vertraagt de taakstroom
-
-Markeer directe URL's voor tools zoals Integration Suite en Destination Management. Gebruik het pad Services → Instances → Subscriptions in Cockpit om handmatig te navigeren.
-
-## Probleem #3: willekeurige interne serverfouten
-
-
-Op een gegeven moment probeer je een service zoals Integration Suite te openen vanuit de BTP Cockpit, en in plaats van het verwachte scherm krijg je een rode foutmelding met de tekst "Interne serverfout". Verder niets. Geen uitleg. Gewoon een kapot scherm.
-
-Het verrast je, vooral als dezelfde link eerder wel werkte. Je herlaadt de pagina. Nog steeds niet. Je probeert een andere browser. Hetzelfde resultaat. Het voelt willekeurig, maar dat is het niet helemaal.
-
-Dit gebeurt meestal nadat de service een tijdje niet is gebruikt. Misschien hebt u hem 's ochtends geopend, een paar uur weggeweest en later weer teruggekomen. Of misschien was de service 's nachts inactief. Die periode van inactiviteit lijkt iets te triggeren, maar het systeem geeft u niets om mee te werken.
-
-Er worden geen logs of foutdetails weergegeven in de Cockpit. Je blijft gissen wat er mis is gegaan.
-
-
-#### Er zijn een paar patronen waarbij dit vaak gebeurt:
-
-*   Integration Suite geeft een foutmelding wanneer het na een paar uur inactiviteit wordt geopend
-
-*   Proefdiensten reageren niet meer wanneer ze na een onderbreking weer worden gebruikt
-
-*   Sessies op meerdere tabbladen lopen niet synchroon en veroorzaken backend-fouten
-
-*   Achtergrondservices lijken actief, maar falen stilletjes tijdens herinitialisatie
-
-Deze situaties vertragen je, zelfs als ze in eerste instantie niet zo erg lijken. Je verliest tijd en de context waarin je je bevond, wordt volledig verstoord. Het is moeilijker om te herstellen dan nodig is.
-
-#### Er zijn een paar oplossingen die meestal helpen, maar geen daarvan lost het probleem volledig op:
-
-*   Wis de cache en cookies van uw browser. Vaak wordt de sessie dan voldoende gereset om de pagina correct te laden.
-
-*   Controleer rechten en gebruikslimieten in de Cockpit. Soms zijn services niet gebonden of gepauzeerd zonder dat er een waarschuwing wordt weergegeven.
-
-*   Koppel de service opnieuw of start deze opnieuw vanuit het subaccount. Dit werkt goed voor Integration Suite en de meeste apps met een abonnement.
-
-*   Vermijd het open laten staan van de Cockpit in meerdere tabbladen. Dit helpt sessieconflicten te voorkomen die tot deze fout leiden.
-
-Het grotere probleem is het gebrek aan zichtbaarheid. Je krijgt niet te horen wat er mis is gegaan. Dus herhaal je steeds dezelfde trial-and-error-stappen. Het zou makkelijker moeten zijn om problemen op te lossen, maar op dit moment vertrouwen de meeste mensen hierop om het probleem te omzeilen.
-
-### Problemen met interne serverfouten in SAP BTP Cockpit oplossen
-
-Wat veroorzaakt het?
-
-Hoe ermee om te gaan of het te voorkomen
-
-Integratiesuite kan niet worden geladen na een paar uur inactiviteit
-
-Wis de cache en cookies van uw browser. Dit reset vaak de sessie en zorgt ervoor dat de pagina opnieuw kan worden geladen.
-
-Services in de proefomgeving reageren niet meer nadat ze inactief zijn geweest
-
-Ga naar het subaccount, controleer de status van het service-exemplaar en start het handmatig opnieuw op of koppel het opnieuw als het inactief lijkt te zijn.
-
-Meerdere Cockpit-tabbladen creëren conflicterende sessiestatussen
-
-Sluit extra tabbladen en gebruik één schone browsersessie. Laat de Cockpit niet openstaan in meerdere vensters of profielen.
-
-Services lijken actief in de gebruikersinterface, maar mislukken stilletjes bij herinitialisatie van de backend
-
-Controleer rechten en quota vanuit de Cockpit. Als services gepauzeerd of niet-gebonden zijn, wijs dan rechten opnieuw toe of maak de instantie opnieuw aan.
-
-Er worden geen gedetailleerde foutlogboeken weergegeven na de storing
-
-Er is momenteel geen logtoegang vanuit de Cockpit-gebruikersinterface voor deze fouten. Gebruik trial-and-error of gebruik indien nodig CLI-gebaseerde controles.
-
-Algemene onvoorspelbaarheid na lange periodes van gebruikersinactiviteit
-
-Vernieuw tokens handmatig, herstart services en vermijd lange inactieve sessies. Sommige gebruikers automatiseren herinitialisatiestappen om fouten te verminderen.
-
-### Gerelateerde onderwerpen: SAP BTP Cockpit
-
-[
-
-BTP-cockpit
-
-### Beheers de SAP BTP Cockpit
-
-Eenvoudige stappen om door SAP BTP Cockpit te navigeren en veelvoorkomende valkuilen te vermijden.
-
-](https://noeldcosta.com/nl/master-the-sap-btp-cockpit-simple-steps/)[
-
-Integratie
-
-### SAP CPI-overzicht
-
-Bevat implementatie- en verbindingstips voor BTP-gebaseerde integraties.
-
-](https://noeldcosta.com/nl/sap-cpi/)[
-
-Validatie
-
-### SAP-test- en validatietools
-
-Vergelijk hulpmiddelen voor het oplossen van problemen met serviceverbindingen in BTP-apps.
-
-](https://noeldcosta.com/nl/sap-testing-validation-tools-comparison/)[
-
-Implementatie
-
-### SAP-implementatiestrategieën
-
-Strategieën om fouten en knelpunten te voorkomen tijdens BTP-gebaseerde uitrol.
-
-](https://noeldcosta.com/nl/best-sap-implementation-strategies-to-avoid-costly-mistakes/)
-
-## Probleem #4: Problemen met de bestemmingsconfiguratie (vooral voor CAP-apps)
-
-
-Op een gegeven moment implementeer je een CAP-app op BTP, stel je een bestemming in de Cockpit in en verwacht je dat alles direct verbinding maakt. Maar dat gebeurt niet. De bestemming wordt weergegeven, de app is actief, maar de verzoeken mislukken. Je krijgt foutmeldingen zoals 'bestemming niet gevonden' of authenticatiefouten, ook al staat de bestemming duidelijk vermeld en lijkt deze geldig.
-
-Je gaat terug en controleert de configuratie opnieuw en alles lijkt in orde. Maar de applicatie kan de service nog steeds niet bereiken. Frustrerend! Het voelt alsof er iets ontbreekt in de configuratie, maar je kunt gewoon niet vaststellen wat het probleem zou kunnen zijn. En de foutmeldingen helpen helemaal niet. Ze zijn ofwel te algemeen ofwel misleidend!
-
-Dit gebeurt vooral als u met OData-services werkt, vooral als uw applicatie versie 2 verwacht, maar de bestemming naar versie 4 verwijst. CAP kan niet altijd goed met deze discrepantie omgaan.
-
-
-#### Er zijn een aantal patronen waarin dit probleem zich voordoet:
-
-*   Bestemmingen worden geconfigureerd in de Cockpit, maar niet opgepikt door de geïmplementeerde app
-
-*   OData-versieverschillen (v4-bestemming met een v2-client) veroorzaken stille fouten
-
-*   Bestemmingsnamen zijn correct, maar niet correct toegewezen in `xs-app.json` or `cds-env`
-
-*   CAP-apps kunnen niet worden geauthenticeerd via de bestemming, zelfs niet als de inloggegevens geldig zijn
-
-Het diagnosticeren van deze problemen duurt vaak langer dan nodig is. Je besteedt meer tijd aan het oplossen van problemen met de configuratie dan aan het schrijven van daadwerkelijke code. Dit onderbreekt de vaart en zorgt voor veel frictie in wat een standaardopstelling zou moeten zijn.
-
-#### Er zijn een paar oplossingen die de verwarring kunnen verminderen:
-
-*   Controleer het bestemmingstype en de authenticatiemethode. Voor CAP-apps zijn "OAuth2ClientCredentials" of "BasicAuthentication" voorspelbaarder dan SAML of andere.
-
-*   Voeg de bestemming handmatig toe aan uw `default-env.json` tijdens lokale tests en zorg ervoor dat het correct in kaart wordt gebracht `cds.env` voor de geïmplementeerde omgeving
-
-*   Als uw CAP-app een OData v2-service aanroept, maar uw bestemming v4 is, gebruikt u de `@sap/cds-odata-v2-adapter-proxy` om de versie-mismatch te verwerken
-
-*   Valideer de bestemming met de Destination Checker-tool in de BTP Cockpit voordat u deze aan de app koppelt
-
-Het probleem hier is niet alleen de complexiteit van de installatie. Het gaat erom hoe verborgen de werkelijke oorzaak kan zijn. Alles lijkt met elkaar verbonden, maar één verkeerde aanname en je kunt de verkeerde versie, verkeerde mapping, verkeerd type verwachten, en de app faalt stilletjes. De meeste teams houden uiteindelijk een checklist bij om er zeker van te zijn dat alles klopt voordat ze opnieuw implementeren.
-
-### Problemen met bestemmingsconfiguratie in SAP BTP voor CAP-apps
-
-Waar het probleem zich voordoet
-
-Wat u eraan kunt doen?
-
-Bestemming wordt correct weergegeven in de Cockpit, maar de CAP-app heeft er geen toegang toe
-
-Zorg ervoor dat de bestemmingsnaam correct wordt vermeld in \`xs-app.json\` en \`cds.env\`. Onjuiste namen of ontbrekende configuraties leiden vaak tot stille fouten.
-
-OData-versieverschil tussen service (v4) en CAP-app (verwacht v2)
-
-Gebruik \`@sap/cds-odata-v2-adapter-proxy\` in uw CAP-app om het versieverschil te verwerken zonder de bestemming zelf te wijzigen.
-
-Het bestemmingstype is geldig, maar de app kan niet worden geverifieerd
-
-Gebruik "OAuth2ClientCredentials" of "BasicAuthentication" voor de meeste CAP-scenario's. Vermijd complexe typen zoals SAML, tenzij u een specifieke reden hebt.
-
-Bestemming werkt in theorie, maar niet tijdens lokale ontwikkeling
-
-Voeg de doelconfiguratie handmatig toe aan \`default-env.json\` wanneer u lokaal test en zorg ervoor dat deze wordt gespiegeld in \`cds.env\` van uw geïmplementeerde omgeving.
-
-U weet niet zeker of de bestemmingsinstelling geldig of bereikbaar is
-
-Gebruik de Destination Checker-tool in de BTP Cockpit. Deze valideert de connectiviteit en configuratie vóór de implementatie van de app.
-
-## Probleem #5: Onvoorspelbare beperkingen en resourceproblemen
-
-
-Op een gegeven moment implementeer je iets simpels. Een CAP-app die gisteren prima werkte. Vandaag loopt hij vast. Geen crash. Geen duidelijke foutmelding. Het lijkt te werken, maar dat is het niet.
-
-Je controleert de Cockpit. De app is er. De servicebindings zien er goed uit. Er valt niets op. Je probeert hem opnieuw op te starten, maar dat helpt niet. Je vraagt je af of het probleem in je code zit, maar het voelt alsof er iets anders aan de hand is.
-
-Dit gebeurt vaak in testomgevingen. Vooral als je al een tijdje hetzelfde subaccount gebruikt. Het gaat even goed, maar dan, zonder waarschuwing, gaat er iets kapot. Geen waarschuwing. Geen rood knipperende verbruiksmeter. Het stopt gewoon.
-
-![SAP BTP Onboarding-serie] SAP BTP Cockpit - Glob... - SAP Community](data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='0'%20height='0'%20viewBox='0%200%200%200'%3E%3C/svg%3E)
-
-#### Er zijn een aantal patronen waar dit vaak voorkomt:
-
-*   Een CAP-app die gisteren nog werkte, start nu niet meer, ook al is er niets veranderd
-
-*   Databasequery's die snel waren voordat ze begonnen, gaven een time-out of leverden lege antwoorden op
-
-*   Als je nog één dienst inzet, wordt alles anders opeens trager
-
-*   Je probeert een nieuw exemplaar te maken, maar het mislukt stilletjes of wordt nooit voltooid
-
-Het probleem blijkt meestal te liggen in throttling. Of resourcelimieten. Maar SAP maakt dat niet duidelijk. De Cockpit laat zelden zien wat u daadwerkelijk verbruikt en de limieten voor proefversies worden niet duidelijk weergegeven.
-
-Uiteindelijk ga je achter het verkeerde probleem aan. Je bekijkt de configuratie. Je debugt de logica. Je implementeert de app opnieuw. Ondertussen is de werkelijke oorzaak gewoon dat je geen ruimte meer hebt of een limiet hebt bereikt waarvan je niet wist dat die er was.
-
-#### Er zijn een paar dingen die u kunnen helpen het ergste te voorkomen:
-
-*   Gebruik de CLI-tools om te controleren wat er draait. De Cockpit-weergave verbergt vaak resourcedetails die u nodig hebt.
-
-*   Overbelast één subaccount niet. Als je meer dan één app bouwt, verdeel ze dan zo snel mogelijk.
-
-*   Services handmatig opnieuw opstarten na een lange periode van activiteit. Het is niet ideaal, maar het helpt wel om alles te resetten.
-
-*   Als je dit vaker tegenkomt, overweeg dan om over te stappen op een betaald abonnement. Niet vanwege de functies, maar vanwege de stabiliteit.
-
-Het lastigste is dat je vaak niet doorhebt dat je een limiet hebt bereikt. Het lijkt erop dat je app kapot is. Dus probeer je iets te repareren wat niet het probleem is. Die discrepantie maakt dit probleem extra frustrerend. De meeste mensen komen er uiteindelijk wel achter, maar niet voordat ze urenlang op de verkeerde plek hebben gezocht.
-
-### Omgaan met beperkingen en resourceproblemen in SAP BTP-proefomgevingen
-
-Wat je ziet
-
-Wat u eraan kunt doen?
-
-CAP-app die gisteren werkte, start nu niet meer zonder dat er een foutmelding wordt weergegeven
-
-Gebruik de CLI om de app-status en het geheugengebruik te controleren. De Cockpit geeft quotaproblemen mogelijk niet duidelijk weer.
-
-Databasequery's starten met een time-out of retourneren lege gegevens
-
-Controleer of de HANA-service wordt beperkt door geheugenbeperkingen of activiteit van een proefaccount. Opnieuw opstarten kan tijdelijk helpen.
-
-Het toevoegen van nog een service vertraagt of breekt bestaande apps
-
-Verdeel uw werklast over meerdere proefsubaccounts. Vermijd het implementeren van alles in één omgeving.
-
-Het maken van een nieuw service-exemplaar mislukt stilzwijgend of wordt nooit voltooid
-
-Controleer het aantal actieve services en de geheugenlimieten. Als u de limiet bijna hebt bereikt, verwijder dan ongebruikte services voordat u het opnieuw probeert.
-
-Je kunt niet zien of de limieten van de hulpbronnen zijn bereikt
-
-Gebruik de CLI-tools \`cf\` of \`btp\` om geheugen, services en quotagegevens te bewaken. De Cockpit-gebruikersinterface geeft mogelijk niet het volledige resourcegebruik weer.
-
-Apps reageren soms niet meer nadat ze inactief zijn geweest
-
-Start inactieve services regelmatig handmatig opnieuw op. Dit is niet efficiënt, maar het helpt wel om te herstellen van stille achtergrondbeperking.
-
-Terugkerende problemen die niet gerelateerd lijken te zijn aan uw app-code
-
-Overweeg om over te stappen naar een betaald of partnerabonnement. Alleen al de stabiliteit maakt de overstap de moeite waard, zelfs als de functies hetzelfde blijven.
-
-### Gerelateerde onderwerpen: SAP BTP en implementatie
-
-[
-
-Kosten
-
-### SAP-implementatiekostenoverzicht
-
-Begrijp hoe resourcebeperkingen in BTP-omgevingen ongemerkt de projectkosten kunnen opdrijven.
-
-](https://noeldcosta.com/nl/sap-implementation-cost-breakdown-why-budgets-explode-50/)[
-
-Analytics
-
-### SAP Analytics Cloud-integratie
-
-Ontdek hoe BTP-services verbinding maken met SAP Analytics Cloud en wat er misgaat als dat niet gebeurt.
-
-](https://noeldcosta.com/nl/sap-analytics-cloud/)[
-
-Architectuur
-
-### SAP Clean Core-strategie
-
-Ontdek waarom een schone architectuur fouten kan verminderen bij cloudimplementaties zoals SAP BTP.
-
-](https://noeldcosta.com/nl/sap-clean-core-strategy-what-it-means-for-your-business/)[
-
-Tools
-
-### Top SAP-projecttrackingtools
-
-Handige tools waarmee u het BTP-servicegedrag buiten de cockpit kunt valideren.
-
-](https://noeldcosta.com/nl/top-sap-project-tracking-tools-2025/)
-
-## Conclusie
-
-
-Toen ik voor het eerst de rode foutbanner in SAP BTP Cockpit zag, dacht ik eerlijk gezegd dat ik iets verkeerd had gedaan.
-
-Misschien heb ik op de verkeerde link geklikt. Misschien is mijn sessie verlopen. Maar na de derde of vierde keer werd het duidelijk en lag het niet aan mij. Dit is de ironie van SAP BTP Cockpit-fouten. 
-
-In de daaropvolgende weken hield ik een notitieboekje bij. Ik begon elke keer dat er iets kapotging op te schrijven. Of het nu een "interne serverfout" was bij het openen van Integration Suite, of een bestemming die weigerde verbinding te maken, ook al leek alles in orde. Er begonnen patronen te verschijnen. En toch werd geen van die patronen ergens nuttig gedocumenteerd.
-
-Wat me het meest opviel, was hoe deze kleine problemen zoveel wrijving veroorzaakten. Je kon 45 minuten besteden aan het debuggen van een fout die met één duidelijke melding voorkomen had kunnen worden. Of urenlang denken dat je configuratie fout was, terwijl het in werkelijkheid gewoon een sessiemismatch of resourcelimiet op de achtergrond was.
-
-Daarom heb ik dit geschreven. Omdat de frustratie echt is. Dit zijn geen randgevallen. Ze overkomen velen van ons.
-
-SAP BTP Cockpit heeft potentie. Maar om ontwikkelaars echt te helpen, is meer transparantie en betere feedback nodig. Als u ook tegen deze problemen aanloopt, deel dan uw bevindingen. Soms redt een andere oplossing u.
-
-Als u vragen heeft of uw ERP-implementatie wilt bespreken, neem dan gerust contact met ons op!
-
-## Veelgestelde vragen die besluitvormers stellen voordat ze moderniseren
-
-### 1\. Waarom krijg ik de foutmelding 401 Unauthorized wanneer ik servicesleutelreferenties gebruik in Postman of code?
-
-Dit gebeurt meestal wanneer de OAuth-stroom onjuist is. De meeste SAP BTP-services vereisen de **client\_referenties** subsidietype. U moet de **token-URL** van de servicesleutel JSON _precies zoals aangegeven_, en omvatten:
-
-*   `Content-Type: application/x-www-form-urlencoded`
-
-*   `Authorization: Basic <base64(clientid:clientsecret)>`
-
-Als er scopes nodig zijn (bijvoorbeeld van `xsappname`), kan het zijn dat als u ze mist, er nog steeds een token wordt geretourneerd, maar dat token geeft geen toegang tot de API zelf.
-
-### 2\. Waarom kan mijn CAP-app geen verbinding maken met een bestemming, ook al wordt deze weergegeven in de Cockpit?
-
-Dit komt vaak neer op mismatches in naamgeving of toewijzing. De bestemmingsnaam moet correct worden vermeld in uw `xs-app.json`, `cds.env`of `default-env.json`Controleer ook of:
-
-*   De authenticatiemethode wordt ondersteund (`OAuth2ClientCredentials` or `BasicAuthentication`)
-
-*   De bestemming bevindt zich in hetzelfde subaccount als de app
-
-*   De app heeft de juiste `scope` en servicebindingen geconfigureerd
-
-### 3\. Wat veroorzaakt de "Interne serverfout" bij het openen van Integration Suite of andere services?
-
-Dit gebeurt vaak nadat een service inactief is geweest of na sessietime-outs. Oorzaken zijn onder andere:
-
-*   Verlopen sessies op meerdere tabbladen
-
-*   Proefservices worden zonder waarschuwing inactief
-
-*   Backend-ontkoppeling of -beperking
-
-Oplossingen zijn onder meer het wissen van de cache van uw browser, het gebruiken van één actieve sessie en het opnieuw starten van de service vanuit de Cockpit.
-
-### 4\. Waarom mislukken bestemmingen die lokaal werken in de geïmplementeerde omgeving?
-
-Lokale en geïmplementeerde omgevingen zijn afhankelijk van verschillende configuraties. Als het lokaal wel werkt, maar na implementatie niet:
-
-*   Check `cds.env` in de geïmplementeerde omgeving
-
-*   Zorg ervoor dat de bestemming bestaat in het doel-subaccount
-
-*   Bevestig dat de geïmplementeerde app is gekoppeld aan de vereiste services via `mta.yaml` of servicebindingen
-
-### 5\. Hoe kan ik controleren of ik de resourcelimieten van een proefaccount bereik?
-
-SAP BTP-proefomgevingen **limieten niet duidelijk weergeven in de Cockpit-gebruikersinterface**Om te controleren:
-
-*   Gebruik `cf apps` en `cf services` om het geheugen- en serviceverbruik te zien
-
-*   Als apps niet starten of services stilzwijgend uitvallen, probeer dan ongebruikte apps of instanties te verwijderen
-
-*   Sommige limieten gelden op het niveau van subaccounts of algemene proefgebruikers, niet alleen per app
-
-### 6\. Wat is de juiste manier om OData-versieverschillen in CAP-apps te verwerken?
-
-Als uw back-endservice wordt blootgesteld **OData v2** maar de bestemming is ingesteld op **v4**, of omgekeerd, kan CAP stilzwijgend falen. Gebruik de `@sap/cds-odata-v2-adapter-proxy` pakket om compatibiliteit toe te voegen. Hiermee kunt u v2-services beschikbaar stellen vanaf een v4-backend, waardoor handmatige hertoewijzing overbodig is.
-
-### 7\. Waarom leiden links in boosters of tegels in de Cockpit naar lege of onjuiste pagina's?
-
-Gebroken navigatie is een veelvoorkomend probleem. Het treedt meestal op wanneer:
-
-*   De boosteropstelling is onvolledig of onderbroken
-
-*   Subaccountstructuur gewijzigd na installatie
-
-*   De sessie is verlopen en de links zijn nu contextloos
-
-Gebruik de Cockpit-boom om handmatig te navigeren: Subaccount → Services → Instances → Subscriptions.
-
-### 8\. Waarom mislukt het maken van een nieuw service-exemplaar stilzwijgend of loopt het vast?
-
-Dit wijst meestal op uitputting van de resources, vooral in testomgevingen. Als er geen foutmelding wordt weergegeven:
-
-*   Check `cf services` voor totale gebruikte diensten
-
-*   Proeflimieten omvatten vaak: **wereldwijde quota**, niet alleen per subaccount
-
-*   Probeer ongebruikte services te verwijderen of verplaats de instellingen naar een nieuw subaccount
-
-### 9\. Is het veilig om de BTP Cockpit in meerdere tabbladen open te houden?
-
-Niet aanbevolen. Sessies op meerdere tabbladen kunnen desynchroniseren, vooral na inactiviteit. Dit kan ertoe leiden dat services niet laden, verlopen autorisatiestatussen weergeven of fouten zonder uitleg retourneren. Gebruik één tabblad tegelijk of werk in de privébrowsermodus om conflicten te voorkomen.
-
-### 10\. Wanneer moet ik overwegen om over te stappen van een proefabonnement naar een betaald BTP-abonnement?
-
-Als jij:
-
-*   Regelmatig bronlimieten bereiken
-
-*   Beheer meer dan één app of database
-
-*   Stabiele uptime nodig voor demo's of echt gebruik
-
-*   Wilt u betere waarneembaarheid en ondersteuning?
-
-Dan is het de moeite waard om naar een **dev-plan** or **partner huurder**Proefomgevingen zijn prima om te verkennen, maar ze zijn niet bedoeld voor langdurig werk.
+</details>

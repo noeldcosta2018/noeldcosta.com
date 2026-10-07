@@ -6,9 +6,15 @@ import {
   getAllTagSlugs,
   getPost,
   getPage,
-} from "@/lib/content";
-import { SITE_URL, toIso } from "@/lib/seo";
-import { WORDPRESS_TAG_SLUGS } from "@/components/tagMeta";
+} from "../lib/content";
+import { SITE_URL, toIso } from "../lib/seo";
+import { WORDPRESS_TAG_SLUGS } from "../components/tagMeta";
+import { resolveCanonicalUrl } from "../lib/seo-graph";
+import { getLocalizedArticle, getLocalizedArticleParams } from "../lib/localized-article-routing";
+import { getLocalizedPage, getLocalizedPageParams } from "../lib/localized-page-routing";
+import { readyLocales } from "../i18n/ready";
+import { localizedInterfacePaths } from "../lib/localized-interface-routes";
+import { LEGACY_REDIRECT_SOURCES } from "../lib/legacy-redirects.mjs";
 
 /**
  * Coerce frontmatter date strings (often `"YYYY-MM-DD HH:mm:ss"` from
@@ -44,35 +50,10 @@ const SHORT_URL_SLUGS = new Set<string>([
   "category",
 ]);
 
-/**
- * Parse an `originalUrl` like
- * `https://noeldcosta.com/sap-implementation/sap-modules/` into
- * `["sap-implementation", "sap-modules"]`. Mirrors the static-params logic
- * in src/app/(site)/[...slug]/page.tsx so the sitemap stays in lockstep
- * with the routes the catch-all actually serves.
- */
-function pathSegmentsFromOriginalUrl(
-  url: string | undefined,
-): string[] | null {
-  if (!url) return null;
-  try {
-    const u = new URL(url);
-    const path = u.pathname.replace(/^\/+|\/+$/g, "");
-    if (!path) return null;
-    return path.split("/");
-  } catch {
-    return null;
-  }
-}
-
 export default function sitemap(): MetadataRoute.Sitemap {
   const items: MetadataRoute.Sitemap = [];
 
-  // Homepage. Single flat URL with trailing slash — matches the WordPress
-  // URL contract and the `trailingSlash: true` Next.js config. GTranslate
-  // proxies translated variants externally; we do NOT emit /{locale}
-  // entries from the origin (see CLAUDE.md, "DO NOT generate sitemap
-  // entries with language prefixes").
+  // Homepage remains English-only; published locale content follows below.
   items.push({
     url: `${SITE_URL}/`,
     changeFrequency: "weekly",
@@ -84,6 +65,37 @@ export default function sitemap(): MetadataRoute.Sitemap {
     url: `${SITE_URL}/books/`,
     changeFrequency: "weekly",
     priority: 0.7,
+  });
+
+  // Translated homepages, archives (category, tag, author) and tools: only
+  // locales whose interface dictionary is ready (same rule as the routes).
+  for (const l of readyLocales()) {
+    items.push({
+      url: `${SITE_URL}/${l}/`,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    });
+    for (const path of localizedInterfacePaths(l)) {
+      items.push({
+        url: `${SITE_URL}${path}`,
+        changeFrequency: "weekly",
+        priority: 0.5,
+      });
+    }
+  }
+
+  // /ai-academy/ — new page (2026 revamp), English only.
+  items.push({
+    url: `${SITE_URL}/ai-academy/`,
+    changeFrequency: "monthly",
+    priority: 0.7,
+  });
+
+  // /author/noeldcosta/ — live WordPress author archive, kept at the same path.
+  items.push({
+    url: `${SITE_URL}/author/noeldcosta/`,
+    changeFrequency: "weekly",
+    priority: 0.5,
   });
 
   // Category indexes.
@@ -129,10 +141,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     });
   }
 
-  // Pages. Emit at the flat slug AND at the multi-segment WordPress URL
-  // when `originalUrl` reveals one — the catch-all in
-  // src/app/(site)/[...slug]/page.tsx serves both, and Google sees them as
-  // distinct URLs unless they're listed here.
+  // Emit canonical pages only. Existing noncanonical aliases remain routable.
   for (const slug of getAllPageSlugs()) {
     if (SHORT_URL_SLUGS.has(slug)) continue;
     if (slug === "https-noeldcosta-com-sap-implementation-expert") continue;
@@ -148,26 +157,54 @@ export default function sitemap(): MetadataRoute.Sitemap {
       : undefined;
 
     items.push({
-      url: `${SITE_URL}/${slug}/`,
+      url: resolveCanonicalUrl({ kind: "page", slug, locale: "en", frontmatter: page.frontmatter }),
       lastModified,
       changeFrequency: "monthly",
       priority: 0.6,
       images,
     });
 
-    const segments = pathSegmentsFromOriginalUrl(
-      page.frontmatter.originalUrl,
-    );
-    if (segments && segments.length > 1) {
-      items.push({
-        url: `${SITE_URL}/${segments.join("/")}/`,
-        lastModified,
-        changeFrequency: "monthly",
-        priority: 0.6,
-        images,
-      });
-    }
   }
 
-  return items;
+  // Publication-aware loaders reject held, missing, raw and fallback sources.
+  for (const { locale, slug } of getLocalizedArticleParams()) {
+    const post = getLocalizedArticle(locale, slug);
+    if (!post || post.isFallback || post.frontmatter.noindex) continue;
+    items.push({
+      url: resolveCanonicalUrl({ kind: "post", slug, locale: post.locale, frontmatter: post.frontmatter }),
+      lastModified: lastModDate(post.frontmatter.lastReviewed || post.frontmatter.updated || post.frontmatter.date),
+      changeFrequency: "monthly",
+      priority: 0.8,
+      images: post.frontmatter.hero ? [absoluteImage(post.frontmatter.hero)] : undefined,
+    });
+  }
+  for (const { locale, slug } of getLocalizedPageParams()) {
+    const page = getLocalizedPage(locale, slug);
+    if (!page || page.isFallback || page.frontmatter.noindex) continue;
+    items.push({
+      url: resolveCanonicalUrl({ kind: "page", slug: page.frontmatter.slug, locale: page.locale, frontmatter: page.frontmatter, publicPath: page.publicPath }),
+      lastModified: lastModDate(page.frontmatter.updated || page.frontmatter.date),
+      changeFrequency: "monthly",
+      priority: 0.6,
+      images: page.frontmatter.hero ? [absoluteImage(page.frontmatter.hero)] : undefined,
+    });
+  }
+
+  // Old WordPress paths that now redirect (next.config.ts) never go in the
+  // sitemap, in English or under a locale prefix.
+  const redirected = (url: string) => {
+    const path = url.replace(SITE_URL, "").replace(/^[/](?:[a-z]{2}|zh-CN|zh-TW)(?=[/])/, "");
+    return LEGACY_REDIRECT_SOURCES.has(path);
+  };
+
+  const unique = new Map<string, MetadataRoute.Sitemap[number]>();
+  for (const item of items) {
+    if (redirected(item.url)) continue;
+    const previous = unique.get(item.url);
+    if (previous && JSON.stringify(previous) !== JSON.stringify(item)) {
+      throw new Error(`Conflicting sitemap entry: ${item.url}`);
+    }
+    if (!previous) unique.set(item.url, item);
+  }
+  return [...unique.values()];
 }

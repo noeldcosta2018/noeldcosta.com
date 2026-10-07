@@ -1,166 +1,176 @@
 import Link from "next/link";
-import BrandWordmark from "./BrandWordmark";
+import SignupForm from "@/components/site/SignupForm";
+import { signupCopy } from "@/components/site/signup-copy";
+import { hasTranslation, translator } from "@/i18n";
+import { localizeHref } from "@/lib/link-repair";
+import type { Locale } from "@/lib/content";
+import { getArticleMessages } from "@/lib/article-localization";
+import { publicPrefixFromContentLocale } from "@/lib/locale-url";
+import {
+  ABOUT,
+  ACADEMY,
+  ARTICLES_INDEX,
+  CLIENT_WORK,
+  CONTACT,
+  EXPERTISE,
+  ERPCV,
+  LINKEDIN,
+  SAPOPEDIA,
+  YOUTUBE,
+  type MenuGroup,
+} from "@/data/site-menu";
 
-export default function Footer() {
-  const solutions: { label: string; href: string }[] = [
-    { label: "ERP Consulting Guide", href: "/category/erp-consulting-guide" },
-    { label: "SAP Modules", href: "/category/sap-modules" },
-    { label: "ERP Strategy", href: "/category/erp-strategy" },
-    { label: "AI Governance", href: "/category/ai-governance" },
-    { label: "Agentic AI", href: "/category/agentic-ai" },
-    { label: "SAP Case Studies", href: "/category/sap-case-studies" },
-  ];
-  const tools: { label: string; href: string }[] = [
-    { label: "ERP Cost Calculator", href: "/erp-implementation-cost-calculator" },
-    { label: "SAP Cost Calculator", href: "/sap-implementation-cost-calculator" },
-    { label: "Migration Estimator", href: "/free-data-migration-estimator-sap-oracle-microsoft" },
-    { label: "JD Generator", href: "/sap-job-description-generator" },
-    { label: "Solution Builder", href: "/sap-solution-builder" },
-  ];
-  const company: { label: string; href: string; external?: boolean }[] = [
-    { label: "About", href: "/about" },
-    { label: "Books", href: "/books" },
-    { label: "Case Studies", href: "/case-studies" },
-    { label: "YouTube", href: "https://www.youtube.com/@NoelDCostaERPAI", external: true },
-    { label: "Contact", href: "/contact-noel-erp-support" },
-  ];
+const COLUMNS: MenuGroup[] = [
+  {
+    title: "Expertise",
+    links: [
+      { label: "All expertise", href: EXPERTISE },
+      { label: "SAP implementation", href: "/sap-implementation/" },
+      { label: "Oracle and Microsoft", href: "/erp-ai-services/#oracle" },
+      { label: "Data and analytics", href: "/erp-ai-services/#databricks" },
+      { label: "Enterprise and private AI", href: "/erp-ai-services/#enterprise-ai" },
+      { label: "AI governance", href: "/ai-governance-services/" },
+    ],
+  },
+  {
+    title: "Work and academy",
+    links: [
+      { label: "Case studies", href: CLIENT_WORK },
+      { label: "Case study articles", href: "/category/sap-case-studies/" },
+      { label: "AI Academy", href: ACADEMY },
+      { label: "Consulting career guides", href: "/consulting-career-guides/" },
+    ],
+  },
+  {
+    title: "Articles",
+    links: [
+      { label: "All articles", href: ARTICLES_INDEX },
+      { label: "ERP consulting guide", href: "/category/erp-consulting-guide/" },
+      { label: "ERP strategy", href: "/category/erp-strategy/" },
+      { label: "SAP modules", href: "/category/sap-modules/" },
+      { label: "AI governance", href: "/category/ai-governance/" },
+      { label: "Agentic AI", href: "/category/agentic-ai/" },
+      { label: "Books", href: "/books/" },
+    ],
+  },
+  {
+    title: "Free tools",
+    links: [
+      { label: "SAP cost calculator", href: "/sap-implementation-cost-calculator/" },
+      { label: "ERP cost calculator", href: "/ai-insights-shiftgearx-noeldcosta/erp-implementation-cost-calculator/" },
+      { label: "Migration estimator", href: "/free-data-migration-estimator-sap-oracle-microsoft/" },
+      { label: "S/4HANA assessment", href: "/sap-s4hana-migration-strategy-greenfield-vs-brownfield/" },
+      { label: "JD generator", href: "/sap-job-description-generator/" },
+      { label: "Solution builder", href: "/sap-solution-builder/" },
+    ],
+  },
+  {
+    title: "About",
+    links: [
+      { label: "My story", href: ABOUT },
+      { label: "Partners", href: "/all-our-partners/" },
+      { label: "Contributions", href: "/contributions-sap-experts-industry-professionals/" },
+      { label: "Write for us", href: "/write-for-us-lets-share-our-experiences/" },
+      { label: "Contact", href: CONTACT },
+      { label: "Privacy", href: "/privacy-policy-noeldcosta/" },
+      { label: "Terms", href: "/terms/" },
+    ],
+  },
+];
+
+/** signup: false on pages that already show the sign-up band (the homepage), so one page never carries two identical forms. */
+export default function Footer({ locale = "en", signup = true }: { locale?: Locale; signup?: boolean }) {
+  const messages = getArticleMessages(locale);
+  const tr = translator(locale);
+  const prefix = publicPrefixFromContentLocale(locale);
+  const href = (h: string) => localizeHref(prefix, h);
+  const translated = locale === "en" || hasTranslation(locale, "Expertise");
   return (
-    <footer
-      className="bg-corbeau text-moon"
-      style={{ padding: "clamp(3rem,6vw,5rem) clamp(1.5rem,5vw,4rem) 2rem" }}
-    >
-      <div className="max-w-[1200px] mx-auto">
-        {/* Top grid */}
-        <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr] gap-8 pb-12 border-b border-white/[0.06] max-lg:grid-cols-2 max-sm:grid-cols-1">
-          {/* Brand */}
-          <div>
-            <Link
-              href="/"
-              aria-label="noeldcosta — home"
-              className="no-underline inline-flex items-center mb-3"
-            >
-              <BrandWordmark variant="on-dark" height={32} />
+    <footer className="nd-footer" lang={translated ? undefined : "en"}>
+      <div className="nd-container">
+        {!translated && messages.englishDestinationNotice && (
+          <p
+            lang={publicPrefixFromContentLocale(locale) ?? "en"}
+            style={{ paddingTop: 32, fontSize: 13, color: "var(--mut)" }}
+          >
+            {messages.englishDestinationNotice}
+          </p>
+        )}
+        {signup && (
+          <div className="nd-footer-signup">
+            <div>
+              <h2 className="nd-display">{tr("New articles, first.")}</h2>
+              <p>{tr("Articles, videos and AI Academy updates by email. Leave any time.")}</p>
+            </div>
+            <SignupForm source="footer" copy={signupCopy(locale)} />
+          </div>
+        )}
+        <div className="cols">
+          <div className="about">
+            <Link className="nd-brand" href={href("/")} aria-label={tr("Noel D'Costa, home")}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="nd-on-dark" src="/brand/nd-monogram-on-dark.svg" alt="" width={36} height={22} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="nd-on-light" src="/brand/nd-monogram.svg" alt="" width={36} height={22} />
+              <span className="word">NOEL DCOSTA</span>
             </Link>
-            <p className="text-[0.85rem] text-silver leading-[1.6] max-w-[280px]">
-              ERP, Data & AI consulting. 25+ years helping companies get real
-              value from SAP, Oracle, and AI systems.
+            <p>
+              {tr(
+                "Enterprise applications, data and AI. I work with leadership teams to choose the right platforms, deliver programmes and put AI to work where it earns its place.",
+              )}
             </p>
-            <div className="flex gap-2 mt-4">
-              {/* LinkedIn */}
-              <a
-                href="https://www.linkedin.com/in/noeldcosta/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-9 h-9 bg-haiti rounded-lg flex items-center justify-center text-moon transition-all hover:bg-white/10 hover:text-bone"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"/>
-                  <rect x="2" y="9" width="4" height="12"/>
-                  <circle cx="4" cy="4" r="2"/>
-                </svg>
-              </a>
-              {/* YouTube */}
-              <a
-                href="https://www.youtube.com/@NoelDCostaERPAI"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-9 h-9 bg-haiti rounded-lg flex items-center justify-center text-moon transition-all hover:bg-white/10 hover:text-bone"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8z"/>
-                  <polygon points="9.75,15.02 15.5,12 9.75,8.98"/>
-                </svg>
-              </a>
-              {/* Email */}
-              <a
-                href="mailto:solutions@noeldcosta.com"
-                className="w-9 h-9 bg-haiti rounded-lg flex items-center justify-center text-moon transition-all hover:bg-white/10 hover:text-bone"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <rect x="2" y="4" width="20" height="16" rx="2"/>
-                  <polyline points="22,4 12,13 2,4"/>
-                </svg>
-              </a>
+            <div style={{ marginTop: 20 }}>
+              <Link className="nd-btn nd-btn-primary magnetic" href={href(CONTACT)}>
+                {tr("Discuss your project")} <span aria-hidden="true">→</span>
+              </Link>
             </div>
           </div>
-
-          {/* Solutions (includes Consulting Career — footer only) */}
-          <div>
-            <h5 className="font-mono text-[0.68rem] font-semibold tracking-[2px] uppercase text-silver mb-4">
-              Solutions
-            </h5>
-            {solutions.map((l) => (
-              <Link
-                key={l.label}
-                href={l.href}
-                className="block text-moon no-underline text-[0.88rem] mb-2.5 font-medium transition-colors hover:text-bone"
-              >
-                {l.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Free Tools */}
-          <div>
-            <h5 className="font-mono text-[0.68rem] font-semibold tracking-[2px] uppercase text-silver mb-4">
-              Free Tools
-            </h5>
-            {tools.map((l) => (
-              <Link
-                key={l.label}
-                href={l.href}
-                className="block text-moon no-underline text-[0.88rem] mb-2.5 font-medium transition-colors hover:text-bone"
-              >
-                {l.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Company */}
-          <div>
-            <h5 className="font-mono text-[0.68rem] font-semibold tracking-[2px] uppercase text-silver mb-4">
-              Company
-            </h5>
-            {company.map((l) =>
-              l.external ? (
-                <a
-                  key={l.label}
-                  href={l.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-moon no-underline text-[0.88rem] mb-2.5 font-medium transition-colors hover:text-bone"
-                >
-                  {l.label}
-                </a>
-              ) : (
-                <Link
-                  key={l.label}
-                  href={l.href}
-                  className="block text-moon no-underline text-[0.88rem] mb-2.5 font-medium transition-colors hover:text-bone"
-                >
-                  {l.label}
-                </Link>
-              )
-            )}
-          </div>
+          {COLUMNS.map((col) => (
+            <div key={col.title}>
+              <h2 className="group">{tr(col.title)}</h2>
+              <ul>
+                {col.links.map((l) => (
+                  <li key={l.href}>
+                    <Link href={href(l.href)}>{tr(l.label)}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
-
-        {/* Bottom */}
-        <div className="flex justify-between items-center pt-8 flex-wrap gap-4">
-          <span className="font-mono text-[0.72rem] text-silver">
-            © 2026 Noel D&apos;Costa · Quantinoid LLC
-          </span>
-          <div className="flex gap-6">
-            <Link href="/privacy-policy-noeldcosta" className="text-[0.8rem] text-silver no-underline transition-colors hover:text-moon">
-              Privacy
-            </Link>
-            {/* Terms-of-service page does not yet exist as MDX content
-                (no WordPress equivalent in PRD). Removed the link rather
-                than ship a 404. Re-add when content lands. */}
-            <Link href="/contact-noel-erp-support" className="text-[0.8rem] text-silver no-underline transition-colors hover:text-moon">
-              Support
-            </Link>
+        <div className="bar">
+          <div className="nd-social">
+            <a href={LINKEDIN} target="_blank" rel="me noopener noreferrer">
+              <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z" />
+                <rect x="2" y="9" width="4" height="12" />
+                <circle cx="4" cy="4" r="2" />
+              </svg>
+              LinkedIn
+            </a>
+            <a href={YOUTUBE} target="_blank" rel="me noopener noreferrer">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8zM9.75 15.02V8.98L15.5 12l-5.75 3.02z" />
+              </svg>
+              YouTube
+            </a>
+            <a href={ERPCV} target="_blank" rel="noopener">
+              ERPCV
+            </a>
+            <a href={SAPOPEDIA} target="_blank" rel="noopener">
+              SAPopedia
+            </a>
+            <a href="mailto:solutions@noeldcosta.com">
+              <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <polyline points="22,4 12,13 2,4" />
+              </svg>
+              solutions@noeldcosta.com
+            </a>
           </div>
+          <span className="legal">
+            © 2026 Noel D&apos;Costa. {tr("This website is operated and maintained by Quantinoid LLC")}
+          </span>
         </div>
       </div>
     </footer>

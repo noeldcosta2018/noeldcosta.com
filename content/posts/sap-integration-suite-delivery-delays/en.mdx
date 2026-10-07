@@ -1,258 +1,189 @@
-﻿---
+---
 title: "SAP Integration Suite: decisions and production trade-offs"
 slug: "sap-integration-suite-delivery-delays"
 date: "2025-07-16"
-updated: "2026-05-21"
+updated: "2026-10-07"
 hero: "/images/wp/2025/07/10-1.webp"
-heroAlt: "SAP integration architect reviewing message flow diagram and error logs on dual monitor setup in enterprise data centre"
+heroAlt: "SAP integration architect reviewing message flow diagram and error logs on dual monitors"
 category: "sap-modules"
 tags: ["sap-industry-topics", "sap-technical-decisions", "sap-integration-suite", "rise-with-sap"]
 author: "Noel D'Costa"
-metaTitle: "SAP Integration Suite in 2026: Decisions and Production Trade-Offs"
-metaDescription: "SAP Integration Suite in 2026 from real project experience: components, standard vs custom content, RISE/GROW deployment, PI/PO end-of-life, and governance."
-excerpt: "SAP Integration Suite is not just a renamed CPI. It is a broader architecture that shapes how well your cross-system communication holds up, especially in S/4HANA programmes and hybrid landscapes. In 2026 it is the default middleware for RISE and GROW, replacing PI/PO. The decisions teams get wrong are rarely about technology. They are about ownership, assumptions about legacy systems, and testing strategies that were designed to pass, not to fail."
-experienceSource: "Direct experience designing and governing SAP integration architectures across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets. Includes cases of interface failure due to ownership gaps, token expiry, legacy system load limits, and late-discovered localisation requirements. Anchored stories: European retail 2023 (token expiry caused silent failure), European manufacturing 2024 (legacy load limits surfaced in production). 2026 SAP Integration Suite as default for RISE/GROW reflects current SAP product roadmap."
+metaTitle: "SAP Integration Suite in 2026: Decisions and Trade-Offs"
+metaDescription: "SAP Integration Suite decisions that cause delivery delays: components, standard vs custom content, PI/PO migration before 2027, legacy limits and testing."
+excerpt: "SAP Integration Suite is not just a renamed CPI, and the decisions teams get wrong are rarely about technology. This guide covers the components, PI/PO migration, legacy limits, testing and the ownership gaps behind most interface failures."
+experienceSource: "Noel's SAP integration experience as published in the original article: the middleware flow that failed every Friday because a payroll system token expired weekly, two project teams building separate integrations to the same endpoint, weeks lost tweaking mismatched standard content, legacy systems freezing under parallel calls, and the team that expected 80% Integration Advisor coverage and got closer to 40%. PI/PO maintenance dates and Integration Suite editions checked against SAP sources in October 2026."
 lastReviewed: "2026-05-21"
 keyTakeaways:
-  - "SAP Integration Suite is not just renamed CPI; it includes Cloud Integration (CPI), API Management, Event Mesh, Integration Advisor, and Open Connectors. Each serves a different purpose."
-  - "Most integration failures in SAP programmes trace back to ownership gaps, not technology: assign named owners for each interface before go-live"
-  - "Standard integration content works for standard SAP-to-SAP scenarios; custom development is needed when business processes deviate from SAP's reference model"
-  - "Legacy systems often cannot handle concurrent synchronous calls: discover this during design, not UAT"
-  - "Integration testing must include load, timing, and batch overlap scenarios: functional tests that run clean in isolation fail under real production pressure"
-  - "Integration Advisor is a starting point, not a strategy: expect 40–60% coverage, not 80%; budget for manual mapping and business logic validation"
-  - "Documentation must stay current after go-live: field mappings, error handling paths, authentication details, volume expectations; if someone new could not troubleshoot from the documentation, it is not good enough"
+  - "Integration Suite is more than CPI: Cloud Integration, API Management, Event Mesh, Integration Advisor, Open Connectors and migration tools each do a different job"
+  - "Most interface failures trace back to ownership gaps, not technology. Name an owner for every interface before go-live"
+  - "PI/PO 7.5 mainstream maintenance ends in 2027, with extended maintenance to 2030. Plan the migration in waves, not under deadline pressure"
+  - "Legacy systems often cannot take concurrent synchronous calls. Find that out in design, not UAT"
+  - "One team expected Integration Advisor to cover 80% of mappings and got closer to 40%. Budget for the rest"
 pullQuote: "Most integration failures in SAP programmes trace back to gaps in ownership, not technology. Without defined accountability for message monitoring, retries, and error resolution, even well-designed iFlows fail silently in production."
 mentions:
   - "SAP Integration Suite"
   - "SAP BTP"
   - "SAP CPI"
   - "SAP S/4HANA"
+  - "SAP Process Orchestration"
   - "SAP Ariba"
   - "SAP SuccessFactors"
   - "SAP API Management"
   - "SAP Event Mesh"
   - "SAP Integration Advisor"
-  - "SAP Solution Manager"
   - "SAP Cloud ALM"
   - "RISE with SAP"
   - "GROW with SAP"
 ---
 
-SAP Integration Suite sounds like a name change from SAP Cloud Platform Integration. It is not. The scope is broader. SAP is positioning it as the foundation for all cross-system communication in cloud and hybrid landscapes. That makes it more central than ever, especially for programmes managing S/4HANA alongside legacy systems, third-party platforms, and complex data flows.
+SAP Integration Suite is SAP's integration platform on SAP BTP: Cloud Integration (the former CPI) plus API Management, Event Mesh, Integration Advisor, Open Connectors and tools to migrate from PI/PO. It is the default middleware for S/4HANA cloud programmes and the route off PI/PO, whose mainstream maintenance ends in 2027. Interface delays rarely come from the technology. They come from unclear ownership, untested assumptions about legacy systems, and testing designed to pass rather than to find failures. This guide is for integration leads, architects and programme managers. It covers what each component is for, standard versus custom content, the PI/PO migration, legacy and testing risks, and post-go-live governance.
 
-## How RISE bundling, PI/PO end-of-life, and Joule change the Integration Suite picture in 2026
+## What changed for 2026
 
-Three shifts from the 2022 playbook matter for any current programme.
+**PI/PO is on the clock.** SAP Process Integration and Process Orchestration 7.5 are in mainstream maintenance until the end of 2027. Optional extended maintenance runs to the end of 2030, after which SAP support ends. SAP's [migration reference architecture](https://architecture.learning.sap.com/docs/ref-arch/8566b4) describes the route. Integration Suite includes a Migration Assessment application that sizes each PI/PO scenario and wizard-based migration tooling in Cloud Integration. Migrate in waves: low-risk SAP-to-SAP flows first, B2B and EDI in the middle, and high-volume order flows last. A forced cutover under deadline pressure takes longer and costs more.
 
-**Integration Suite is bundled into RISE with SAP and GROW with SAP subscriptions.** Base capacity is included; high-volume consumption beyond the bundled tier carries uplift. For organisations on cloud editions, the integration platform decision is no longer standalone. Programmes evaluating MuleSoft or Boomi against Integration Suite should factor in the bundled economics under RISE; the comparison is not just feature-for-feature.
+<explainer-timeline title="Moving off PI/PO in waves, before the clock runs out" caption="Finish the waves while there is still time. A forced cutover under deadline pressure takes longer and costs more." items="Wave 1 => Low-risk SAP-to-SAP flows|Wave 2 => B2B and EDI|Wave 3 => High-volume order flows|2027 => PI/PO 7.5 mainstream maintenance ends|2030 => Optional extended maintenance ends" notes="Size every scenario first with Migration Assessment|||End of year. Plan the waves to finish before this|End of year. Then SAP support ends" highlight="4" source="SAP maintenance dates and migration reference architecture, checked October 2026"></explainer-timeline>
 
-**PI/PO mainstream support ends 2027.** Programmes still on PI/PO need a migration roadmap. The wave-based migration pattern (low-risk SAP-to-SAP flows first, B2B EDI in the middle, high-volume order management last) typically runs six months on a multi-interface landscape and stays inside planned budget. A forced cutover under 2027 deadline pressure runs nine months and usually attracts a six-figure recovery cost.
+**Check what your cloud contract covers.** RISE and GROW contracts usually include SAP BTP credits that can pay for Integration Suite. Confirm which edition and message volumes your entitlement covers before you compare Integration Suite with MuleSoft or Boomi on features alone. The economics of an included platform change the comparison.
 
-**Joule on Integration Suite reached general availability through 2024-2025.** Natural-language iFlow drafting, AI-assisted error triage on failing messages, anomaly detection on integration volume patterns. The acceleration is real on standard iFlows. Complex orchestration with deep business logic still needs senior architects. The 2026 Joule for SAP Activate drafts integration design artefacts 30 to 50 percent faster on standard scope.
+**AI is arriving in stages.** Cloud Integration has offered generative AI flow generation in its Premium edition since mid-2024. It produces the structure of an iFlow (steps, channels, exception subprocess), not the mappings or scripts. SAP's enhanced edition, launched in March 2026, adds text-to-flow generation and script optimisation, and SAP planned Joule in Integration Suite for general availability in the third quarter of 2026. Useful for standard flows. Complex orchestration with deep business logic still needs senior architects.
 
-The technical decisions teams get wrong here are rarely about the technology. They are about ownership gaps, untested assumptions about legacy systems, and integration testing strategies designed to pass rather than to find the failures that production will find anyway.
+## The components and what each one does
 
-This is the set of decisions and blind spots that teams do not usually talk about until something breaks.
-
-## The components and what each one actually does
-
-SAP Integration Suite is not one tool. It is a bundle of services. Knowing which piece to use, when, and why shapes how well the integration landscape holds up over time.
+Integration Suite is a set of services. Using the right one for the job shapes how well the landscape holds up.
 
 | Component | Role | What goes wrong when it is misused |
 |---|---|---|
-| Cloud Integration (CPI) | Message flows, routing, transformations: the default for most iFlows | When everything gets stuffed into CPI including APIs and events, interfaces become hard to support and test |
-| API Management | Governs external API exposure: rate limiting, security, analytics | If skipped, point-to-point calls multiply and governance is impossible to retrofit |
-| Event Mesh | Asynchronous messaging for decoupled downstream triggers | If not tracked properly, message queues grow silently without alerting anyone |
-| Integration Advisor | Mapping suggestions for structured formats like EDI and IDoc | Teams assume 80% coverage; actual coverage is often 40–60%; the rest needs manual work |
-| Open Connectors | Wraps third-party APIs like Salesforce or Shopify | External platform updates break connectors silently; someone needs to actively monitor endpoints |
+| Cloud Integration (CPI) | Message flows, routing and transformation; the default for most iFlows | Everything stuffed into CPI, including APIs and events, becomes hard to support and test |
+| API Management | Governs API exposure: security, rate limits, analytics | Skip it and point-to-point calls multiply; governance is hard to retrofit |
+| Event Mesh | Asynchronous messaging for decoupled triggers | Untracked queues grow silently without alerting anyone |
+| Integration Advisor | Mapping proposals for B2B formats such as EDIFACT, X12 and IDoc | Teams assume high coverage; one team expected 80% and got closer to 40% |
+| Open Connectors | Prebuilt connectors to third-party cloud apps | External API changes break connectors silently unless someone monitors them |
+| Migration Assessment and tooling | Sizes and migrates PI/PO scenarios | Treated as a one-off estimate instead of a working migration plan |
 
-Teams that treat Integration Suite as "CPI with add-ons" often ignore API Management and Event Mesh entirely. That works until complexity catches up.
+Teams that treat Integration Suite as "CPI with add-ons" often ignore API Management and Event Mesh. That works until complexity catches up. My [SAP CPI guide](/sap-cpi/) goes deeper on Cloud Integration itself.
 
 ## Standard content versus custom development
 
-Pre-packaged SAP integration content is genuinely useful in the right contexts. When connecting SAP S/4HANA to SAP Ariba or SAP SuccessFactors using their standard processes, the fit is often clean. Real business processes rarely stay inside SAP's reference lines.
+Prebuilt SAP integration content is genuinely useful when the process is standard. Connecting S/4HANA to SAP Ariba or SuccessFactors with standard processes is often a clean fit. Real processes rarely stay inside SAP's reference lines.
 
-| Criteria | Standard content | Custom development |
-|---|---|---|
-| Process alignment | Best for standard SAP-to-SAP scenarios | When business logic deviates from SAP reference |
-| Time to deploy | Faster initial setup, assuming minimal adjustments | More upfront effort; avoids rework if standard flows are too rigid |
-| Modifiability | Hard to customise deeply without breaking SAP support | Designed for actual process; change requests are cleaner to implement |
-| Long-term maintenance | Risk of technical debt if modified beyond intent | Cleaner for long-term support when built with clear architecture |
-| Interface complexity | Best for simple, one-way flows | Required for conditional routing, multi-step logic, legacy system quirks |
+Choose standard content when:
 
-The decision cannot be deferred. When it is made late, teams discover mid-project that a "standard" iFlow was modified so heavily it lost SAP support alignment, and they are rebuilding it under go-live pressure.
+1. The scenario is SAP-to-SAP and close to SAP's reference process
+2. The flow is simple and mostly one-way
+3. You can live with SAP's mapping and only extend through the provided exits
 
-I have seen projects lose weeks because teams assumed standard content would accommodate custom master data structures, additional fields added by internal development, and legacy authentication models simultaneously. It did not. The analysis that should have happened in design happened during UAT.
+Choose a custom build when:
 
-The question to ask in the blueprint phase: is this process genuinely close to SAP best practice, or have years of internal decisions made it something different? If it is the latter, custom development gives you cleaner code and clearer ownership.
+1. Years of internal decisions have moved the process away from SAP's model
+2. Conditional routing, multi-step logic or legacy quirks are involved
+3. Heavy modification would break SAP's support alignment for the standard package
+
+Make the decision in the blueprint phase. When it is made late, teams find mid-project that a "standard" iFlow has been modified so heavily it lost support alignment, and they rebuild it under go-live pressure. I have seen projects lose weeks because teams assumed standard content would absorb custom master data structures, extra fields and legacy authentication all at once. It did not. The analysis that belonged in design happened during UAT.
 
 ## Integration in complex programmes
 
-In large SAP programmes, integration is often the first thing to fall between workstreams; each team has its own priorities and timelines. Interfaces cross those boundaries, but no one owns the coordination.
+In large SAP programmes, integration is often the first thing to fall between workstreams. Interfaces cross team boundaries, but nobody owns the coordination. I have seen two project teams build separate integrations for the same business partner, pointing at the same endpoint, without knowing about each other. Neither found out until UAT. That is a structural failure, not a technical one.
 
-I have seen two project teams independently build integrations for the same business partner, both pointing at the same endpoint, with no awareness of each other. Neither team discovered this until UAT. These failures are not technical; they are structural.
+Set up central integration governance early:
 
-Central integration governance needs to be established early. That means:
-
-1. A shared integration backlog visible to all workstreams
-2. Named interface owners tracked through delivery
-3. Cross-workstream coordination checkpoints before each major deployment
-4. A review of interface dependencies before any go-live commitment
-
-| Challenge area | What goes wrong | How to address it |
-|---|---|---|
-| Workstream coordination | Each stream builds interfaces in isolation; dependencies overlap | Shared integration backlog with cross-stream design checkpoints |
-| Middleware reuse | Multiple programmes overload CPI with unrelated logic | Shared services with version control; documented ownership per flow |
-| Ownership gaps | When failures occur, no one knows who resolves them | Named owners for each iFlow or API, visible to business and IT support |
-| Concurrent deployments | Two go-lives share endpoints or queues; one breaks the other | Sequence dependent releases; integration dependencies in cutover plan |
-| Environment mismatches | Dev, test, and production do not mirror each other; credentials differ | Automated deployment scripts; documented credentials per landscape |
-| Late business rule changes | UAT changes require last-minute edits across multiple integrations | Functional owners involved in every iteration; mapping assumptions reviewed early |
+1. A shared integration backlog visible to every workstream
+2. A named owner for each interface, tracked through delivery
+3. Coordination checkpoints across workstreams before each major deployment
+4. A review of interface dependencies before any go-live commitment, with shared endpoints and queues sequenced in the cutover plan
+5. Automated deployment between environments, with credentials documented per landscape
 
 ## Legacy systems and third-party integration
 
-The biggest integration challenges are rarely the modern platforms. They are the older systems sitting in the middle of critical processes.
+The hardest integration problems are rarely the modern platforms. They are the older systems in the middle of critical processes.
 
-Legacy ERPs often cannot handle concurrent synchronous calls under load. Queue five parallel API calls and the server slows, freezes, or drops data silently. Async integration can help, but only if the receiving system can process queues. Many legacy systems cannot.
+Legacy ERPs often cannot handle concurrent synchronous calls. Send five parallel API calls and the server slows, freezes or drops data silently. Asynchronous integration helps only if the receiving system can process a queue, and many cannot.
 
-Protocol mismatches are common and late-discovered. You design a flow using OAuth2 and REST; the legacy system speaks SOAP with a 30-second hardcoded timeout. Older systems sometimes do not support token refresh logic properly.
+Protocol mismatches are common and found late. You design with OAuth2 and REST; the legacy system speaks SOAP with a 30-second hardcoded timeout and handles token refresh badly.
 
-On a European retail programme in 2023 a middleware flow failed every Friday because an OAuth token issued by a third-party payroll system expired weekly. Nobody noticed until the second UAT cycle. That is a week of delay from a gap that would have cost an hour to identify during design.
+In one client case, a middleware flow failed every Friday because the token issued by a third-party payroll system expired weekly. Nobody noticed until the second UAT cycle. Quirks like this are common, and they eat into timelines.
 
-| Risk area | Common challenge | Planning action |
+The table lists the risks to check before design freeze.
+
+| Risk | Common problem | What to do in design |
 |---|---|---|
-| Synchronous limits | Legacy systems lock under parallel calls | Use async messaging; stagger calls via Event Mesh or CPI |
-| Protocol mismatches | Legacy rejects REST or OAuth; times out on SOAP | Confirm protocol compatibility before design starts |
-| API rate limits | Batch jobs exceed external API throttling | Throttle calls via API Management; add wait logic in CPI |
-| Token expiry | Flows fail silently during off-peak windows | Schedule token refresh cycles; monitor expiry proactively |
-| Data format rigidity | Legacy requires rigid formats; dynamic payloads break parsing | Validate with sample production data before design freeze |
-| No fallback on failure | File transfers fail without retry; data gets stuck | Buffer in middleware; build retry and alert logic into iFlows |
+| Synchronous limits | Legacy locks up under parallel calls | Use asynchronous messaging; stagger calls through Event Mesh or Cloud Integration |
+| Protocol mismatch | Legacy rejects REST or OAuth, or times out on SOAP | Confirm protocols and timeouts before design starts |
+| API rate limits | Batch jobs exceed third-party throttling | Throttle in API Management; add wait logic in the iFlow |
+| Token expiry | Flows fail silently in off-peak windows | Schedule refresh cycles and monitor expiry |
+| Rigid formats | Dynamic payloads break legacy parsing | Validate with real production samples |
+| No fallback | File transfers fail without retry and data gets stuck | Buffer in middleware; build retry and alerting into iFlows |
 
-## Testing strategy for interfaces
+For the cross-cloud version of these problems, see my piece on [why ERP integration with Salesforce fails](/why-erp-integration-with-salesforce-fails-and-how-to-fix-it/).
 
-Integration does not break the way functional tests check. It fails under timing pressure, when background jobs overlap, when inputs arrive at scale rather than one at a time.
+## Testing interfaces the way production will
 
-Functional tests establish that a transaction posts and a message appears in the log. They do not test what happens when 200,000 IDoc records arrive during the first payroll run. On one project, an IDoc that looked clean in SIT caused the queue to stall when actual payroll data volume came through. It was not caught in unit tests. It required load testing to find.
+Integration does not break the way functional tests check. It fails under timing pressure, when background jobs overlap, and when inputs arrive in volume rather than one at a time. A functional test proves a transaction posts and a message appears in the log. It does not prove what happens when the first payroll run sends a flood of IDocs. On one project, an IDoc that looked clean in system integration testing stalled the queue when real payroll volumes came through. Only load testing found it.
 
-What integration testing needs to cover that functional testing misses:
+Interface testing needs to cover:
 
-1. Realistic data loads across concurrent users
+1. Realistic data volumes with concurrent users
 2. Service interruptions and recovery behaviour
-3. Timeouts and retries across middleware and backends
-4. Background batch jobs running in parallel with real-time calls
-5. Month-end and peak-period load scenarios
+3. Timeouts and retries across middleware and back ends
+4. Batch jobs running alongside real-time calls
+5. Month-end and other peak periods
 
-Environments matter too. Development is clean: no real load, no overlapping schedules. By the time UAT and pre-production are reached, other systems are active, batch jobs are running, and nightly windows are live. Deadlocks, race conditions, and API throttle limits all show up here, not in unit testing.
+Development environments are clean. Deadlocks, race conditions and throttling show up in UAT and pre-production, where other systems and batch windows are live, so run load tests there. Split ownership clearly: functional teams validate business results across the whole flow, integration teams own logs, retries and exception flows, and project leads confirm coverage. My guide to [SAP performance testing](/sap-performance-testing-it-leaders/) covers the load side.
 
-Testing ownership matters as much as test coverage. Functional teams validate end-to-end results. Integration teams handle logs, retries, and exception flows. Project leads confirm coverage across environments and load conditions.
+## What Integration Advisor will and will not do
 
-## Integration Advisor limitations
+Integration Advisor proposes mappings for structured B2B formats. For partners who follow strict conventions, it saves real setup time. For enterprise integrations with legacy systems, custom fields, conditional logic and undocumented rules, it is a starting point.
 
-Integration Advisor suggests mappings for structured formats: EDIFACT, ANSI X12, IDoc-based EDI. For B2B formats that follow strict conventions, it saves setup time. For enterprise integrations involving legacy systems, custom fields, conditional logic, and undocumented business rules, it is a starting point only.
+One team I worked with expected 80% mapping coverage. Actual coverage was around 40%. The rest had to be customised, validated with the business and manually tested.
 
-One team I worked with expected 80% mapping coverage from Advisor. The actual coverage was around 40%. The remainder required custom mapping, business validation, and manual testing. If the project budget does not account for this, the cleanup happens under go-live pressure.
+It does not resolve business logic that built up informally over years (payment terms, pricing categories, unit conventions), conditional rules based on business context, or exceptions outside the standard format. Those need functional input. Without it, interfaces are technically mapped and logically wrong in specific cases.
 
-The specific gaps Integration Advisor does not solve:
+## Documentation and governance after go-live
 
-1. Business logic that accumulated informally over years (payment terms, pricing categories, unit of measure conventions)
-2. Conditional transformation rules based on business context
-3. Exception handling for edge cases that do not fit the standard format
+Integration degrades after go-live when documentation drifts and ownership is not formal. Useful documentation covers field mappings and transformation logic, and authentication details such as endpoints, token refresh and credential rotation. It also covers error handling, fallback rules and volume expectations for critical windows such as month-end and payroll. The test: could someone who joined the support team next week troubleshoot a failing interface from the documentation alone?
 
-Functional team input is required to fill these gaps. Integration Advisor without that input produces interfaces that are technically mapped but logically wrong in specific scenarios.
-
-## Documentation and post-go-live governance
-
-Integration does not end at go-live. It degrades over time when documentation drifts, ownership is not formalised, and post-hypercare support is not structured.
-
-What integration documentation needs to contain to be useful:
-
-1. Field mappings and transformation logic
-2. Authentication details (endpoints, token refresh cycles, credential rotation schedule)
-3. Error handling paths and fallback rules
-4. Volume expectations and critical time windows (month-end, payroll runs, overnight batches)
-
-If someone new joined the support team next week, could they troubleshoot a failing interface using only what is documented? If the answer is no, the documentation is not sufficient for production operations.
-
-Named interface ownership is not optional. Each interface (even low-volume ones) needs a named individual or team accountable for monitoring, escalation, and lifecycle updates. Without this, failures bounce between Basis, middleware, and functional teams while the business waits.
-
-Post-hypercare: after the initial intensive support period ends, integration monitoring tends to fade. Build a support model that includes regular error log reviews, ownership handover from project to support teams, and SLA alignment between business and IT. Integration that becomes invisible gets neglected. Neglected integration is often the root cause of delayed postings, missing invoices, and misaligned financial reports that surface weeks after go-live.
+Every interface, even a low-volume one, needs a named owner for monitoring, escalation and lifecycle changes. Without one, failures bounce between Basis, middleware and functional teams while the business waits. After hypercare, monitoring tends to fade. Build regular error log reviews, a formal handover from project to support, and service levels agreed between the business and IT. Neglected integration is behind many of the delayed postings, missing invoices and misaligned financial reports that surface weeks after go-live.
 
 ## Frequently asked questions
 
 <details>
 <summary>What is SAP Integration Suite and how is it different from CPI?</summary>
 
-SAP Integration Suite is the evolution of SAP Cloud Platform Integration (CPI), but the scope is broader. CPI is one component within Integration Suite (Cloud Integration) that handles message flows, routing, and transformations.
+Cloud Integration, formerly SAP Cloud Platform Integration (CPI), is one capability inside Integration Suite. The suite adds API Management for governed API exposure and Event Mesh for asynchronous messaging. It also includes Integration Advisor for B2B mapping proposals, Open Connectors for third-party cloud apps, and assessment and migration tools for PI/PO. Teams that treat it as CPI with a new name often skip API Management and Event Mesh, and pay for it in governance gaps later.
 
-Integration Suite adds four additional services: API Management governs external API exposure with rate limiting, security, and analytics; Event Mesh enables asynchronous messaging for decoupled downstream triggers; Integration Advisor provides mapping suggestions for structured data formats like EDI and IDoc; Open Connectors wraps third-party APIs like Salesforce or Shopify.
+</details>
 
-Teams that treat Integration Suite as "just CPI with a new name" often skip API Management and Event Mesh entirely. That works in simple landscapes. In complex cross-system environments, those omissions create governance gaps that surface under production load.
+<details>
+<summary>When does SAP PI/PO support end?</summary>
+
+SAP Process Integration and Process Orchestration 7.5 are in mainstream maintenance until the end of 2027. Customers can take optional extended maintenance until the end of 2030, after which SAP support ends. Integration Suite includes a Migration Assessment application to size each scenario and migration tooling to move artefacts semi-automatically. Start with a wave plan rather than waiting for the deadline.
 
 </details>
 
 <details>
 <summary>When should SAP integration use standard content versus custom development?</summary>
 
-Standard content makes sense when the process stays close to SAP's best practice model, the interface is SAP-to-SAP (S/4HANA to Ariba or SuccessFactors, for example), and the data logic is relatively straightforward.
-
-Custom development is the better choice when the business process has deviated from SAP's reference through years of internal decisions, when legacy system quirks require specific handling, or when conditional routing and multi-step logic make standard flows hard to maintain.
-
-The decision should be made during the blueprint phase, not after configuration has started. The risk with deferring it: teams modify standard content so heavily that it loses SAP support alignment, then rebuild it under go-live pressure. That rebuilding costs more than a clean custom build would have cost at the start.
+Use standard content when the scenario is SAP-to-SAP, close to SAP's reference process and relatively simple. Build custom when the process has drifted from SAP's model, when legacy quirks need specific handling, or when conditional and multi-step logic would force heavy changes to the standard package. Decide in the blueprint phase; rebuilding an over-modified standard flow under go-live pressure costs more than a clean custom build.
 
 </details>
 
 <details>
 <summary>What causes SAP integration failures in complex programmes?</summary>
 
-The most common causes I have seen are structural rather than technical.
-
-Ownership gaps: no named individual is accountable for monitoring, retries, and error resolution on a specific interface. When something fails, it bounces between teams.
-
-Concurrent deployment conflicts: two project workstreams independently build integrations that share the same endpoint or message queue, with no awareness of each other. This is not discovered until UAT.
-
-Late-discovered legacy limitations: legacy ERPs cannot handle concurrent synchronous calls under load. This gets discovered during load testing if load testing happens, and during go-live if it does not.
-
-Testing that finds nothing: functional tests run clean in isolation but do not simulate batch job overlap, peak-period volume, or timing conflicts between concurrent background processes. Production finds these.
+Mostly structural causes. No named owner for monitoring and error resolution, so failures bounce between teams. Two workstreams building integrations that share an endpoint or queue without knowing. Legacy systems that cannot take concurrent calls, found only under load. And testing that runs clean in isolation but never simulates batch overlap or peak volume.
 
 </details>
 
 <details>
 <summary>How should integration testing be structured for SAP Integration Suite?</summary>
 
-Integration testing needs to cover scenarios that functional testing does not: realistic data volumes, concurrent users, batch job overlap, and peak-period load conditions.
-
-Specific scenarios to include:
-
-- Large-volume data loads: test with volumes matching the first month-end or payroll run, not just individual transactions
-- Concurrent background jobs: test with scheduled nightly batches and real-time interfaces running simultaneously
-- Service interruption and recovery: test what happens when a downstream system is temporarily unavailable; verify retry logic and alerting
-- API throttle limits: test what happens when an external API rate limit is reached during a bulk job
-
-Environment matters. Development environments are clean and underloaded. UAT and pre-production have other systems active and batch jobs running. Load testing and performance validation need to run in environments that reflect production conditions.
-
-</details>
-
-<details>
-<summary>What are the most common problems with legacy system integration in SAP?</summary>
-
-Three patterns account for most of the late-discovered problems.
-
-Synchronous load limits: legacy ERPs often cannot handle multiple parallel API calls. The system slows or drops data silently. Asynchronous messaging can help, but only if the legacy system is built to process queues; many are not.
-
-Protocol mismatches: modern SAP flows use OAuth2 and REST. Legacy systems may only speak SOAP with hard-coded timeouts. These mismatches need to be confirmed during design, not discovered during testing.
-
-Authentication token expiry: OAuth tokens issued by third-party systems expire on schedules that do not align with interface run windows. One project had a payroll integration fail every Friday for this reason, discovered in the second UAT cycle. A token refresh cycle verified during design would have cost an hour. Discovering it in UAT cost a week.
+Beyond functional tests, cover realistic volumes such as the first month-end or payroll run. Test batch jobs running alongside real-time interfaces, recovery when a downstream system is unavailable, and third-party rate limits during bulk jobs. Run load and performance tests in environments that resemble production, because clean development systems hide the problems.
 
 </details>
 
 <details>
 <summary>How should SAP integration be governed after go-live?</summary>
 
-Integration governance after go-live has three components.
-
-Named ownership: each interface needs a named individual or team accountable for monitoring, error escalation, and lifecycle updates. Without this, failures bounce between teams and resolution time extends unnecessarily.
-
-Living documentation: integration documentation should include field mappings, authentication details with credential rotation schedules, error handling paths, and volume expectations. If documentation is not updated when changes are made, it becomes misleading rather than helpful.
-
-Structured post-hypercare support: the intensive monitoring during hypercare fades. Build a long-term model with regular error log reviews, ownership formally handed from project to support teams, and SLA alignment between business and IT. Integration that becomes invisible gets neglected, and neglected integration is a common source of delayed financial postings and reconciliation gaps.
+Give every interface a named owner for monitoring, escalation and changes. Keep documentation current: mappings, authentication and credential rotation, error handling and volume expectations. And build a long-term support model with regular error log reviews, a formal handover from project to support and agreed service levels. Integration that becomes invisible gets neglected.
 
 </details>

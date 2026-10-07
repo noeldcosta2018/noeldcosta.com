@@ -87,20 +87,18 @@ export default function CalendlyEmbed() {
   }, [shouldLoad]);
 
   return (
-    <div className="not-prose my-8">
-      <div className="relative rounded-2xl border border-corbeau/10 bg-paper overflow-hidden min-h-[680px]">
+    <div className="not-prose nd-block">
+      <div className="nd-calendly">
         {!shouldLoad ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-8 text-center">
-            <p className="font-mono text-[0.72rem] tracking-[2px] uppercase text-eyebrow">
-              Loading scheduler…
-            </p>
+          <div className="wait">
+            <p>Loading the scheduler</p>
             <a
               href={CALENDLY_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 bg-papaya hover:bg-[#fdaa78] text-corbeau font-bold text-[0.92rem] px-5 py-3 rounded-lg no-underline transition-colors shadow-[0_2px_12px_rgba(252,152,90,0.25)]"
+              className="nd-btn nd-btn-primary"
             >
-              Book on Calendly →
+              Book on Calendly <span aria-hidden="true">→</span>
             </a>
           </div>
         ) : (

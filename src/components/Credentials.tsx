@@ -105,9 +105,9 @@ export default function Credentials() {
               <span className="text-papaya block mb-4" aria-hidden>
                 {c.icon}
               </span>
-              <h4 className="font-display font-extrabold text-corbeau text-[1.1rem] tracking-[-0.02em] leading-[1.2] mb-1.5">
+              <h3 className="font-display font-extrabold text-corbeau text-[1.1rem] tracking-[-0.02em] leading-[1.2] mb-1.5">
                 {c.label}
-              </h4>
+              </h3>
               <p className="font-mono text-[0.78rem] text-eyebrow tracking-[0.5px] leading-[1.4]">
                 {c.sub}
               </p>

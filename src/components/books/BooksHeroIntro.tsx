@@ -66,8 +66,8 @@ export default function BooksHeroIntro() {
           className="relative w-full max-w-[360px] md:max-w-[420px] aspect-[4/5] rounded-[14px] bg-paper p-3 md:p-4"
           style={{
             boxShadow:
-              "0 1px 2px rgba(14,16,32,0.06), 0 12px 36px rgba(252,152,90,0.12), 0 36px 64px rgba(14,16,32,0.18)",
-            outline: "1px solid rgba(14,16,32,0.12)",
+              "0 1px 2px rgba(var(--ink-rgb),0.06), 0 12px 36px rgba(var(--accent-rgb),0.12), 0 36px 64px rgba(var(--ink-rgb),0.18)",
+            outline: "1px solid rgba(var(--ink-rgb),0.12)",
             outlineOffset: "-1px",
           }}
         >

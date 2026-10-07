@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 /**
  * Sequential-reveal feed for the terminal card on the homepage AI section.
@@ -20,7 +21,9 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
  * setInterval doesn't burn cycles on a hidden element.
  *
  * Respects prefers-reduced-motion: all lines render at opacity 1
- * immediately, no cycling.
+ * immediately, no cycling. The preference is read after hydration, so
+ * `data-motion-reveal` lets globals.css show every line for reduced-motion
+ * and no-script visitors before React runs.
  */
 
 const CYCLE_SECONDS = 12;
@@ -36,18 +39,8 @@ function tickToVisibleCount(tick: number, lineCount: number): number {
 export default function TerminalFeed({ lines }: { lines: ReactNode[] }) {
   const [tick, setTick] = useState(0);
   const [visible, setVisible] = useState(true);
-  const [reduced, setReduced] = useState(false);
+  const reduced = usePrefersReducedMotion();
   const ref = useRef<HTMLDivElement | null>(null);
-
-  // Honour OS-level reduced-motion. With it on, every line stays at
-  // opacity 1 from first paint.
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(mq.matches);
-    const update = () => setReduced(mq.matches);
-    mq.addEventListener?.("change", update);
-    return () => mq.removeEventListener?.("change", update);
-  }, []);
 
   // Pause cycling while card is off-screen.
   useEffect(() => {
@@ -83,6 +76,7 @@ export default function TerminalFeed({ lines }: { lines: ReactNode[] }) {
               transform: isShown ? "translateY(0)" : "translateY(6px)",
             }}
             aria-hidden={!reduced && !isShown}
+            data-motion-reveal=""
           >
             <span className="text-papaya font-semibold shrink-0">▶</span>
             <span className="text-night">{node}</span>

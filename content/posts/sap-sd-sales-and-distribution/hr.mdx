@@ -1,0 +1,228 @@
+---
+title: "SAP SD: što radi i gdje implementacije zakazuju"
+h1: "SAP SD: što radi i gdje implementacije zakazuju"
+slug: "sap-sd-sales-and-distribution"
+date: "2025-04-08"
+updated: "2026-10-07"
+hero: "/images/wp/2025/04/What-You-Must-Know-Before-Starting-SAP-SD-Implementation.webp"
+heroAlt: "Dijagram SAP SD procesa od narudžbe do naplate s tijekom dokumenata: prodajni nalog, isporuka i fakturiranje"
+category: "sap-modules"
+tags: ["sap-technical-decisions", "sap-sd", "order-to-cash", "rise-with-sap"]
+author: "Noel D'Costa"
+metaTitle: "SAP SD 2026: što radi i gdje zakazuje"
+metaDescription: "SAP SD za 2026.: od narudžbe do naplate na S/4HANA, cijene, napredni ATP, kreditni limiti, integracija s FI i četiri mjesta gdje implementacije zakazuju."
+excerpt: "SAP SD povezuje ono što prodaja obećava s onim što operativa može isporučiti. Vodič obrađuje tijek od narudžbe do naplate, što se mijenja na S/4HANA i četiri mjesta na kojima SD implementacije obično zakazuju."
+experienceSource: "Noel's SAP SD experience as published in the original article: the rollout where sales quoted five days and manufacturing knew it was ten, the manufacturing client that cut its order-to-cash cycle by 40%, and the data governance problems (old pricing conditions, incomplete customer masters, mismatched tax codes). S/4HANA SD facts (business partner, SAP Credit Management, condition contracts, advanced ATP licensing, RAR) checked against SAP documentation in October 2026."
+lastReviewed: "2026-05-21"
+keyTakeaways:
+  - "SAP SD vodi proces od narudžbe do naplate: ponudu, prodajni nalog, isporuku, fakturiranje i predaju financijama"
+  - "Prodaja je kupcima rekla pet dana, a proizvodnja je znala da je deset. Provjera raspoloživosti koja je čitala pogrešne podatke koštala je povjerenja kupaca, a ne samo uspješnosti isporuke"
+  - "Zapisi uvjeta za cijene trebaju vlasnika nakon puštanja u rad. Zastarjeli uvjeti proizvode pogrešne račune i sporove"
+  - "U S/4HANA kupci postaju poslovni partneri, upravljanje kreditnim rizikom prelazi na SAP Credit Management, a rabati na ugovore o uvjetima"
+  - "Određivanje konta i porez testirajte sa stvarnim kontnim planom i poreznim kodovima prije UAT potpisa"
+pullQuote: "SAP SD povezuje prodajno obećanje s operativnom stvarnošću. Kada je ta veza pogrešna, kupac to vidi prvi."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP SD"
+  - "SAP MM"
+  - "SAP PP"
+  - "SAP FI"
+  - "SAP ECC"
+  - "SAP TM"
+  - "SAP Credit Management"
+  - "SAP Revenue Accounting and Reporting"
+  - "RISE with SAP"
+originalUrl: "https://noeldcosta.com/sap-sd-sales-and-distribution/"
+canonicalUrl: "https://noeldcosta.com/hr/sap-sd-sales-and-distribution/"
+locale: "hr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP SD (Sales and Distribution, odnosno prodaja i distribucija) vodi proces od narudžbe do naplate u SAP-u: ponudu, prodajni nalog, isporuku, fakturiranje i predaju financijama. Na S/4HANA mijenja se na načine koji utječu na opseg projekta. Kupci postaju poslovni partneri, upravljanje kreditnim rizikom prelazi na SAP Credit Management, rabati prelaze na ugovore o uvjetima, a fakturiranje knjiži izravno u Universal Journal. Ovaj je vodič namijenjen voditeljima prodajnih operacija, financijskim kontrolorima i voditeljima projekata koji trebaju znati što SD radi i gdje zakazuje. Kratak odgovor na drugo pitanje: matični podaci kupaca, uvjeti za cijene, provjera raspoloživosti i određivanje konta. Ta četiri područja testirajte sa stvarnim podacima prije puštanja u rad.
+
+Na jednom uvođenju nakon pune SAP implementacije koraci od narudžbe do naplate izgrađeni su točno prema dizajnu. Na procesnoj karti izgledali su uredno. Nitko nije provjerio kako zalihe pristižu iz proizvodnje.
+
+Prodaja je kupcima rekla pet dana. Proizvodnja je znala da je bliže deset.
+
+Taj je jaz koštao više od zakašnjelih isporuka. Koštao je povjerenja, a povjerenje je teže vratiti nego postavku konfiguracije.
+
+## Što SAP SD obuhvaća
+
+SD se nalazi na početku logističkog lanca. Zanimanje kupca pretvara u račun nizom dokumenata:
+
+1. **Upit**: kupac traži cijenu ili raspoloživost
+2. **Ponuda**: formalna ponuda cijene i isporuke s rokom valjanosti
+3. **Prodajni nalog**: kupac se obvezuje, pokreće se provjera raspoloživosti i potvrđuje se datum isporuke
+4. **Isporuka**: skladište komisionira i pakira, a izlaz robe smanjuje zalihe
+5. **Fakturiranje**: izdaje se račun zajedno s knjigovodstvenim dokumentom
+6. **Plaćanje**: financije zatvaraju dolaznu uplatu prema otvorenoj stavci
+
+Svaki dokument upućuje na prethodni. Taj tijek dokumenata čini proces od narudžbe do naplate sljedivim. Ako je lanac čist, svaki se račun može pratiti do izvornog zahtjeva. Ako se dokumenti stvaraju krivim redoslijedom ili zaobilaze, izvještavanje pada i slijede sporovi.
+
+<explainer-flow title="Od narudžbe do naplate kao lanac dokumenata" caption="Svaki dokument upućuje na prethodni. Preskočite jedan i trag od računa do upita se prekida." steps="Upit|Ponuda|Prodajni nalog|Isporuka|Fakturiranje|Plaćanje" notes="Traži se cijena ili raspoloživost|Formalna ponuda s rokom valjanosti|Provjera raspoloživosti potvrđuje datum|Komisioniranje, pakiranje, izlaz robe|Račun i knjigovodstveni dokument|Financije zatvaraju otvorenu stavku" result="Svaki račun može se pratiti do izvornog upita"></explainer-flow>
+
+Kada je dobro napravljen, taj lanac uklanja ručne predaje. Jedan proizvodni klijent skratio je ciklus od narudžbe do naplate za 40 % nakon puštanja SD-a u rad, uglavnom ukidanjem predaja između prodaje, skladišta i financija.
+
+## Ključne komponente
+
+### Prodajni nalozi i provjera raspoloživosti
+
+Obrada prodajnih naloga mjesto je gdje završava najveći dio SD konfiguracije: vrste naloga, kategorije stavki, rasporedi isporuke i provjera raspoloživosti.
+
+Available-to-promise (ATP) najvažniji je dio za poslovanje. Provjerava može li se traženi datum ispuniti iz zaliha, planiranih zaprimanja i postojećih obveza. Kad je dobro konfiguriran, prodaja kupcima govori ono što sustav stvarno može potvrditi. Kad je loše konfiguriran, prodaja govori ono što se nada isporučiti.
+
+Na uvođenju s početka teksta nitko nije provjerio kako zalihe pristižu iz proizvodnje. Prodaja je nudila datume koje pogon nije mogao ispuniti.
+
+### Cijene i uvjeti
+
+Formiranje cijena najpodcjenjenija je postavka u SD-u. Izgleda jednostavno sve do prvog spora oko računa.
+
+SD-ova tehnika uvjeta obrađuje osnovne cijene, popuste kupaca, količinske stepenice, dodatke, vozarinu i porez. Svaki element je vrsta uvjeta sa slijedom pristupa, a vrijednost se nalazi u zapisu uvjeta.
+
+Najčešći problem s cijenama koji vidim: stari uvjeti za cijene iz vremena puštanja u rad koji se nikada nisu ažurirali. Poslovanje ponovno dogovori popust, nitko ne ažurira zapis uvjeta u SD-u, račun je pogrešan, a spor završi u potraživanjima od kupaca.
+
+Upravljanje cijenama procesna je odluka, a ne odluka o konfiguraciji. Netko mora biti vlasnik održavanja zapisa uvjeta.
+
+### Otprema
+
+Obrada isporuke obuhvaća komisioniranje, pakiranje i izlaz robe. Izlaz robe ključni je događaj: knjiži smanjenje zaliha, stavlja isporuku na popis za fakturiranje i bilježi stvarni datum isporuke. Otpremna točka i određivanje rute upravljaju načinom na koji se isporuke stvaraju. Tvrtke sa složenim distribucijskim mrežama to proširuju alatom SAP Transportation Management (TM).
+
+### Fakturiranje, određivanje konta i porezi
+
+Fakturiranje pretvara isporuku u račun i stvara knjigovodstveni dokument. Određivanje konta svaku stavku fakture povezuje s kontima prihoda, poreza i drugim kontima glavne knjige, na temelju prodajne organizacije, grupa za dodjelu konta kupcu i materijalu te vrste uvjeta. Kad je pogrešno, račun se knjiži na pogrešno konto, a financije to otkriju pri mjesečnom zatvaranju.
+
+Određivanje poreza jednako je krhko. Ovisi o poreznoj klasifikaciji kupca, poreznoj klasifikaciji materijala te zemlji ili jurisdikciji iz koje se isporučuje. Neusklađenost može dati račun s nultim porezom na oporezivu prodaju ili porez na oslobođenu.
+
+### Upravljanje kreditnim rizikom
+
+Provjere kreditnog limita blokiraju ili označavaju narudžbe koje bi kupca odvele preko njegova kreditnog limita. Radi samo ako se limiti održavaju. Statični limiti postavljeni pri puštanju u rad prestaju išta značiti kako se mijenjaju ponašanje plaćanja i obujam.
+
+Kad limit padne ispod uobičajene veličine narudžbe kupca, svaka se narudžba automatski blokira. Prodajni timovi tada nauče otpuštati blokade umjesto da traže reviziju limita.
+
+Ovo nije upravljanje kreditnim rizikom. Ovo je zaobilazno rješenje.
+
+## Organizacijska struktura
+
+Ovo su elementi SD strukture i s čime se svaki povezuje.
+
+| Element strukture | Svrha u SAP SD-u | Ključna veza |
+|---|---|---|
+| Prodajna organizacija | Prodajna jedinica najviše razine, odgovorna za prodajne uvjete i obveze | Dodijeljena šifri društva (company code) u FI-ju |
+| Kanal distribucije | Način na koji proizvodi stižu do kupca (veleprodaja, maloprodaja, izravno) | Upravlja cijenama, matičnim podacima i određivanjem partnera |
+| Sektor | Grupa proizvoda unutar prodajne organizacije | Grupiranje materijala za izvještavanje i izlazne dokumente |
+| Prodajno područje | Prodajna organizacija, kanal distribucije i sektor zajedno | Obavezno za svaki prodajni dokument i zapis kupca |
+| Prodajni ured | Geografska prodajna jedinica | Regionalno izvještavanje i određivanje partnera |
+| Prodajna grupa | Tim unutar prodajnog ureda | Odgovorna osoba na narudžbama |
+| Otpremna točka | Lokacija s koje se roba otprema | Povezuje SD sa skladišnim poslovanjem i transportom |
+| Pogon | Proizvodna ili opskrbna jedinica | Izvor zaliha, povezan s otpremnom točkom |
+
+Prodajno područje je operativna jedinica. Prodajni podaci kupca održavaju se po prodajnom području, a svaki prodajni dokument stvara se u jednom od njih. Mnoge migracije posrnu upravo ovdje: naslijeđeni zapisi kupaca koji se ne preslikavaju čisto na prodajna područja traže stvarnu pripremu prije učitavanja.
+
+## Što se mijenja na S/4HANA
+
+Ako prelazite s ECC-a, ovo su promjene u SD-u koje treba uvrstiti u opseg. SAP to područje u dokumentaciji za S/4HANA vodi pod nazivom „Sales”, iako ga većina timova i dalje zove SD.
+
+<explainer-compare title="Što se mijenja u SD-u pri prelasku s ECC-a na S/4HANA" caption="Svaka promjena traži konfiguraciju, migraciju podataka i testiranje, zato svih šest uvrstite u opseg na vrijeme." options="ECC|S/4HANA" criteria="Kupci => Matični zapis kupca ; Poslovni partner s ulogom kupca|Upravljanje kreditnim rizikom => FI-AR-CR ; SAP Credit Management (FIN-FSCM-CR), obavezno|Rabati => SD obrada rabata, ponovno izgrađena iz indeksa ; Ugovori o uvjetima u modulu Settlement Management|Provjera raspoloživosti => Osnovna provjera raspoloživosti proizvoda ; Napredni ATP: alokacija, zaostale narudžbe, alternativni pogoni|Fakturiranje => FI i CO usklađuju se zasebno ; Jedna stavka u Universal Journalu (ACDOCA)|Priznavanje prihoda => Prilagođena logika razgraničenja na mnogim programima ; SAP Revenue Accounting and Reporting, licencira se zasebno" highlight="2"></explainer-compare>
+
+1. **Kupci su poslovni partneri.** Matični podaci kupca održavaju se putem poslovnog partnera s ulogom kupca. Kod konverzije integracija kupca i dobavljača (customer-vendor integration) mora biti postavljena prije nego što se konverzija pokrene.
+2. **Upravljanje kreditnim rizikom prelazi na SAP Credit Management.** Upravljanje kreditima iz ECC-a (FI-AR-CR) nije dostupno u S/4HANA. SAP Credit Management (FIN-FSCM-CR) njegova je zamjena, pa konverzija mora migrirati kreditne podatke i postavke. To nije izborno.
+3. **Rabati prelaze na ugovore o uvjetima.** Klasičnu SD obradu rabata zamjenjuje Settlement Management (upravljanje ugovorima o uvjetima). Uvjeti rabata primjenjuju se odmah, umjesto da se ponovno grade iz indeksa.
+4. **Napredni ATP.** [Napredni ATP](https://learning.sap.com/courses/exploring-aatp-in-sap-s-4hana/outlining-advanced-available-to-promise-aatp-in-sap-s-4hana) u S/4HANA dodaje alokaciju proizvoda, obradu zaostalih narudžbi, potvrdu na temelju alternativa među pogonima, oslobađanje za isporuku i dodjelu opskrbe. U S/4HANA Cloud te su funkcije dio standardne licence. On-premise zahtijevaju zasebnu licencu nakon aktivacije.
+5. **Fakturiranje knjiži u Universal Journal.** FI, CO i analiza marže dijele jednu stavku u ACDOCA, čime nestaje posao usklađivanja FI-CO iz ECC-a. Cijena toga: pogreška u određivanju konta odmah je knjiženje na pogrešno konto, vidljivo na razini stavke.
+6. **Priznavanje prihoda.** Kod ugovora s više elemenata, pretplata ili dugoročnih usluga prema standardu IFRS 15, SAP Revenue Accounting and Reporting zamjenjuje prilagođenu logiku razgraničenja koju su izgradili mnogi ECC programi. Licencira se zasebno i treba ga osmisliti prije puštanja u rad, a ne otkriti pri godišnjem zatvaranju.
+
+Clean Core mijenja način na koji se rješavaju prilagodbe u SD-u. U javnom oblaku vlastiti kod u jezgri nije moguć. U privatnom oblaku i on-premise moguć je, ali svaku nadogradnju čini težom. Većina starih Z-rutina za cijene može se zamijeniti standardnim vrstama uvjeta, formulama i BAdI-jevima. Ono što doista ostane pripada u side-by-side ekstenziju na SAP BTP-u. Moj [vodič kroz Clean Core](/hr/sap-clean-core-strategy-what-it-means-for-your-business/) obrađuje tu odluku.
+
+## Točke integracije
+
+### SD s MM-om
+
+Provjera raspoloživosti čita zalihe iz MM-a, a izlaz robe knjiži kretanje zaliha. Ako su podaci o zalihama pogrešni, ATP rezultati nisu pouzdani. Ako izlaz robe ne uspije jer zalihe zapravo nisu na otpremnoj točki, isporuka se ne može dovršiti i fakturiranje staje. Oba područja držite usklađenima kroz matične podatke i disciplinu: bez ručnih korekcija zaliha koje zaobilaze standardna knjiženja.
+
+### SD s PP-om
+
+U scenarijima proizvodnje po narudžbi prodajni nalog može izravno pokrenuti proizvodnju, pa potvrđeni datum postaje obveza potkrijepljena proizvodnim nalogom. Grupa strategija u matičnim podacima materijala upravlja načinom na koji se prodajni nalozi i prognoze međusobno odnose. Ako je postavljena pogrešno, zbrajaju se umjesto da se prebijaju, planiranje potreba precjenjuje potražnju i slijedi prekomjerna proizvodnja. Moj [vodič kroz SAP PP](/hr/sap-pp-production-planning/) obrađuje stranu planiranja.
+
+### SD s FI-jem
+
+Dokument fakture je sučelje. Svaki račun stvara knjigovodstveni dokument koji knjiži prihod, porez i otvorenu stavku kupca u Universal Journal. Uvjeti plaćanja u matičnim podacima kupca određuju datum dospijeća. Kad prodaja dogovori uvjete a da financije ne obavijesti, sustav provodi uvjete koje financije nikada nisu odobrile.
+
+Ako SD dizajn sav prihod priznaje pri fakturiranju, a ugovori kažu drugačije, naknadna prepravka je skupa. Priznavanje prihoda dogovorite s financijama prije nego što se dizajn potpiše. Za financijsku stranu integracije pogledajte moj [vodič kroz SAP FICO](/hr/sap-fico/).
+
+## Gdje SD implementacije zakazuju
+
+Četiri točke kvara uzrokuju većinu problema nakon puštanja u rad.
+
+**Matični podaci kupaca nisu spremni.** Svako polje važno je u nastavku lanca. Nedostajuća porezna klasifikacija znači pogrešan porez. Nedostajući uvjeti plaćanja znače da FI ne može izračunati datume dospijeća. Nedostajući uvjeti otpreme kvare planiranje isporuka. Obujam je veći, a izvorni podaci lošiji nego što plan pretpostavlja, a čišćenje traži poslovne odluke. Počnite rano i tretirajte to kao poslovni radni tok, a ne tehničko učitavanje. Moj tekst o tome [zašto migracija SAP podataka zakazuje](/hr/why-sap-data-migration-fails-and-how-to-fix-it/) obrađuje metodu.
+
+**Uvjeti za cijene se ne održavaju.** Uvjeti iz vremena puštanja u rad koje nitko ne pregledava unutar prve godine postaju sporovi oko računa.
+
+**Provjera raspoloživosti odvojena od stvarnosti.** ATP koji čita zastarjele podatke daje obećanja koja poslovanje ne može održati. Validirajte ga na stvarnim scenarijima proizvodnje i zaliha, a ne na čistim testnim podacima iz jediničnog testiranja.
+
+**Praznine u određivanju konta otkrivene nakon puštanja u rad.** Testirajte sa stvarnim kontnim planom, poreznim kodovima i grupama materijala. Neusklađeni porezni kodovi mogu blokirati narudžbe ili izazvati sporove oko računa prije nego što itko shvati što nije u redu.
+
+Tablica je popis koji bih prošao prije UAT potpisa.
+
+| Rizik | Utjecaj | Ublažavanje |
+|---|---|---|
+| Nepotpuni matični podaci kupaca | Pogreške na računima, neuspjele isporuke, praznine u FI knjiženjima | Rano pokrenite radni tok za podatke, prije migracije definirajte obavezna polja po prodajnom području |
+| Zastarjeli uvjeti za cijene | Sporovi oko računa, netočan prihod | Pri puštanju u rad imenujte vlasnika zapisa uvjeta i ciklus pregleda |
+| ATP odvojen od PP-a ili MM-a | Nepouzdana obećanja o isporuci | Testirajte ATP na stvarnim scenarijima planiranja prije UAT potpisa |
+| Praznine u određivanju konta | Prihod knjižen na pogrešna konta | Testirajte sa stvarnim kontnim planom i cijelim skupom poreznih kodova |
+| Otpuštanje kreditnih blokada kao rutina | Nekontrolirana izloženost, sporovi oko potraživanja | Provodite revizije limita, pratite ručna otpuštanja u prvih 90 dana |
+| Izlazni dokumenti nisu testirani | Računi i otpremnice se ne šalju automatski | Prije puštanja u rad testirajte svaku vrstu izlaza sa stvarnim usmjeravanjem ispisa i e-pošte |
+| Neusklađeni uvjeti plaćanja | Pogrešni datumi dospijeća, pogreške u prognozi novčanog toka | Uvjete dogovorite između prodaje i financija prije učitavanja podataka o kupcima |
+
+Ako prodajni tim rutinski otpušta kreditne blokade umjesto da traži reviziju, to ispravite u prvih devedeset dana, prije nego što se navika učvrsti.
+
+## Često postavljana pitanja
+
+<details>
+<summary>Što je SAP SD i što radi?</summary>
+
+SAP SD (Sales and Distribution) upravlja procesom od narudžbe do naplate: upitima, ponudama, prodajnim nalozima, isporukama, fakturiranjem i predajom financijskom računovodstvu. Njegov tijek dokumenata povezuje svaki korak s prethodnim, pa se svaki račun može pratiti do izvorne narudžbe. Integriran je s MM-om za zalihe i izlaz robe, s PP-om za proizvodnju po narudžbi i raspoloživost te s FI-jem za prihod, porez i potraživanja.
+
+</details>
+
+<details>
+<summary>Kakva je organizacijska struktura u SAP SD-u?</summary>
+
+Operativna jedinica je prodajno područje: prodajna organizacija, kanal distribucije i sektor zajedno. Svaki prodajni dokument stvara se u nekom prodajnom području, a prodajni podaci kupca održavaju se po prodajnom području. Prodajni uredi i prodajne grupe nalaze se ispod, za izvještavanje i odgovornost. Na logističkoj strani otpremne točke i pogoni određuju odakle se roba otprema. Strukturu dovedite u red prije učitavanja podataka o kupcima, jer promjena kasnije znači ponovno učitavanje podataka.
+
+</details>
+
+<details>
+<summary>Kako funkcionira formiranje cijena u SAP SD-u?</summary>
+
+Formiranje cijena koristi tehniku uvjeta. Svaki element cijene je vrsta uvjeta, slijed pristupa odlučuje koji se zapis uvjeta primjenjuje, a postupak određivanja cijena kombinira vrste uvjeta redom. Većina sporova oko cijena proizlazi iz zapisa uvjeta koji nisu ažurirani kada su se promijenili komercijalni uvjeti, a ne iz pogrešaka u konfiguraciji.
+
+</details>
+
+<details>
+<summary>Što je napredni ATP u SAP S/4HANA?</summary>
+
+Napredni available-to-promise (aATP) je provjera raspoloživosti u S/4HANA. Povrh osnovne provjere raspoloživosti proizvoda dodaje alokaciju proizvoda, obradu zaostalih narudžbi, potvrdu na temelju alternativa među pogonima, oslobađanje za isporuku i dodjelu opskrbe. Te su funkcije uključene u S/4HANA Cloud, a on-premise zahtijevaju zasebnu licencu nakon aktivacije. Koristite ih gdje je opskrba ograničena ili gdje su važna pravila alokacije. Za stabilne opskrbne lance često je dovoljna dobro konfigurirana osnovna provjera.
+
+</details>
+
+<details>
+<summary>Kako se SAP SD integrira s financijskim računovodstvom?</summary>
+
+Preko dokumenta fakture. Prosljeđivanje dokumenta fakture u računovodstvo stvara knjigovodstveni nalog za prihod, porez i otvorenu stavku kupca. Određivanje konta odabire konta glavne knjige na temelju prodajne organizacije, grupa za dodjelu konta i vrste uvjeta. Porez ovisi o poreznim klasifikacijama kupca i materijala. Uvjeti plaćanja u matičnim podacima kupca određuju datum dospijeća. U slučajevima IFRS 15 SAP Revenue Accounting and Reporting razgraničava i priznaje prihod tijekom vremena.
+
+</details>
+
+<details>
+<summary>Što se mijenja u SAP SD-u pri prelasku s ECC-a na S/4HANA?</summary>
+
+Kupci postaju poslovni partneri. Upravljanje kreditnim rizikom prelazi s FI-AR-CR na SAP Credit Management, što je obavezno. Obradu rabata zamjenjuju ugovori o uvjetima u Settlement Managementu. Napredni ATP postaje dostupan, a fakturiranje knjiži u Universal Journal. Sve to uvrstite u opseg na vrijeme, jer svaka stavka traži konfiguraciju, migraciju podataka i testiranje.
+
+</details>
+
+<details>
+<summary>Koje su najčešće pogreške u implementaciji SAP SD-a?</summary>
+
+Pet se stalno ponavlja. Podcjenjivanje matičnih podataka kupaca. Ostavljanje uvjeta za cijene bez vlasnika nakon puštanja u rad. Testiranje ATP-a samo na čistim podacima. Testiranje određivanja konta na pojednostavljenim podacima. Izostanak testiranja izlaznih dokumenata od početka do kraja. Posljednje je lako previdjeti. Kad se računi ne šalju automatski, netko ih počne ispisivati ručno, a zaobilazno rješenje postane trajno.
+
+</details>

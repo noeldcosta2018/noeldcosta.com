@@ -1,0 +1,261 @@
+---
+title: "SAP FICO objašnjen: 7 stvari koje ruše implementacije"
+h1: "SAP FICO objašnjen: 7 stvari koje ruše implementacije"
+slug: "sap-fico"
+date: "2025-05-02"
+updated: "2026-10-07"
+hero: "/images/wp/2025/04/Standard-SEO-Agencies-14-1.webp"
+heroAlt: "Troje kolega okupljeno oko stolnog monitora u slabo osvijetljenom uredu"
+category: "sap-modules"
+tags: ["sap-technical-decisions", "sap-fico", "sap-finance", "rise-with-sap"]
+author: "Noel D'Costa"
+metaTitle: "SAP FICO 2026: 7 stvari koje ruše implementacije"
+metaDescription: "SAP FICO na S/4HANA objašnjen: FI, CO i Universal Journal, kako se FICO integrira s MM-om i SD-om te sedam pogrešaka koje ruše financijske implementacije."
+excerpt: "Modul SAP FICO rijetko je uzrok problema. Uzrokuju ih odluke donesene prebrzo ili prekasno: matični podaci bez vlasnika, CO dizajniran bez kontrolora, izvještavanje izgrađeno u zadnjem sprintu."
+experienceSource: "20+ years direct experience as SAP FICO consultant and advisor across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets, covering manufacturing, retail, telecom, and holding company implementations. Includes blueprint, configuration, testing, go-live, and post-live support. 2026 S/4HANA Universal Journal (ACDOCA), Group Reporting, and RISE positioning reflects current SAP product roadmap."
+lastReviewed: "2026-05-21"
+keyTakeaways:
+  - "SAP FICO je financijsko računovodstvo (FI) za vanjsko izvještavanje plus kontroling (CO) za interno upravljanje troškovima i maržom; na S/4HANA oba knjiže u jedan Universal Journal"
+  - "Matični podaci bez vlasnika i CO dizajniran bez kontrolora dvije su od najčešćih pogrešaka"
+  - "Poslovni korisnici koji sustav prvi put vide tek u UAT-u koštaju tjedne prerade koje bi rani pregledi ekrana izbjegli"
+  - "Porezna logika i pravila knjiženja izgrađeni u ABAP-u umjesto u standardnoj konfiguraciji postaju usko grlo i problem Clean Core na S/4HANA"
+  - "Pogreške integracije nalaze se na granicama modula: nedostajuća klasa vrednovanja znači da MM knjiži, a FI ne"
+  - "Rubni slučajevi poput različitih varijanti fiskalne godine među company codeovima izlaze na vidjelo pri mjesečnom zatvaranju ako ih nitko ne traži u dizajnu"
+pullQuote: "Problemi sa SAP FICO-om gotovo nikad ne dolaze od sustava. Dolaze od odluka donesenih prebrzo ili prekasno: matični podaci bez vlasnika, CO dizajniran bez uključenih kontrolora, izvještavanje izgrađeno u zadnjem sprintu."
+mentions:
+  - "SAP FICO"
+  - "SAP FI"
+  - "SAP CO"
+  - "SAP S/4HANA"
+  - "SAP ECC"
+  - "SAP MM"
+  - "SAP SD"
+  - "SAP PP"
+  - "SAP HANA"
+  - "SAP CO-PA"
+  - "RISE with SAP"
+  - "SAP Group Reporting"
+  - "Universal Journal"
+originalUrl: "https://noeldcosta.com/sap-fico/"
+canonicalUrl: "https://noeldcosta.com/hr/sap-fico/"
+locale: "hr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP FICO su dva modula koja rade kao jedan. Financijsko računovodstvo (FI) proizvodi brojke koje vide revizori i regulatori. Kontroling (CO) proizvodi brojke koje uprava koristi za vođenje poslovanja. Na S/4HANA oba knjiže u jedan Universal Journal. Ovaj je članak namijenjen voditeljima financija, direktorima programa i FICO konzultantima koji započinju, vode ili spašavaju financijski tok rada na S/4HANA. Objašnjava kako se FI i CO uklapaju, gdje se povezuju s ostatkom SAP-a i sedam odluka koje ruše implementacije. Koristite popis spremnosti pri kraju prije ulaska u korisničko prihvatno testiranje (UAT).
+
+Na SAP FICO projektima radim više od 20 godina, kroz cijeli životni ciklus od blueprinta do podrške, i isti se obrasci ponavljaju. Neki su problemi tehnički. Češće dolaze od odluka koje su se ishitrile ili previdjele rano.
+
+Vrijeme je u 2026. važno. SAP ECC izlazi iz standardnog održavanja krajem 2027., pa je većina financijskih timova koji su još na ECC-u ili usred migracije ili pred početkom. Pogreške u nastavku koštaju više na S/4HANA programu nego na ECC-u, jer Universal Journal ostavlja manje prostora za naknadno upijanje lošeg dizajna.
+
+## FI i CO na S/4HANA
+
+**Financijsko računovodstvo (FI)** okrenuto je prema van. Zakonska usklađenost, bilanca, račun dobiti i gubitka, brojke koje izlaze iz tvrtke. Svaka financijska transakcija u SAP-u završava u FI-ju.
+
+**Kontroling (CO)** okrenut je prema unutra. Praćenje troškova, budžetiranje i profitabilnost za upravljačke odluke. Troškovni centri pokazuju gdje se novac troši. Analiza profitabilnosti pokazuje maržu po kupcu, regiji ili proizvodu.
+
+U praksi ih ne možete razdvojiti. Račun dobavljača u obvezama prema dobavljačima knjiži se u glavnu knjigu i može teći u izvještaje troškovnih centara. Nabava imovine ažurira knjige i utječe na planiranje troškova. Znati gdje FI završava, gdje CO počinje i gdje se preklapaju razlikuje znanje o financijama od znanja o tipkama.
+
+Na S/4HANA granica se dodatno briše. Universal Journal (tablica ACDOCA) pohranjuje stavke FI-ja i CO-a u jedan zapis. Dvije posljedice važne su za dizajn. Vrste troška (cost elements) sada su konta glavne knjige s kategorijom vrste troška, a ne zasebni matični podaci. I SAP-ov preporučeni model profitabilnosti je Margin Analysis (CO-PA temeljen na kontima). CO-PA temeljen na kalkulaciji (costing-based) i dalje postoji on-premise i u private edition. SAP-ov [materijal za učenje](https://learning.sap.com/courses/profitability-analysis-in-sap-s-4hana/costing-based-co-pa-vs-margin-analysis-1) ipak je jasan: nije dostupan u S/4HANA Cloudu, a nova ulaganja idu u Margin Analysis.
+
+Ovo su glavne komponente koje FICO tim konfigurira:
+
+| Komponenta | Područje | Čime upravlja |
+|---|---|---|
+| Glavna knjiga (FI-GL) | FI | Središnja evidencija svih financijskih transakcija; osnova za zakonsko izvještavanje |
+| Obveze prema dobavljačima (FI-AP) | FI | Računi dobavljača, plaćanja, obveze |
+| Potraživanja od kupaca (FI-AR) | FI | Računi kupcima, naplata, kredit |
+| Računovodstvo dugotrajne imovine (FI-AA) | FI | Nabava, amortizacija, otpis dugotrajne imovine |
+| Bankovno računovodstvo | FI | Bankovni izvodi, usklađivanje, novčana pozicija |
+| Računovodstvo troškovnih centara | CO | Troškovi po odjelu ili funkciji |
+| Interni nalozi | CO | Privremeni sakupljači troškova za događaje, kampanje, male projekte |
+| Računovodstvo profitnih centara | CO | Prihodi i troškovi po poslovnoj jedinici |
+| Margin Analysis (CO-PA) | CO | Marža po kupcu, proizvodu, kanalu ili regiji |
+
+## Što se promijenilo za financije na S/4HANA
+
+**Usklađivanje FI-a i CO-a je nestalo.** S jednim dnevnikom i bez zasebnih tablica zbrojeva, usklađivanje na kraju razdoblja koje je na ECC-u jelo konzultantske dane uglavnom nestaje. Druga strana medalje: dizajn troškovnih centara i karakteristike profitabilnosti moraju biti ispravni u trenutku dizajna. Nema agregatnog sloja koji bi skrio pogreške.
+
+**Konsolidacija i planiranje imaju nove domove.** SAP S/4HANA Group Reporting pozicionira kao nasljednika SAP Business Planning and Consolidation (BPC) za konsolidaciju, a SAP Analytics Cloud za planiranje. Standardno održavanje BPC-a završava 2027. Moj [vodič za SAP BPC](/hr/sap-bpc-features-deployment-best-practice-guide/) opisuje što učiniti ako ga još koristite.
+
+**Joule je stvaran, ali uzak.** SAP-ove [napomene o izdanju AI-ja iz sredine 2025.](https://news.sap.com/2025/07/sap-business-ai-release-highlights-q2-2025/) navode financijske primjene poput izrade matičnih podataka dugotrajne imovine i nadzora bankovnih izvoda putem asistenta Joule. Opisuju i agenta za potraživanja koji naplaćuje dospjele stavke. SAP Joule for Consultants, općenito dostupan od svibnja 2025., odgovara na pitanja o konfiguraciji iz SAP Notes i sadržaja Activate. Sve to bolje radi na čistim podacima. Ništa od toga ne popravlja loš dizajn.
+
+**Clean Core mijenja što znači „prilagoditi".** Na S/4HANA Cloud Public Edition jezgru uopće ne možete mijenjati. Na private edition i on-premise možete, ali svaka izmjena dodaje trud pri nadogradnji i rizik regresije. Navike iz ECC-a (Z-tablice za pravila knjiženja, poboljšanja za poreznu logiku, ABAP derivacije u CO-PA) sada pripadaju standardnoj konfiguraciji ili side-by-side proširenjima na SAP BTP-u. To podiže ulog kod pogreške 4 u nastavku.
+
+![Savjetnik za SAP FICO pregledava financijska knjiženja, izvještaje troškovnih centara i rezultate integracijskih testova](https://images.pexels.com/photos/6120166/pexels-photo-6120166.jpeg)
+
+## Kako se FICO integrira s ostalim modulima
+
+FICO se povezuje s gotovo svakim drugim SAP modulom. Primopredaje su mjesto gdje nastaje većina problema integracije: svaki tim testira svoje područje, a nitko ne testira vezu.
+
+| Modul | Točka integracije | Što se događa na S/4HANA |
+|---|---|---|
+| MM (upravljanje materijalima) | GR/IR poravnanje, knjiženje računa, vrednovanje zaliha | Primka robe knjiži GR/IR stavku u ACDOCA; račun dobavljača je poravnava i knjiži u AP |
+| SD (prodaja i distribucija) | Fakturiranje, prihodi, potraživanja, kredit | Fakturiranje ažurira prihode i potraživanja u Universal Journalu; MSFI 15 koristi Revenue Accounting and Reporting gdje ugovori to traže |
+| PP (planiranje proizvodnje) | Troškovi proizvodnje, WIP, odstupanja | Troškovi naloga skupljaju se u ACDOCA; WIP i odstupanja obračunavaju se unutar istog dnevnika |
+| HCM / obračun plaća | Knjiženje plaća, dodjela troškova | Rezultati obračuna plaća knjiže se u FI kao trošak i obveza i teku u troškovne centre |
+| PS (Project System) | Budžeti, obračun, prihodi projekta | Troškovi i prihodi projekta knjiže se u FI/CO uz trenutni uvid |
+| PM (održavanje postrojenja) | Troškovi naloga održavanja | Troškovi rada i materijala skupljaju se na nalozima i obračunavaju u CO |
+| Group Reporting | Konsolidacija | Čita ACDOCA izravno; nema zasebne baze za konsolidaciju |
+
+Universal Journal mijenja način na koji te integracije zakazuju. U ECC-u su se razlike FI-CO-a pojavljivale kao problem usklađivanja. Na S/4HANA, MM knjiženje koje pogodi krivo konto stvara stvarno knjiženje koje treba stornirati i ponovno proknjižiti. Revizijski nalazi stižu brže. Za logističku stranu tih primopredaja pogledajte moje vodiče o [SAP SD-u](/hr/sap-sd-sales-and-distribution/) i [SAP PP-u](/hr/sap-pp-production-planning/).
+
+<explainer-flow title="Kako primka robe dolazi u knjige na S/4HANA" caption="Svaka primopredaja je mjesto za testiranje. Propustite li klasu vrednovanja u drugom koraku, MM obrađuje primku, a FI ne dobiva nikakvo knjiženje." steps="Primka robe u MM-u|Određivanje konta|GR/IR stavka u ACDOCA|Račun dobavljača|Obveze prema dobavljačima" notes="Ažuriraju se zalihe|Klasa vrednovanja bira konta glavne knjige|Jedna stavka Universal Journala za FI i CO|Poravnava GR/IR stavku|Knjiži se u glavnu knjigu i može teći u izvještaje troškovnih centara" result="Jedno knjiženje koje čitaju i FI i CO"></explainer-flow>
+
+## Sedam stvari za koje sam vidio da ruše SAP FICO projekte
+
+### 1. Matični podaci koje nitko nema u vlasništvu
+
+Većina projekata u prvom se tjednu složi da matične podatke treba očistiti. Zatim konfiguracija preuzme, rokovi se stežu, a matični podaci zaostaju. Do testiranja.
+
+Jedan maloprodajni klijent u UAE imao je hijerarhiju troškovnih centara koja je izgledala potpuno. Nazivi su se podudarali. Zbrojevi su se slagali. U integracijskom testiranju troškovi trgovina pojavljivali su se pod regionalnim voditeljima bez ikakvog smisla, a neki podaci uopće su nedostajali.
+
+Struktura nikad nije provjerena u odnosu na to kako trgovine stvarno posluju. Izgrađena je na pretpostavkama implementacijskog tima. Restrukturiranje mapiranja troškovnih centara i logike izvještavanja trajalo je dva tjedna, uz dobre ljude koji su se time bavili.
+
+Uobičajeni osumnjičenici su poznati. Konta glavne knjige kopirana iz starog sustava bez provjere trenutnih potreba izvještavanja. Matični zapisi dobavljača sa zastarjelim poreznim podacima ili bez bankovnih podataka. Hijerarhije troškovnih centara koje prate organigram umjesto toka troškova. Profitni centri dodani kasno. Matičnim podacima dodijelite imenovanog vlasnika prije zatvaranja blueprinta. Čak i gruba provjera strukture, upotrebe i praznina sprječava većinu kasnijeg čišćenja.
+
+### 2. CO konfiguriran bez uključenih kontrolora
+
+Kontroling obično dolazi drugi. FI se dizajnira, pregledava i testira rano. CO slijedi uz manje pažnje, uz teoriju da je jednostavniji i da se može dovršiti kasnije.
+
+Ne može.
+
+Na jednom telekomunikacijskom projektu na kojem sam radio CO-PA je konfiguriran kasno. Testiranje je izgledalo dobro. Knjiženja su prolazila i izvještaji su se izvršavali. Zatim su prodaja i financije pregledale marže, a vodeći proizvodi pokazali su negativnu profitabilnost. Ključne vrste troška nisu bile mapirane, a pravila derivacije bila su nepotpuna. Popravak je značio redizajn izvještajnih struktura koje su već bile odobrene.
+
+CO funkcionira samo kad ljudi koji čitaju izvještaje, kontrolori i financijski direktori, pomognu u njegovu dizajnu. Oni misle u ponašanju troškova i marži, a ne u tijeku sustava. Uključite ih tijekom blueprinta, a ne UAT-a.
+
+### 3. Poslovni korisnici sustav prvi put vide u UAT-u
+
+UAT je mjesto gdje problemi izlaze na vidjelo i najskuplje mjesto da ih se pronađe. Dizajn je zaključan, a konfiguracija gotovo gotova.
+
+Na financijskoj transformaciji jednog holdinga u jugoistočnoj Aziji UAT je započeo sa samopouzdanjem. Skripte su bile spremne. Tehničke provjere bile su prošle. Zatim se financijski tim prijavio. Za mnoge od njih to je bio prvi put da vide ekrane. Polja koja su koristili svaki dan nestala su. Koraci su se pojavili bez objašnjenja. Tijekovi rada bili su izgrađeni na način koji je imao tehnički smisao, a nikakav operativni.
+
+Morali smo revidirati ključne tokove, a dio logike morao se izgraditi ponovno. Projekt je izgubio tjedne.
+
+Pokažite korisnicima nedovršene ekrane rano. Uvijek je jeftinije nego pokazati im gotove ekrane kasno.
+
+### 4. Prilagođeni razvoj gdje bi konfiguracija bila dovoljna
+
+Prilagođeni kod djeluje brže i kontroliranije. Dobijete točno ono što je traženo. S vremenom ga postaje teško testirati, teško mijenjati i krhak je, a na S/4HANA svaka izmjena dodaje trud pri nadogradnji.
+
+Jednom sam radio na globalnoj implementaciji u šest zemalja gdje je porezna logika bila u cijelosti izgrađena u ABAP-u: pravila po zemljama, iznimke, stope prema proizvodu. Radilo je. Ali standardni SAP to je već pokrivao vrstama uvjeta (condition types), poreznim procedurama i konfiguracijom po zemlji.
+
+Kad je jedna zemlja promijenila poreznu stopu, poslovanje je moralo podnijeti zahtjev za razvoj, čekati i sve ponovno testirati. Ono što je na početku izgledalo učinkovito postalo je usko grlo za svaku poreznu promjenu. Rješenje u ovakvim slučajevima je ukinuti prilagođene tablice, prebaciti logiku u standardnu konfiguraciju i u malom proširenju zadržati samo doista jedinstvena pravila.
+
+Isti se obrazac pojavljuje drugdje. Prilagođene validacije za pravila knjiženja koja konfiguracija već pokriva. Izvještaji izgrađeni ispočetka kad postoje standardne Fiori aplikacije ili CDS viewovi. Koraci odobrenja ugrađeni u kod bez prostora za promjenu. Svaki put postavite jedno pitanje: gdje ta logika živi i hoće li preživjeti sljedeću nadogradnju bez projekta? Ako je odgovor „u jezgri" ili „nismo provjerili", prebacite je u konfiguraciju ili na BTP.
+
+### 5. Točke integracije koje nitko ne provjerava
+
+Tijekom testiranja timovi se usredotočuju na vlastiti modul. Granice ostaju neprovjerene.
+
+Na jednom uvođenju u proizvodnji primke robe ispravno su se obrađivale u MM-u. Zalihe su se ažurirale. Logistika nije imala primjedbi. FI nije imao nikakvih knjiženja za te primke.
+
+Uzrok je bila klasa vrednovanja koja je nedostajala u određivanju konta. MM je obradio bez pogreške i nije stvorio financijsko knjiženje. Dva dana za dijagnozu. Još nekoliko za čišćenje onoga što je u međuvremenu proknjiženo.
+
+Slični kvarovi koje sam vidio: SD fakturiranje koje knjiži na pogrešna konta prihoda zbog praznina u određivanju konta. Prijenosi imovine u PM-u koji nikad ne stignu do računovodstva dugotrajne imovine. GR/IR logika koju su timovi MM-a i FI-ja razumjeli različito. Jedan voditelj financija koji pregleda testne skripte MM-a i SD-a sprječava većinu toga. Financije znaju kako knjiženje treba izgledati. Logistički tester često ne zna.
+
+### 6. Izvještavanje dizajnirano u zadnjem sprintu
+
+Za modul koji postoji da bi proizvodio financijske informacije, projekti izvještavanje guraju na kraj zapanjujuće dosljedno. Prvo neka se transakcije knjiže, izvještaji kasnije.
+
+Kod jednog klijenta robe široke potrošnje u Europi, gdje sam podržavao fazu nakon puštanja u rad, CO-PA je bio izgrađen, polja mapirana i derivacije konfigurirane. Prvi račun dobiti i gubitka po segmentu imao je ispravna zaglavlja i raštrkane, fragmentirane troškove. Prihod je bio u redu. Neka polja vrijednosti uopće nisu bila popunjena.
+
+Financijski tim vratio se na Excel. Opet. Morao sam uskočiti da to riješim. Kad se povjerenje u izvještavanje izgubi, rijetko se vrati samo od sebe.
+
+Ako su poslovanju važni marža po kanalu ili trošak po projektu, taj zahtjev mora oblikovati način prikupljanja podataka tijekom dizajna. Uobičajeni sloj izvještavanja u 2026. je SAP Analytics Cloud koji čita Universal Journal; uključen je u neke GROW i RISE pakete, a u drugima se prodaje zasebno, pa provjerite svoj ugovor. Analytics Cloud povrh čistog dizajna profitabilnosti funkcionira. Analytics Cloud povrh napola konfiguriranog ne funkcionira. Više o tome u mom [vodiču za SAP Analytics Cloud](/hr/sap-analytics-cloud/).
+
+### 7. Rubni slučajevi koji padaju između timova
+
+Projekti se s pravom usredotočuju na procese velikog opsega. To odgurne rubne slučajeve u stranu dok ne izađu na vidjelo.
+
+Na jednom uvođenju klijent je imao tri company codea s tri različite varijante fiskalne godine: jedna kalendarska godina, jedna od travnja do ožujka, jedna 4-4-5. Nitko to nije označio u dizajnu.
+
+Izašlo je na vidjelo u međukompanijskom usklađivanju. Razdoblja se nisu poklapala. Financije nisu mogle zatvoriti na vrijeme jer je svaki company code imao drukčije granične datume. Samo taj problem odgodio je konsolidaciju za dva tjedna.
+
+Rezervirajte jedan sat u planu u kojem svaki tok rada navodi što je neobično u njegovu području. Postavite tri pitanja. Postoje li pravna ili regionalna pravila koja još nisu modelirana? Provodi li neki tim ručna zaobilazna rješenja izvan SAP-a? Koriste li se funkcije poput predujmova, parkiranih dokumenata ili međukompanijskog prijeboja? Rubni slučajevi uvijek izađu na vidjelo. Jedino je pitanje hoće li izaći na dizajnerskoj sesiji ili pri mjesečnom zatvaranju.
+
+## FICO popis spremnosti prije UAT-a
+
+Prođite ovaj popis dva tjedna prije početka UAT-a. Svaki „ne" je rizik koji treba zabilježiti s vlasnikom i datumom.
+
+1. **Imenovan vlasnik matičnih podataka.** Jedna osoba odobrava kontni plan, hijerarhiju troškovnih centara, profitne centre te matične zapise dobavljača i kupaca. Vlasnik: direktor financija.
+2. **Hijerarhija troškovnih centara testirana prema stvarnom toku troškova.** Ne prema organigramu. Vlasnik: financijski kontrolor.
+3. **Kontrolori su pregledali dizajn profitabilnosti.** Karakteristike, pravila derivacije i prvi nacrt računa dobiti i gubitka po segmentu. Vlasnik: voditelj kontrolinga.
+4. **Ključni korisnici vidjeli su ekrane.** Najmanje jedan prolaz po procesu prije pisanja UAT skripti. Vlasnik: voditelj financijskih procesa.
+5. **Popis prilagođenog koda pregledan.** Svako poboljšanje ima razlog zašto standardna konfiguracija nije mogla ono što je trebalo. Vlasnik: arhitekt rješenja.
+6. **Određivanje konta testirano kroz module.** Primka robe, račun dobavljača, račun kupcu i obračun proizvodnog naloga svaki daju očekivana knjiženja. Vlasnik: FICO voditelj uz voditelje MM-a, SD-a i PP-a.
+7. **Upravljački izvještaji izgrađeni na stvarnim testnim podacima.** Ne maketama. Vlasnik: voditelj izvještavanja uz ured CFO-a.
+8. **Varijante fiskalne godine, valute i međukompanijske postavke uspoređene kroz company codeove.** Vlasnik: FICO voditelj.
+9. **Održana sesija o rubnim slučajevima.** Vremenska razgraničenja, predujmovi, parkirani dokumenti, međukompanijski prijeboj, porezna pravila po zemljama. Vlasnik: voditelj programa.
+
+## Često postavljana pitanja
+
+<details>
+<summary>Što je SAP FICO i što znači svako slovo?</summary>
+
+FI znači Financial Accounting (financijsko računovodstvo), a CO Controlling (kontroling). Zajedno su SAP-ovi temeljni financijski moduli.
+
+FI obrađuje vanjsko izvještavanje: glavnu knjigu, obveze prema dobavljačima, potraživanja od kupaca, računovodstvo dugotrajne imovine i bankovno računovodstvo. CO obrađuje interno upravljačko izvještavanje: troškovne centre, interne naloge, profitne centre i analizu profitabilnosti.
+
+Usko su povezani. Na S/4HANA dijele jedan Universal Journal, pa se jedan ne može razumjeti bez drugog.
+
+</details>
+
+<details>
+<summary>Kako se SAP FICO integrira sa SAP MM-om, SD-om i PP-om?</summary>
+
+MM prema FI: primka robe automatski knjiži GR/IR stavku. Račun dobavljača je poravnava i knjiži u obveze prema dobavljačima. Određivanje konta mora biti ispravno, inače MM obradi, a financijskog knjiženja nema.
+
+SD prema FI: fakturiranje ažurira prihode i potraživanja. Praznine u SD određivanju konta šalju prihod na pogrešna konta ili nikamo.
+
+PP prema FI/CO: proizvodni nalozi skupljaju troškove materijala, rada i općih troškova. CO obračunava nedovršenu proizvodnju i odstupanja. Slab dizajn profitabilnosti znači da ti troškovi nikad ne stignu u izvještaje o marži.
+
+Rješenje za sva tri je isto. Voditelj financija treba pregledati integracijske testne skripte koje pišu drugi tokovi rada.
+
+</details>
+
+<details>
+<summary>Koja je razlika između SAP HANA i SAP FICO?</summary>
+
+To su različiti slojevi. SAP HANA je baza podataka u memoriji. SAP FICO je financijska aplikacija koju koriste računovođe i kontrolori.
+
+Na S/4HANA, HANA je ono što Universal Journal čini praktičnim: podaci FI-ja i CO-a u jednoj tablici, izvještavani u stvarnom vremenu bez batch usklađivanja. Problem performansi HANA-e utječe na to koliko brzo rade FICO izvještaji. Problem FICO konfiguracije određuje što ti izvještaji sadrže.
+
+</details>
+
+<details>
+<summary>Je li SAP FICO još relevantan uz S/4HANA u 2026.?</summary>
+
+Da. Temeljne vještine se prenose: određivanje konta, dizajn troškovnih centara, postavljanje profitabilnosti, zatvaranje razdoblja. Tvrtkama i dalje trebaju ljudi koji razumiju financijske procese jednako kao i transakcije.
+
+Promijenio se traženi profil. Poslodavci žele FICO konzultante koji razumiju Universal Journal, Margin Analysis, Group Reporting i proširenja u skladu s Clean Core, i koji mogu savjetovati koje ECC prilagodbe treba ukinuti tijekom migracije. Kako standardno održavanje ECC-a završava 2027., migracijski poslovi drže potražnju visokom.
+
+Ako planirate promjenu FICO karijere, [karijerni putovi na SAPopedia](https://www.sapopedia.com/) mapiraju vještine po ulogama, a [ERPCV karijerni paket](https://erpcv.com/) pomaže Vam prikazati iskustvo u S/4HANA financijama u životopisu.
+
+</details>
+
+<details>
+<summary>Kako Joule mijenja SAP FICO implementacije u 2026.?</summary>
+
+Manje nego što sugerira marketing, više nego što pretpostavljaju skeptici. SAP Joule for Consultants odgovara na pitanja o konfiguraciji i kodu iz SAP-ovih vlastitih Notes i sadržaja Activate, što ubrzava istraživanje standardnog opsega. U sustavu Joule obavlja zadatke poput izrade matičnih podataka dugotrajne imovine i nadzora bankovnih izvoda, a SAP je izdao financijske agente, poput onog za naplatu dospjelih potraživanja.
+
+Ništa od toga ne zamjenjuje prosudbu u dizajnu kod poreza u više zemalja, struktura Group Reportinga ili priznavanja prihoda. I funkcionira samo onoliko dobro koliko i podaci ispod njega. Kad pregledavate prijedloge partnera, pitajte kako se AI alati odražavaju u njihovim procjenama napora.
+
+</details>
+
+<details>
+<summary>Koji su ključni koraci FICO konfiguracije u novoj implementaciji?</summary>
+
+Temelj se konfigurira otprilike ovim redom:
+
+1. Company codeovi: pravni subjekti koji izrađuju financijska izvješća.
+2. Varijante fiskalne godine: kalendarska, od travnja do ožujka ili 4-4-5. Držite ih dosljednima među company codeovima koji međusobno trguju.
+3. Kontni plan: popis konta glavne knjige, zajednički među company codeovima gdje je moguće. Te odluke utječu na svaki izvještaj tijekom životnog vijeka sustava.
+4. Varijante razdoblja knjiženja: koja su razdoblja otvorena za knjiženje.
+5. Varijante statusa polja: koja su polja obvezna, neobavezna ili skrivena.
+6. Porezna konfiguracija: porezne šifre, stope i mapiranje po zemljama. Većina složenosti lokalizacije živi ovdje.
+7. Strukture kontrolinga: kontrolno područje (controlling area), troškovni centri, profitni centri, interni nalozi i karakteristike profitabilnosti, dizajnirani s kontrolorima.
+8. Određivanje konta: kako transakcije MM-a, SD-a i PP-a postaju FI knjiženja. Provjerite ga integracijskim testovima od početka do kraja prije puštanja u rad.
+
+</details>

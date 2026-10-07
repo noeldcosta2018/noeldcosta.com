@@ -1,0 +1,168 @@
+---
+title: "Zašto integracija ERP-a sa Salesforceom zakazuje i kako to popraviti"
+h1: "Zašto integracija ERP-a sa Salesforceom zakazuje i kako to popraviti"
+slug: "why-erp-integration-with-salesforce-fails-and-how-to-fix-it"
+date: "2025-04-07"
+updated: "2026-10-07"
+hero: "/images/wp/2025/04/ERP-Integratioin-with-CRM.webp"
+heroAlt: "Agenti korisničke podrške sa slušalicama rade na prijenosnim računalima uz zajednički stol"
+category: "erp-strategy"
+tags: ["sap-technical-decisions", "sap-integration", "salesforce-integration", "sap-integration-suite"]
+author: "Noel D'Costa"
+metaTitle: "Zašto ERP-Salesforce integracija zakazuje 2026.: popravak"
+metaDescription: "Zašto SAP-Salesforce integracije zakazuju: stari podaci, loši podaci, veze točka-do-točke, nema vlasnika. Popravci, middleware i predložak specifikacije."
+excerpt: "Većina SAP-Salesforce integracija zakazuje poslovno, a ne tehnički: podaci su prestari, previše prljavi ili nitko nije vlasnik toka. Evo obrazaca neuspjeha, opcija middlewarea i jednostraničnog predloška specifikacije koji ih sprječava."
+experienceSource: "Direct experience advising on SAP-Salesforce integration projects across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets, including SAP Integration Suite engagements, middleware governance reviews, and post-go-live integration troubleshooting across manufacturing, financial services, and retail. Anchored stories: European B2B distributor 2023 (four-hour batch sync losing deals), European manufacturing 2024 (point-to-point integration unmanageable at five systems), GCC retail RISE 2024 (Integration Suite migration from PI/PO). Product facts (PI/PO maintenance, MuleSoft, Boomi) checked October 2026."
+lastReviewed: "2026-05-21"
+keyTakeaways:
+  - "Najčešći neuspjeh je integracija koja tehnički radi, ali je komercijalno pokvarena. Podaci o zalihama sinkronizirani u serijama svakih nekoliko sati jesu aktivni, a prodajnom timu beskorisni"
+  - "Popravite kvalitetu podataka prije integracije. Loši zapisi kupaca u Salesforceu postaju loši zapisi kupaca u SAP-u"
+  - "Integracije točka-do-točke jeftine su na početku, a skupe kasnije. Nakon tri sustava postaju neupravljive"
+  - "Middleware (SAP Integration Suite, MuleSoft, Boomi) treba vlasnika i upravljanje. Ako ga se tretira kao običnu infrastrukturu, zakazuje"
+  - "Svako izdanje Salesforcea i svako SAP ažuriranje može pokvariti integraciju. Bez regresijskog paketa testova za integracije saznajete u produkciji"
+  - "Odredite što se događa kad sinkronizacija ne uspije. Većina integracija dizajnirana je samo za uspješan put"
+pullQuote: "Tehnički aktivno nije isto što i komercijalno funkcionalno. Čak i jednosatno kašnjenje između sustava može uzrokovati pogreške u ponudama koje koštaju poslova."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Integration Suite"
+  - "SAP BTP"
+  - "SAP SD"
+  - "Salesforce"
+  - "MuleSoft"
+  - "Boomi"
+  - "RISE with SAP"
+originalUrl: "https://noeldcosta.com/why-erp-integration-with-salesforce-fails-and-how-to-fix-it/"
+canonicalUrl: "https://noeldcosta.com/hr/why-erp-integration-with-salesforce-fails-and-how-to-fix-it/"
+locale: "hr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP i Salesforce integracije obično zakazuju iz poslovnih, a ne tehničkih razloga. Sinkronizacija radi, ali su podaci prestari za odluku koju korisnik donosi, dva sustava ne slažu se koji je zapis kupca točan ili nitko nije vlasnik toka kad se ažuriranje pokvari. Rješenje je dizajnirati od korisnikove odluke unatrag, najprije očistiti podatke, odabrati middleware koji odgovara Vašem razmjeru te svakom toku dati vlasnika i plan za slučaj neuspjeha.
+
+Ovaj je tekst namijenjen CIO-ima, voditeljima prodajnih operacija i integracija koji povezuju Salesforce sa SAP-om. Obrađuje četiri obrasca neuspjeha, opcije integracije, što pouzdana integracija treba i predložak specifikacije.
+
+Radio sam s poduzećima u kojima je i jednosatno kašnjenje između sustava uzrokovalo pogreške u ponudama koje su dovele do izgubljenih poslova. Uobičajeni je uzrok da nitko nije pitao koliko svježi moraju biti podaci o zalihama da bi prodajni predstavnik iz njih mogao dati ponudu.
+
+Integracija može tehnički raditi, a komercijalno biti pokvarena. Ta je razlika polazište.
+
+## Zašto se SAP-Salesforce integracije raspadaju
+
+### Pogrešna učestalost sinkronizacije za odluku
+
+Serijska sinkronizacija u redu je za neke podatke. Nije u redu za zalihe dostupne za obećanje (available-to-promise), cijene ili status narudžbe, gdje kupci očekuju odgovor odmah.
+
+Obrazac neuspjeha: integracijski tim gradi ono što je tehnički zgodno za količine i postavlja intervale serija iz tehničkih razloga. Nitko na poslovnoj strani ne provjerava podržava li ta učestalost odluku koju korisnik donosi.
+
+Postavite jedno pitanje prije nego što se išta specificira: koliko stari podaci smiju biti, a da još budu korisni? Dnevno može biti u redu za ažuriranja matičnih podataka kupaca. Za dostupnost zaliha u B2B prodaji sve preko petnaest minuta je problem.
+
+<explainer-flow title="Koliko svježi moraju biti pojedini tokovi" caption="Ilustrativne vrijednosti iz predloška specifikacije u nastavku. Svoje dogovorite s ljudima koji koriste podatke." steps="Matični podaci kupaca|Cjenici|Dostupnost zaliha|Dobivena prilika|Status narudžbe|Račun i plaćanje" notes="SAP u Salesforce, 24 sata|SAP u Salesforce, 1 sat|SAP u Salesforce, 15 minuta|Salesforce u SAP, odmah|SAP u Salesforce, 15 minuta|SAP u Salesforce, 24 sata" result="Ponuda, narudžba i račun se slažu"></explainer-flow>
+
+### Nepodudarnosti u kvaliteti podataka
+
+Ako je naziv tvrtke u Salesforceu formatiran drugačije od matičnog zapisa kupca u SAP-u, svaka sinkronizacija stvara nepodudarnosti koje treba ručno popravljati.
+
+Radio sam s timovima koji su svaki tjedan satima usklađivali osnovne podatke o kupcima između Salesforcea i ERP-a, a vidio sam i projekte u kojima je samo mapiranje hijerarhija kupaca trajalo tjednima jer su dva sustava različito definirala pojam „account”. Sustavi su godinama održavani zasebno i razišli su se na načine koje nitko nije mapirao.
+
+Očistite podatke prije integracije. Zvuči očito. To je korak koji se dosljedno najčešće preskače.
+
+### Pogrešna arhitektura za razmjer
+
+Integracija točka-do-točke funkcionira za dva sustava, nekoliko tokova i stabilne procese. To je najjeftiniji način za početak.
+
+Ne skalira se. Dodate li SAP modul, novu Salesforce poslovnu jedinicu ili treći sustav, veze se množe. Svaku treba zasebno održavati, testirati i otklanjati probleme.
+
+Middleware (SAP Integration Suite, MuleSoft, Boomi ili sličan) daje jedan upravljani sloj sa središnjim nadzorom i obradom pogrešaka. Cijena je početno ulaganje u arhitekturu i upravljanje. Tvrtke koje uvedu middleware, a ne daju mu imenovanog vlasnika, završe s istim problemima kao kod točka-do-točke, plus platformom koju nitko ne razumije.
+
+### Nema upravljanja integracijama
+
+Svako izdanje Salesforcea i svaki SAP paket podrške može pokvariti tok: promjene API-ja, nova pravila validacije, promijenjena polja, novi zahtjevi za autentifikaciju. Integracije koje se izgrade i zaborave zakazuju na prvoj nadogradnji koju nitko nije regresijski testirao. To je najčešći neuspjeh nakon puštanja u rad koji viđam.
+
+## Opcije integracije
+
+**SAP Integration Suite.** SAP-ova integracijska platforma na SAP BTP-u i prirodan izbor u krajolicima usmjerenima na SAP. Dobro obrađuje IDoc-ove, BAPI-je, OData i SAP formate poruka te ima gotov sadržaj za uobičajene SAP scenarije. Složeni poslovni procesi i dalje traže prilagođene integracijske tokove i stvarno integracijsko znanje. Ako ste još na SAP PI/PO, imajte na umu da [njegovo redovno održavanje završava krajem 2027.](https://sapinsider.org/blogs/sap-extends-maintenance-for-sap-netweaver-7-5-and-sap-bw-4hana/), pa nove Salesforce tokove ne treba graditi tamo. Na RISE-u provjerite koje SAP BTP pravo Vaš ugovor već uključuje prije nego što kupite još.
+
+**MuleSoft.** U vlasništvu Salesforcea od 2018., sa širokom bibliotekom konektora, službenim [konektorom za SAP S/4HANA](https://docs.mulesoft.com/sap-s4hana-cloud-connector/latest/) i predlošcima akceleratora za SAP order-to-cash. Dobar izbor ako ga već posjedujete. Zamka za organizacije s puno SAP-a: MuleSoft je zaseban skup vještina, a tim koji vodi Vaš SAP program vjerojatno nije tim koji bi trebao dizajnirati Vašu MuleSoft arhitekturu.
+
+**Boomi.** Platforma za integraciju u oblaku (neovisna o Dellu od 2021.) s konektorima za SAP i Salesforce i nižim pragom ulaska od MuleSofta. Razuman izbor za organizacije srednjeg tržišta koje žele upravljan middleware bez MuleSoftova troška ili složenosti.
+
+**API-ji točka-do-točke.** Izravni REST ili SOAP pozivi između Salesforcea i SAP-a izbjegavaju trošak middlewarea. Traže disciplinirano verzioniranje API-ja, regresijsko testiranje uz svako izdanje i tim koji razumije oba sustava. U redu za jednostavne, stabilne slučajeve. Akumulator duga za sve složeno.
+
+Moj [vodič o SAP CPI-ju i Integration Suiteu](/hr/sap-cpi/) pokriva SAP-ovu platformu detaljnije, a [pet CRM opcija za SAP](/hr/5-best-crm-systems-for-sap-in-2024/) uspoređuje same CRM-ove.
+
+## Što pouzdana integracija treba
+
+1. **Specifikaciju svakog toka:** polja, smjer, učestalost, mapiranje ključeva i što se događa kad se dva sustava ne slažu.
+2. **Izričit dizajn neuspjeha.** Kad sinkronizacija ne uspije, što se događa s podacima u prijenosu? Koliko pokušaja? Tko dobiva upozorenje? Kakav je ručni oporavak? Većina integracija ovdje je premalo dizajnirana.
+3. **Regresijske testove prije svake nadogradnje.** Salesforce izdaje tri velika izdanja godišnje, a SAP ima vlastite pakete podrške i ažuriranja. Automatizirani paket koji pokriva kritične tokove treba se izvesti prije svakog od njih.
+4. **Nadzor s upozorenjima.** Tihi neuspjeh gori je od glasnog. Pogreške koje se danima gomilaju mnogo je teže popraviti od pogrešaka uhvaćenih u nekoliko minuta.
+5. **Vlasnika.** Jednu osobu koja zna što integracija radi, vidi kad se pokvari te ima pristup i ovlasti da je popravi.
+
+## Jednostranična integracijska specifikacija
+
+Ispunite jedan redak po toku prije nego što itko napiše dokument specifikacije. Ako je ćelija prazna, tok nije spreman za izgradnju. Vrijednosti u nastavku su ilustracije; svoje dogovorite s ljudima koji koriste podatke.
+
+| Tok | Smjer | Okidač i učestalost | Najstariji prihvatljivi podatak | Sustav evidencije | Pri neuspjehu | Vlasnik |
+|---|---|---|---|---|---|---|
+| Matični podaci kupaca | SAP u Salesforce | Pri promjeni | 24 sata | SAP | Ponovni pokušaj, zatim upozorenje voditelju podataka | Vlasnik matičnih podataka kupaca |
+| Dostupnost zaliha | SAP u Salesforce | Na zahtjev ili gotovo u stvarnom vremenu | 15 minuta | SAP | Prikaži oznaku „provjerite s operacijama” | Voditelj sustava opskrbnog lanca |
+| Cjenici i uvjeti | SAP u Salesforce | Pri promjeni | 1 sat | SAP | Blokiraj ponudu pri zastarjeloj cijeni | Voditelj cijena |
+| Dobivena prilika u prodajnu narudžbu | Salesforce u SAP | Pri zatvaranju | Odmah | Salesforce dok se narudžba ne kreira, zatim SAP | Stavi u red i upozori prodajne operacije | Voditelj prodajnih operacija |
+| Status narudžbe i isporuke | SAP u Salesforce | Pri svakoj prekretnici | 15 minuta | SAP | Ponovni pokušaj, zatim upozorenje integracijskoj podršci | Voditelj integracija |
+| Status računa i plaćanja | SAP u Salesforce | Dnevno | 24 sata | SAP | Upozori financijske sustave | Voditelj financijskih sustava |
+
+Stupac „najstariji prihvatljivi podatak” onaj je koji većina timova nikad ne ispuni. Dogovorite ga s korisnicima koji donose odluke, a ne samo s integracijskim timom. Ako već kasnite, [kašnjenja isporuke SAP Integration Suitea](/hr/sap-integration-suite-delivery-delays/) pokrivaju uobičajene uzroke.
+
+## Uobičajeni scenariji neuspjeha i što učiniti
+
+**Zapisi kupaca se ne podudaraju.** Uzrok: dva matična zapisa kupaca nikad nisu usklađena. Rješenje: uskladite ih prije puštanja u rad, učinite SAP sustavom evidencije za podatke o kupcima i provedite mapiranje u integraciji.
+
+**Status narudžbe se ne ažurira u Salesforceu.** Uzrok: integracija pokriva ponudu-do-narudžbe, ali ne i povratne pozive statusa. Rješenje: šaljite ažuriranja statusa iz SAP SD-a natrag u Salesforce na svakoj prekretnici narudžbe.
+
+**Cijene ponude razlikuju se od cijena računa.** Uzrok: cijene se ručno održavaju u Salesforceu i odmiču od SAP uvjeta određivanja cijena. Rješenje: učinite SAP glavnim izvorom cijena i povlačite cijene u Salesforce kroz integraciju.
+
+**Integracija se kvari nakon SAP ažuriranja.** Uzrok: nema regresijskog testiranja integracije u planu nadogradnje. Rješenje: uvrstite regresijsko testiranje integracije u opseg svakog SAP ažuriranja.
+
+## Često postavljana pitanja
+
+<details>
+<summary>Može li se Salesforce integrirati sa SAP-om?</summary>
+
+Da, preko SAP Integration Suitea, MuleSofta, Boomija, drugih integracijskih platformi ili izravnih API-ja. Tipični tokovi su sinkronizacija matičnih podataka kupaca, dobivena prilika u prodajnu narudžbu, status narudžbe i isporuke natrag u Salesforce, cijene u Salesforce za ponude te status računa i plaćanja. Sinkronizacija matičnih podataka kupaca jednostavna je. Potpuni quote-to-cash sa složenim cijenama, mnogo šifara tvrtke i zalihama u stvarnom vremenu značajan je projekt.
+
+</details>
+
+<details>
+<summary>Je li Salesforce ERP ili CRM?</summary>
+
+CRM. Upravlja prodajnim cjevovodom, prilikama, interakcijama s kupcima, marketingom i uslugom. Ne knjiži računovodstvene stavke niti upravlja zalihama. SAP je ERP za financije, nabavu, zalihe i proizvodnju. Kad su dobro integrirani, prodajni predstavnik u Salesforceu vidi zalihe i status plaćanja, a financije u SAP-u vide vrijednost posla.
+
+</details>
+
+<details>
+<summary>Koji je glavni razlog zbog kojeg ERP-CRM integracije zakazuju?</summary>
+
+Zahtjevi definirani iz tehnologije umjesto iz korisnikove odluke. Integracija se ispravno izgradi prema specifikaciji koja je bila pogrešna: podaci stari četiri sata, cijene koje se ne podudaraju s računima, ažuriranja statusa koja kasne. Prije pisanja tehničke specifikacije dokumentirajte odluke koje svaka skupina korisnika donosi s podacima i koliko svježi moraju biti.
+
+</details>
+
+<details>
+<summary>Kako održavati ERP-Salesforce integraciju tijekom vremena?</summary>
+
+Pokrećite automatizirane regresijske testove na kritičnim tokovima prije svakog Salesforce izdanja i svakog SAP ažuriranja. Nadzirite svaki kritični tok upozorenjima koja se aktiviraju pri neuspjehu, a ne u izvještaju na kraju dana. Imenujte vlasnika koji ima pristup nadzoru i sudjeluje u planiranju promjena za oba sustava.
+
+</details>
+
+<details>
+<summary>Kada koristiti SAP Integration Suite za Salesforce integraciju?</summary>
+
+Kad je SAP dominantan sustav, kad imate pristup SAP BTP-u i kad tokovi uključuju SAP-specifičan sadržaj poput IDoc-ova, BAPI-ja ili SAP formata poruka. Slabiji je izbor ako ste već mnogo uložili u MuleSoft ili Boomi, ako Vašem timu nedostaje SAP integracijskog znanja ili ako je SAP sporedni sudionik u pretežno ne-SAP tokovima. Za nove RISE programe sa Salesforceom u opsegu to je prirodna polazna točka.
+
+</details>
+
+<details>
+<summary>Koliko traje projekt ERP-Salesforce integracije?</summary>
+
+Standardni opseg (sinkronizacija matičnih podataka kupaca, ponuda-do-narudžbe i osnovni status narudžbe) uz gotov sadržaj obično traje 8 do 16 tjedana od određivanja opsega do puštanja u rad, uz čiste podatke i posvećenog integracijskog programera. Potpuni quote-to-cash sa složenim cijenama, više pravnih subjekata, upravljanjem kreditima i zalihama u stvarnom vremenu obično traje 4 do 9 mjeseci. Problemi s podacima otkriveni usred projekta i tokovi dodani tijekom izgradnje uobičajeni su uzroci prekoračenja, pa prije početka izgradnje provedite procjenu kvalitete podataka.
+
+</details>

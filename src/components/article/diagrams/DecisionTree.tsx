@@ -40,45 +40,27 @@ export default function DecisionTree(props: DecisionTreeProps) {
   if (!branches.length) return null;
 
   return (
-    <FadeUp as="figure" className="not-prose my-10">
+    <FadeUp as="figure" className="not-prose nd-block">
       {/* Question */}
-      <div className="mx-auto max-w-[28rem] rounded-xl bg-corbeau text-bone px-6 py-4 mb-6 text-center shadow-[0_4px_18px_rgba(14,16,32,0.15)]">
-        <p className="font-mono text-[0.6rem] font-medium tracking-[2.4px] uppercase text-papaya mb-1.5">
-          Decide
-        </p>
-        <h4 className="font-display font-bold text-[1.02rem] md:text-[1.1rem] tracking-[-0.02em] leading-[1.25]">
-          {props.question}
-        </h4>
+      <div data-heading-source="DecisionTree" className="nd-dt-q">
+        <span className="nd-label">Decide</span>
+        <h3>{props.question}</h3>
       </div>
 
       {/* Connector */}
-      <div className="flex justify-center mb-0">
-        <span aria-hidden className="block w-[2px] h-6 bg-corbeau/15" />
-      </div>
+      <span aria-hidden="true" className="nd-dt-stem" />
 
-      {/* Branches */}
+      {/* Branches: one column on phones, up to three from 768px */}
       <div
-        className="grid gap-3"
-        style={{
-          gridTemplateColumns: `repeat(${Math.min(branches.length, 3)}, minmax(0, 1fr))`,
-        }}
+        className="nd-dt-branches"
+        style={{ ["--cols" as string]: String(Math.min(branches.length, 3)) }}
       >
         {branches.map((b, i) => (
-          <div
-            key={i}
-            className="rounded-xl bg-paper border border-corbeau/[0.08] p-5 hover:border-papaya/40 transition-colors"
-          >
-            <p className="text-[0.86rem] text-night/80 leading-[1.55] mb-3">
-              {b.condition}
-            </p>
-            <div className="flex items-center gap-2">
-              <span
-                aria-hidden
-                className="text-papaya font-mono text-[0.9rem]"
-              >
-                →
-              </span>
-              <p className="font-display font-bold text-corbeau text-[1rem] tracking-[-0.015em]">
+          <div key={i} className="nd-dt-col">
+            <div className="nd-card nd-glow nd-dt-branch">
+              <p className="cond">{b.condition}</p>
+              <p className="out">
+                <span aria-hidden="true">→</span>
                 {b.outcome}
               </p>
             </div>

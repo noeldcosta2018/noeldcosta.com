@@ -1,12 +1,11 @@
-import { CATEGORIES, getAllPosts, getPage } from "@/lib/content";
-import { AUTHOR, SITE_URL } from "@/lib/seo";
+import { CATEGORIES, getAllPosts, getPage } from "../../lib/content";
+import { AUTHOR, SITE_URL } from "../../lib/seo";
+import { resolveCanonicalUrl } from "../../lib/seo-graph";
 
 /**
  * /llms.txt — proposed standard (jeremyhoward/llms-txt) for giving LLMs a
- * structured, navigable summary of the site. ChatGPT, Claude, and Perplexity
- * actively check for it; sites that publish llms.txt get more reliable
- * citations because the agent can find the right page in one fetch instead
- * of crawling the whole sitemap.
+ * structured, navigable summary of the site. Adoption and citation effects
+ * are not guaranteed.
  *
  * Format spec: https://llmstxt.org/
  *   - First line: # H1 (site name)
@@ -14,21 +13,25 @@ import { AUTHOR, SITE_URL } from "@/lib/seo";
  *   - ## sections of links, where each link is "- [Title](url): Description"
  *   - Final ## Optional section is for content the LLM may skip
  *
- * Generated dynamically from the content catalogue so it stays current.
+ * Generated at build time from the content catalogue.
  */
 
 export const dynamic = "force-static";
 
 export async function GET() {
-  const posts = getAllPosts("en");
+  const posts = getAllPosts("en").filter(p => !p.isFallback && !p.frontmatter.noindex);
   const aboutPage = getPage("about", "en");
+  const aboutUrl = resolveCanonicalUrl({
+    kind: "page", slug: "about", locale: "en",
+    frontmatter: aboutPage?.frontmatter ?? {},
+  });
   const aboutDesc =
     aboutPage?.frontmatter.excerpt ||
     aboutPage?.frontmatter.metaDescription ||
     "Background, credentials, and engagement model";
 
-  // Group posts by category, take top ~10 per category by reading-time
-  // proxy. Caps the file at a reasonable size — full archive lives in the
+  // Group posts by category, take up to 12 per category in catalogue date
+  // order. Caps the file at a reasonable size — full archive lives in the
   // sitemap, which we link as Optional at the end.
   const byCategory: Record<string, typeof posts> = {};
   for (const p of posts) {
@@ -45,10 +48,26 @@ export async function GET() {
 
   // About / contact
   lines.push("## About");
-  lines.push(`- [About ${AUTHOR.name}](${SITE_URL}/about): ${aboutDesc}`);
+  lines.push(`- [About ${AUTHOR.name}](${aboutUrl}): ${aboutDesc}`);
   lines.push(
-    `- [Contact](${SITE_URL}/contact-noel-erp-support): Discovery call booking and ERP advisory enquiries`,
+    `- [Contact](${SITE_URL}/contact-noel-erp-support/): Discovery call booking and ERP advisory enquiries`,
   );
+  lines.push(
+    `- [Expertise](${SITE_URL}/erp-ai-services/): Enterprise applications (SAP, Oracle, Microsoft), data and analytics (Databricks, SAP Analytics Cloud) and AI (enterprise AI, private AI, SAP Joule)`,
+  );
+  lines.push(`- [Client work](${SITE_URL}/case-studies/): Case studies and recommendations`);
+  lines.push(
+    `- [AI Academy](${SITE_URL}/ai-academy/): AI Automation Practitioner for consultants: build and deploy three working business automations in 30 days (launching soon)`,
+  );
+  lines.push(
+    `- [Article library](${SITE_URL}/best-sap-articles-for-implementation-noel-dcosta/): Every article, grouped by enterprise applications, data, AI and consulting practice`,
+  );
+  lines.push("");
+
+  lines.push("## Also by Noel");
+  lines.push("- [ERPCV](https://erpcv.com/): Career documents and paid one-to-one career advice for ERP consultants");
+  lines.push("- [SAPopedia](https://www.sapopedia.com/): SAP career paths, professional skills courses and Noel's books");
+  lines.push("- [YouTube](https://www.youtube.com/@NoelDCostaERPAI): Talks on SAP, ERP programmes, data and AI");
   lines.push("");
 
   // Per-category top posts
@@ -64,7 +83,7 @@ export async function GET() {
       const desc = fm.metaDescription || fm.excerpt || fm.title;
       const cleanDesc = desc.replace(/\s+/g, " ").trim().slice(0, 200);
       lines.push(
-        `- [${fm.title}](${SITE_URL}/${fm.slug}): ${cleanDesc}`,
+        `- [${fm.title}](${SITE_URL}/${fm.slug}/): ${cleanDesc}`,
       );
     }
     lines.push("");
@@ -100,7 +119,12 @@ export async function GET() {
     },
   ];
   for (const t of tools) {
-    lines.push(`- [${t.title}](${SITE_URL}/${t.slug}): ${t.desc}`);
+    // Canonical destination (the ERP calculator's is its nested WordPress URL).
+    const url = resolveCanonicalUrl({
+      kind: "page", slug: t.slug, locale: "en",
+      frontmatter: getPage(t.slug, "en")?.frontmatter ?? {},
+    });
+    lines.push(`- [${t.title}](${url}): ${t.desc}`);
   }
   lines.push("");
 
@@ -111,7 +135,7 @@ export async function GET() {
   );
   for (const [catSlug, catMeta] of Object.entries(CATEGORIES)) {
     lines.push(
-      `- [${catMeta.label} archive](${SITE_URL}/category/${catSlug}): All articles in this category`,
+      `- [${catMeta.label} archive](${SITE_URL}/category/${catSlug}/): All articles in this category`,
     );
   }
 

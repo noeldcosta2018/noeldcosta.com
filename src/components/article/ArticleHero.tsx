@@ -1,141 +1,89 @@
-import Image from "next/image";
-import Link from "next/link";
+import PageBanner, { type Crumb } from "@/components/site/PageBanner";
+import type { Locale } from "@/lib/content";
+import { getArticleMessages } from "@/lib/article-localization";
 
 interface ArticleHeroProps {
-  category?: { label: string; slug: string };
+  crumbs: Crumb[];
   title: string;
   deck?: string;
-  author?: string;
   date: string;
   updated?: string;
   lastReviewed?: string;
   readingMinutes: number;
-  heroImage?: string;
-  heroAlt?: string;
+  /** Article hero image, shown faintly behind the banner scrim. */
+  coverImage?: string;
+  locale?: Locale;
 }
 
 const DISPLAY_AUTHOR = "Noel D'Costa";
+const AUTHOR_AVATAR = "/media/noel-headshot.webp";
 
-/**
- * Article hero with staggered CSS entrance animations.
- * Uses pure CSS keyframes (not IntersectionObserver) because the hero is
- * above the fold — it should animate in on page load, not on scroll.
- * `animation-fill-mode: both` keeps elements hidden until their delay fires,
- * preventing a flash of unstyled content.
- */
-export default function ArticleHero({
-  category,
-  title,
-  deck,
-  author: _author,
-  date,
-  updated,
-  lastReviewed,
-  readingMinutes,
-  heroImage,
-  heroAlt,
-}: ArticleHeroProps) {
-  void _author;
-  const author = DISPLAY_AUTHOR;
-
-  const displayDate = new Date(updated || date);
-  const dateLabel = displayDate.toLocaleDateString("en-US", {
+function formatDate(value: string, dateLocale: string): string {
+  return new Date(value).toLocaleDateString(dateLocale, {
     year: "numeric",
     month: "short",
     day: "numeric",
   });
+}
 
-  // E-E-A-T trustworthiness signal: human-readable "last reviewed" line.
-  // Only shown when set in frontmatter — keeps editorial honesty intact.
+/**
+ * Article banner: breadcrumb trail, the article H1 in the display face, the
+ * standfirst, and a meta row (author, published or updated date, reading time,
+ * last reviewed). Built on the shared PageBanner so articles match the rest of
+ * the site. Server component: dates are formatted once, at render.
+ */
+export default function ArticleHero({
+  crumbs,
+  title,
+  deck,
+  date,
+  updated,
+  lastReviewed,
+  readingMinutes,
+  coverImage,
+  locale = "en",
+}: ArticleHeroProps) {
+  const messages = getArticleMessages(locale);
+  const shownDate = updated || date;
+  const dateLabel = formatDate(shownDate, messages.dateLocale);
+  // E-E-A-T trust signal: only shown when set in frontmatter.
   const reviewedLabel = lastReviewed
-    ? new Date(lastReviewed).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      })
+    ? formatDate(lastReviewed, messages.dateLocale)
     : null;
 
-  // Shared animation base: fade-up-in keyframe defined in globals.css
-  const anim = (delay: string) => ({
-    animation: `fade-up-in 0.9s cubic-bezier(0.22,1,0.36,1) ${delay} both`,
-  });
-
   return (
-    <header className="mb-12">
-      {category && (
-        <Link
-          href={`/category/${category.slug}`}
-          style={anim("100ms")}
-          className="inline-flex items-center gap-2 font-mono text-[0.72rem] font-medium tracking-[2px] uppercase text-papaya mb-5 hover:text-canyon transition-colors"
-        >
-          <span className="w-[7px] h-[7px] rounded-full bg-papaya" />
-          {category.label}
-        </Link>
-      )}
-
-      <h1
-        className="font-display font-black text-corbeau tracking-[-0.04em] leading-[1.05] mb-6"
-        style={{ fontSize: "clamp(2.25rem, 5.2vw, 3.6rem)", ...anim("220ms") }}
-      >
-        {title}
-      </h1>
-
-      {deck && (
-        <p
-          className="text-night leading-[1.7] text-[1.1rem] md:text-[1.2rem] max-w-[42rem] mb-8 font-normal"
-          style={anim("340ms")}
-        >
-          {deck}
-        </p>
-      )}
-
-      <div
-        className="flex flex-wrap items-center gap-x-5 gap-y-3 pb-7 border-b border-corbeau/[0.08]"
-        style={anim("460ms")}
-      >
-        <span className="flex items-center gap-3">
-          <span className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-papaya/20 flex-shrink-0">
-            <Image
-              src="/headshot.png"
-              alt={author}
-              fill
-              sizes="40px"
-              className="object-cover object-top"
-            />
-          </span>
-          <span className="flex flex-col leading-tight gap-0.5">
-            <span className="text-corbeau font-display font-bold text-[0.94rem] tracking-[-0.01em]">
-              {author}
-            </span>
-            <span className="font-mono text-[0.72rem] uppercase tracking-[1.5px] text-eyebrow">
-              {updated ? "Updated " : ""}{dateLabel}
-            </span>
-          </span>
+    <PageBanner
+      crumbs={crumbs}
+      title={title}
+      long
+      lede={deck}
+      cover={coverImage ? { src: coverImage } : undefined}
+    >
+      <div className="nd-meta nd-article-meta">
+        <span className="who">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={AUTHOR_AVATAR} alt="" width={32} height={32} />
+          <b>{DISPLAY_AUTHOR}</b>
         </span>
-        <span className="h-4 w-px bg-corbeau/[0.12] hidden sm:block" aria-hidden />
-        <span className="font-mono text-[0.72rem] uppercase tracking-[1.5px] text-eyebrow">
-          {readingMinutes} min read
+        <span className="dot" aria-hidden="true" />
+        <span>
+          {updated ? messages.updatedPrefix : ""}
+          <time dateTime={shownDate}>{dateLabel}</time>
         </span>
-        {reviewedLabel && (
+        <span className="dot" aria-hidden="true" />
+        <span>
+          {readingMinutes} {messages.readingTimeSuffix}
+        </span>
+        {reviewedLabel && lastReviewed && (
           <>
-            <span className="h-4 w-px bg-corbeau/[0.12] hidden sm:block" aria-hidden />
-            <span className="font-mono text-[0.72rem] uppercase tracking-[1.5px] text-eyebrow">
-              Reviewed {reviewedLabel}
+            <span className="dot" aria-hidden="true" />
+            <span>
+              {messages.reviewedPrefix}
+              <time dateTime={lastReviewed}>{reviewedLabel}</time>
             </span>
           </>
         )}
       </div>
-
-      {heroImage && (
-        <figure className="mt-10" style={anim("580ms")}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={heroImage}
-            alt={heroAlt || title}
-            className="w-full h-auto rounded-xl border-2 border-papaya/60 shadow-[0_12px_40px_rgba(14,16,32,0.14),0_4px_16px_rgba(252,152,90,0.10)]"
-          />
-        </figure>
-      )}
-    </header>
+    </PageBanner>
   );
 }

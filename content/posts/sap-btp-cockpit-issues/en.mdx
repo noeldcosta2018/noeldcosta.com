@@ -1,25 +1,24 @@
-﻿---
+---
 title: "SAP BTP Cockpit issues: five problems and how to fix them"
 slug: "sap-btp-cockpit-issues"
 date: "2025-06-24"
-updated: "2026-05-21"
+updated: "2026-10-07"
 hero: "/images/wp/2025/06/3.webp"
-heroAlt: "Developer troubleshooting SAP BTP Cockpit service configuration on laptop screen with error message visible"
+heroAlt: "Developer seen from behind typing code on a desktop monitor beside a laptop"
 category: "sap-modules"
 tags: ["sap-technical-decisions", "sap-btp", "sap-cap", "sap-integration-suite"]
 author: "Noel D'Costa"
 metaTitle: "SAP BTP Cockpit Issues in 2026: 5 Common Problems and Fixes"
-metaDescription: "SAP BTP Cockpit problems in 2026: 401 login errors, broken navigation, Internal Server Errors, destination configuration, and trial throttling with practical fixes."
-excerpt: "The first time I saw the red error banner in SAP BTP Cockpit, I thought I had done something wrong. After the fourth time, it was clear: this was not just me. These five issues come up constantly. Knowing what to look for saves hours of debugging the wrong thing."
+metaDescription: "SAP BTP Cockpit issues and fixes: 401 token errors, Integration Suite Internal Server Errors, dead links, CAP destination failures and apps that stop on trial."
+excerpt: "Five SAP BTP Cockpit problems come up again and again: 401 token errors, Integration Suite errors, dead links, CAP destination failures and trial apps that stop overnight. Here is what to check first for each."
 experienceSource: "Direct experience working with SAP BTP Cockpit across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets, covering integration, CAP application deployment, and destination configuration in both trial and production subaccount environments. 2026 BTP Cockpit issues verified against current Cloud Foundry runtime."
 lastReviewed: "2026-05-21"
 keyTakeaways:
-  - "401 errors on service key credentials are almost always an OAuth grant type or token URL problem, not a credential problem"
-  - "Internal Server errors in Integration Suite typically follow idle periods: clearing browser cache and rebinding the service usually resolves them"
-  - "Broken links in boosters and tiles often occur when subaccount structure changes after setup: navigate manually via the Cockpit tree instead"
-  - "CAP destination failures usually trace to name mismatches in xs-app.json or cds.env, not the destination configuration itself"
-  - "Trial environment throttling shows no clear warning: use CLI tools to check actual resource consumption, not the Cockpit UI"
-  - "Running multiple Cockpit tabs creates session conflicts that cause silent failures: use one session at a time"
+  - "401 errors with service key credentials are usually an OAuth problem: wrong grant type, wrong token URL or missing authorities, not a wrong password"
+  - "Integration Suite Internal Server Errors most often trace to missing role collections or a stale session: assign roles, then log out fully and back in"
+  - "Booster and tile links break when subaccount structure changes after setup: navigate through the Cockpit tree and bookmark direct URLs"
+  - "CAP destination failures usually trace to a name mismatch in cds.requires or xs-app.json, a missing Destination or XSUAA binding, or the wrong OData kind"
+  - "Trial and free-tier SAP HANA Cloud instances stop every night: an app that worked yesterday may simply have lost its database"
 pullQuote: "SAP BTP Cockpit gives you very little feedback when something breaks. Most of the debugging happens through trial and error. Knowing the patterns saves the hours."
 mentions:
   - "SAP BTP"
@@ -30,178 +29,160 @@ mentions:
   - "RISE with SAP"
 ---
 
-The first time I saw the red error banner in SAP BTP Cockpit, I thought I had done something wrong. Maybe I clicked the wrong link. Maybe my session had expired.
+If SAP BTP Cockpit is throwing errors at you, it is probably one of five things. A 401 from a service key is almost always the OAuth request, not the credentials. An Internal Server Error on Integration Suite usually means missing role collections or a stale session. Dead links come from boosters set up before the subaccount changed. CAP destination failures are usually a name mismatch or a missing binding. And an app that worked yesterday on a trial account may have lost its database overnight. This guide is for developers and integration consultants working in Cloud Foundry subaccounts. The triage table below tells you what to check first.
 
-After the fourth time, it became clear it was not just me.
+The first time I saw the red error banner in SAP BTP Cockpit, I assumed I had done something wrong. Wrong link, expired session.
 
-Over a few weeks I kept notes on every time something broke. Internal Server Errors opening Integration Suite, destinations that refused to connect despite looking valid, apps that worked yesterday and hung today for no apparent reason. Patterns emerged. None of them were documented anywhere useful.
+After the third or fourth time, it was clear it was not just me.
 
-These are not edge cases. They are what a lot of developers run into, and the frustration usually is not the issue itself; it is that the Cockpit gives almost no feedback to work with.
+Over the next few weeks I kept a notebook and wrote down every time something broke. Internal Server Errors opening Integration Suite. Destinations that looked valid and refused to connect. Apps that worked yesterday and hung today. Patterns emerged. Few of them were documented anywhere useful, and the Cockpit itself gives you almost nothing to work with.
 
-## What changed in BTP Cockpit through 2024-2026
+## Triage: symptom to first check
 
-A few things worth knowing before the troubleshooting list. The BTP Cockpit user experience evolved through 2024-2025 in ways that affect what you see versus older screenshots. Cloud Foundry is now the runtime default; Neo is in maintenance with limited new feature support, so the persistent issues developers run into in 2026 are mostly Cloud Foundry-flavoured. Subaccount and directory structures are increasingly governed at the global account level through hierarchies that did not exist in earlier versions. Integration Suite, Build, and Datasphere now share more of the Cockpit experience with the underlying BTP services, which makes the destination configuration and authentication patterns more consistent across services than they used to be.
+| Symptom | Most likely cause | Check first |
+|---|---|---|
+| 401 Unauthorized calling an API with a service key | Wrong grant type, token URL or missing authorities | Decode the token and read `aud` and `scope` |
+| Internal Server Error opening Integration Suite | Missing role collections or stale session | Role collections on your user, then a full log-out |
+| Booster or tile opens a blank or wrong page | Subaccount changed after the booster ran | Navigate via the Cockpit tree instead |
+| CAP app: "destination not found" or auth errors | Name mismatch, missing binding, wrong OData kind | `cds.requires` and `xs-app.json` against the Cockpit name |
+| App worked yesterday, hangs today (trial) | HANA Cloud instance stopped overnight | Database instance status in SAP HANA Cloud Central |
 
-The five issues below show up across both Cloud Foundry and (where still relevant) Neo, on both RISE-bundled BTP entitlements and standalone BTP subscriptions. Here are the ones that come up most often.
+## What changed in BTP through 2024 to 2026
 
-## Issue 1: Login and credential failures (401 unauthorized)
+Cloud Foundry, Kyma and the ABAP environment run on SAP's multi-cloud foundation, which has been the default for new customers since 2020. The older Neo environment gets security and compliance updates only, and SAP has set its sunset for 31 December 2028. Nearly every issue below is a Cloud Foundry issue.
 
-You create a service instance, generate a service key, copy the client ID and secret from the JSON. Plug them into Postman. Add the token URL. Make the request. Get a 401. No detail. Just unauthorized.
+Two renames still confuse people reading older guides. SAP Launchpad service became SAP Build Work Zone, standard edition, in January 2023. And many tiles and boosters were rebuilt as SAP Build grew, so screenshots from 2022 often no longer match what you see.
 
-You double-check the credentials. Copy the secret again. Still fails. The service is not broken; the OAuth flow is.
+On RISE with SAP, BTP usually arrives as a credit-based entitlement inside the contract. The Cockpit is the same. What differs is who in your organisation controls the global account, so find that person before you need a new entitlement.
 
-**What to check:**
+## Issue 1: 401 unauthorized with service key credentials
 
-1. **Grant type.** Most BTP services use `client_credentials`. Set this explicitly in Postman. Do not assume the default.
-2. **Token URL.** Copy it exactly from the service key JSON. Even a character difference breaks it. Do not borrow it from another environment.
-3. **Headers.** When calling the token URL directly, set `Content-Type` to `application/x-www-form-urlencoded` and encode your client ID and secret as `Authorization: Basic <base64(clientid:clientsecret)>`.
-4. **Scopes.** Some services require a scope field in the token request (look for `xsappname` in the service key). Missing it may still return a token, but that token will not authorize the API call.
-5. **Service instance status.** On trial accounts, services go idle. Check the Cockpit to confirm the instance is still active.
-6. **Token audience.** If you are getting a token but the API still fails, decode it at jwt.io. Check the `aud` claim. If it does not match the API you are calling, that is the problem.
+You create a service instance, generate a service key, copy the client ID and secret into Postman, add the token URL and send the request. 401. No detail.
 
-| What to check | How to validate |
-|---|---|
-| Grant type | Use `client_credentials` explicitly, not authorization code, not password flow. |
-| Token URL | Copy directly from service key JSON. No modifications. |
-| HTTP headers | `Content-Type: application/x-www-form-urlencoded` + `Authorization: Basic <base64 encoded>` |
-| Scopes | Check service key for `xsappname` or `scope` field; include in token request if present |
-| Service instance activity | Confirm instance is active in Cockpit; restart if idle on trial account |
-| Token audience | Decode at jwt.io; `aud` claim must match the API you are calling |
+You copy the secret again. Still fails. The service is fine. The OAuth flow is not.
 
-## Issue 2: Broken navigation and dead links
+**What to check, in order:**
 
-You click "Go to Application" or "Open in Cockpit" and get a blank screen, a generic landing page, or a redirect that makes no sense.
+1. **Grant type.** Technical access to most BTP service APIs uses `client_credentials`. Set it explicitly in Postman. Do not trust the default.
+2. **Token URL.** Take it from the service key. Some keys give a `tokenurl`; others give the XSUAA `url`, to which you append `/oauth/token`. Never borrow one from another subaccount.
+3. **Headers.** For a direct token call, send `Content-Type: application/x-www-form-urlencoded` and `Authorization: Basic <base64(clientid:clientsecret)>`.
+4. **Authorities.** With client credentials, the token only carries the scopes granted to that service instance. If the API needs a role the instance does not have, you still get a token, and the API still says no. Fix it in the instance parameters (for example, the roles on an Integration Suite API plan instance), not in the request.
+5. **Audience.** If you have a token and the API rejects it, decode the token and read the `aud` claim. If it does not match the API you are calling, you are using a key from the wrong service instance.
 
-This is not random. It follows predictable patterns:
+## Issue 2: Internal Server Errors opening Integration Suite
 
-1. Links inside **boosters** break when subaccount setup changes midway. The redirect sends you to the homepage or drops you in the wrong space.
-2. **Integration Suite** tile links sometimes work, sometimes throw an internal error, sometimes time out.
-3. **Workzone and Launchpad** links show "connection denied" even when entitlements are present.
-4. Multiple tabs or browser profiles cause sessions to desync, which makes links open in expired contexts.
+You open Integration Suite and get a red "Internal Server Error" banner. No log. Reload, different browser, same result.
 
-**Workarounds that help:**
-1. Bookmark direct URLs for Integration Suite, Destination Management, and Launchpad. Do not rely on in-app links.
-2. Navigate manually via the Cockpit tree: Subaccount → Services → Instances → Subscriptions.
-3. Use one Cockpit session in a clean browser profile. Avoid multiple tabs.
-
-The broader issue is predictability, when a link fails every third time, you start building workarounds instead of using the platform as designed.
-
-## Issue 3: Internal Server Errors (especially Integration Suite)
-
-You try to open Integration Suite. Instead of the expected screen, you get a red "Internal Server Error" banner. Nothing else. No log. No explanation.
-
-You reload. Still broken. Different browser. Same result.
-
-This usually happens after the service has been idle for a few hours: left open in the morning, returned to after a break. The inactivity seems to trigger a backend state issue, but the Cockpit shows you nothing.
+It usually happens after the service has been left unused for a while: opened in the morning, left for a few hours, used again later. SAP's community threads and knowledge base point to two usual causes: missing role collections and stale sessions.
 
 **What usually resolves it:**
-1. Clear browser cache and cookies. This resets the session enough to let the page load.
-2. Check entitlements and service status in the Cockpit. Services can become unbound or paused without showing an alert.
-3. Rebind or restart the service from the subaccount. Works reliably for Integration Suite.
-4. One active Cockpit tab only. Session conflicts from multiple tabs are a common trigger.
 
-The underlying problem is visibility. There is no logging surfaced, no explanation of what failed. The resolution is trial and error, which is why it wastes so much time.
+1. **Check role collections.** Your user needs `Integration_Provisioner` to set up the tenant, and the relevant `PI_` role collections (administrator, integration developer, business expert) to work in it. Assign them in the subaccount under Security.
+2. **Log out completely.** Role changes only reach your session after a fresh login. Close every BTP and Integration Suite tab, sign out, then sign back in.
+3. **Clear cookies for the BTP domains** if the error survives a fresh login. A stale session cookie can outlive the session.
+4. **Use one Cockpit session.** Several tabs or browser profiles on the same subaccount cause session conflicts that look exactly like this error.
 
-## Issue 4: Destination configuration failures in CAP apps
+The real problem is visibility. The Cockpit tells you nothing about what failed, so you end up guessing. Work through the list in order instead. For a wider view of why integration programmes stall, see my piece on [SAP Integration Suite delivery delays](/sap-integration-suite-delivery-delays/).
 
-You deploy a CAP app, configure a destination in the Cockpit, and the requests still fail. The destination is listed, the app is running, but you get "destination not found" or authentication errors.
+## Issue 3: Broken navigation and dead links
 
-Everything looks correct. The error messages do not help; they are either too generic or point to the wrong place.
+You click "Go to Application" and get a blank screen, a generic landing page or a redirect that makes no sense.
 
-**The common causes:**
+It follows patterns:
 
-1. Destination name not correctly referenced in `xs-app.json` or `cds.env`. The name must match exactly.
-2. OData version mismatch. If your app expects v2 and the destination points to a v4 service (or vice versa), CAP fails silently. Use `@sap/cds-odata-v2-adapter-proxy` to handle the mismatch.
-3. Wrong authentication method. Use `OAuth2ClientCredentials` or `BasicAuthentication` for most CAP scenarios. SAML adds complexity you do not need unless there is a specific requirement.
-4. Destination not in the same subaccount as the app.
+1. Booster links break when the subaccount setup changes after the booster ran. The redirect points somewhere that no longer exists.
+2. Integration Suite tiles sometimes work, sometimes error, sometimes time out, usually for the session reasons above.
+3. SAP Build Work Zone links show "connection denied" when the subscription exists but your user lacks the role collection for the site.
+4. Multiple tabs or browser profiles open links in expired contexts.
 
-**Troubleshooting checklist:**
+What works: navigate through the Cockpit tree (subaccount, then Services, then Instances and Subscriptions), and bookmark the direct URLs for Integration Suite, destinations and Work Zone. Use one session in a clean browser profile. When a link fails every third time, you stop trusting the platform and start building workarounds. Bookmarks are the cheapest workaround there is. If you are still finding your way around, my [BTP Cockpit walkthrough](/master-the-sap-btp-cockpit-simple-steps/) covers the basic navigation.
 
-| Issue | Fix |
+## Issue 4: Destination failures in CAP apps
+
+You deploy a CAP app, configure a destination in the Cockpit, and requests still fail with "destination not found" or authentication errors. The destination is listed. The app is running. The error messages point nowhere useful.
+
+[SAP's CAP documentation](https://cap.cloud.sap/docs/guides/services/consuming-services) is clear on how this should be wired: the remote service is declared under `cds.requires` in `package.json` (or `.cdsrc.json`) with a `kind`, and the destination name goes under `credentials.destination`. The app also needs bindings to both the Destination service and XSUAA. Most failures are a break somewhere in that chain.
+
+<explainer-flow title="The CAP destination chain" caption="A wrong name, a missing binding or the wrong OData kind breaks one link, and the error rarely says which one." steps="cds.requires|Production profile|Service bindings|Destination in the Cockpit|Remote service" notes="Declares the remote service, its kind and the destination name|Holds the destination credentials after deployment|The app is bound to Destination and XSUAA|Same name as in cds.requires and xs-app.json, case included|odata-v2 for a V2 service, odata for V4" result="Requests reach the remote service"></explainer-flow>
+
+| Symptom | Fix |
 |---|---|
-| Destination listed but app cannot access it | Check name in `xs-app.json` and `cds.env`: must match exactly |
-| OData version mismatch | Use `@sap/cds-odata-v2-adapter-proxy` package in the CAP app |
-| Authentication failures despite valid credentials | Switch to `OAuth2ClientCredentials` or `BasicAuthentication` |
-| Works locally but fails after deployment | Check `cds.env` in deployed environment; confirm destination is in the correct subaccount |
-| Unsure if destination is reachable | Use the Destination Checker tool in BTP Cockpit before deploying |
+| Destination listed but the app cannot find it | Compare the name in `cds.requires` and in `xs-app.json` routes with the Cockpit, character for character, including case |
+| Works locally, fails after deployment | Check the `[production]` profile actually holds the destination credentials, and that the app is bound to Destination and XSUAA |
+| Remote OData V2 service returns errors | Set `kind` to `odata-v2` for a V2 service and `odata` for V4. Use V4 wherever both sides allow it |
+| A UI5 app needs V2 but your CAP service is V4 | Add the `@cap-js-community/odata-v2-adapter` plugin. The older `@sap/cds-odata-v2-adapter-proxy` is deprecated |
+| Authentication fails with valid credentials | Start with `OAuth2ClientCredentials` or `BasicAuthentication`. Only use SAML or principal propagation when the scenario needs it |
+| Not sure the target is reachable at all | Use "Check Connection" on the destination in the Cockpit before you debug the app |
 
-Teams that handle this well maintain a configuration checklist. Not because it is a complex setup. One wrong assumption about version, name, or auth method causes a silent failure that takes longer to find than it should.
+Teams that handle this well keep a short destination checklist per app. Not because the setup is complex. Because one wrong assumption about name, binding or OData kind fails silently and takes far longer to find than to prevent.
 
-## Issue 5: Throttling and resource limits in trial environments
+## Issue 5: Apps that stop overnight in trial and free tier
 
-A CAP app that worked yesterday now hangs. No error. The Cockpit shows it as running. You try restarting. Still nothing.
+A CAP app that worked yesterday now hangs. No error. The Cockpit shows it running. You restart it. Nothing.
 
-This is usually throttling or resource exhaustion in the trial environment. SAP does not surface this clearly. The Cockpit UI rarely shows what you are actually consuming, and the limits for trial accounts are not well-documented inside the interface itself.
+Check the database first. SAP's own [HANA Cloud trial tutorial](https://developers.sap.com/tutorials/hana-cloud-mission-trial-1) states that free-tier instances are stopped every night and must be restarted each day you work. The trial account itself lasts up to 90 days if you log in regularly. Your app is fine. Its database is asleep.
 
-You end up debugging your app code when the real cause is a quota you did not know you'd hit.
+**What helps:**
 
-**What actually helps:**
+1. Restart the HANA Cloud instance from SAP HANA Cloud Central before you start debugging code.
+2. Use the CLI (`cf apps`, `cf services`) to see memory and service usage. The Cockpit UI shows far less.
+3. Delete unused service instances before creating new ones. Trial quotas apply to the whole account, not just one app.
+4. Keep demo and test workloads in separate subaccounts.
 
-1. Use CLI tools (`cf apps`, `cf services`) to check memory and service consumption. The Cockpit UI hides most of this.
-2. Spread workloads across multiple subaccounts. Do not deploy everything into one.
-3. Restart idle services manually after long periods of inactivity.
-4. Delete unused services before trying to create new ones. Trial limits include global quotas, not just per-app.
-
-If you are hitting this repeatedly (more than one app, more than one database, or needing stable uptime for demos), a paid plan is worth it for the stability alone.
+If you need more than one app and database running reliably, or stable uptime for demos, move to a productive account. Free-tier plans in a productive account can be upgraded to paid without losing your work, which a trial account cannot.
 
 ## Frequently asked questions
 
 <details>
-<summary>Why do I get a 401 error with service key credentials even when they look correct?</summary>
+<summary>Why do I get a 401 error with SAP BTP service key credentials even when they look correct?</summary>
 
-Almost always an OAuth flow problem rather than a credential problem. The two most common causes: using the wrong grant type (BTP services require `client_credentials`) or using a token URL that does not match the service key JSON exactly.
+Almost always the OAuth request, not the credentials. The usual causes are the wrong grant type (use `client_credentials` for technical access), a token URL that does not match the service key, or wrong headers on the token call.
 
-Check your headers. The token request needs `Content-Type: application/x-www-form-urlencoded` and the credentials base64-encoded in the Authorization header. If scopes are required (check the service key for an `xsappname` field) and they are missing from the request, you may still get a token back, but it will not authorize the API call.
-
-If you are getting a token but the API still rejects it, decode the token at jwt.io and check the `aud` claim. It must match the API you are calling.
+If you get a token and the API still rejects it, decode it. Check the `aud` claim matches the API, and check the scopes. With client credentials, scopes come from the authorities granted to the service instance, so fix missing roles in the instance parameters.
 
 </details>
 
 <details>
 <summary>What causes Internal Server Errors when opening Integration Suite in BTP Cockpit?</summary>
 
-Usually follows a period of inactivity. The service goes into a reduced state in the background, but the Cockpit shows nothing: no alert, no status change. The error only appears when you try to open it.
+Most often missing role collections or a stale session. Make sure your user has `Integration_Provisioner` and the `PI_` role collections you need. Then close every BTP tab, sign out and sign back in, because new roles only apply after a fresh login.
 
-Three things that usually resolve it: clear browser cache and cookies, confirm the service instance is still active in the Cockpit (and restart or rebind if it is not), and ensure you only have one active Cockpit session. Multiple tabs create session conflicts that trigger this error even when the service itself is fine.
+If it persists, clear cookies for the BTP domains and keep to a single Cockpit session. Multiple tabs on the same subaccount trigger the same error.
 
 </details>
 
 <details>
 <summary>Why does my CAP app fail to connect to a destination that appears correctly in the Cockpit?</summary>
 
-The most common cause is a naming mismatch. The destination name referenced in `xs-app.json` or `cds.env` must match the name in the Cockpit exactly, including case.
+Usually a naming mismatch. The destination name in `cds.requires` and in your `xs-app.json` routes must match the Cockpit exactly, including case.
 
-If the naming is correct, check the OData version. If your app expects v2 and the destination points to a v4 service, CAP fails silently. Use the `@sap/cds-odata-v2-adapter-proxy` package to handle the mismatch.
-
-Authentication method is another common source. `OAuth2ClientCredentials` or `BasicAuthentication` work predictably for most CAP scenarios. More complex types like SAML introduce variables that are harder to debug.
-
-Use the Destination Checker tool in the Cockpit to validate connectivity before deploying the app.
+If the name is right, check that the app is bound to both the Destination service and XSUAA, that the `[production]` profile carries the credentials, and that the `kind` matches the remote service: `odata-v2` for V2, `odata` for V4. Use "Check Connection" in the Cockpit to confirm the target is reachable.
 
 </details>
 
 <details>
-<summary>How do I check if I have hit resource limits in a trial account?</summary>
+<summary>Why does my SAP BTP trial app stop working overnight?</summary>
 
-The Cockpit UI does not show this clearly. Use the CLI: `cf apps` shows memory consumption per app; `cf services` shows total services in use. Trial accounts have global quotas that are not exposed in the Cockpit dashboard.
+On trial and free-tier plans, SAP HANA Cloud instances are stopped every night to save resources. Your app keeps running but cannot reach its database. Restart the instance in SAP HANA Cloud Central each day before you work.
 
-If an app fails to start or a new service instance silently fails, resource exhaustion is likely the cause. Delete unused apps and services before trying again. If you are regularly hitting limits, spreading workloads across multiple trial subaccounts helps, or moving to a paid plan for the stability.
+Use `cf apps` and `cf services` to check memory and service usage, because trial quotas are hard to see in the Cockpit. Delete unused instances before creating new ones.
 
 </details>
 
 <details>
-<summary>Why do links inside boosters and tiles lead to blank pages or incorrect locations?</summary>
+<summary>Why do links inside boosters and tiles lead to blank pages?</summary>
 
-Booster-generated links break when the subaccount structure changes after setup. A redirect that was pointing to a specific location sends you somewhere that no longer exists or has not been properly configured.
+Booster links break when the subaccount structure changes after the booster ran. The redirect points to a location that no longer exists or was never fully configured.
 
-The reliable workaround: navigate manually via the Cockpit tree. Subaccount → Services → Instances → Subscriptions. Bookmark the direct URLs for tools you use regularly. Integration Suite, Destination Management, Launchpad. Do not rely on shortcut tiles or booster-generated navigation for anything critical.
+Navigate through the Cockpit tree instead, and bookmark direct URLs for Integration Suite, destinations and SAP Build Work Zone. Do not rely on booster-generated navigation for anything you use daily.
 
 </details>
 
 <details>
 <summary>When should I move from a BTP trial account to a paid plan?</summary>
 
-When resource limits are affecting your work regularly. If you are managing more than one app or database, or need stable uptime for demos or testing, the trial environment will eventually cause more friction than value.
+When the limits start costing you time. If you run more than one app or database, or need stable uptime for demos or testing, the trial causes more friction than it saves.
 
-The paid plan does not necessarily give you different features; the main benefit is stability and clearer resource visibility. Trial throttling is unpredictable and the Cockpit does not surface it clearly, which means you spend time debugging problems that are not actually in your code.
+The main gains are stability and clearer resource visibility, not new features. A productive account with free-tier plans is a good middle step: you can upgrade those plans to paid later without rebuilding anything.
 
 </details>

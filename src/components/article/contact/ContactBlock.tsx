@@ -118,34 +118,25 @@ function Icon({ name }: { name: IconKey }) {
 
 export default function ContactBlock() {
   return (
-    <FadeUp as="section" className="not-prose my-10">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {ITEMS.map((item) => (
-          <a
-            key={item.label}
-            href={item.href}
-            {...(item.external
-              ? { target: "_blank", rel: "noopener noreferrer" }
-              : {})}
-            className="group flex items-center gap-3.5 rounded-xl border border-corbeau/10 bg-paper px-4 py-3.5 hover:border-papaya/60 hover:bg-cream transition-colors no-underline"
-          >
-            <span
-              className="shrink-0 flex items-center justify-center w-9 h-9 rounded-lg bg-papaya/10 text-papaya group-hover:bg-papaya group-hover:text-corbeau transition-colors"
-              aria-hidden
-            >
-              <Icon name={item.icon} />
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="font-mono text-[0.62rem] tracking-[1.6px] uppercase text-corbeau/50 leading-none mb-1">
-                {item.label}
-              </p>
-              <p className="text-corbeau text-[0.92rem] md:text-[0.96rem] font-semibold group-hover:text-papaya transition-colors break-all leading-tight">
-                {item.display}
-              </p>
-            </div>
-          </a>
-        ))}
-      </div>
+    <FadeUp as="section" className="not-prose nd-block nd-contact-grid">
+      {ITEMS.map((item) => (
+        <a
+          key={item.label}
+          href={item.href}
+          {...(item.external
+            ? { target: "_blank", rel: "noopener noreferrer" }
+            : {})}
+          className="nd-card nd-glow nd-contact-item"
+        >
+          <span className="ico" aria-hidden="true">
+            <Icon name={item.icon} />
+          </span>
+          <span>
+            <span className="nd-label">{item.label}</span>
+            <span className="val">{item.display}</span>
+          </span>
+        </a>
+      ))}
     </FadeUp>
   );
 }

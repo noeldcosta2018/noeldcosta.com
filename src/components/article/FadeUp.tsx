@@ -1,28 +1,31 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 /**
  * Scroll-triggered reveal wrapper.
  *
- * Motion: 48px fade-up + scale 0.92→1.0 over 900ms cubic-bezier spring.
- * Triggers when ~10% of the element enters the viewport. The motion is
- * deliberately substantial (not subtle) — the brief is "obviously animated,"
- * not "tasteful microinteraction."
+ * Motion: a restrained 16px rise with an opacity fade over 600ms, triggered
+ * when ~10% of the element enters the viewport. One reveal per block (a
+ * diagram, a card grid), never per heading or per paragraph.
  *
  * All transition properties are inlined as JS styles, NOT Tailwind arbitrary
- * value classes. Tailwind v4's parser handles bracket arbitrary values fine
- * but combined with CSS layer ordering it can defer them; inline `style` wins
- * the cascade and renders the same on every browser/build path.
+ * value classes, so they win the cascade on every build path.
  *
- * Respects `prefers-reduced-motion: reduce` — content visible immediately,
+ * Respects `prefers-reduced-motion: reduce`: content visible immediately,
  * no transform. Always present for screen readers and crawlers.
+ *
+ * The preference is read after hydration (server and first client render
+ * are identical), so the server HTML always carries the hidden start state.
+ * The `data-motion-reveal` attribute lets globals.css force that state
+ * visible for reduced-motion and no-script visitors before React runs.
  */
 export default function FadeUp({
   children,
   delay = 0,
-  duration = 900,
-  distance = 48,
+  duration = 600,
+  distance = 16,
   as: Tag = "div",
   className = "",
 }: {
@@ -35,21 +38,10 @@ export default function FadeUp({
 }) {
   const ref = useRef<HTMLElement | null>(null);
   const [visible, setVisible] = useState(false);
-  const [reduced, setReduced] = useState(false);
+  const reduced = usePrefersReducedMotion();
 
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(mq.matches);
-    const update = () => setReduced(mq.matches);
-    mq.addEventListener?.("change", update);
-    return () => mq.removeEventListener?.("change", update);
-  }, []);
-
-  useEffect(() => {
-    if (reduced) {
-      setVisible(true);
-      return;
-    }
+    if (reduced) return;
     const el = ref.current;
     if (!el) return;
     // Safety net: even if IntersectionObserver mis-fires, force-show after
@@ -81,11 +73,9 @@ export default function FadeUp({
     : {
         transitionProperty: "transform, opacity",
         transitionDuration: `${duration}ms`,
-        transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)",
+        transitionTimingFunction: "cubic-bezier(0.2, 0.8, 0.2, 1)",
         transitionDelay: `${delay}ms`,
-        transform: visible
-          ? "translateY(0) scale(1)"
-          : `translateY(${distance}px) scale(0.92)`,
+        transform: visible ? "none" : `translateY(${distance}px)`,
         opacity: visible ? 1 : 0,
         willChange: "transform, opacity",
       };
@@ -95,6 +85,7 @@ export default function FadeUp({
       ref={ref as never}
       className={className}
       style={style}
+      data-motion-reveal=""
     >
       {children}
     </Tag>

@@ -1,0 +1,208 @@
+---
+title: "SAP 品質關卡：如何設置，以及為什麼會失靈"
+h1: "SAP 品質關卡：如何設置，以及為什麼會失靈"
+slug: "sap-quality-gates-implementation"
+date: "2024-12-26"
+updated: "2026-10-07"
+hero: "/images/wp/2024/12/sap-quality-gates-implementation-1.webp"
+heroAlt: "白板上的紅色品質印章，附有 SAP 品質關卡的說明文字"
+category: "erp-consulting-guide"
+tags: ["sap-implementation-strategies", "sap-governance", "quality-gates", "rise-with-sap"]
+author: "Noel D'Costa"
+metaTitle: "SAP 品質關卡：設置方法與常見失敗原因"
+metaDescription: "說明如何設置 SAP 品質關卡：依 SAP Activate 各階段設關卡、可衡量的退出準則、有權叫停專案的關卡負責人、管理工具，以及關卡失靈的原因。"
+excerpt: "品質關卡是有權叫停專案的檢查點。本文說明如何依 SAP Activate 各階段設置關卡、寫出能給出是或否答案的準則，並避免關卡淪為橡皮圖章。"
+experienceSource: "Noel's published WordPress article (published 2024-12-26) and its client examples (Singapore consumer goods rollout, manufacturing integration flaw, vague criteria, the CIO override, the 40% unexecuted test cases, the buffer week, the SharePoint gate). Tool and maintenance facts checked against SAP Support pages on 2026-10-07."
+lastReviewed: "2026-05-21"
+keyTakeaways:
+  - "品質關卡是階段之間有權叫停專案的正式檢查點；狀態會議不是關卡"
+  - "把關卡設在 SAP Activate 的階段交接處，並寫出能給出是或否答案的退出準則"
+  - "每道關卡指定一位有書面授權、能夠延後專案的負責人，並在壓力來臨之前取得高階主管對框架的簽核"
+  - "關卡證據必須來自系統紀錄；有一位客戶發現，「已完成」的測試案例中有 40% 從未執行過"
+  - "SAP Cloud ALM 包含在 SAP 雲端訂閱與 Enterprise Support 中；Solution Manager 7.2 的主流維護將於 2027 年結束"
+  - "追蹤缺陷外洩率、首次通過率與上線事件數，看看您的關卡是否真有約束力"
+pullQuote: "橡皮圖章式的品質關卡比沒有品質關卡更糟。它製造虛假的信心，而真正的問題卻在底下不斷堆積。"
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Activate"
+  - "SAP Solution Manager"
+  - "SAP Cloud ALM"
+  - "Tricentis Tosca"
+  - "ServiceNow"
+  - "Jira"
+  - "RISE with SAP"
+  - "SAP BTP"
+originalUrl: "https://noeldcosta.com/sap-quality-gates-implementation/"
+canonicalUrl: "https://noeldcosta.com/zh-TW/sap-quality-gates-implementation/"
+locale: "zh-TW"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+品質關卡是專案各階段之間的正式檢查點。團隊要往下一階段走之前，必須證明已達到事先約定的準則。通過，就往前走；沒通過，就先把問題修好。在 SAP 專案中，關卡設在 SAP Activate 的各階段交接處，每一道關卡都有一位指名的負責人，他有權說「還沒準備好」。
+
+新加坡有一家大型消費品公司正在全球推行 SAP。團隊為了趕上期限，匆匆帶過測試。這場災難我親眼看著它發生。使用者測試幾乎沒有做，高階主管卻仍然堅持要上線。幾天之內，問題就冒出來了：設定缺漏、流程中斷、資料全部錯誤。上線後那幾週的混亂，源自上線前就已經看得見的問題。沒有人停下來查驗。
+
+我從不略過品質關卡審查。不走捷徑，不蓋橡皮圖章。前期要花比較多時間，但日後能省下好幾個月的善後工作。
+
+關卡是一個決策點，有書面標準、有留存紀錄的簽核，也有真正能延後專案的權限。它不是進度檢討，也不是指導委員會的狀態報告。
+
+沒有這份權限，審查就會淪為橡皮圖章。而橡皮圖章式的關卡比沒有關卡更糟，因為它會製造虛假的信心。有一位零售客戶辦過「審查」，基本上就是蓋橡皮圖章。六個月後，專案進度落後到無可挽回，因為那些審查本該抓出的問題，一直沒有人處理。
+
+## SAP Activate 各階段的品質關卡
+
+SAP Activate 分成六個階段：Discover（發現）、Prepare（準備）、Explore（探索）、Realize（實現）、Deploy（部署）與 Run（運行）。每個階段交接處，都是天然的關卡。以下是我期望每道關卡查驗的內容。
+
+| 階段關卡 | 品質重點 | 應看到的證據 | 通過條件 |
+|---|---|---|---|
+| Discover | 商業案例、高階主管共識 | 商業案例、高階藍圖 | 商業案例已簽核，發起人已承諾投入 |
+| Prepare | 治理、團隊、風險 | 專案章程、治理模式、風險登錄表 | 章程已核准，風險負責人已指定，團隊已到位 |
+| Explore | Fit-to-Standard、設計、整合做法 | Fit-Gap 決策、流程設計、整合架構 | 流程負責人已簽核；每個落差都有決策 |
+| Realize | 組態設定、整合測試 | 測試執行報告、缺陷紀錄 | 達到測試門檻，嚴重缺陷已關閉 |
+| Deploy | 資料、訓練、切換準備度 | 資料移轉對帳、訓練紀錄、切換計畫 | 已完成彩排，回復計畫已確認 |
+| Run | 穩定化與交接 | 事件紀錄、效能報告 | 事件數量在約定範圍內，支援交接已簽署 |
+
+實務上，Explore、Realize 與 Deploy 這三個階段風險最高。一個問題如果在這三關之一被放行，等到上線後才浮現，代價最高。
+
+<explainer-flow title="每道 SAP Activate 關卡必須證明什麼" caption="六道關卡，每一道都是「是或否」的決定。Explore、Realize 與 Deploy 風險最高。" steps="Discover|Prepare|Explore|Realize|Deploy|Run" notes="商業案例已簽核，發起人已承諾|章程已核准，風險負責人已指定|每個落差都有決策|達到測試門檻，嚴重缺陷已關閉|已完成彩排，回復計畫已確認|事件在範圍內，交接已簽署" result="每道關卡由一位有權說「還沒準備好」的負責人簽核"></explainer-flow>
+
+在組態設定開始之前，就把每道關卡的進入與退出準則寫進專案章程。在期限壓力下寫出來的準則，描述的是團隊目前拿得出什麼，而不是專案需要什麼。我有一位客戶想合併階段來「節省時間」，結果反而得重做好幾週的工作。
+
+## 有效的關卡需要什麼
+
+### 給出是或否答案的準則
+
+「測試完成」不是準則，只會引發爭論。我合作過的一位零售客戶，關卡上只寫著「UAT 完成」。一半的團隊把它理解為所有測試都已執行，另一半則理解為所有缺陷都已修復。
+
+「95% 的測試案例已執行、所有優先級 1 的缺陷已解決、沒有超過五天仍未關閉的優先級 2 缺陷」才是準則。它會產生答案。
+
+有一位製造業客戶的關卡之所以失靈，是因為準則太模糊，沒有人知道自己到底有沒有通過。等到準則改成可衡量的門檻，階段交接時的爭執就停了。
+
+### 一位有權延後的負責人
+
+每道關卡都需要一位指名的負責人，他能夠讓專案延後。是一個人，不是一個委員會。我見過一個專案垮掉，原因就是明明團隊還沒準備好，卻沒有人有權延後下一個階段。
+
+反過來做就有效。有一位零售客戶指派一位資深總監擔任關卡負責人。他說「還沒準備好」時，所有人都聽。把這項權限寫進專案章程。
+
+### 在壓力來臨之前先取得高階主管支持
+
+高階主管很喜歡品質關卡，直到某道關卡威脅到期限為止。曾有一位 CIO 為了達成季度目標，推翻了未通過的關卡。後來出現的問題，代價是延後所需成本的兩倍。這樣的情形我看過很多次，所以現在我會要求在專案開始前，就由高階主管簽核關卡框架。
+
+### 來自系統紀錄的證據
+
+關卡決策需要證據：測試執行報告、缺陷紀錄、流程簽核、資料移轉對帳。證據要從工具裡取得，而不是聽人說已經完成。我的一位客戶透過 Solution Manager 報告發現，他們「已完成」的測試案例中有 40% 從未執行過。他們是在關卡之前發現的，而不是之後。
+
+## 如何一步一步設置品質關卡
+
+1. **把關卡對應到階段交接處。** 以 SAP Activate 來說，至少設在 Prepare、Explore、Realize 與 Deploy 之後。有一位能源業客戶在中間隨意增設檢查點，最後一團混亂。
+2. **在組態設定開始之前，先定義進入與退出準則。** 約定測試涵蓋率、缺陷門檻，以及必須簽核的流程負責人。把這些寫進章程，並取得發起人的簽名。
+3. **排程時為關卡預留緩衝。** 把每道關卡當成一項活動排進行事曆，而不只是一個里程碑。我的一位零售客戶在每道關卡之前，都預留整整一週專門做收尾清理。
+4. **選擇有權做決定的審查者。** 業務主管簽核流程，技術主管簽核組態與整合。顧問絕不替業務單位簽核。
+5. **把證據集中放在同一處。** 六個月後，稽核人員會問是誰簽核了資料移轉。這個答案應該幾分鐘內就能找到。
+6. **讓結果看得見。** 有一位客戶把關卡儀表板貼在專案室的牆上，讓人無法忽視。
+
+### 最關鍵的兩道關卡的退出準則範例
+
+**Realize 關卡：**
+
+1. 測試執行率達到或超過約定門檻，且結果存放在測試工具中。
+2. 沒有未關閉的優先級 1 缺陷；優先級 2 缺陷在約定的存續期限內。
+3. 每個關鍵流程都已由指定的流程負責人簽核。
+4. 整合測試涵蓋完整的流程鏈，且結果有文件記錄。
+5. 每一項客製開發都已依專案的 Clean Core 規則集核准。
+
+**Deploy 關卡：**
+
+1. 資料移轉彩排已完成，對帳結果已由資料主管簽署。
+2. 各角色的訓練完成率達到或超過約定門檻。
+3. 切換計畫已演練，包含時程與 go/no-go 決策點。
+4. 回復計畫已文件化並經過測試。
+5. Hypercare 團隊已指定，並確認升級路徑與嚴重度定義。
+
+如果 Deploy 關卡顯示仍有未解決的對帳差異，或使用者尚未受訓，而業務單位仍想繼續推進，就把它做成一項有文件記錄、有指名簽署人的決定，而不是因為沒有人願意說不而順勢預設通過。
+
+## Clean Core、SAP Cloud ALM 與其他工具
+
+有兩件事改變了我在現行專案中設計關卡的方式。
+
+**Clean Core 現在是關卡準則之一。** SAP 把擴充分成 A 級（僅使用已釋出的介面）到 D 級（修改標準程式與直接寫入資料表）。在 Explore 關卡，每個落差都應該有決策：用組態處理、以已釋出 API 的擴充方式開發，或是否決。在 Realize 關卡，要檢查沒有新的 D 級物件混進來。Public Edition 在技術上會強制執行這點，Private Edition 與地端部署則不會，所以要靠關卡來把關。
+
+**SAP Cloud ALM 是預設工具。** 它包含在 SAP 雲端訂閱（含 Enterprise Support, cloud edition）中，也包含在地端客戶的 SAP Enterprise Support 中（[SAP Support](https://support.sap.com/en/alm/sap-cloud-alm.html)）。它涵蓋 Fit-to-Standard、任務指派、測試編排與可追溯性。SAP Solution Manager 7.2 的主流維護將於 2027 年底結束，SAP 建議在此之前轉移到 Cloud ALM（[SAP Support](https://support.sap.com/en/alm/solution-manager.html)）。如果您的專案進行到一半且使用的是 Solution Manager，就在那裡完成。新專案則以 Cloud ALM 為基礎來規劃。
+
+### 管理關卡的工具
+
+工具的重要性遠不如紀律。有一位零售客戶用 SharePoint 建了一套乾淨的關卡流程，在中型導入專案中運作得很漂亮。我也見過關卡在完整的 Solution Manager 環境下失敗，因為團隊另外維護了平行的試算表。
+
+| 工具 | 在關卡管理中的角色 | 最適合 |
+|---|---|---|
+| SAP Cloud ALM | Fit-to-Standard、任務、測試、可追溯性 | 新的 S/4HANA 專案，雲端或地端皆可 |
+| SAP Solution Manager 7.2 | 專案追蹤、測試與缺陷管理 | 已經在使用它的專案 |
+| Jira and Confluence | 任務、缺陷、關卡準則與證據 | 已在使用 Atlassian 工具的團隊 |
+| Tricentis Tosca | 測試自動化與涵蓋率報告 | 大量採用測試自動化的專案 |
+| ServiceNow | 核准流程與稽核軌跡 | 已在使用 ServiceNow 的公司 |
+
+不論選哪一種，它都必須是唯一的事實來源。平行的試算表永遠呈現團隊想給人看的版本。我寫的[SAP 測試與驗證工具比較](/zh-TW/sap-testing-validation-tools-comparison/)在測試面有更深入的說明。
+
+## 品質關卡為何失靈，以及如何判斷您的關卡是否有效
+
+**在時程壓力下被略過。** 專案落後時，關卡是第一個被砍掉的項目。在其中一個專案裡，審查淪為橡皮圖章，上線成了一場惡夢：系統當機、訂單卡住，最後完全回復到舊系統。他們「省下」的三週，換來三個月的復原期。
+
+**準則模糊。** 前面已經談過。如果一條準則需要詮釋，它就只是個開啟討論的話題。
+
+**審查者沒有時間。** 關鍵審查者分身於好幾個專案時，審查就會變成逐項打勾。中型專案的 Realize 關卡審查至少應該花上半天，而且證據要事先讀過。
+
+**文化。** 習慣趕里程碑的團隊，會想辦法繞過關卡。當高階主管在啟動會議上宣布關卡是強制的，並且在第一次有關卡造成延後時拒絕推翻它，以行動證明這一點，情況就會改變。
+
+### 判斷關卡是否有效的三個數字
+
+追蹤這些數字，看看關卡是真的在保護專案，還是只是看起來如此。
+
+1. **缺陷外洩率：** 在關卡之後才發現、而本該由該關卡攔下的缺陷所占的比例。
+2. **首次通過率：** 如果每道關卡都一次就通過，準則大概沒有約束力。
+3. **上線事件數：** 上線後前 30 天的高優先級事件，是對 Deploy 關卡最直接的評判。
+
+關卡從第一天起就應該寫進章程。我的[專案章程指南](/zh-TW/how-to-create-an-sap-implementation-project-charter/)說明了關卡該放在哪裡，[指導委員會指南](/zh-TW/creating-an-effective-sap-project-steering-committee/)則談到誰該握有強制執行的權限。
+
+## 常見問題
+
+<details>
+<summary>SAP 專案中的品質關卡是什麼？</summary>
+
+專案各階段之間的正式檢查點。團隊必須先證明已達到具體、可衡量的準則，才能往下走。每道關卡都有一位指名的負責人，有權延後專案。在 SAP Activate 中，關卡設在各階段交接處，尤其是 Explore、Realize 與 Deploy 之後。
+
+</details>
+
+<details>
+<summary>SAP Activate 中有哪些品質關卡？</summary>
+
+SAP Activate 有六個階段（Discover、Prepare、Explore、Realize、Deploy 與 Run），每個交接處都是一道關卡。Discover 查驗商業案例。Prepare 查驗治理與章程。Explore 查驗設計簽核與落差決策。Realize 查驗測試結果與缺陷。Deploy 查驗資料、訓練與切換準備度。Run 查驗穩定化與交接。
+
+</details>
+
+<details>
+<summary>SAP 品質關卡的準則應該包含什麼？</summary>
+
+能給出是或否答案的準則。Realize 關卡：測試執行門檻、依優先級列出的未結缺陷、流程負責人簽核與整合測試結果。Deploy 關卡：資料移轉對帳、各角色訓練完成率、已演練的切換計畫、已測試的回復計畫，以及人員到位的 Hypercare 團隊。每一條準則都需要一位負責提供證據的人。
+
+</details>
+
+<details>
+<summary>為什麼 SAP 導入專案中的品質關卡會失靈？</summary>
+
+它們在時程壓力下被略過、準則模糊、審查者沒有時間準備，或是高階主管推翻了未通過的關卡。根本原因是把關卡當成額外負擔，而不是保護機制。
+
+</details>
+
+<details>
+<summary>我該用哪種工具來管理 SAP 品質關卡？</summary>
+
+新專案選 SAP Cloud ALM。它包含在 SAP 雲端訂閱與 Enterprise Support 中，支援 Fit-to-Standard、測試與可追溯性。SAP Solution Manager 7.2 將於 2027 年底結束主流維護。公司若已在使用 Jira、Tricentis Tosca 與 ServiceNow，這些工具也運作得很好。原則只有一條：唯一的事實來源。
+
+</details>
+
+<details>
+<summary>如何在最後一道品質關卡評估上線準備度？</summary>
+
+用證據查驗五件事：資料移轉已彩排並完成對帳、各角色訓練已完成、切換計畫已演練且訂有 go/no-go 決策點、回復計畫已測試，以及 Hypercare 人員到位並訂有升級路徑。如果其中任何一項沒通過，而業務單位仍想推進，就把它記錄成一項經簽署的業務決策。
+
+</details>

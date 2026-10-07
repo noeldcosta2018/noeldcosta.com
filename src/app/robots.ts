@@ -44,13 +44,15 @@ export default function robots(): MetadataRoute.Robots {
   ];
 
   const blocked = ["Bytespider", "ImagesiftBot"];
+  // Never useful in search: form and chat endpoints, the admin area, dev previews.
+  const privatePaths = ["/api/", "/admin/", "/dev-explainers/"];
 
   return {
     rules: [
       // Default allow — covers Googlebot, Bingbot, DuckDuckBot, Ahrefs, etc.
-      { userAgent: "*", allow: "/" },
+      { userAgent: "*", allow: "/", disallow: privatePaths },
       // Explicit AI crawler allowlist (signals opt-in for training + citations)
-      ...aiCrawlers.map((ua) => ({ userAgent: ua, allow: "/" })),
+      ...aiCrawlers.map((ua) => ({ userAgent: ua, allow: "/", disallow: privatePaths })),
       // Explicit blocks for known bad actors
       ...blocked.map((ua) => ({ userAgent: ua, disallow: "/" })),
     ],

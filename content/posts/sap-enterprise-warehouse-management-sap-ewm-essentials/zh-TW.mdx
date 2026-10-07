@@ -1,0 +1,182 @@
+---
+title: "SAP EWM：功能、運作方式與成本"
+h1: "SAP EWM：功能、運作方式與成本"
+slug: "sap-enterprise-warehouse-management-sap-ewm-essentials"
+date: "2025-04-10"
+updated: "2026-10-07"
+hero: "/images/wp/2025/04/SAP-EWM.webp"
+heroAlt: "兩名戴安全帽、穿反光背心的倉儲人員，正在檢查堆疊的紙箱"
+category: "sap-modules"
+tags: ["sap-technical-decisions", "sap-ewm", "warehouse-management", "sap-manufacturing"]
+author: "Noel D'Costa"
+metaTitle: "SAP EWM 解析：功能、運作方式與導入成本"
+metaDescription: "SAP EWM 完整解析：核心元件、嵌入式與分散式的差異、WM 的結束日期、Stock Room Management、導入成本，以及如何從 WM 遷移。"
+excerpt: "SAP EWM 是 SAP 在 S/4HANA 上的策略性倉儲系統。本文說明它的功能、部署方式、成本，以及如何在使用權到期之前，從傳統 WM 遷移出來。"
+experienceSource: "Noel's published WordPress article (published 2025-04-10) and its examples (food DC receiving time, electronics peak-season picking, beverage distributor ASN, conveyor middleware, paper records, warehouse redesign). WM, Stock Room Management and EWM lifecycle facts checked against SAP Learning and SAP Community on 2026-10-07."
+lastReviewed: "2026-05-21"
+keyTakeaways:
+  - "SAP EWM 是 SAP 在 S/4HANA 上的策略性倉儲管理系統，可嵌入 S/4HANA，也可作為分散式系統部署"
+  - "ECC 中的傳統 WM 遵循 ERP 6.0 的維護時程（主流維護至 2027 年底）；在 S/4HANA 地端版中，其相容性套件使用權已於 2025 年底到期"
+  - "Stock Room Management 是 SAP 為簡單 WM 倉庫提供的基本後繼方案；它不會再有後續投資，因此 EWM 才是長期路線"
+  - "單一倉庫的導入需要 8 至 12 個月；Noel 發布的成本區間，從小型據點的 25 萬至 40 萬美元，到多據點網路的 200 萬美元以上"
+  - "不要遷移 WM 的交易資料；請遷移清理過的主檔資料，並重新設計倉庫結構"
+  - "先讓收貨、出貨與庫存上線；核心穩定後，再加入儲位優化、人力管理與加值服務"
+pullQuote: "主檔資料中的小錯誤，會在收貨與揀貨之間產生連鎖效應，看起來像系統問題，追根究柢卻是資料問題。"
+mentions:
+  - "SAP EWM"
+  - "SAP WM"
+  - "Stock Room Management"
+  - "SAP S/4HANA"
+  - "SAP ECC"
+  - "SAP TM"
+  - "SAP Fiori"
+  - "RISE with SAP"
+originalUrl: "https://noeldcosta.com/sap-enterprise-warehouse-management-sap-ewm-essentials/"
+canonicalUrl: "https://noeldcosta.com/zh-TW/sap-enterprise-warehouse-management-sap-ewm-essentials/"
+locale: "zh-TW"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP Extended Warehouse Management（EWM）是 SAP 為 S/4HANA 提供的倉儲系統。它即時管理倉庫中的每個儲位、任務與移動，直接連接自動化設備，並且可以在 S/4HANA 內運行，也可以作為獨立系統運行。如果您仍在使用傳統的倉庫管理（WM），下方的結束日期將決定您的時程。單一倉庫的導入通常需要 8 至 12 個月。
+
+多數倉庫問題，在您仔細追查之前，看起來都像是人的問題。有人漏揀了一件貨。一台拖車晚到。循環盤點揭露了一個沒人解釋得了的差異。直覺反應是檢討團隊。通常問題出在系統，或是缺少一套真正管用的系統。
+
+在一座食品配送中心，我看到收貨時間縮短了近三分之一。他們並沒有讓團隊加快速度，只是不再要團隊自己想貨該放在哪裡。系統會告訴他們。一座電子產品倉庫，在旺季以同一批人力，把揀貨速率提高了一倍，靠的只是更聰明的揀貨路徑。
+
+## SAP EWM 的功能
+
+EWM 取代傳統 WM，成為 SAP 的策略性倉儲產品。它為複雜的作業而生：大量作業、多個據點、自動化，以及細緻的人力追蹤。它連接物料管理（MM）、銷售與配送（SD）、生產規劃（PP）、品質管理（QM）與運輸管理（TM），因此倉儲資料與採購、生產與出貨流經同一套系統。
+
+以下是各個元件，以及它們發揮價值的地方：
+
+| 元件 | 作用 | 效益所在 |
+|---|---|---|
+| 倉庫結構 | 儲存類型、區段與儲位，對應實體配置 | 空間運用；多區域作業 |
+| 入庫處理 | 從場站報到到上架的收貨流程 | 收貨更快、庫存立即可見 |
+| 出庫處理 | 波次、揀貨、包裝、暫存、出貨 | 訂單速度與準確度 |
+| 實地盤點 | 儲位層級的庫存與循環盤點 | 較少的調整與報損 |
+| 儲位優化與重新配置 | 依需求安排商品位置 | 快速區域內揀貨員行走距離更短 |
+| 人力管理 | 對照工程標準衡量工作量 | 人力配置與輔導 |
+| 場站管理 | 碼頭預約、拖車移動 | 碼頭門口較不壅塞 |
+| 越庫作業 | 貨物不經儲存，直接從入庫轉到出庫 | 較低的搬運成本 |
+| 加值服務 | 套組組裝、貼標、簡易組裝 | 在配送中心內處理客戶專屬訂單 |
+| 品質檢驗 | 對待檢或過期的庫存加以凍結 | 不會出貨不合格或過期的貨品 |
+| 物料流系統（MFS） | 直接控制輸送帶與自動化倉儲 | 不需中介軟體層即可整合自動化 |
+
+效益往往出現在特定的地方。我合作過的一家飲料經銷商，透過預先出貨通知（ASN），把收貨時間縮短了 35%。一家消費品公司在人力管理顯示出時間花在哪裡之後，三個月內整體生產力提升了 18%。一家經銷商把每年的庫存報損削減了 70%。
+
+## SAP WM、Stock Room Management 還是 EWM
+
+結束日期比功能清單更重要。
+
+**ECC 上的傳統 WM** 遵循 SAP ERP 6.0 的維護時程：主流支援至 2027 年底。
+
+**S/4HANA 內的傳統 WM** 運行在相容性範圍內。對 S/4HANA 地端版而言，這些使用權已於 2025 年 12 月 31 日到期（[SAP Learning](https://learning.sap.com/courses/exploring-business-processes-for-supply-chain-execution-in-sap-s-4hana-cloud-private-edition/positioning-warehouse-management)）。採用 RISE 雲端訂閱的 S/4HANA，期限較長；請查閱 SAP Note 2269324，確認您合約中的日期。
+
+**Stock Room Management** 是 SAP 為簡單 WM 倉庫提供的基本後繼方案。它沿用了 WM 的大部分內容，包含在 S/4HANA Enterprise Management 授權之內，若您的倉庫符合它縮減後的範疇，就不需要技術性遷移。它不含任務與資源管理、場站管理、越庫作業、波次管理與加值服務，而且 SAP 已表示不會再對它投入資源。
+
+**EWM** 是 SAP 投入所有新倉儲創新的地方。在 S/4HANA 中，它分為 Basic 或 Advanced Warehouse Management，並跟隨 S/4HANA 的發行週期。
+
+| 功能 | 傳統 WM | Stock Room Management | SAP EWM |
+|---|---|---|---|
+| 平台 | ECC，或 S/4HANA 相容性範圍 | S/4HANA | S/4HANA，嵌入式或分散式 |
+| 自動化 | 第三方工具 | 基本 | 原生的物料流系統 |
+| 波次、場站、越庫、加值服務 | 有，以獨立元件提供 | 不含 | 包含（Advanced） |
+| 儲位優化與人力管理 | 無或極少 | 無 | 有 |
+| 使用者介面 | SAP GUI | SAP GUI | SAP Fiori 與行動裝置 |
+| SAP 路線圖 | 即將結束 | 不再投資 | 策略性、持續開發中 |
+
+我的看法：對於簡單的倉庫，Stock Room Management 是 S/4HANA 轉換期間的過渡位置。如果倉庫攸關您的服務水準，請規劃 EWM。
+
+## 部署選項
+
+**嵌入式 EWM** 在 S/4HANA 內運行。倉儲與 ERP 共用一套系統。它較易營運，適合倉儲流程與生產或財務緊密相連的據點。
+
+**分散式 EWM** 作為獨立系統運行。ERP 的修補與變慢不會讓倉庫停擺。它適合運轉時間至關重要的大量配送中心，以及每個據點需要不同規則的網路。
+
+**混合網路** 兩者並用：較小的據點用嵌入式，主要配送中心用分散式。這在分階段推行時效果很好，因為您可以在一個據點試行，而不必動到其他據點。
+
+<explainer-compare title="嵌入式、分散式或混合式 EWM" caption="嵌入式較易營運。分散式能讓倉庫在 ERP 修補與變慢期間持續運作。" options="嵌入式|分散式|混合網路" criteria="運行位置 => 在 S/4HANA 內 ; 作為獨立系統 ; 較小據點用嵌入式，主要配送中心用分散式|ERP 升級的週末 => 可能讓倉庫停擺 ; 不會讓倉庫停擺 ; 不會讓主要配送中心停擺|授權 => S/4HANA 已含基本倉儲管理，進階功能需要 EWM 授權 ; 一律需要 EWM 授權 ; 分散式據點需要 EWM 授權|最適合 => 與生產或財務緊密相連的據點 ; 運轉時間至關重要的大量配送中心 ; 一次試行一個據點的分階段推行"></explainer-compare>
+
+決定的問題很簡單。如果 ERP 升級的週末會讓倉庫停擺，而這是不能接受的，就選分散式。
+
+## 導入的成本與時間
+
+EWM 不是外掛元件。以下是我在 2025 年發布的區間：
+
+| 環境 | 專案總成本 | 典型範疇 |
+|---|---|---|
+| 小型據點（25,000 平方英尺以下） | 25 萬至 40 萬美元 | 核心流程、輕度客製 |
+| 中型配送中心（50 至 100 位使用者） | 60 萬至 120 萬美元 | 部分自動化、多個元件 |
+| 大型或多據點網路 | 200 萬美元以上 | 大量自動化、機器人、橫跨多個國家 |
+
+整合自動化會在基本預估之上增加 20% 至 40%。如果據點要連接輸送帶、自動導引車或燈號揀貨系統，請把這部分工作另外界定範疇。在授權方面，嵌入式 EWM 的基本倉儲管理包含在 S/4HANA 授權之內。波次、儲位優化、人力管理與物料流系統等進階功能需要 EWM 授權，而分散式 EWM 一律需要。進階 EWM 的費用，大約是每位使用者每年 300 至 600 美元，視合約條款與使用者數量而定。
+
+單一倉庫請規劃 8 至 12 個月。任何人若承諾更快、卻不做妥善的測試，請不要相信。多據點的專案則在此基礎上延長，視推行波次的規劃而定。
+
+## 從 WM 遷移到 EWM
+
+我最常被問到的問題，是該遷移哪些資料。
+
+1. **交易資料留在原地。** 未結交貨單、轉運單與移動歷史，在 WM 與 EWM 之間無法乾淨地對應。請在切換之前，先在 WM 中把它們消化完。
+2. **遷移主檔資料，但要先清理。** 刪除已過時的物料。修正尺寸、包裝規格與計量單位。我看過尺寸對不上，在收貨與揀貨之間造成連鎖效應，看起來卻像是系統故障。
+3. **重新設計倉庫結構，而不是照抄。** 一家消費品公司在遷移時徹底重新設計了倉庫配置，揀貨速度提升了 30%。
+4. **及早界定自動化介面的範疇。** 我曾諮詢過的一家製造商，其輸送帶控制系統從來就沒設計成能與現代軟體溝通。我們必須自建客製的中介軟體，才能讓最基本的通訊運作。
+5. **先讓核心上線。** 入庫、出庫與庫存。核心穩定後，再加入儲位優化、人力管理與加值服務。我合作過一家消費品公司，想一次實施所有功能，結果不堪負荷，導入工作停擺。
+
+如果 WM 是更大範圍 ECC 遷移的一部分，我的 [ECC 遷移至 S/4HANA 指南](/zh-TW/ecc-to-s4hana-migration/)說明了時程安排，而 [SAP 資料遷移為何失敗](/zh-TW/why-sap-data-migration-fails-and-how-to-fix-it/)則說明了資料清理。
+
+## 我會預先規劃的風險
+
+**人們繞過系統。** 我記得有一座配送中心，工人私下保留紙本紀錄，因為他們不信任系統。請讓關鍵使用者參與設計、依角色訓練，並儘早展示小勝利。
+
+**上線時資料髒亂。** 一家零售客戶試圖不經妥善清理，就遷移多年的庫存資料，錯誤使它的上線嚴重延後。請在配置之前修正主檔資料，而不是在測試期間。
+
+**尖峰負載。** 我合作過的一座高周轉電商倉庫，在尖峰期間出現變慢之後，不得不重新思考它的伺服器基礎架構。請在上線之前，以尖峰流量測試，而不是等到第一場銷售活動之後。
+
+在生產面，請見我的 [SAP PP 生產規劃](/zh-TW/sap-pp-production-planning/)指南。
+
+## 常見問題
+
+<details>
+<summary>SAP EWM 是什麼？與 SAP WM 有何不同？</summary>
+
+SAP EWM（Extended Warehouse Management）是 SAP 在 S/4HANA 上的策略性倉儲系統。傳統 WM 是為 ECC 打造的。EWM 加入了原生的自動化控制、儲位優化、人力管理、場站管理，以及以 Fiori 為基礎的行動畫面，並獲得 SAP 所有新的倉儲開發。傳統 WM 已走到生命終點。
+
+</details>
+
+<details>
+<summary>SAP WM 的支援何時結束？</summary>
+
+ECC 上的傳統 WM 遵循 SAP ERP 6.0，主流維護至 2027 年底。在 S/4HANA 地端版內，WM 運行於相容性套件使用權之下，該權利已於 2025 年 12 月 31 日到期。採用 RISE 雲端訂閱的 S/4HANA 期限較長，詳見 SAP Note 2269324。Stock Room Management 是 SAP 為簡單 WM 倉庫提供的基本後繼方案。
+
+</details>
+
+<details>
+<summary>我該選 Stock Room Management 還是 EWM？</summary>
+
+Stock Room Management 適合符合其縮減範疇、需要在 S/4HANA 轉換期間持續運作的簡單倉庫。它不需技術性遷移，且包含在 S/4HANA 授權之內，但 SAP 不會再進一步開發它。如果倉庫使用波次、場站管理、越庫作業、加值服務或自動化，或攸關服務水準，請選 EWM。
+
+</details>
+
+<details>
+<summary>導入 SAP EWM 要花多少錢？</summary>
+
+作為參考：核心流程的小型據點為 25 萬至 40 萬美元，中型配送中心為 60 萬至 120 萬美元，大型自動化或多據點網路則為 200 萬美元以上。整合自動化會增加 20% 至 40%。嵌入式 EWM 的基本倉儲管理包含在 S/4HANA 授權之內；進階功能與分散式 EWM 則需要 EWM 授權。
+
+</details>
+
+<details>
+<summary>嵌入式或分散式 SAP EWM：哪個適合？</summary>
+
+嵌入式 EWM 在 S/4HANA 內運行，營運較簡單，適合與生產或財務緊密相連的據點。分散式 EWM 獨立運行，因此 ERP 維護不會讓倉庫停擺，適合大量配送中心，以及各據點規則不同的多據點網路。許多網路是兩者混用。
+
+</details>
+
+<details>
+<summary>從 SAP WM 遷移到 EWM 時，應該遷移資料嗎？</summary>
+
+遷移清理過的主檔資料，而不是交易。未結交貨單、轉運單與歷史資料無法乾淨對應，因此請在切換之前，先在 WM 中消化完畢。請重新設計儲位、儲存類型與區域，而不是照抄；這次遷移正是修正 WM 多年累積問題的機會。
+
+</details>

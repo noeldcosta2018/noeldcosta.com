@@ -1,28 +1,27 @@
 import type { Metadata } from "next";
+import { SAPOPEDIA_BOOKS } from "@/data/site-menu";
 import Image from "next/image";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
-import CTABanner from "@/components/CTABanner";
+import PageBanner from "@/components/site/PageBanner";
+import { CloseBand } from "@/components/home/HomeSections";
 import BookSection from "@/components/books/BookSection";
-import BooksHeroIntro from "@/components/books/BooksHeroIntro";
 import { getAllBooks, coverExists } from "@/lib/books";
-import { SITE_URL, SITE_NAME, AUTHOR } from "@/lib/seo";
+import { SITE_URL, SITE_NAME, AUTHOR, DEFAULT_OG_IMAGE } from "@/lib/seo";
+import { ARTICLES_INDEX } from "@/data/site-menu";
 
 /**
- * /books — full rebuild.
+ * /books
  *
  * Sections:
- *   1. Nav (unchanged)
- *   2. Hero (unchanged — H1 + framed photo of Noel)
- *   3. Trust strip (unchanged)
- *   4. Free books section (3 cards today, scales to more)
- *   5. Paid books section (1 card today, scales to more)
- *   6. CTA banner (existing Calendly pattern)
- *   7. Footer
+ *   1. Banner: H1, lede, Noel with the book, jump links
+ *   2. Trust strip: publications that carried the writing
+ *   3. Free books (3 cards today, scales to more)
+ *   4. Paid books (1 card today, paid editions coming soon)
+ *   5. Closing band
  *
- * Server component. Two interactive client islands per books section:
- * BookSection (which owns the modal + cards) and BookAccordion (single-open
- * state inside each card).
+ * Server component. Client islands: BookSection (cards + the shared lead
+ * capture modal) and BookAccordion (single-open state inside each card).
  *
  * JSON-LD:
  *   - ItemList of Books
@@ -32,11 +31,11 @@ import { SITE_URL, SITE_NAME, AUTHOR } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const url = `${SITE_URL}/books/`;
-  const title = "Books by Noel D'Costa | SAP, ERP and Enterprise AI";
+  const title = "Books by Noel D'Costa | SAP, ERP and enterprise AI";
   const description =
-    "Practical books for SAP consultants, CIOs, CFOs, and ERP programme leaders covering SAP careers, enterprise AI, autonomous agents, and the SAP career playbook for the AI era.";
+    "Practical books for SAP consultants, CIOs, CFOs and ERP programme leaders: SAP careers, enterprise AI, autonomous agents and the SAP career playbook.";
   return {
-    title,
+    title: { absolute: title },
     description,
     alternates: { canonical: url },
     openGraph: {
@@ -46,11 +45,13 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: SITE_NAME,
       type: "website",
       locale: "en",
+      images: [DEFAULT_OG_IMAGE],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      images: [DEFAULT_OG_IMAGE.url],
     },
   };
 }
@@ -147,67 +148,71 @@ export default async function BooksPage() {
   return (
     <>
       <Nav />
+      <main id="main-content" className="nd-main">
+        <PageBanner
+          label="Books"
+          crumbs={[{ label: "Articles", href: ARTICLES_INDEX }, { label: "Books" }]}
+          title="Books for teams building, fixing, or surviving"
+          highlight="ERP and AI programmes."
+          long
+          lede="I write for SAP consultants, CIOs, CFOs and programme leaders who need clear answers. The things I wish more teams knew before they spent millions getting it wrong."
+          portrait={{ src: "/media/noel-with-book.webp", width: 1139, height: 1128 }}
+        >
+          <div className="nda-banner-actions">
+            <a className="nd-btn nd-btn-primary magnetic" href={SAPOPEDIA_BOOKS} target="_blank" rel="noopener">
+              Get the books on SAPopedia <span aria-hidden="true">↗</span>
+            </a>
+            <a className="nd-btn nd-btn-secondary" href="#free-books">
+              Browse the books <span aria-hidden="true">↓</span>
+            </a>
+          </div>
+          <div className="nda-banner-meta">
+            <span className="nd-pill">
+              {freeBooks.length + paidBooks.length} books
+            </span>
+            <span>Available on SAPopedia</span>
+          </div>
+        </PageBanner>
 
-      {/* 1. HERO — left text + right framed photo. Wrapped in a client
-          island for a subtle fade-up on mount. */}
-      <section
-        className="bg-bone pt-28 pb-12"
-        style={{ padding: "7rem clamp(1.5rem,5vw,4rem) 4rem" }}
-      >
-        <BooksHeroIntro />
-      </section>
+        <section className="nda-section tight flush" aria-label="Writing and commentary featured in">
+          <div className="nda-wrap">
+            <div className="nda-press">
+              <p className="nd-label">Writing and commentary featured in</p>
+              <ul>
+                {PRESS.map((p) => (
+                  <li key={p.name}>
+                    <Image src={p.src} alt={p.name} width={140} height={28} style={{ height: 26, width: "auto" }} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
 
-      {/* 2. TRUST STRIP — unchanged from the previous build. */}
-      <section
-        className="bg-bone"
-        style={{ padding: "3rem clamp(1.5rem,5vw,4rem)" }}
-      >
-        <div className="max-w-[1200px] mx-auto">
-          <p className="font-mono text-[0.72rem] font-medium tracking-[2.5px] uppercase text-eyebrow mb-6">
-            Writing and commentary featured in
-          </p>
-          <ul className="flex flex-wrap items-center justify-between gap-x-12 gap-y-6 list-none p-0 m-0">
-            {PRESS.map((p) => (
-              <li key={p.name} className="flex items-center">
-                <Image
-                  src={p.src}
-                  alt={p.name}
-                  width={140}
-                  height={28}
-                  className="object-contain opacity-55 grayscale transition-all duration-200 hover:opacity-90"
-                  style={{ height: 28, width: "auto" }}
-                />
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
+        {freeBooks.length > 0 && (
+          <BookSection
+            sectionId="free-books"
+            eyebrow="Free books"
+            heading="Free reading."
+            highlight="On SAPopedia."
+            intro="Three field guides from active SAP and AI work. Get them on SAPopedia, where all my books live."
+            books={freeBooks}
+          />
+        )}
 
-      {/* 3. FREE BOOKS */}
-      {freeBooks.length > 0 && (
-        <BookSection
-          sectionId="free-books"
-          eyebrow="[ 02 · Free books ]"
-          heading="Free reading. Sent by email."
-          intro="Three field guides from active SAP and AI work. Drop an email, the PDF arrives."
-          books={freeBooks}
-        />
-      )}
+        {paidBooks.length > 0 && (
+          <BookSection
+            sectionId="paid-books"
+            eyebrow="Paid books"
+            heading="The deep one."
+            highlight="On SAPopedia."
+            intro="The full book is on SAPopedia."
+            books={paidBooks}
+          />
+        )}
 
-      {/* 4. PAID BOOKS */}
-      {paidBooks.length > 0 && (
-        <BookSection
-          sectionId="paid-books"
-          eyebrow="[ 03 · Paid books ]"
-          heading="The deep one. Paid."
-          intro="Practical execution, not theory. $12.99 ebook, ships the day you buy."
-          books={paidBooks}
-        />
-      )}
-
-      {/* 5. CTA banner — reuses the existing component. */}
-      <CTABanner />
-
+        <CloseBand />
+      </main>
       <Footer />
 
       {bookListLd && (

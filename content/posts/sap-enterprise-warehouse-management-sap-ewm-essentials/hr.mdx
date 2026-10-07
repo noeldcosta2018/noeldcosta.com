@@ -1,0 +1,182 @@
+---
+title: "SAP EWM: što radi, kako funkcionira i koliko košta"
+h1: "SAP EWM: što radi, kako funkcionira i koliko košta"
+slug: "sap-enterprise-warehouse-management-sap-ewm-essentials"
+date: "2025-04-10"
+updated: "2026-10-07"
+hero: "/images/wp/2025/04/SAP-EWM.webp"
+heroAlt: "Dvoje skladišnih radnika u zaštitnim kacigama i signalnim prslucima provjerava složene kartone"
+category: "sap-modules"
+tags: ["sap-technical-decisions", "sap-ewm", "warehouse-management", "sap-manufacturing"]
+author: "Noel D'Costa"
+metaTitle: "SAP EWM: što radi, kako funkcionira i koliko košta"
+metaDescription: "SAP EWM objašnjen: ključne komponente, embedded naspram decentralized, datumi završetka WM-a, Stock Room Management, trošak implementacije i migracija s WM-a."
+excerpt: "SAP EWM je SAP-ov strateški sustav za skladišta na S/4HANA. Što radi, kako ga uvesti, koliko košta i kako napustiti klasični WM prije nego što isteknu Vaša prava korištenja."
+experienceSource: "Noel's published WordPress article (published 2025-04-10) and its examples (food DC receiving time, electronics peak-season picking, beverage distributor ASN, conveyor middleware, paper records, warehouse redesign). WM, Stock Room Management and EWM lifecycle facts checked against SAP Learning and SAP Community on 2026-10-07."
+lastReviewed: "2026-05-21"
+keyTakeaways:
+  - "SAP EWM je SAP-ov strateški sustav za upravljanje skladištem na S/4HANA, dostupan ugrađen u S/4HANA ili kao decentralizirani sustav"
+  - "Klasični WM u ECC-u prati održavanje ERP-a 6.0 (standardno do kraja 2027.); u S/4HANA on-premise njegova prava korištenja iz paketa kompatibilnosti istekla su krajem 2025."
+  - "Stock Room Management je SAP-ov osnovni nasljednik za jednostavna WM skladišta; nema daljnjih ulaganja, pa je EWM dugoročni put"
+  - "Implementacija traje 8 do 12 mjeseci za jedno skladište; Noelovi objavljeni rasponi troškova kreću se od 250.000 do 400.000 USD za malu lokaciju do više od 2 milijuna USD za mreže s više lokacija"
+  - "Ne migrirajte transakcijske podatke WM-a; migrirajte očišćene matične podatke i redizajnirajte strukturu skladišta"
+  - "U rad krenite s ulazom, izlazom i zalihama; slotting, upravljanje radnom snagom i usluge s dodanom vrijednošću dodajte kad se jezgra stabilizira"
+pullQuote: "Male pogreške u matičnim podacima stvaraju učinak domina u zaprimanju i komisioniranju koji izgleda kao problem sustava, a zapravo potječe od podataka."
+mentions:
+  - "SAP EWM"
+  - "SAP WM"
+  - "Stock Room Management"
+  - "SAP S/4HANA"
+  - "SAP ECC"
+  - "SAP TM"
+  - "SAP Fiori"
+  - "RISE with SAP"
+originalUrl: "https://noeldcosta.com/sap-enterprise-warehouse-management-sap-ewm-essentials/"
+canonicalUrl: "https://noeldcosta.com/hr/sap-enterprise-warehouse-management-sap-ewm-essentials/"
+locale: "hr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP Extended Warehouse Management (EWM) je SAP-ov sustav za skladišta na S/4HANA. U stvarnom vremenu upravlja svakom lokacijom, zadatkom i kretanjem u skladištu, izravno se povezuje s automatizacijom i radi unutar S/4HANA ili kao zaseban sustav. Ako ste još na klasičnom Warehouse Managementu (WM), datumi završetka u nastavku određuju Vaš vremenski plan. Implementacija jednog skladišta obično traje 8 do 12 mjeseci.
+
+Većina problema u skladištima izgleda kao problemi s ljudima dok ih se ne ispita kako treba. Netko promaši komisioniranje. Kamion kasni na rampu. Ciklično brojanje otkrije razliku koju nitko ne može objasniti. Instinkt je gledati tim. Obično je problem sustav, ili izostanak sustava koji radi.
+
+U jednom distribucijskom centru za hranu vidio sam kako se vrijeme zaprimanja smanjilo za gotovo trećinu. Tim nisu ubrzali. Samo su prestali tjerati ljude da sami smišljaju gdje što odložiti. Sustav im je rekao. Skladište elektronike udvostručilo je brzinu komisioniranja u sezoni vrhunca s istim timom, samo uz pametnije putanje komisioniranja.
+
+## Što radi SAP EWM
+
+EWM je zamijenio klasični WM kao SAP-ov strateški proizvod za skladišta. Izgrađen je za složene operacije: veliki volumen, više lokacija, automatizaciju i detaljno praćenje rada. Povezuje se s upravljanjem materijalima (MM), prodajom i distribucijom (SD), planiranjem proizvodnje (PP), upravljanjem kvalitetom (QM) i upravljanjem prijevozom (TM), pa podaci o skladištu teku kroz isti sustav kao nabava, proizvodnja i otprema.
+
+Ovo su komponente i gdje se najviše isplate:
+
+| Komponenta | Što radi | Gdje se isplati |
+|---|---|---|
+| Struktura skladišta | Tipovi skladištenja, odjeli i lokacije koji odražavaju fizički raspored | Iskorištenje prostora; operacije u više zona |
+| Ulazna obrada | Zaprimanje robe od prijave u dvorištu do uskladištenja | Brže zaprimanje, trenutni uvid u zalihe |
+| Izlazna obrada | Valovi, komisioniranje, pakiranje, priprema za otpremu, otprema | Brzina i točnost narudžbi |
+| Fizička inventura | Zalihe na razini lokacije i ciklično brojanje | Manje korekcija i otpisa |
+| Slotting i prerasporedi | Smješta proizvode prema potražnji | Manje putovanja komisionera u brzim zonama |
+| Upravljanje radnom snagom | Mjeri rad prema projektiranim normativima | Popunjavanje osoblja i usmjeravanje zaposlenika |
+| Upravljanje dvorištem | Termini na rampama, kretanje kamiona | Manje gužve na vratima |
+| Cross-docking | Premješta robu s ulaza na izlaz bez skladištenja | Niži trošak rukovanja |
+| Usluge s dodanom vrijednošću | Kompletiranje (kitting), označavanje, lagana montaža | Narudžbe prilagođene kupcu unutar DC-a |
+| Kontrola kvalitete | Blokira zalihe do kontrole ili nakon isteka roka | Nema otpreme robe koja je pala na kontroli ili joj je istekao rok |
+| Material Flow System (MFS) | Izravno upravljanje transporterima i automatiziranim skladištima | Automatizacija bez međusloja (middleware) |
+
+Dobitci se obično pojavljuju na određenim mjestima. Distributer pića s kojim sam radio smanjio je vrijeme zaprimanja za 35 posto uz napredne najave isporuke (advanced shipping notifications). Jedna tvrtka robe široke potrošnje poboljšala je ukupnu produktivnost za 18 posto unutar tri mjeseca, čim je upravljanje radnom snagom pokazalo kamo odlazi vrijeme. Jedan distributer smanjio je godišnje otpise zaliha za 70 posto.
+
+## SAP WM, Stock Room Management ili EWM
+
+Datumi završetka važniji su od popisa funkcija.
+
+**Klasični WM na ECC-u** prati održavanje SAP ERP-a 6.0: standardna podrška do kraja 2027.
+
+**Klasični WM unutar S/4HANA** radio je u okviru kompatibilnosti (compatibility scope). Za on-premise S/4HANA ta su prava korištenja istekla 31. prosinca 2025. ([SAP Learning](https://learning.sap.com/courses/exploring-business-processes-for-supply-chain-execution-in-sap-s-4hana-cloud-private-edition/positioning-warehouse-management)). S/4HANA uz RISE pretplatu u oblaku ima dulje razdoblje; datum za Vaš ugovor provjerite u SAP Noteu 2269324.
+
+**Stock Room Management** je SAP-ov osnovni nasljednik za jednostavna WM skladišta. Ponovno koristi velik dio WM-a, uključen je u licencu S/4HANA Enterprise Management i ne traži tehničku migraciju ako Vaša skladišta stanu u njegov smanjeni opseg. Izostavlja upravljanje zadacima i resursima, upravljanje dvorištem, cross-docking, upravljanje valovima i usluge s dodanom vrijednošću, a SAP je rekao da u njega neće dalje ulagati.
+
+**EWM** je mjesto gdje SAP ulaže sve nove inovacije za skladišta. U S/4HANA dolazi kao Basic ili Advanced Warehouse Management i prati ciklus izdanja S/4HANA.
+
+| Značajka | Klasični WM | Stock Room Management | SAP EWM |
+|---|---|---|---|
+| Platforma | ECC ili S/4HANA compatibility scope | S/4HANA | S/4HANA, embedded ili decentralized |
+| Automatizacija | Alati trećih strana | Osnovna | Izvorni Material Flow System |
+| Valovi, dvorište, cross-docking, VAS | Da, kao zasebne komponente | Nije uključeno | Uključeno (Advanced) |
+| Slotting i upravljanje radnom snagom | Ne ili minimalno | Ne | Da |
+| Korisničko sučelje | SAP GUI | SAP GUI | SAP Fiori i mobilno |
+| SAP-ov plan razvoja | Završava | Bez daljnjih ulaganja | Strateški, aktivan razvoj |
+
+Moje mišljenje: Stock Room Management je privremena pozicija za jednostavna skladišta tijekom S/4HANA konverzije. Ako skladište utječe na Vaše razine usluge, planirajte EWM.
+
+## Opcije uvođenja
+
+**Embedded EWM** radi unutar S/4HANA. Jedan sustav za skladište i ERP. Jednostavniji je za rad i odgovara lokacijama na kojima su skladišni procesi čvrsto povezani s proizvodnjom ili financijama.
+
+**Decentralized EWM** radi kao zaseban sustav. Zakrpe ERP-a i usporenja ne zaustavljaju skladište. Odgovara distribucijskim centrima velikog volumena u kojima je dostupnost ključna te mrežama kojima trebaju različita pravila po lokaciji.
+
+**Miješane mreže** koriste oboje: embedded za manje lokacije, decentralized za glavne DC-e. To dobro funkcionira u faznom uvođenju, jer možete pilotirati na jednoj lokaciji bez diranja ostalih.
+
+<explainer-compare title="Embedded, decentralized ili miješani EWM" caption="Embedded je jednostavniji za rad. Decentralized održava skladište u radu tijekom zakrpa ERP-a i usporenja." options="Embedded|Decentralized|Miješana mreža" criteria="Gdje radi => Unutar S/4HANA ; Kao zaseban sustav ; Embedded na manjim lokacijama, decentralized u glavnim DC-ima|Vikend nadogradnje ERP-a => Može isključiti skladište ; Ne zaustavlja skladište ; Ne zaustavlja glavne DC-e|Licenca => Osnovno upravljanje skladištem uključeno je u S/4HANA, napredne funkcije traže EWM licencu ; Uvijek traži EWM licencu ; EWM licenca na decentraliziranim lokacijama|Najbolje za => Lokacije usko vezane uz proizvodnju ili financije ; DC-e velikog volumena gdje je dostupnost ključna ; Fazna uvođenja koja pilotiraju jednu po jednu lokaciju"></explainer-compare>
+
+Odlučujuće pitanje je jednostavno. Ako bi vikend nadogradnje ERP-a isključio skladište, a to je neprihvatljivo, idite na decentralized.
+
+## Koliko implementacija košta i koliko traje
+
+EWM nije dodatak koji se samo uključi. Ovo su rasponi koje sam objavio 2025.:
+
+| Okruženje | Ukupni trošak projekta | Tipičan opseg |
+|---|---|---|
+| Mala lokacija (manje od 25.000 četvornih stopa) | 250.000 do 400.000 USD | Osnovni procesi, lagane prilagodbe |
+| Srednji DC (50 do 100 korisnika) | 600.000 do 1,2 milijuna USD | Nešto automatizacije, više komponenti |
+| Velika mreža ili mreža s više lokacija | 2 milijuna USD i više | Teška automatizacija, robotika, više zemalja |
+
+Integracija automatizacije dodaje 20 do 40 posto na osnovnu procjenu. Ako se lokacija povezuje s transporterima, automatski vođenim vozilima ili pick-to-light sustavima, taj rad odredite zasebno. Što se licenciranja tiče, osnovno upravljanje skladištem u embedded EWM-u uključeno je u licencu S/4HANA. Napredne funkcije poput valova, slottinga, upravljanja radnom snagom i Material Flow Systema traže EWM licencu, a decentralized EWM ju uvijek traži. Računajte otprilike 300 do 600 USD po korisniku godišnje za napredni EWM, ovisno o uvjetima ugovora i broju korisnika.
+
+Planirajte 8 do 12 mjeseci za jedno skladište. Ne vjerujte nikome tko obećava brže bez pravilnog testiranja. Programi s više lokacija protežu se dalje od toga, ovisno o planu valova.
+
+## Prelazak s WM-a na EWM
+
+Pitanje koje najčešće dobivam je koje podatke prenijeti.
+
+1. **Transakcijske podatke ostavite iza sebe.** Otvorene isporuke, transportni nalozi (transfer orders) i povijest kretanja ne mapiraju se čisto između WM-a i EWM-a. Zatvorite ih u WM-u prije prijelaza (cutover).
+2. **Migrirajte matične podatke, ali ih prvo očistite.** Obrišite zastarjele materijale. Ispravite dimenzije, veličine pakiranja i mjerne jedinice. Vidio sam kako neusklađene dimenzije uzrokuju učinak domina u zaprimanju i komisioniranju koji je izgledao kao kvar sustava.
+3. **Strukturu skladišta redizajnirajte, a ne kopirajte.** Jedna tvrtka robe široke potrošnje potpuno je redizajnirala raspored skladišta tijekom prelaska i brzina komisioniranja porasla joj je za 30 posto.
+4. **Opseg sučelja za automatizaciju odredite rano.** Jedan proizvođač kojem sam bio konzultant imao je sustav upravljanja transporterima koji nikad nije bio projektiran za komunikaciju s modernim softverom. Morali smo izgraditi prilagođeni middleware samo da bismo ostvarili osnovnu komunikaciju.
+5. **U rad krenite s jezgrom.** Ulaz, izlaz i zalihe. Slotting, upravljanje radnom snagom i usluge s dodanom vrijednošću dodajte kad se jezgra stabilizira. Radio sam s jednom tvrtkom robe široke potrošnje koja je pokušala implementirati svaku funkciju odjednom. Preplavila ju je količina posla i implementacija je stala.
+
+Ako je WM dio šireg prelaska s ECC-a, moj [vodič za migraciju s ECC-a na S/4HANA](/hr/ecc-to-s4hana-migration/) pokriva vremenski plan, a tekst o [tome zašto migracija SAP podataka ne uspijeva](/hr/why-sap-data-migration-fails-and-how-to-fix-it/) pokriva čišćenje.
+
+## Rizici za koje bih planirao
+
+**Ljudi koji zaobilaze sustav.** Sjećam se distribucijskog centra u kojem su radnici potajno vodili papirnate evidencije jer nisu vjerovali sustavu. Uključite ključne korisnike u dizajn, obučavajte po ulogama i pokažite rane uspjehe.
+
+**Prljavi podaci pri puštanju u rad.** Jedan maloprodajni klijent pokušao je migrirati godine podataka o zalihama bez pravilnog čišćenja, a pogreške su mu znatno odgodile go-live. Matične podatke popravite prije konfiguracije, a ne tijekom testiranja.
+
+**Vršno opterećenje.** Skladište e-trgovine visoke brzine prometa s kojim sam radio moralo je preispitati svoju poslužiteljsku infrastrukturu nakon usporenja u razdobljima vrhunca. Testirajte na vršnim volumenima prije puštanja u rad, a ne nakon prve rasprodaje.
+
+Za proizvodnu stranu pogledajte moj vodič o [SAP PP planiranju proizvodnje](/hr/sap-pp-production-planning/).
+
+## Često postavljana pitanja
+
+<details>
+<summary>Što je SAP EWM i po čemu se razlikuje od SAP WM-a?</summary>
+
+SAP EWM (Extended Warehouse Management) je SAP-ov strateški sustav za skladišta na S/4HANA. Klasični WM izgrađen je za ECC. EWM dodaje izvorno upravljanje automatizacijom, slotting, upravljanje radnom snagom, upravljanje dvorištem i mobilne ekrane temeljene na Fiori, a dobiva sav SAP-ov novi razvoj za skladišta. Klasični WM je na kraju životnog vijeka.
+
+</details>
+
+<details>
+<summary>Kada završava podrška za SAP WM?</summary>
+
+Klasični WM na ECC-u prati SAP ERP 6.0, sa standardnim održavanjem do kraja 2027. Unutar S/4HANA on-premise WM je radio prema pravima korištenja iz paketa kompatibilnosti koja su istekla 31. prosinca 2025. S/4HANA uz RISE pretplatu u oblaku ima dulje razdoblje, navedeno u SAP Noteu 2269324. Stock Room Management je SAP-ov osnovni nasljednik za jednostavna WM skladišta.
+
+</details>
+
+<details>
+<summary>Trebam li odabrati Stock Room Management ili EWM?</summary>
+
+Stock Room Management odgovara jednostavnim skladištima koja stanu u njegov smanjeni opseg i trebaju nastaviti raditi tijekom S/4HANA konverzije. Ne traži tehničku migraciju i uključen je u licencu S/4HANA, ali ga SAP neće dalje razvijati. Ako skladište koristi valove, upravljanje dvorištem, cross-docking, usluge s dodanom vrijednošću ili automatizaciju, ili utječe na razine usluge, odaberite EWM.
+
+</details>
+
+<details>
+<summary>Koliko košta implementacija SAP EWM-a?</summary>
+
+Orijentacijski: 250.000 do 400.000 USD za malu lokaciju s osnovnim procesima, 600.000 do 1,2 milijuna USD za srednji distribucijski centar i 2 milijuna USD ili više za velike automatizirane mreže ili mreže s više lokacija. Integracija automatizacije dodaje 20 do 40 posto. Osnovno upravljanje skladištem u embedded EWM-u uključeno je u licencu S/4HANA; napredne funkcije i decentralized EWM traže EWM licencu.
+
+</details>
+
+<details>
+<summary>Embedded ili decentralized SAP EWM: što je ispravno?</summary>
+
+Embedded EWM radi unutar S/4HANA i jednostavniji je za rad, što odgovara lokacijama usko vezanim uz proizvodnju ili financije. Decentralized EWM radi odvojeno, pa održavanje ERP-a ne zaustavlja skladište, što odgovara distribucijskim centrima velikog volumena i mrežama s više lokacija s različitim pravilima. Mnoge mreže miješaju oboje.
+
+</details>
+
+<details>
+<summary>Trebam li migrirati podatke pri prelasku sa SAP WM-a na EWM?</summary>
+
+Migrirajte očišćene matične podatke, a ne transakcije. Otvorene isporuke, transportni nalozi i povijest ne mapiraju se čisto, pa ih zatvorite u WM-u prije prijelaza. Lokacije, tipove skladištenja i zone redizajnirajte umjesto da ih kopirate; prelazak je prilika da se popravi ono što se nakupilo kroz godine WM-a.
+
+</details>

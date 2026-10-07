@@ -10,7 +10,7 @@
 export interface Programme {
   sectorRegion: string; // mono uppercase tag, e.g. "PUBLIC SECTOR · TELECOM"
   badge: string; // short categorisation, e.g. "RECOVERY"
-  badgeType: "p" | "g" | "c"; // matches TrackRecord palette: papaya / green / canyon
+  badgeType: "p" | "g" | "c"; // chip dot colour: accent / data area / secondary accent
   title: string;
   body: string[]; // one or two paragraphs
 }

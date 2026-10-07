@@ -2,25 +2,25 @@
 title: "Why ERP integration with Salesforce fails and how to fix it"
 slug: "why-erp-integration-with-salesforce-fails-and-how-to-fix-it"
 date: "2025-04-07"
-updated: "2026-05-21"
+updated: "2026-10-07"
 hero: "/images/wp/2025/04/ERP-Integratioin-with-CRM.webp"
-heroAlt: "Integration architecture diagram showing SAP ERP connected to Salesforce CRM with data flow arrows"
+heroAlt: "Customer service agents with headsets working at laptops along a shared desk"
 category: "erp-strategy"
 tags: ["sap-technical-decisions", "sap-integration", "salesforce-integration", "sap-integration-suite"]
 author: "Noel D'Costa"
 metaTitle: "Why ERP-Salesforce Integration Fails in 2026: How to Fix It"
-metaDescription: "Why SAP and Salesforce integrations fail in 2026: data sync problems, SAP Integration Suite vs PI/PO, governance gaps, and what to do differently."
-excerpt: "A European B2B distributor in 2023 had a sales team quoting customers off inventory numbers that were four hours old. The integration was live. It was running batch sync every four hours. The sales director did not know. His team was losing deals to competitors who could tell customers what was in stock right now. The integration was technically working. It was commercially broken. That is the most common ERP-Salesforce failure pattern, and in 2026 SAP Integration Suite replaces PI/PO as the default middleware."
-experienceSource: "Direct experience advising on SAP-Salesforce integration projects across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets, including SAP Integration Suite engagements, middleware governance reviews, and post-go-live integration troubleshooting across manufacturing, financial services, and retail. Anchored stories: European B2B distributor 2023 (four-hour batch sync losing deals), European manufacturing 2024 (point-to-point integration unmanageable at five systems), GCC retail RISE 2024 (Integration Suite migration from PI/PO). 2026 SAP Integration Suite, Joule, and RISE customer success positioning reflects current SAP product roadmap."
+metaDescription: "Why SAP and Salesforce integrations fail: stale sync, dirty data, point-to-point sprawl and no owner. The fixes, the middleware options and a spec template."
+excerpt: "Most SAP-Salesforce integrations fail commercially, not technically: the data is too old, too dirty or nobody owns the flow. Here are the failure patterns, the middleware options and a one-page specification template that prevents them."
+experienceSource: "Direct experience advising on SAP-Salesforce integration projects across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets, including SAP Integration Suite engagements, middleware governance reviews, and post-go-live integration troubleshooting across manufacturing, financial services, and retail. Anchored stories: European B2B distributor 2023 (four-hour batch sync losing deals), European manufacturing 2024 (point-to-point integration unmanageable at five systems), GCC retail RISE 2024 (Integration Suite migration from PI/PO). Product facts (PI/PO maintenance, MuleSoft, Boomi) checked October 2026."
 lastReviewed: "2026-05-21"
 keyTakeaways:
-  - "The most common failure is an integration that is technically working but commercially broken. Batch sync every 4 hours on inventory data is technically live. It is operationally useless for sales teams"
-  - "Data quality must be resolved before integration. Bad customer records in Salesforce become bad customer records in SAP. The integration amplifies problems, it does not fix them"
-  - "Point-to-point integrations are cheap upfront and expensive long-term. Once you have more than three systems, they become unmanageable"
-  - "Middleware (SAP Integration Suite, MuleSoft, Dell Boomi) requires governance investment. Many implementations deploy middleware and then treat it as infrastructure with no ownership. That is when it fails"
-  - "Every Salesforce release and every SAP upgrade is a potential integration break. Without a test suite for integration flows, you find out at go-live rather than in testing"
-  - "The integration specification must define what happens when the sync fails. Most integrations are designed for the success path. The failure path is where the real design work is"
-pullQuote: "The integration was technically working. The sales team was quoting off inventory numbers that were four hours old. They were losing deals they did not know they were losing. Technically live is not commercially functional."
+  - "The most common failure is an integration that works technically but is commercially broken. Stock data synced in batches every few hours is live, and useless to a sales team"
+  - "Fix data quality before you integrate. Bad customer records in Salesforce become bad customer records in SAP"
+  - "Point-to-point integrations are cheap up front and expensive later. Past three systems they become unmanageable"
+  - "Middleware (SAP Integration Suite, MuleSoft, Boomi) needs an owner and governance. Treated as plumbing, it fails"
+  - "Every Salesforce release and every SAP update can break an integration. Without an integration regression suite, you find out in production"
+  - "Specify what happens when a sync fails. Most integrations are designed only for the success path"
+pullQuote: "Technically live is not commercially functional. Even a one-hour lag between systems can cause quoting errors that lose deals."
 mentions:
   - "SAP S/4HANA"
   - "SAP Integration Suite"
@@ -28,173 +28,135 @@ mentions:
   - "SAP SD"
   - "Salesforce"
   - "MuleSoft"
-  - "Dell Boomi"
+  - "Boomi"
   - "RISE with SAP"
-  - "Joule"
 ---
 
-A European B2B distributor in 2023 had a sales team losing deals and the leadership did not know why. Their CRM was Salesforce. Their ERP was SAP. The integration was live and running. They thought they had real-time inventory visibility in Salesforce.
+SAP and Salesforce integrations usually fail for business reasons, not technical ones. The sync runs, but the data is too old for the decision the user is making, the two systems disagree about which customer record is right, or nobody owns the flow when an update breaks it. The fix is to design from the user's decision backwards, clean the data first, pick middleware that fits your scale, and give every flow an owner and a failure plan.
 
-They did not. The integration ran batch sync every four hours. By mid-afternoon, the inventory numbers in Salesforce were from before lunch. Sales reps were quoting customers off outdated stock positions. Competitors were winning deals on availability commitments the sales team could not make because they did not know what was actually available. The recovery cost the programme a six-figure rework against the original integration design.
+This piece is for CIOs, sales operations and integration leads connecting Salesforce to SAP. It covers the four failure patterns, the integration options, what a reliable integration needs, and a specification template.
 
-The integration was technically functioning. It was commercially broken. That distinction is the starting point for understanding why these integrations fail. In 2026 the conversation also shifts to SAP Integration Suite as the default middleware (replacing PI/PO, which is in end-of-life transition) and to Joule for AI-assisted exception triage on integration failures.
+I've worked with businesses where even a one-hour lag between systems caused quoting errors that led to lost deals. The usual cause is that nobody asked how fresh the stock data had to be for a rep to quote from it.
 
-## Why most SAP-Salesforce integrations break down
+An integration can be technically working and commercially broken. That distinction is where to start.
 
-### Wrong sync frequency for the use case
+## Why SAP-Salesforce integrations break down
 
-Batch sync works for some data. It does not work for inventory availability, pricing, or order status in a business where customers expect real-time answers.
+### Wrong sync frequency for the decision
 
-The failure pattern: the integration team builds what is technically feasible given the data volumes and system architecture. They set batch intervals based on technical parameters. Nobody on the business side validates whether that frequency supports the actual decision being made by the end user.
+Batch sync is fine for some data. It is not fine for available-to-promise stock, pricing or order status where customers expect an answer now.
 
-Before any integration is specified, the question is: what is the maximum age of data that makes this integration useful? For customer master updates, daily sync may be fine. For available-to-promise inventory in a B2B sales context, anything more than fifteen minutes is a problem.
+The failure pattern: the integration team builds what is technically convenient for the volumes and sets batch intervals on technical grounds. Nobody on the business side checks whether that frequency supports the decision the user is making.
+
+Ask one question before anything is specified: what is the oldest the data can be and still be useful? Daily may be fine for customer master updates. For stock availability in B2B sales, anything over fifteen minutes is a problem.
+
+<explainer-flow title="How fresh each flow has to be" caption="Illustrative values from the specification template below. Agree your own with the people who use the data." steps="Customer master|Price lists|Stock availability|Won opportunity|Order status|Invoice and payment" notes="SAP to Salesforce, 24 hours|SAP to Salesforce, 1 hour|SAP to Salesforce, 15 minutes|Salesforce to SAP, immediate|SAP to Salesforce, 15 minutes|SAP to Salesforce, 24 hours" result="Quote, order and invoice agree"></explainer-flow>
 
 ### Data quality mismatches
 
-An integration connects two systems. If the customer record in Salesforce has a different format for the company name than the customer master in SAP, every sync produces mismatches that require manual intervention.
+If the company name in Salesforce is formatted differently from the customer master in SAP, every sync creates mismatches that need manual fixing.
 
-I have seen integration projects where the first six weeks of operation were consumed entirely by customer record reconciliation. The integration was live. The data teams were spending three to four hours per day manually resolving sync failures. The source systems had been maintained independently for years and had diverged in ways that nobody had mapped before go-live.
+I've worked with teams that spent hours every week reconciling basic customer information between Salesforce and the ERP, and I've seen projects where just mapping customer hierarchies took weeks because the two systems defined an "account" differently. The systems had been maintained separately for years and had drifted apart in ways nobody had mapped.
 
-Clean the data before you integrate. This sounds obvious. It is the most consistently skipped step in ERP-CRM integration projects.
+Clean the data before you integrate. It sounds obvious. It is the most consistently skipped step.
 
-### Wrong integration architecture for the scale
+### Wrong architecture for the scale
 
-Point-to-point integration works for simple cases: two systems, a small number of data flows, stable business processes. It is the cheapest way to connect two systems.
+Point-to-point integration works for two systems, a few flows and stable processes. It is the cheapest way to start.
 
-It does not scale. When the ERP adds a new module, point-to-point connections multiply. The same happens when Salesforce is extended for a new business unit, or a third system needs to participate in the same data flows. They become unmanageable. Each additional connection is another interface to maintain, test, and troubleshoot independently.
+It doesn't scale. Add an SAP module, a new Salesforce business unit or a third system, and the connections multiply. Each one has to be maintained, tested and troubleshot separately.
 
-Middleware-based integration, using SAP Integration Suite, MuleSoft, Dell Boomi, or an equivalent, creates a managed integration layer. Data flows are governed through one platform. New connections are added within the same governance framework. Monitoring and error handling are centralised.
-
-The trade-off: middleware requires upfront investment in architecture and governance. Companies that deploy middleware but treat it as infrastructure with no named ownership end up with the same problems as point-to-point, plus a middleware platform they do not understand.
+Middleware (SAP Integration Suite, MuleSoft, Boomi or similar) gives you one governed layer with central monitoring and error handling. The trade-off is upfront investment in architecture and governance. Companies that deploy middleware but give it no named owner end up with the same problems as point-to-point, plus a platform nobody understands.
 
 ### No integration governance
 
-Every Salesforce seasonal release and every SAP support package is a potential integration break. API changes, new validation rules, changed field mappings, updated authentication requirements: any of these can break a flow that was working last month.
+Every Salesforce release and every SAP support package can break a flow: API changes, new validation rules, changed fields, new authentication requirements. Integrations that are built and forgotten fail on the first upgrade nobody regression-tested. It is the most common post-go-live failure I see.
 
-Integrations that are built and forgotten fail on the first system upgrade that no one thought to regression test against the integration layer. This is the most common post-go-live failure mode I encounter.
+## The integration options
 
-Integration governance means a few things. A named owner for each integration flow. A regression test suite that runs before any system upgrade. A monitoring setup that alerts on failures rather than reporting them after users have complained. A documented understanding of what happens when a sync fails.
+**SAP Integration Suite.** SAP's integration platform on SAP BTP, and the natural choice in SAP-centric landscapes. It handles IDocs, BAPIs, OData and SAP message formats well and has prebuilt content for common SAP scenarios. Complex business processes still need custom integration flows and real integration skills. If you are still on SAP PI/PO, note that its [mainstream maintenance ends at the end of 2027](https://sapinsider.org/blogs/sap-extends-maintenance-for-sap-netweaver-7-5-and-sap-bw-4hana/), so new Salesforce flows should not be built there. On RISE, check what SAP BTP entitlement your contract already includes before buying more.
 
-## The SAP-Salesforce integration options
+**MuleSoft.** Owned by Salesforce since 2018, with a broad connector library, an official [SAP S/4HANA connector](https://docs.mulesoft.com/sap-s4hana-cloud-connector/latest/) and accelerator templates for SAP order-to-cash. A good fit if you already own it. The catch for SAP-heavy organisations: MuleSoft is a separate skill set, and the team running your SAP programme is probably not the team that should design your MuleSoft architecture.
 
-### SAP Integration Suite (Cloud Platform Integration)
+**Boomi.** A cloud integration platform (independent of Dell since 2021) with SAP and Salesforce connectors and a lower entry barrier than MuleSoft. Reasonable for mid-market organisations that want governed middleware without MuleSoft's cost or complexity.
 
-For SAP-centric landscapes, SAP Integration Suite on BTP is the natural choice. It has pre-built connectors for Salesforce and for the main SAP modules (SD, MM, FI). It runs in the SAP cloud, which simplifies the authentication and security model for SAP-to-SAP and SAP-to-Salesforce flows.
+**Point-to-point APIs.** Direct REST or SOAP calls between Salesforce and SAP avoid middleware cost. They need disciplined API versioning, regression testing on every release and a team that understands both systems. Fine for simple, stable cases. A debt accumulator for anything complex.
 
-SAP Integration Suite is not plug-and-play for complex scenarios. The standard connectors handle the common flows, customer master synchronisation, order status updates, quote-to-order hand-off. Custom business processes require custom iFlows, which need integration development skills.
-
-### MuleSoft
-
-Salesforce acquired MuleSoft in 2018. It has the broadest ecosystem of pre-built connectors and a mature platform for complex integration architectures. For organisations that already own MuleSoft, adding SAP connectors is straightforward.
-
-The disadvantage for SAP-heavy organisations: MuleSoft expertise is a separate skillset from SAP expertise. The team that runs your SAP implementation is probably not the team that should be designing your MuleSoft architecture.
-
-### Dell Boomi
-
-Dell Boomi is a cloud-native iPaaS platform with SAP and Salesforce connectors and a lower entry-level configuration barrier than MuleSoft. It is a reasonable choice for mid-market organisations that want middleware governance without MuleSoft's licensing cost or architectural complexity.
-
-### Point-to-point via REST/SOAP APIs
-
-For organisations with specific, stable integration requirements and the in-house technical capability to manage it, a direct API integration between Salesforce and SAP avoids middleware overhead. It requires disciplined API versioning, regression testing on every release, and a team that understands both systems' API models.
-
-This is appropriate for simple, stable integrations. It is a technical debt accumulator for anything complex.
+My [SAP CPI and Integration Suite guide](/sap-cpi/) covers the SAP-side platform in more depth, and [the five CRM options for SAP](/5-best-crm-systems-for-sap-in-2024/) compares the CRMs themselves.
 
 ## What a reliable integration needs
 
-**A clear specification of every data flow.** What fields sync. In which direction. At what frequency. What the primary key mapping is between systems. What happens when the data in one system conflicts with the data in the other.
+1. **A specification of every flow:** fields, direction, frequency, key mapping, and what happens when the two systems disagree.
+2. **An explicit failure design.** When a sync fails, what happens to in-flight data? How many retries? Who gets the alert? What is the manual recovery? Most integrations are under-designed here.
+3. **Regression tests before every upgrade.** Salesforce ships three major releases a year, and SAP ships support packages and updates of its own. An automated suite covering the critical flows should run before each one.
+4. **Monitoring with alerts.** A silent failure is worse than a loud one. Errors that pile up for days are much harder to fix than errors caught in minutes.
+5. **An owner.** One person who knows what the integration does, sees when it breaks, and has the access and authority to fix it.
 
-**An explicit failure design.** Most integrations are designed for the success path. When a sync fails, what happens to the in-flight data? Does it retry? How many times? Does it alert? Who receives the alert? What is the manual recovery process? The failure path is where most integrations are underdesigned.
+## A one-page integration specification
 
-**Regression testing before every upgrade.** Every Salesforce release (three per year) and every SAP support package should trigger an integration regression test run. This does not need to be manual. An automated test suite that validates the critical flows can run in hours.
+Fill in one row per flow before anyone writes a specification document. If a cell is blank, the flow isn't ready to build. The values below are illustrations; agree your own with the people who use the data.
 
-**Monitoring with alerts.** An integration that fails silently is worse than one that fails visibly. Errors that accumulate over days before someone notices them are harder to resolve than errors caught within minutes of occurrence.
+| Flow | Direction | Trigger and frequency | Oldest acceptable data | System of record | On failure | Owner |
+|---|---|---|---|---|---|---|
+| Customer master | SAP to Salesforce | On change | 24 hours | SAP | Retry, then alert data steward | Customer master data owner |
+| Stock availability | SAP to Salesforce | On request or near real time | 15 minutes | SAP | Show "check with operations" flag | Supply chain systems lead |
+| Price lists and conditions | SAP to Salesforce | On change | 1 hour | SAP | Block quote on stale price | Pricing manager |
+| Won opportunity to sales order | Salesforce to SAP | On close | Immediate | Salesforce until order created, then SAP | Queue and alert sales ops | Sales operations lead |
+| Order and delivery status | SAP to Salesforce | On each milestone | 15 minutes | SAP | Retry, then alert integration support | Integration lead |
+| Invoice and payment status | SAP to Salesforce | Daily | 24 hours | SAP | Alert finance systems | Finance systems lead |
 
-**Ownership.** Someone is accountable for the integration layer. They know what it does, they know when it breaks, and they have the access and the authority to fix it.
+The "oldest acceptable data" column is the one most teams never fill in. Agree it with the users who make the decisions, not with the integration team alone. If you are already running late, [SAP Integration Suite delivery delays](/sap-integration-suite-delivery-delays/) covers the common causes.
 
 ## Common failure scenarios and what to do
 
-**Customer records do not match.** Root cause: Salesforce and SAP customer masters were not aligned before integration. Fix: run a data reconciliation exercise before go-live, establish a master system of record for customer data, and configure the integration to enforce the mapping.
+**Customer records don't match.** Cause: the two customer masters were never aligned. Fix: reconcile before go-live, make SAP the system of record for customer data, and enforce the mapping in the integration.
 
-**Order status not updating in Salesforce.** Root cause: the integration covers quote-to-order hand-off but not order status callbacks. Fix: extend the integration to include status updates from SAP SD back to Salesforce at each order milestone.
+**Order status not updating in Salesforce.** Cause: the integration covers quote-to-order but not the status callbacks. Fix: send status updates from SAP SD back to Salesforce at each order milestone.
 
-**Pricing differences between Salesforce quotes and SAP invoices.** Root cause: pricing in Salesforce is maintained manually and diverges from the pricing conditions in SAP. Fix: make SAP the master for pricing and pull prices into Salesforce via the integration rather than maintaining them separately.
+**Quote prices differ from invoice prices.** Cause: prices are maintained by hand in Salesforce and drift from SAP pricing conditions. Fix: make SAP the price master and pull prices into Salesforce through the integration.
 
-**Integration breaks after SAP upgrade.** Root cause: no regression testing on the integration layer during upgrade planning. Fix: include integration regression testing in every SAP upgrade project scope.
+**Integration breaks after an SAP update.** Cause: no integration regression testing in the upgrade plan. Fix: put integration regression testing in the scope of every SAP update.
 
 ## Frequently asked questions
 
 <details>
 <summary>Can Salesforce integrate with SAP?</summary>
 
-Yes. SAP and Salesforce can be integrated using several methods: SAP Integration Suite (Cloud Platform Integration) on SAP BTP, MuleSoft, Dell Boomi, direct REST or SOAP API connections, and other iPaaS platforms.
-
-The integration typically covers the following data flows: customer master synchronisation (keeping customer records aligned between the two systems), quote-to-order hand-off (moving a won opportunity in Salesforce to a sales order in SAP SD), order status updates (feeding SAP order and delivery status back to Salesforce), pricing synchronisation (pulling SAP pricing conditions into Salesforce for quote generation), and invoice and payment status updates.
-
-The complexity of the integration depends on the business processes, the number of entities and company codes in scope, the data volume, and the real-time requirements. A simple customer master sync is a standard configuration task. A full quote-to-cash integration with complex pricing logic, multi-entity accounting, and real-time inventory availability is a significant integration project.
+Yes, through SAP Integration Suite, MuleSoft, Boomi, other integration platforms or direct APIs. Typical flows are customer master sync, won opportunity to sales order, order and delivery status back to Salesforce, pricing into Salesforce for quotes, and invoice and payment status. A customer master sync is straightforward. Full quote-to-cash with complex pricing, many company codes and real-time stock is a significant project.
 
 </details>
 
 <details>
 <summary>Is Salesforce an ERP or a CRM?</summary>
 
-Salesforce is a CRM. It manages customer relationships: sales pipeline, opportunity tracking, customer interactions, marketing automation, and service management. It is not a financial system, does not manage inventory, and does not post accounting entries.
-
-SAP is an ERP. It manages the back-office processes: financial accounting, procurement, inventory, production, human capital management. It is not designed for managing sales pipelines or customer relationship workflows.
-
-The integration between the two systems connects the front-office (Salesforce, customer-facing) with the back-office (SAP, operations and finance). Done well, a sales rep can see stock availability and customer payment status in Salesforce. A finance team can see order value and deal stage in SAP. Done poorly, the two systems hold different versions of the same customer information and nobody trusts either.
+A CRM. It manages pipeline, opportunities, customer interactions, marketing and service. It doesn't post accounting entries or manage inventory. SAP is the ERP for finance, procurement, inventory and production. Integrated well, a sales rep sees stock and payment status in Salesforce and finance sees deal value in SAP.
 
 </details>
 
 <details>
 <summary>What is the main reason ERP-CRM integrations fail?</summary>
 
-The most consistent failure cause is misaligned expectations about what the integration actually needs to do, discovered after it has been built.
-
-The integration team specifies technical requirements: which fields sync, in which direction, at what frequency. The business team reviews the specification at a conceptual level. Nobody maps the specification against the actual decisions being made by end users. Go-live happens. Users start working with the integration. They discover that the inventory numbers are four hours old, or that the pricing in Salesforce does not match the invoice, or that order status updates are delayed.
-
-These are not technical failures. They are requirement definition failures. The integration was built correctly to the specification. The specification was wrong.
-
-The fix: before writing a technical specification, document the specific decisions each user group is trying to make using the integrated data, and what data currency (freshness) those decisions require. Build the specification from the user's decision, not from the technical capability of the systems.
+Requirements defined from the technology instead of from the user's decision. The integration gets built correctly to a specification that was wrong: data four hours old, prices that don't match invoices, status updates that lag. Before writing a technical specification, document the decisions each user group makes with the data and how fresh it has to be.
 
 </details>
 
 <details>
 <summary>How do you maintain an ERP-Salesforce integration over time?</summary>
 
-Three practices account for most of the maintenance work.
-
-Regression testing before system upgrades. Salesforce releases three major updates per year. SAP releases support packages and updates on a varying schedule. Each update is a potential integration break. An automated regression test suite that validates the critical integration flows should run before any upgrade in either system. Finding breaks in testing is cheap. Finding them in production is expensive.
-
-Monitoring and alerting. Integration errors that are caught immediately can be resolved before they affect users. Integration errors that accumulate silently for days create data reconciliation problems that require significant effort to untangle. Set up automated monitoring on all critical integration flows with alerts that fire on failure, not on end-of-day reporting.
-
-Ownership. Assign a named owner for the integration layer. That person understands what the integration does, has access to the monitoring platform, knows the escalation path when something breaks, and is included in change management planning for both Salesforce and SAP upgrades.
+Run automated regression tests on the critical flows before every Salesforce release and every SAP update. Monitor every critical flow with alerts that fire on failure, not in an end-of-day report. Name an owner who has access to the monitoring and is part of change planning for both systems.
 
 </details>
 
 <details>
-<summary>What is SAP Integration Suite and when should you use it for Salesforce integration?</summary>
+<summary>When should you use SAP Integration Suite for Salesforce integration?</summary>
 
-SAP Integration Suite (Cloud Platform Integration) is SAP's integration middleware platform, part of SAP BTP. It provides pre-built connectors for Salesforce and for SAP modules, a graphical interface for building integration flows (iFlows), and monitoring tools for managing the integration landscape.
-
-SAP Integration Suite makes the most sense when SAP is the dominant system in the landscape, when the organisation has SAP BTP access (which comes with most RISE with SAP subscriptions), and when the integration requirements include SAP-specific content like IDoc processing, BAPI calls, or SAP-format message structures.
-
-It is not the right choice when the organisation has already invested heavily in a non-SAP middleware platform like MuleSoft or Boomi, when the team does not have SAP integration developer skills, or when the integration requirements are primarily non-SAP to non-SAP and SAP is a peripheral participant.
-
-For new RISE with SAP implementations where Salesforce integration is in scope, SAP Integration Suite is the natural starting point. It is included in the BTP entitlement and reduces the number of platforms to maintain.
+When SAP is the dominant system, when you have SAP BTP access, and when flows involve SAP-specific content such as IDocs, BAPIs or SAP message formats. It is a weaker choice if you have already invested heavily in MuleSoft or Boomi, if your team lacks SAP integration skills, or if SAP is a minor participant in mostly non-SAP flows. For new RISE programmes with Salesforce in scope, it is the natural starting point.
 
 </details>
 
 <details>
 <summary>How long does an ERP-Salesforce integration project take?</summary>
 
-Timeline varies significantly by scope and complexity.
-
-A standard integration covering customer master sync, quote-to-order hand-off, and basic order status updates, using a pre-built connector like SAP Integration Suite's Salesforce integration, typically takes 8 to 16 weeks from scoping to go-live. This assumes clean source data and a dedicated integration developer.
-
-A full quote-to-cash integration including complex pricing, multi-entity accounting, credit management, and real-time inventory availability typically takes 4 to 9 months, depending on the complexity of the SAP configuration and the Salesforce customisation.
-
-The most consistent cause of overruns: data quality issues discovered mid-project that were not identified in the initial assessment, and scope additions that come in during build when business users see what the integration can do and want to add more flows.
-
-Budget a data quality assessment before the integration build begins. It is the most reliable way to avoid the reconciliation delays that consume the first weeks of every integration project.
+A standard scope (customer master sync, quote-to-order and basic order status) using prebuilt content typically takes 8 to 16 weeks from scoping to go-live, assuming clean data and a dedicated integration developer. Full quote-to-cash with complex pricing, multiple entities, credit management and real-time stock typically takes 4 to 9 months. Data problems found mid-project and flows added during build are the usual causes of overrun, so run a data quality assessment before build starts.
 
 </details>

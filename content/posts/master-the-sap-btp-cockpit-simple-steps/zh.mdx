@@ -1,1155 +1,203 @@
 ---
-title: "Master the SAP BTP Cockpit: Simple Steps Anyone Can Follow"
+title: "掌握SAP BTP Cockpit：人人都能照做的简单步骤"
+h1: "掌握SAP BTP Cockpit：人人都能照做的简单步骤"
 slug: "master-the-sap-btp-cockpit-simple-steps"
-date: "2025-03-27 09:07:00"
-updated: "2026-01-11 19:51:19"
+date: "2025-03-27"
+updated: "2026-10-07"
 hero: "/images/wp/2025/03/SAP-BTP-Cockpit-3.webp"
+heroAlt: "SAP BTP Cockpit登录界面，旁边是霓虹背景前的一个白色人形机器人"
 category: "sap-modules"
-tags: ["sap-technical-decisions"]
-author: "noeldcosta"
+tags: ["sap-technical-decisions", "sap-btp", "sap-cap", "cloud-foundry"]
+author: "Noel D'Costa"
+metaTitle: "SAP BTP Cockpit：管理员和开发人员的简单步骤"
+metaDescription: "如何使用SAP BTP Cockpit：登录、设置子账户和权利、连接您的身份提供商、部署应用，并把成本控制在预算之内。管理员和开发人员都能照着做。"
+excerpt: "SAP BTP Cockpit是您运行名下每一项SAP云服务的地方。本文讲如何登录、如何按正确的顺序完成设置，以及如何避开那些让团队白白耗掉几周的错误。"
+experienceSource: "Noel's published WordPress article (published 2025-03-27) and its first-person examples (50+ subaccounts, entitlement savings, morning dashboard check, deployment script, 80% setup time). Cockpit URLs, trust setup, usage and alerting features checked against SAP Learning and SAP Developers pages on 2026-10-07."
+lastReviewed: "2026-05-21"
+keyTakeaways:
+  - "通过您所在区域的网关登录，例如emea.cockpit.btp.cloud.sap；试用账户使用cockpit.hanatrial.ondemand.com，有效期最长90天"
+  - "在创建任何东西之前，先规划好子账户结构和命名；有一位客户有50多个随意命名的子账户，没人找得到东西"
+  - "通过SAP Cloud Identity Services连接企业的身份提供商，而不是手工管理BTP用户"
+  - "从最小的权利配置起步，按需追加，并在每次续约之前查看Usage Analytics或Costs and Usage"
+  - "让运行时（Cloud Foundry、Kyma或ABAP环境）匹配团队的技能，而不只是匹配架构图"
+  - "把账户结构及其背后的理由写下来；Cockpit存的是“是什么”，不是“为什么”"
+pullQuote: "Cockpit里存的是“是什么”。它从不存“为什么”。这部分要您自己写下来。"
+mentions:
+  - "SAP BTP"
+  - "SAP S/4HANA"
+  - "SAP Integration Suite"
+  - "SAP SuccessFactors"
+  - "SAP HANA Cloud"
+  - "SAP Build"
+  - "SAP Datasphere"
+  - "SAP Cloud Identity Services"
+  - "SAP Alert Notification service"
 originalUrl: "https://noeldcosta.com/master-the-sap-btp-cockpit-simple-steps/"
-h1: "Master the SAP BTP Cockpit: Simple Steps Anyone Can Follow!"
-metaDescription: "Master the SAP BTP Cockpit with this step-by-step guide. Learn to deploy apps, manage users & optimize costs. Start your SAP cloud journey!"
-excerpt: "Master the SAP BTP Cockpit with this step-by-step guide. Learn to deploy apps, manage users & optimize costs. Start your SAP cloud journey!"
-metaTitle: "Master the SAP BTP Cockpit: Simple Steps Anyone Can Follow"
-canonicalUrl: "https://noeldcosta.com/master-the-sap-btp-cockpit-simple-steps/"
+canonicalUrl: "https://noeldcosta.com/zh-CN/master-the-sap-btp-cockpit-simple-steps/"
 locale: "zh"
 translatedFrom: "en"
-translationSource: "gtranslate-scrape-cleanup"
+translationSource: "reviewed-en-2026-10"
 ---
 
-### SAP Articles
+SAP Business Technology Platform（BTP）Cockpit是一个网页控制台，您在这里运行自己的SAP云环境：账户、服务、用户、安全、已部署的应用和成本。如果您负责管理BTP、向它部署应用，或者审批它的账单，这个界面就是您要常驻的地方。
 
-# Master the SAP BTP Cockpit: Simple Steps Anyone Can Follow!
+要进入它，请打开您所在区域的网关：`https://emea.cockpit.btp.cloud.sap`、`https://amer.cockpit.btp.cloud.sap`或`https://apac.cockpit.btp.cloud.sap`（[SAP Learning](https://learning.sap.com/courses/operating-sap-business-technology-platform/utilizing-sap-btp-cockpit)）。您需要一个SAP用户ID，管理员可以帮您开通。试用账户使用`https://cockpit.hanatrial.ondemand.com/trial/`，有效期最长90天，30天后需要办理延期（[SAP Developers](https://developers.sap.com/tutorials/cp-trial-quick-onboarding.html)）。
 
+然后按下面的顺序完成设置。第一次摸索这个顺序，我花了好几天。大部分的麻烦，都来自把第四步放在了第一步之前。
 
-### Noel DCosta
+## Cockpit是如何组织的
 
-*   Last Update : March 27, 2025
+一切都放在一个层级结构里。**全局账户**是您与SAP的合同，里面装着您购买的服务池。**目录**为子账户分组，比如按业务单元。**子账户**是真正干活的地方：每个子账户都有自己的区域、一个环境（如Cloud Foundry或Kyma）、自己的用户和自己的服务实例。
 
-The SAP Business Technology Platform (BTP) Cockpit is the control center for SAP cloud services. It’s where you manage your applications, services, security settings and subscriptions in one place.
+<explainer-org title="BTP全局账户是如何组织的" caption="每个子账户都从同一个有限的池子里取用。在创建第一个之前，先把名称和划分定下来。" chain="全局账户 => 您与SAP的合同，以及您购买的服务|目录 => 为子账户分组，例如按业务单元" side="权利 => 每个子账户从中取用的有限池子" roles="Finance-Dev => 开发，使用免费或小规格的方案|Finance-Test => 测试，有自己的用户和角色集合|Finance-Prod => 生产，上线之前设置好告警" highlight="side"></explainer-org>
 
-I’ve worked with many clients on BTP implementations. The Cockpit becomes the daily command center for anyone running SAP cloud solutions. It gives you direct control over your entire environment.
+BTP本身涵盖四个领域：应用开发与自动化、集成、数据与分析，以及AI。您在Cockpit里会遇到这四个领域，但多数项目从集成和S/4HANA的扩展开始。
 
-Three main groups use the BTP Cockpit. Technical admins handle configuration and monitoring. Developers deploy and manage applications. Business users access specific tools they need. Each role uses different parts of the Cockpit.
+## 第一周的设置顺序
 
-Many companies buy SAP cloud products but don’t get full value because they never properly learn the Cockpit. They struggle with basic tasks that should be simple.
+这是我在一个新的全局账户上遵循的顺序。每一步都有天然的负责人。
 
-When you know your way around the BTP Cockpit, you can:
+1. **统一子账户结构和命名**（平台负责人）。每个领域分开发、测试和生产，例如`Finance-Dev`、`Finance-Test`、`Finance-Prod`。
+2. **连接您的身份提供商**（安全负责人）。在添加任何一个用户之前先做这件事。
+3. **按岗位职能定义角色集合**（安全负责人），包括一个应急（break-glass）管理员集合。
+4. **分配权利，先从最小的开始**（平台负责人）。当某个团队能证明自己需要时，再追加。
+5. **安装并配置Cloud Connector**（基础设施团队），如果BTP需要访问本地部署的系统。
+6. **开启告警和用量复核**（平台负责人）。决定由谁看什么，多久看一次。
+7. **把这一切记录在Cockpit之外**（架构师）。结构、命名规则、权利的划分，以及每一项背后的理由。
 
-*   Get applications running faster
-*   Track and control your cloud costs
-*   Set up proper security permissions
-*   Connect [SAP to your other systems](https://noeldcosta.com/5-best-crm-systems-for-sap-in-2024/)
+### 子账户和权利
 
-In this guide, I’ll show you how to use the [SAP BTP Cockpit from the basics to advanced features](https://noeldcosta.com/sap-bpc-features-deployment-best-practice-guide/). These are practical [steps you can use immediately to improve your SAP](https://noeldcosta.com/sap-implementation/business-one/) cloud setup.
+大多数团队就是在这里搞出一团乱麻，并且为此困扰好几年。
 
-Let’s get started with the essentials of BTP Cockpit navigation and management.
+我曾合作过一位客户，有50多个随意命名的子账户，没人找得到东西。在项目中途去理清这些，非常痛苦。请先花一天时间，把结构画在纸上。如果您在多个区域运行，就在各区域之间镜像同样的结构，并用标签把相关的子账户归在一起。
 
-The SAP BTP Cockpit's connectivity options (Cloud Connector and destinations) make it surprisingly easy to [connect your cloud applications with on-premise SAP systems](https://noeldcosta.com/start-your-sap-implementation-project-right/) and third-party solutions.  
+**权利（Entitlement）**决定每个子账户可以使用哪些服务，以及用多少。您的全局账户拥有的是一个有限的池子。我从最小配置起步，按需扩大，这种做法让我的客户在没用上的服务上省下了数千美元。许多服务有免费方案，用来测试已经足够。
 
-This integration layer is what transforms BTP from just another cloud platform into a true extension of your core [SAP](https://noeldcosta.com/system-implementation-sap/) landscape.
+### 用户、信任和角色集合
 
-[Talk to Noel – Free 15-Min Call to help you!](mailto:solutions@noeldcosta.com)
+如果您的公司已经有身份提供商，比如Microsoft Entra ID或Okta，就不要手工管理BTP用户。SAP推荐的路线，是使用一个SAP Cloud Identity Services租户，并在**Security > Trust Configuration**下把它连接到子账户。这个租户随后充当您企业身份提供商的代理。信任关系可以通过OpenID Connect自动建立。双因素认证和访问策略也就集中在一处。
 
-## 10 Key Takeaways on SAP BTP Cockpit
+角色集合是您分配给用户或用户组的一组角色。我的做法是：
 
-1.  **Plan your account structure first.** I’ve watched companies struggle after creating random subaccounts with no strategy. Take a day to [map out your structure](https://noeldcosta.com/2024-sap-timeline-planning-implementation-guide-essentials/) before diving in. You’ll thank me later.
-2.  **Master the entitlement model.** Your global account has a finite pool of resources to distribute. I start minimal and scale up as needed. This approach has [saved my clients thousands in unused services](https://noeldcosta.com/sap-negotiation-advisors-reduce-cost/).
-3.  **[Connect to your identity provider.](https://noeldcosta.com/create-and-manage-sap-universal-id-link-s-user-and-p-user-ids/)** The SAP BTP Cockpit works best when linked to your company’s central user management. I set this up first thing—it eliminates so many headaches down the road.
-4.  **The Service Marketplace is overwhelming at first.** But what if you’re not sure where to start? Focus on the foundation services i.e. Destination Service, Authorization Management, and [Cloud Connector](https://noeldcosta.com/sap-vs-oracle-which-erp-is-better-for-your-business/).
-5.  **Choose your runtime environment wisely.** Your team’s skills should guide this decision. I’ve seen projects delayed by months because developers had to learn new environments.
-6.  [Integration capabilities are the hidden gem. The](https://noeldcosta.com/start-your-sap-implementation-project-right/) combination of Cloud Connector and destinations makes connecting systems surprisingly simple. This is where BTP really shines.
-7.  **Set up monitoring before you need it.** Configure alerts in the Cockpit for your critical services. I check my dashboards every morning with coffee and it’s become a ritual that prevents disasters.
-8.  **Learn the automation tools.** The BTP CLI and APIs seem like extra work at first, but they’re game-changers for repetitive tasks. I automated our deployments and cut setup time by 80%.
-9.  **Custom domains boost user adoption.** Take the time to configure them in the Security section. The professional appearance makes a real difference to end users.
-10.  **Document everything outside the platform.** The Cockpit doesn’t track your decisions or reasoning. I keep a simple Wiki that’s saved me countless troubleshooting hours.
+1. 围绕岗位职能来建，而不是围绕个人。
+2. 粗细要适中：具体到有意义，但不要细到要维护几百个。
+3. 保留一个应急管理员集合，用于紧急情况。
+4. 每个季度复核一次分配。人会换岗，却保留着原来的权限。
 
-The bottom line is that if you don’t get comfortable with the [SAP BTP](https://noeldcosta.com/what-consultants-actually-do-beyond-using-buzzwords/) Cockpit, you’re making everything harder than it needs to be. Master these basics, and you’ll be the hero your company needs.
+### 服务、实例和密钥
 
-## What SAP BTP Addresses For You
+要创建服务实例，请在子账户中打开**Services > Service Marketplace**，选择服务，并选一个方案。方案同时决定能力和成本。请把您选择的设置保存在Cockpit之外的某个地方；出问题时您会用到。
 
-[SAP Business](https://noeldcosta.com/sap-clean-core-strategy-what-it-means-for-your-business/) Technology Platform tackles specific problems companies face when moving to the cloud. It helps with connecting systems, building applications, and using new technologies.
+把实例绑定到您的应用，BTP就会注入凭据。对于不是BTP应用的外部工具，请创建一个**服务密钥**。密钥要按使用者来命名，比如`jenkins-deployment`，而不是`key1`。
 
-BTP works as the foundation for extending SAP applications and connecting different systems. It brings various tools together in one place, letting companies solve business problems while keeping proper control.
+## 在BTP上构建
 
-Let’s look at the main challenges that [SAP BTP helps fix](https://noeldcosta.com/sap-quality-gates-implementation/) with its capabilities.
+### 选择运行时
 
-### 1\. Integration Challenges
+Cockpit提供三种主要环境。请对照团队的技能来选。
 
-*   [SAP BTP connects cloud](https://noeldcosta.com/sap-implementation/grow-with-sap/) and on-premise systems through Cloud Integration (formerly CPI). This service gives you visual tools to create integration flows.
-*   The platform connects S/4HANA, SuccessFactors, Ariba, and non-SAP systems like Salesforce without complex coding.
-*   API Management tools help you create and manage APIs that expose business functions to other applications.
-*   [Open Connectors give you pre-built integration](https://noeldcosta.com/sap-implementation/rise-with-sap/) for hundreds of third-party systems outside SAP.
-*   Event Mesh lets your systems communicate based on business events across your landscape.
-*   Integration Advisor helps map data between different systems using suggestions for field mappings.
+| 运行时 | 最适合 | 注意事项 |
+|---|---|---|
+| Cloud Foundry | Java、Node.js和Python应用，包括SAP Cloud Application Programming Model（CAP） | 成熟的默认选项；对大多数团队来说意外最少 |
+| Kyma | 基于Kubernetes的原生微服务和事件驱动的扩展 | 需要许多SAP团队不具备的Kubernetes技能 |
+| ABAP环境 | S/4HANA旁边的ABAP Cloud扩展 | 与ABAP开发人员天然契合；只能使用已发布的API |
 
-### 2\. Custom Development Needs
+我见过项目因为开发人员要学一个符合架构规划、却不符合他们经验的新环境，而延误了好几个月。技术上更好、但您的团队构建不了的运行时，是更差的选择。
 
-*   ABAP Cloud Environment lets ABAP developers create extensions without changing core SAP code. This keeps upgrade paths clear.
-*   Cloud Foundry runtime works with Java, Node.js, and Python for web application development.
-*   Business Application Studio gives developers a complete web-based development environment. They can work from any device with a browser.
-*   [SAP Build gives business](https://noeldcosta.com/sap-business-one-price-guide/) users low-code tools to create simple applications without deep technical skills.
-*   The extension approach keeps core systems clean while allowing customization. This cuts down upgrade problems later.
-*   Developers can use existing skills while learning cloud approaches. The platform works with both traditional and modern development.
+要部署到Cloud Foundry，先在`manifest.yml`里描述应用（内存、实例数、buildpack、环境变量），然后用CF CLI或流水线推送。Cloud Foundry会识别buildpack、绑定服务并设置路由。
 
-### 3\. Data Management Complexity
+### 把BTP连接到S/4HANA和其他系统
 
-*   Data Intelligence Cloud creates data pipelines to move and transform [information between systems](https://noeldcosta.com/my-journey-with-customer-information-solutions-defense/). This removes manual data transfers.
-*   [HANA Cloud provides](https://noeldcosta.com/sap-testing-validation-tools-comparison/) database capabilities for applications and analytics. The in-memory technology runs fast.
-*   Datasphere (formerly Data Warehouse Cloud) combines data from multiple sources for business reporting. Business users can create their own data models.
-*   Pre-built connectors make [data integration with non-SAP](https://noeldcosta.com/sap-testing-validation-tools-comparison/) sources easier. This saves time when connecting different systems.
-*   The platform handles real-time, batch, and event-based data processing. Companies can pick the right approach for each situation.
-*   Data quality management tools keep information accurate across systems. This builds trust in reporting and analytics.
+BTP上大部分工作是集成。下面是我设置得最多的几种模式。
 
-## Section 1: Getting Started with SAP BTP Cockpit
+| 场景 | 如何设置 |
+|---|---|
+| 本地部署或私有云版的S/4HANA | 在您的网络里装Cloud Connector，在子账户里建一个目的地，再用OData或SOAP API |
+| SuccessFactors之类的SAP云应用 | 目的地加Integration Suite或Event Mesh，扩展用CAP开发 |
+| Salesforce或Workday之类的非SAP系统 | Integration Suite适配器，或自定义集成流 |
+| 对外开放您自己的API | Integration Suite中的API Management：设计、发布、监控 |
 
+Cloud Connector会向BTP开一条出站隧道，所以不需要入站的防火墙规则。只开放BTP真正需要的系统和URL路径。如果集成是您的主要用途，我写的[SAP CPI文章](/zh-CN/sap-cpi/)更深入地讲了设计上的选择。
 
-Let’s start with the basics, which is getting into the SAP BTP Cockpit. It sounds straightforward, but you’d be surprised how many people make mistakes here.
+## BTP的日常运行
 
-*   Just go to **[https://account.hana.ondemand.com/](https://account.hana.ondemand.com/)** and log in with your SAP username and password. That’s your front door into everything else. If you don’t have those yet, you’ll need to bug your SAP admin to set you up with proper access.
-*   The global account structure is the first thing you’ll see after logging in. Look, this is basically your company’s main container for everything [SAP cloud-related](https://noeldcosta.com/sap-vs-oracle-which-erp-is-better-for-your-business/). I always tell my clients to think of it like your company’s headquarters, with all the subaccounts being different departments.
-*   The interface can be a bit much at first glance. You’ve got the navigation menu on the left with all your options. The main area shows your global account overview with tiles for different sections. 
-*   There’s also a search bar at the top that honestly saves me so much time when I’m hunting for specific settings.
+### 监控与成本控制
 
-But what if you’re totally new to the SAP BTP Cockpit terminology? Then, you’ll need to know these basics to avoid getting lost:
+在需要之前，就把监控设置好。我每天早上喝着咖啡查看仪表板。这已经成了一种仪式，也让我躲过了不止几次“系统怎么挂了？”的时刻。
 
-*   **Global Account:** Your main container for everything
-*   **Subaccount:** Separate environments for different departments or projects
-*   **Entitlements:** Services and resources you’re allowed to use
-*   **Service Marketplace:** The place to enable various SAP services
-*   **Spaces:** Where your actual applications run in a subaccount
+需要设置的内容：
 
-Setting up your first subaccount is quite easy actually. From your global account view, you need to click the “Create Subaccount” button. 
+1. **告警。** SAP Alert Notification service会把平台和应用事件发送到电子邮件、Slack或您自己的告警工具。我常用的设置，是关键应用走电子邮件，任何不能宕机的东西走Slack webhook。
+2. **应用健康。** 来自Cloud Foundry或Kyma视图的每个应用的响应时间和错误率。
+3. **用量和成本。** 每个子账户里的Usage Analytics，以及全局账户层面的Costs and Usage。用量数值每24小时刷新一次。
 
-You have then give it a name, pick a provider (like AWS or Azure) from the drop down, and select a region. I always recommend choosing the region closest to most of your users as it makes a real difference in performance.
+每个月都要删除没用的服务实例。在工作时间之外，把开发空间缩小规格。在续约之前，检查权利的消耗情况，因为没用上的配额是常见的超支来源。
 
+### 自动化与自定义域名
 
-After creating it, your new subaccount will show up in your global account overview. Click on it, and you will be ready to start the real work of setting up services and deploying applications.
+在Cockpit里一路点鼠标，是无法规模化的。BTP命令行界面（btp CLI）和平台API，几乎可以把界面能做的事都写成脚本：创建子账户、分配权利、为开发人员开通环境。
 
-The bottom line is that if you don’t understand the foundation, you’re making everything else in the SAP BTP much harder than it needs to be. 
+在一次咨询中，我需要为12名新开发人员准备环境。我没有整天在Cockpit里点来点去，而是运行了我的脚本，然后去喝咖啡。等我回来，一切都准备好了。在一次咨询中，自动化部署把设置时间缩短了80%；把服务密钥和CF CLI接入流水线，则让部署从几个小时降到了几分钟。
 
-I spent days figuring this out my first time, but you don’t have to. Just follow these steps, and you’ll be [navigating the SAP BTP Cockpit](https://noeldcosta.com/system-implementation-sap/) like a pro in no time.
+对于面向用户的应用，自定义域名值得花功夫。它们是通过SAP Custom Domain service来配置的，而不是Cockpit里的某个菜单。在一个客户项目中，高管们立刻就注意到了更专业的观感。
 
-#### What is SAP BTP Cockpit
+## 我最常见到的错误
 
-Aspect
+1. 在统一命名规范之前就创建子账户。
+2. 把角色分配给个人，而不是角色集合和用户组。
+3. 在开发用的服务上，使用生产规格的方案。
+4. 把告警拖到第一次宕机之后才做。
+5. 没有记录账户结构及其背后的理由。Cockpit存的是“是什么”，从不存“为什么”。
 
-Description
+卡在某个具体错误上？我写的[BTP Cockpit问题指南](/zh-CN/sap-btp-cockpit-issues/)讲了常见的那些。[Clean Core指南](/zh-CN/sap-clean-core-strategy-what-it-means-for-your-business/)则解释了BTP扩展在S/4HANA项目中的位置。
 
-Business Use
+## 常见问题
 
-Definition
+<details>
+<summary>SAP BTP Cockpit是用来做什么的？</summary>
 
-Web-based interface to manage accounts, services, and applications on SAP Business Technology Platform (BTP).
+它是SAP Business Technology Platform的网页管理控制台。您用它来创建子账户、分配权利、管理用户和信任、创建服务实例、部署和监控应用，并跟踪用量和成本。
 
-Central hub for developers and admins to configure and monitor BTP resources.
+</details>
 
-Global Account
+<details>
+<summary>SAP BTP Cockpit的登录网址是什么？</summary>
 
-Top-level account structure representing a customer’s BTP subscription.
+请使用您所在区域的网关：欧洲、中东和非洲用`https://emea.cockpit.btp.cloud.sap`，美洲用`https://amer.cockpit.btp.cloud.sap`，亚太用`https://apac.cockpit.btp.cloud.sap`。试用账户使用`https://cockpit.hanatrial.ondemand.com/trial/`。登录需要一个SAP用户ID。
 
-Used to manage entitlements, subaccounts, and regions.
+</details>
 
-Subaccount
+<details>
+<summary>在SAP BTP中应该如何规划子账户结构？</summary>
 
-Logical container within a global account for isolated development or deployment environments.
+从一开始，就把开发、测试和生产分别放进各自的子账户，并起一个让领域和阶段一目了然的名字，比如`Finance-Dev`和`Finance-Prod`。较大的组织会按业务单元再增加目录。先在纸上规划；服务一旦运行起来，这个结构就很难改了。
 
-Segregates projects, apps, or stages (e.g., dev/test/prod).
+</details>
 
-Entitlements
+<details>
+<summary>SAP BTP的四大支柱是什么？</summary>
 
-Defines service quotas and usage limits per subaccount.
+SAP把BTP分成应用开发与自动化、集成、数据与分析，以及人工智能。多数项目从集成和S/4HANA扩展开始，等平台稳定之后，再加入数据和AI的用例。
 
-Controls access to services like Integration Suite, HANA, or Launchpad.
+</details>
 
-Service Marketplace
+<details>
+<summary>如何把我的身份提供商连接到SAP BTP？</summary>
 
-Catalog of [SAP and third-party services](https://noeldcosta.com/sap-testing-validation-tools-comparison/) available for activation.
+设置一个SAP Cloud Identity Services租户，并在Security > Trust Configuration下与您的子账户建立信任；OpenID Connect可以自动完成这一步。然后把您的企业身份提供商，比如Microsoft Entra ID或Okta，连接到这个租户。用户和双因素认证就在一处管理。
 
-Allows teams to bind services like APIs, messaging, or workflow tools to apps.
+</details>
 
-Spaces and Environments
+<details>
+<summary>应该选哪个BTP运行时：Cloud Foundry、Kyma还是ABAP环境？</summary>
 
-Defines the runtime (Cloud Foundry, Kyma, ABAP) and grouping of apps.
+要与您的团队相匹配。Cloud Foundry适合Java、Node.js和Python应用，是最稳妥的默认选项。Kyma适合基于Kubernetes的原生微服务，但需要Kubernetes技能。ABAP环境适合ABAP开发人员，在S/4HANA旁边构建符合Clean Core的扩展。
 
-Used to manage deployment infrastructure and app isolation layers.
+</details>
 
-Security & Trust
+<details>
+<summary>如何把SAP BTP连接到本地部署的SAP系统？</summary>
 
-Handles user roles, authentication, and identity providers (IdP).
+在您的网络内部安装Cloud Connector。它会向BTP开一条安全的出站隧道，所以不需要改动入站防火墙。只开放BTP需要的系统和路径，在子账户的Connectivity下检查连接，然后创建供您的应用和集成流调用的目的地。在上生产之前，要把整条路径测试一遍。
 
-Ensures role-based access control and secure application access.
-
-Monitoring & Usage
-
-Dashboards and tools to track service consumption, logs, and app health.
-
-Helps track resource usage, diagnose issues, and optimize environments.
-
-## Section 2: Managing Subaccounts & Entitlements
-
-
-Let’s talk about [organizing your subaccounts in the SAP BTP Cockpit](https://noeldcosta.com/create-and-manage-sap-universal-id-link-s-user-and-p-user-ids/). I’ve seen too many companies create a mess here that haunts them later. The way I approach it is to create separate subaccounts for development, testing, and production. 
-
-You can do this by clicking “Create Subaccount” from your global account page. Give each one a clear name like “Marketing-Dev” or “Finance-Prod” so you know exactly what’s what.
-
-But what if you have multiple departments or projects? Then, you’ll want to create a consistent naming convention before you start. 
-
-Trust me on this one…I once worked with a client who had 50+ randomly named subaccounts, and nobody could find anything.
-
-Assigning entitlements is where things get interesting in the SAP BTP Cockpit. This is basically where you decide which subaccounts get access to which services and how much of each. 
-
-You’ll need to navigate to the “Entitlements” section in your global account. From there, hit “Configure Entitlements,” select your subaccount, and add the services you need.
-
-
-The entitlement model itself is pretty straightforward. Your global account has a pool of entitlements you’ve purchased from SAP. 
-
-You distribute these to your subaccounts based on need. I always recommend starting with minimal entitlements and adding more as needed. Many services offer a free tier, which is perfect for testing.
-
-For multi-environment deployments, here are some best practices I’ve learned the hard way:
-
-*   Mirror your subaccount structure across regions if you’re global
-*   Keep development entitlements minimal to control costs
-*   Give production environments priority for performance-related resources
-*   [Document your entitlement distribution somewhere outside the SAP](https://noeldcosta.com/best-sap-documentation-tools-2024-guide/) BTP Cockpit
-*   Use labels to organize related subaccounts
-
-Monitoring consumption is crucial unless you want surprise bills. In each subaccount, go to “Usage Analytics” to see what you’re actually using versus what you’re paying for. I check this monthly for all my clients. 
-
-You’d be shocked how often we find services eating up quota without delivering value.
-
-The bottom line is that if you don’t manage your subaccounts and entitlements properly, you’re throwing money away and creating technical debt that will slow you down later. 
-
-Getting this right from the start makes everything in your SAP BTP environment run so much smoother.
-
-
-#### How to Manage Subaccounts and Entitlements in SAP BTP
-
-Management Area
-
-What It Involves
-
-Action Steps
-
-Create Subaccounts
-
-Subaccounts act as isolated environments within a global account for different projects or stages.
-
-In BTP Cockpit: Navigate to Global Account → Create Subaccount → Choose Region, Environment, Name.
-
-Assign Entitlements
-
-Entitlements define which services (e.g., Integration Suite, HANA Cloud) are available to a subaccount.
-
-Global Account → Entitlements → Edit → Add Service Plans → Allocate Quotas to Subaccounts.
-
-Manage Service Plans
-
-Select the right plan (free, standard, dev) based on subaccount needs and usage model.
-
-Review available plans under Entitlements → Filter by service → Allocate per subaccount.
-
-Track Quota Usage
-
-Monitoring consumption prevents service disruption due to overuse or lack of allocation.
-
-Go to Entitlements → Quota Utilization Dashboard → Review allocations and usage by subaccount.
-
-Role and Trust Setup
-
-Each subaccount requires role collections and identity providers (IdP) to control access.
-
-Subaccount → Security → Trust Configuration & Role Collections → Map roles to users/groups.
-
-Environment Assignment
-
-Defines runtime (Cloud Foundry, Kyma, ABAP) used within the subaccount.
-
-When creating subaccount, select environment → Enable Cloud Foundry or Kubernetes accordingly.
-
-Service Enablement
-
-Services must be enabled before use even if entitlements are assigned.
-
-Subaccount → Service Marketplace → Select Service → Enable Plan → Configure Instance.
-
-Labeling and Organization
-
-Labels help organize and filter subaccounts by business unit, region, or purpose.
-
-Use tags when creating/editing subaccounts → Filter using cockpit search tools.
-
-### Related Topics: SAP BTP Cockpit & Service Oversight
-
-[
-
-Cockpit
-
-### Common SAP BTP Cockpit Issues
-
-Where the cockpit fails to give accurate service status and what to do about it.
-
-](https://noeldcosta.com/sap-btp-cockpit-issues/)[
-
-Cost
-
-### Hidden Costs of BTP Service Limits
-
-Understand how misused cockpit settings silently inflate cloud project budgets.
-
-](https://noeldcosta.com/sap-implementation-cost-breakdown-why-budgets-explode-50/)[
-
-Tools
-
-### Track What the Cockpit Doesn’t Show
-
-3rd-party tools that expose SAP BTP service behavior beyond cockpit limitations.
-
-](https://noeldcosta.com/top-sap-project-tracking-tools-2025/)[
-
-Architecture
-
-### Clean Core Strategy & BTP Configuration
-
-Ensure cockpit settings don’t introduce risks to upgrade-safe architecture.
-
-](https://noeldcosta.com/sap-clean-core-strategy-what-it-means-for-your-business/)
-
-## Section 3: User Management and Authentication
-
-User [management in the SAP](https://noeldcosta.com/sap-ariba-your-2025-guide-to-sourcing-supplier-management/) BTP Cockpit can be a real headache if you don’t approach it right. I learned this the hard [way at my first implementation](https://noeldcosta.com/erp-implementation-kpis-metrics/). 
-
-You’ll want to start by navigating to the “Security” section in your subaccount and clicking on “Users.” From here, you can add users one by one or upload a CSV file for bulk additions. 
-
-I always recommend the bulk approach if you’ve got more than a handful of users.
-
-But what if your organization already has an identity provider like Azure AD or Okta? Then, you don’t need to create users manually at all. 
-
-Instead, you’ll want to set up trust between your identity provider and the SAP BTP Cockpit. This is honestly such a time-saver.
-
-For authentication, you’ve got several options in the BTP Cockpit. The default is SAP ID service, but I rarely use this for enterprise setups. 
-
-Custom SAML identity providers give you the most flexibility. Go to “Security” > “Trust Configuration” to set this up. You’ll need to exchange metadata files between SAP and your identity provider.
-
-
-Role collections are where things get interesting. These are basically bundles of permissions you assign to users. Here’s my approach:
-
-*   Create role collections based on job functions, not individuals
-*   Keep them granular enough to be specific but not so granular you have hundreds
-*   Include an emergency “admin” role collection with full access for break-glass scenarios
-*   Document what each role collection can do in a place your team can easily reference
-*   Review role assignments quarterly—people change jobs but often keep old permissions
-
-Security best practices are crucial in the SAP BTP Cockpit. I always enable two-factor authentication, restrict access to trusted networks where possible, and set up proper audit logging. 
-
-You should also regularly review the “Security Alerts” section—SAP will notify you about potential issues there.
-
-The bottom line is that if you don’t get your user management and authentication right in the BTP Cockpit, you’re setting yourself up for security headaches and administrative nightmares down the road. 
-
-Spend the time to get this right early, and you’ll thank yourself later.
-
-
-#### User Management and Authentication in SAP BTP Cockpit
-
-Function
-
-Description
-
-Key Actions
-
-User Roles
-
-Define permissions for users within subaccounts (e.g., Admin, Developer, Viewer).
-
-Go to Subaccount → Security → Role Collections → Assign roles to users or groups.
-
-Role Collections
-
-Bundles of roles that can be assigned to users for easier access control.
-
-Create role collections → Include service-specific roles → Map to users or IdP groups.
-
-User Assignment
-
-Grants users access to subaccount services based on assigned roles.
-
-Subaccount → Security → Users → Add users manually or sync via IdP group mapping.
-
-Identity Providers (IdP)
-
-Authentication source for user login (SAP ID Service or custom SAML IdP).
-
-Subaccount → Security → Trust Configuration → Add & configure new IdP.
-
-Trust Configuration
-
-Manages trusted IdPs and how users are authenticated.
-
-Define assertion attributes → Activate default or custom IdP → Test login flows.
-
-User Groups (via IdP)
-
-Allows role assignment based on group membership in external IdP (e.g., Azure AD).
-
-Map external groups to BTP role collections using role mappings.
-
-SCIM API
-
-Used for automating user provisioning and de-provisioning via external systems.
-
-Use SCIM endpoint to push user data from Identity Authentication or HR systems.
-
-Audit & Access Logs
-
-Tracks login attempts, changes to role assignments, and user activity.
-
-Enable audit logging in cockpit → Use SAP BTP CLI or API to extract log data.
-
-### How you organize your global account and subaccounts impacts everything from security to costs. **Take time to map this out before creating anything.** 
-
-### **Think about separating development, testing, and production environments,** and consider how different departments or projects should be isolated.
-
-
-### See How I Make Your ERP and AI System Selection or Implementation right for you.
-
-**ERP & AI System Selection** – Identify and choose the right ERP or AI-enabled platform to fit your business needs.
-
-**Project Support & Recovery** – Keep your project on track or bring failing implementations back under control.
-
-**ERP Modernization** – Transform existing ERP systems to modern, efficient, and scalable ERP environments.
-
-[GET IN TOUCH](mailto:so*******@********ta.com "This contact has been encoded by Anti-Spam by CleanTalk. Click to decode. To finish the decoding make sure that JavaScript is enabled in your browser.")
-
-## Section 4: Working with Service Instances and Applications
-
-
-Creating service instances in SAP BTP Cockpit is one of those things that seems simple once you’ve done it a few times… but for the first time, it can feel like a maze. When I first tried it, I must’ve clicked through every menu before finding the right spot.
-
-#### Here’s how I do it now (no time wasted):
-
-1.  In your subaccount, head to **“Services” → “Service Marketplace.”**
-
-2.  You’ll see all the services you can use.
-
-3.  Click the one you want, then hit **“Create.”**
-
-4.  Pick your plan (this decides what you get and how much you’ll pay).
-
-5.  Fill in the settings it asks for. I always save these somewhere safe — they’re a lifesaver when something goes wrong later.
-
-#### Linking the service to your app:
-
-After you create it, your app still doesn’t know it exists. That’s where **service bindings** come in.
-
-*   Go to your app → **“Service Bindings”** → create a new one for your service.
-
-*   BTP will handle the connection and credentials.
-
-#### Service keys (my go-to trick):
-
-These are like special logins for tools or people outside BTP.
-
-*   Find your service → **“Service Keys”** → **“Create.”**
-
-*   Give it a name you’ll actually remember, like `dev-team-access` or `jenkins-deployment`.
-
-#### Getting around the Service Marketplace without losing your patience:
-
-*   Use the search bar if you know what you’re after.
-
-*   The **“Recently Used”** section is handy for stuff you keep coming back to.
-
-*   Filters help when you’re exploring.
-
-*   If you’re just testing, look for **Free** plans.
-
-*   Check if the service works in your environment (Cloud Foundry, Kyma, etc.).
-
-#### Keep tabs on your services:
-
-Every service has a **“Monitoring”** section. I check mine weekly for anything important.  
-It’ll show you:
-
-*   How fast it’s responding
-
-*   How often it’s erroring
-
-*   How much it’s using in resources  
-    Some even have detailed dashboards with extra info.
-
-#### The bottom line:
-
-If you’re not keeping track of your service instances, you’re missing half the point of BTP. This is where the real value is, once you get the hang of it, the whole platform just makes more sense.
-
-#### Working with Service Instances and Applications in SAP BTP Cockpit
-
-Component
-
-Purpose
-
-Key Actions
-
-Service Marketplace
-
-Catalog of services (SAP and third-party) that can be used in applications.
-
-Navigate to Subaccount → Service Marketplace → Search and select desired service.
-
-Service Instance
-
-A concrete instance of a service (e.g., HANA, Document Management) with specific configuration.
-
-Click on service → Create Instance → Choose plan → Set parameters → Confirm creation.
-
-Service Binding
-
-Connects an application to a service instance securely.
-
-After instance creation → Create binding → Select app → Set authentication method (e.g., service key).
-
-Service Keys
-
-Used to connect external tools or applications to a service instance using credentials.
-
-Under the service instance → Create Service Key → Copy key for external integration (e.g., Postman, CI/CD).
-
-Application Deployment
-
-Pushes your application code to BTP via Cloud Foundry or Kyma environments.
-
-Use SAP BTP CLI or deploy directly from SAP Business Application Studio or CI pipeline.
-
-Application Runtime
-
-Environment where apps run (Node.js, Java, HTML5, etc.).
-
-Defined at subaccount level → Enable runtime → Bind services as needed.
-
-Application Monitoring
-
-Track health, logs, metrics, and performance of deployed apps.
-
-Subaccount → Applications → Select App → View logs, metrics, restarts, and scaling options.
-
-Service Plan Selection
-
-Defines features and cost model of the service (e.g., free, standard).
-
-Choose plan during service instance creation based on project requirement.
-
-Deprovisioning
-
-Safely delete services and apps when no longer needed.
-
-Delete service bindings → Remove service instances → Delete apps and related keys.
-
-## Section 5: Deploying Applications to SAP BTP
-
-
-Deploying applications to SAP BTP can seem intimidating at first. I remember staring at all those options in the Cockpit wondering where to even begin. 
-
-The good news is that SAP gives you multiple deployment options, and you can pick what works best for your specific needs.
-
-The three main deployment options you’ll see in the SAP BTP Cockpit are Cloud Foundry, Kyma, and ABAP. I typically use Cloud Foundry for most web applications, Kyma when I need Kubernetes capabilities, and ABAP for extensions to S/4HANA. 
-
-Each has its own section in the Cockpit, so you’ll need to enable the one you want to use.
-
-But what if you’re not sure which environment to choose? Then, consider your team’s skills first. If your developers know ABAP, stick with the ABAP environment. 
-
-If they’re familiar with containers and microservices, Kyma might be better.
-
-Let me walk you through a basic Cloud Foundry deployment. First, make sure you’ve created a Cloud Foundry space in your subaccount. Then:
-
-*   Navigate to your space in the SAP BTP Cockpit
-*   Click “Deploy Application”
-*   Upload your application file (usually a JAR or WAR file)
-*   Set the application name and other basic details
-*   Configure memory allocation and instances
-*   Hit Deploy and wait for the magic to happen
-
-Managing application versions isn’t well-documented in the official guides. I create separate routes for each major version and use blue-green deployments for updates. This lets me test new versions before switching production traffic over.
-
-Environment variables are super important for configuration. You can set these in the BTP Cockpit by going to your deployed application, clicking on “Environment Variables,” and adding key-value pairs. 
-
-I store things like API endpoints, feature flags, and non-sensitive configuration here. Never put passwords or tokens in environment variables—use the destination service instead.
-
-Scaling is straightforward in the Cockpit. You can manually adjust instance count and memory allocation under the “Resources” section of your application. 
-
-For production apps, I recommend at least two instances for high availability.
-
-The bottom line is that if you don’t understand the deployment options in the SAP BTP Cockpit, you’re limiting what your team can build. 
-
-Take the time to learn these deployment patterns, and you’ll find the platform can handle pretty much anything you throw at it.
-
-### Breaking it down...
-
-#### Deploying Applications to SAP BTP Cockpit
-
-Deployment Step
-
-Description
-
-Execution Method
-
-Prepare Application Code
-
-Structure your app based on SAP-supported runtimes (Node.js, Java, HTML5).
-
-Use SAP Business Application Studio or VS Code with MTA/YAML descriptor files.
-
-Define Deployment Descriptor
-
-Specify app name, memory, routes, services in \`mta.yaml\` or \`manifest.yml\`.
-
-Create \`mta.yaml\` for MTA-based apps or \`manifest.yml\` for Cloud Foundry CLI.
-
-Set Target Subaccount & Space
-
-Ensure you're deploying to the correct subaccount and Cloud Foundry space.
-
-Run \`cf login\` or \`btp login\` → Target org/space using \`cf target\`.
-
-Deploy Application
-
-Push the app to BTP environment (e.g., Cloud Foundry, Kyma).
-
-Use \`cf push\` (CLI), \`mbt build + deploy\`, or deploy directly from SAP BAS.
-
-Bind Services
-
-Attach service instances (e.g., HANA, XSUAA) to your app.
-
-Use \`cf bind-service\` or define bindings in \`mta.yaml\` → Re-deploy if needed.
-
-Set Environment Variables
-
-Configure app-specific parameters like API keys, DB credentials.
-
-Use \`cf set-env\` or define in \`manifest.yml\` → Restart app to apply changes.
-
-Verify Deployment
-
-Ensure the app is running, routes are active, and services are connected.
-
-Check in BTP Cockpit → Subaccount → Applications → View app status and logs.
-
-Enable Application Access
-
-Expose app to end users with secure access.
-
-Set up authentication (XSUAA), define route, configure scopes and roles.
-
-Monitor and Scale
-
-Track app performance, logs, and scale as needed.
-
-Use Cockpit or \`cf scale\` to change memory/instances dynamically.
-
-## Section 6: Integration and Extension Scenarios
-
-
-[Integration scenarios in the SAP](https://noeldcosta.com/why-sap-integrated-business-planning-sap-ibp-matters/) BTP Cockpit used to make me overwhelmed until I figured out the patterns. Connecting to your S/4HANA systems is probably what you’re here for, and honestly, it’s worth the effort. 
-
-In the Cockpit, you’ll first need to set up the Cloud Connector—a small on-premise component that securely tunnels communication between your BTP environment and your internal systems.
-
-Once you’ve installed the Cloud Connector, log into your SAP BTP Cockpit, navigate to your subaccount, and look for “Connectivity” in the left menu. 
-
-You’ll need to add your Cloud Connector here and define the internal systems it can access. I always start with minimal access and expand as needed.
-
-But what if you’re trying to connect to cloud systems, not on-premise ones? Then, you’ll use destinations instead of the Cloud Connector. 
-
-Destinations are basically connection configurations stored in the BTP Cockpit. Go to “Connectivity” > “Destinations” and create a new one. You’ll need to specify the URL, authentication type, and additional properties.
-
-Setting up proper destinations in the SAP BTP Cockpit is really important. This is what I always focus on:
-
-*   Use clear naming conventions that indicate system AND purpose
-*   Store credentials in the destination, not in your code
-*   Set up separate destinations for different environments (dev/test/prod)
-*   Use properties to control timeout values and other connection parameters
-*   Test your destinations before letting developers rely on them
-
-API management is another powerful feature in the BTP Cockpit. You can create API proxies that sit in front of your actual endpoints, giving you control over rate limiting, security, and transformation. 
-
-I always use this for any APIs exposed to partners or customers.
-
-For more complex integration scenarios, check out the [Integration Suite](https://noeldcosta.com/sap-integration-suite-delivery-delays/) in the Service Marketplace. 
-
-This gives you tools like Cloud Integration, API Management, and Open Connectors all managed from your BTP Cockpit.
-
-The bottom line is that if you don’t really understand the integration capabilities in the SAP BTP Cockpit, you would be stuck with siloed systems that can’t share data effectively and that will definitely be a problem for you. 
-
-### Related Topics: SAP BTP Monitoring & Deployment
-
-[
-
-Governance
-
-### Quality Gates Beyond the Cockpit
-
-Why cockpit logs alone can’t ensure BTP deployment compliance or readiness.
-
-](https://noeldcosta.com/sap-quality-gates-implementation/)[
-
-Risk
-
-### SAP BTP Risk Mapping Tactics
-
-How cockpit blind spots can mask major risks—use this matrix to stay ahead.
-
-](https://noeldcosta.com/sap-project-risk-assessment-matrix-and-mitigation-strategies/)[
-
-Execution
-
-### Keep Cloud Deployments on Track
-
-Why execution teams shouldn’t rely solely on cockpit views for tracking milestones.
-
-](https://noeldcosta.com/project-planning-and-control-get-sap-projects-back-on-track/)[
-
-Analytics
-
-### Cockpit Metrics vs. SAC Insights
-
-What SAP Analytics Cloud reveals that cockpit dashboards often miss.
-
-](https://noeldcosta.com/sap-analytics-cloud/)
-
-### Breaking it down...
-
-#### SAP BTP Cockpit – Integration & Extension Scenarios
-
-Scenario
-
-What It’s For
-
-How It’s Done
-
-[SAP S/4HANA Integration](https://noeldcosta.com/sap-implementation/sap-modules/)
-
-Share data between your S/4HANA system and apps running on BTP.
-
-Connect via SAP Cloud Connector and Destination Service → Access S/4HANA OData APIs.
-
-[SAP SuccessFactors Extension](https://noeldcosta.com/simplify-your-business-with-erp-ai-tools/)
-
-Build custom HR tools and workflows using SuccessFactors data.
-
-Enable SAP Event Mesh + API Management → Extend with CAP or Node.js apps.
-
-SAP Integration Suite
-
-Connect and automate processes between SAP and non-SAP systems.
-
-Provision Integration Suite → Create iFlows → Monitor in BTP Cockpit.
-
-Side-by-Side Extensions
-
-Run new cloud apps that add features without changing the core SAP system.
-
-Develop in BAS → Deploy to BTP → Connect via Destinations and XSUAA.
-
-Third-Party API Integration
-
-Link SAP to tools like Salesforce, Workday, or other REST APIs.
-
-Use API Management or Open Connectors to handle authentication and security.
-
-Mobile App Enablement
-
-Run business apps on mobile with offline access and push notifications.
-
-Use Mobile Services in BTP → Link with Fiori apps or native iOS/Android SDKs.
-
-SAP Build Work Zone
-
-Create a single workspace combining SAP apps, widgets, and external tools.
-
-Set up Work Zone → Add UI Cards, apps, and integrated services.
-
-Event-Driven Architecture
-
-Trigger actions automatically when business events occur (e.g., an order is placed).
-
-Use Event Mesh → Subscribe to topics → Trigger apps or functions.
-
-Data Lake / Analytics
-
-Send SAP data to BI tools or data lakes for analysis.
-
-Use SAP HANA Cloud or Data Intelligence → Share data via APIs or federation.
-
-## Section 7: Monitoring and Analytics
-
-
-**Monitoring in SAP BTP Cockpit** isn’t the most exciting part of the job, but it’s what keeps you from getting blindsided. I’ve watched too many teams ignore it, and it always comes back to bite them.
-
-**Where to start:**
-
-*   Go to the **“Monitoring”** section in your subaccount.
-
-*   You’ll see a snapshot of every app and service, plus their current status.
-
-*   I check it every morning—it’s saved me from more than a few “Why is the system down?” moments.
-
-**Setting up alerts:**
-
-*   In your app, go to **“Monitoring” → “Configure Alerts”**.
-
-*   You can set alerts for:
-
-    *   Slow response times
-
-    *   High error rates
-
-    *   Heavy resource usage
-
-*   My go-to setup: email alerts for critical apps, Slack webhooks for the ones that can’t go down.
-
-**Watching your usage:**
-
-*   Head to **“Usage Analytics”**—it’s the easiest way to see where your resources are going.
-
-*   It breaks things down by:
-
-    *   Service
-
-    *   Subaccount
-
-    *   Time period
-
-*   I use it to catch waste and spot optimizations before they turn into a cost problem.
-
-**How I keep client costs in check:**
-
-*   Delete unused services monthly
-
-*   Scale down dev environments after hours
-
-*   Match service plans to the right environment (dev vs. prod)
-
-*   Watch for usage spikes—they’re usually a sign something’s off
-
-*   Use free tier services when possible
-
-**Troubleshooting:**
-
-*   For Cloud Foundry apps: open the app → **“Logs”**
-
-*   For services: go to the **“Monitoring”** section in that service instance
-
-*   Most issues leave clues here—always check before guessing.
-
-**Bottom line:**  
-If you’re not monitoring your BTP environment, you’re flying blind. Small problems become big ones fast, and costs can get out of hand. Keep an eye on it and you stay in control.
-
-## Section 8: Advanced BTP Cockpit Features
-
-
-Let me tell you about some advanced SAP BTP Cockpit features I’ve learned the hard way. Trust me, these will [save you hours](https://noeldcosta.com/how-to-create-an-sap-implementation-project-charter/) of frustration once you master them.
-
-I started using the BTP APIs to automate repetitive tasks about a year ago. You can script almost anything—creating subaccounts, provisioning services, assigning users. 
-
-Last week I needed to set up environments for 12 new developers. Instead of clicking through the Cockpit all day, I ran my script and went for coffee. When I got back, everything was ready.
-
-But what if you hate browser interfaces altogether? Then, you need to download the BTP Command Line Interface. I use it constantly now. It’s so much faster to type a quick command than navigate through all those Cockpit screens. 
-
-You can deploy apps, check status, and manage services right from your terminal.
-
-Custom domains make a huge difference to your users. Nobody wants to use an app with those generic SAP URLs. 
-
-You’ll find this under “Security” > “Custom Domains” in your subaccount. You’ll need to verify your domain with a TXT record and upload SSL certificates. 
-
-I just did this for a client project, and their executives immediately noticed the more professional feel.
-
-For multi-region deployments, here’s what works for me:
-
-*   Active-active for applications that absolutely cannot go down
-*   Region-specific deployments for data residency requirements
-*   Primary-backup setup when budget matters more than perfect uptime
-*   Global routing layer for the best user experience worldwide
-
-I’ve integrated the SAP BTP Cockpit with our DevOps tools using service keys and the CF CLI in our pipelines. Now our developers push code, and it automatically deploys without anyone touching the Cockpit. This has cut our deployment time from hours to minutes.
-
-The bottom line is that if you’re still doing everything manually in the SAP BTP Cockpit, you’re wasting valuable time and probably making errors. 
-
-These advanced features take a bit of setup, but they’ll transform how you manage your BTP environment.
-
-### Breaking it down...
-
-#### Advanced SAP BTP Cockpit Features
-
-Feature
-
-Capability
-
-How to Use
-
-Feature Set B Management
-
-Enables separation of development and productive environments using different feature sets.
-
-Access Global Account → Settings → Enable Feature Set B → Assign subaccounts accordingly.
-
-Audit Logging
-
-Tracks changes to services, users, and apps for compliance and traceability.
-
-Subaccount → Security → Audit Logs → Enable logging and retrieve via API or BTP CLI.
-
-Custom Domain Mapping
-
-Use your own domain names for deployed applications.
-
-Cockpit → Connectivity → Custom Domains → Map DNS entries and bind TLS certs.
-
-Quotas and Budget Alerts
-
-Monitor and alert on service consumption to prevent overuse or cost spikes.
-
-Global Account → Entitlements → Configure alerts on quotas per service or subaccount.
-
-Transport Management
-
-Move app configurations and content across subaccounts or landscapes.
-
-Provision Transport Management → Configure nodes and transport routes in Cockpit.
-
-Multi-Environment Subaccount Support
-
-Run Cloud Foundry, Kyma, ABAP environments within the same subaccount.
-
-Enable multiple runtimes in subaccount settings → Manage each via respective cockpit tabs.
-
-Service Consumption Viewer
-
-Provides visual insights into usage patterns for services and apps.
-
-Cockpit → Subaccount → Usage Analytics → Filter by period, service, or user.
-
-Service Authorizations & Trust Configuration
-
-Manage fine-grained access to APIs and services across IdPs.
-
-Subaccount → Security → Trust → Configure IdPs and role mappings for services.
-
-CI/CD Integration Support
-
-Supports DevOps practices using Jenkins, GitHub Actions, or SAP’s CI/CD pipeline.
-
-Integrate via APIs, BTP CLI, or project pipelines defined in SAP Business Application Studio.
-
-### Related Topics: SAP BTP Architecture & Scope Control
-
-[
-
-Architecture
-
-### BTP Cockpit & Clean Core Strategy
-
-How cockpit-level choices can violate upgrade-safe clean core principles.
-
-](https://noeldcosta.com/sap-clean-core-strategy-what-it-means-for-your-business/)[
-
-Integration
-
-### Cockpit Missteps in ERP Integrations
-
-How BTP cockpit routing and service keys can cause critical integration breakdowns.
-
-](https://noeldcosta.com/why-erp-integration-with-salesforce-fails-and-how-to-fix-it/)[
-
-Scope
-
-### Limit Scope Drift in BTP Deployments
-
-Use clear templates to prevent cockpit-enabled overbuild and budget overreach.
-
-](https://noeldcosta.com/sap-project-scope-template-management-and-control/)[
-
-Failure
-
-### Cockpit Blind Spots in Cost Control
-
-When ERP teams fail to catch overuse and misuse of cloud services early.
-
-](https://noeldcosta.com/the-50-billion-erp-failure-why-cfos-still-reach-for-excel-instead/)
-
-## Conclusion
-
-
-Man, we’ve covered a ton about the SAP BTP Cockpit in this guide. When I first started with this platform years ago, I was completely lost. Spent weeks figuring out stuff that should’ve taken hours. Hopefully this guide saves you from that pain.
-
-Want to keep building your skills? I’ve found this learning path works best. Start with getting the hang of subaccounts. Then move to user management. 
-
-Next, explore services and try deploying some basic apps. After that, tackle integration scenarios. Finally, get into the automation to make your life easier.
-
-But what if you’re worried about keeping up with SAP’s constant changes? I get it. The BTP Cockpit evolves fast. 
-
-Right now, I’m seeing them add more AI features, expand their multi-cloud capabilities, and strengthen connections with business applications. Staying on top of these changes will make you super valuable to your company.
-
-My hard-earned tips after years of BTP projects:
-
-*   Document everything about your setup—future you will be grateful
-*   Start building automation immediately—manual work is a time sink
-*   Get governance in place early—before chaos takes over
-*   Set a monthly calendar reminder for maintenance and cleanup
-
-The bottom line is that if you don’t take the time to master the SAP BTP Cockpit now, you’ll waste countless hours struggling later. 
-
-This platform can transform how your company uses SAP, but only if you know how to leverage it properly.
-
-I’d love to hear about your own journey with the SAP BTP Cockpit. Run into strange issues I didn’t cover? Discovered time-saving tricks? Drop a comment below. 
-
-Your real-world experience might be exactly what another reader needs to solve a problem they’re facing today.
-
-## Additional Resources
-
-These resources have helped me solve problems I didn’t even know I had with the SAP BTP Cockpit:
-
-*   **[BTP Setup Automator – GitHub (Public)](https://github.com/SAP-samples/btp-setup-automator)**
-
-*   **[CF Local – GitHub (Public)](https://cloudfoundry.github.io/)**
-
-If you have any questions, or want to discuss a situation you have in your SAP Implementation, please don't hesitate to reach out!
-
-## Questions You Might Have...
-
-### 1\. What is a BTP cockpit in SAP?
-
-The SAP [BTP Cockpit](https://noeldcosta.com/sap-enterprise-warehouse-management-sap-ewm-essentials/) is the central web-based administration interface for managing your SAP Business Technology Platform environment. It’s where you configure subaccounts, set up security, deploy applications, and manage services. Think of it as your control center for everything running in SAP’s cloud platform.
-
-### 2\. How do I get to the BTP cockpit?
-
-You access the SAP BTP Cockpit by going to [https://account.hana.ondemand.com/](https://account.hana.ondemand.com/) and logging in with your SAP credentials. If you don’t have access yet, you’ll need to ask your company’s SAP administrator to set you up with the proper permissions.
-
-### 3\. What are the 4 pillars of SAP BTP?
-
-The four pillars of SAP BTP are:
-
-*   Database and Data Management – Tools for handling data storage, processing, and analytics
-*   Application Development – Services for building cloud applications and extensions
-*   Integration – Solutions for connecting systems and processes
-*   Intelligent Technologies – AI, ML, and analytics capabilities
-
-These pillars form the foundation of what you can manage through the BTP Cockpit.
-
-### 4\. What is the Cockpit tool in SAP?
-
-The Cockpit tool in SAP is the web-based administrative interface for managing various SAP cloud solutions. For SAP BTP specifically, the Cockpit gives you a visual way to handle configurations, deployments, and monitoring without needing to use command-line tools or APIs for everything.
-
-### 5\. How does the SAP BTP Trial Account creation work?
-
-Creating a BTP Trial Account is pretty straightforward. Go to [https://account.hanatrial.ondemand.com/](https://account.hanatrial.ondemand.com/), click “Register,” and follow the steps. You’ll get a free account with limited resources that lasts for 90 days but can be extended. The trial gives you access to most BTP services with some usage limitations.
-
-### 6\. How does SAP BTP Cockpit administration work?
-
-SAP BTP Cockpit administration works through a role-based access model. Global administrators can create subaccounts and assign administrators to them. Each level has specific responsibilities—global admins handle entitlements and quotas, while subaccount admins manage services and applications. Everything is done through the web interface with clear sections for different administrative tasks.
-
-### 7\. How to access SAP BTP Cockpit?
-
-To access the SAP BTP Cockpit, visit [https://account.hana.ondemand.com/](https://account.hana.ondemand.com/) and log in with your SAP user ID and password. If you’re using a trial account, use [https://account.hanatrial.ondemand.com/](https://account.hanatrial.ondemand.com/) instead. You’ll need to have been granted access by an administrator in your organization first.
-
-### 8\. How to create user in SAP BTP Cockpit?
-
-To create a user in the SAP BTP Cockpit:
-
-1.  Navigate to your subaccount
-2.  Go to the “Security” section in the left menu
-3.  Select “Users”
-4.  Click “Create” button
-5.  Enter the user’s details and email
-6.  Assign role collections as needed
-7.  Save the changes
-
-The user will then receive an email to activate their account.
-
-### 9\. How does the SAP CPI BTP Cockpit work?
-
-The SAP Cloud Integration (CPI) in BTP Cockpit works by providing integration capabilities through the Integration Suite. In the Cockpit, you subscribe to the Integration Suite, then access the Integration Suite UI where you design, deploy, and monitor integration flows. The Cockpit itself manages the subscription, entitlements, and security aspects.
-
-### 10\. What is the SAP BTP Cockpit url?
-
-The main URL for the SAP BTP Cockpit is [https://account.hana.ondemand.com/](https://account.hana.ondemand.com/). For trial accounts, use [https://account.hanatrial.ondemand.com/](https://account.hanatrial.ondemand.com/). These take you to the global account level where you can then navigate to your specific subaccounts.
-
-### 11\. How does SAP BTP Cockpit access work?
-
-Access to the SAP BTP Cockpit works through a hierarchical permission system. Users are assigned specific role collections that grant permissions to certain actions and areas within the Cockpit. Global administrators can access everything, while other users may only have access to specific subaccounts or services based on their assigned roles.
-
-### 12.What is the SAP BTP Cockpit global account?
-
-The SAP BTP Cockpit global account is the top-level container for all your SAP cloud resources. It’s where you manage entitlements, create subaccounts, and handle cross-subaccount concerns. Your company typically has one global account that contains multiple subaccounts for different departments, projects, or environments.
-
-### 13\. Give me the SAP BTP Cockpit overview
-
-The SAP [BTP Cockpit](https://noeldcosta.com/sap-analytics-cloud/) provides a central interface for managing your cloud resources. It organizes functionality into clear sections:
-
-*   Account Explorer – For navigating between accounts
-*   Security – For user management and authentication
-*   Services – For enabling and managing cloud services
-*   Spaces – For application deployment (in Cloud Foundry)
-*   Monitoring – For tracking usage and performance
-*   Connectivity – For integrating with other systems
-
-### 14\. What is the purpose of BTP in SAP?
-
-The purpose of SAP BTP is to provide a unified cloud platform for extending and integrating SAP applications. It lets you build custom applications, connect different systems, add intelligence to business processes, and manage your data—all while staying compatible with your core SAP systems. BTP bridges the gap between standard SAP functionality and your specific business needs.
-
-### 15\. Is SAP BTP like AWS?
-
-SAP BTP and AWS serve different purposes. While AWS is a general-purpose cloud infrastructure provider, SAP BTP is a platform specifically designed for building and extending SAP applications. BTP does include infrastructure components, but its primary value is in the business services and SAP-specific integration capabilities it provides. Many companies actually run SAP BTP on top of infrastructure providers like AWS.
-
-### 16\. What is the full form of BTP?
-
-BTP stands for Business Technology Platform. SAP renamed it from SAP Cloud Platform (SCP) to better reflect its comprehensive nature as a business-focused platform that extends beyond just cloud infrastructure.
-
-### 17\. How to create a user in SAP BTP cockpit?
-
-To create a user in the SAP BTP Cockpit:
-
-1.  Log into the Cockpit and navigate to your subaccount
-2.  Click on “Security” in the left navigation
-3.  Select “Users”
-4.  Click the “Create” button
-5.  Enter the user’s email address and name
-6.  Save the user
-7.  Assign appropriate role collections to the user
-
-### 18\. What is a cockpit in programming?
-
-In programming and software systems, a “cockpit” generally refers to a centralized dashboard or control interface that provides comprehensive management capabilities. Like an aircraft cockpit, it brings together all the controls and displays needed to operate a complex system. The SAP BTP Cockpit follows this concept by centralizing all administration functions for the platform.
-
-### 19\. How to connect BTP to SAP?
-
-To connect BTP to your existing SAP systems:
-
-1.  Set up the Cloud Connector on your on-premise network
-2.  Configure it to expose specific systems to BTP
-3.  In the BTP Cockpit, navigate to your subaccount’s “Connectivity” section
-4.  Verify the Cloud Connector connection
-5.  Create destinations pointing to your SAP systems
-6.  Use these destinations in your BTP applications
-
-The Cloud Connector provides a secure tunnel between your internal network and SAP BTP.
-
-#### Tools to Simplify Your SAP Implementation Journey
-
-#### **SAP Implementation Cost Calculator**
-
-This tool will help you determine the approximate cost of your [SAP Implementation](https://noeldcosta.com/mastering-sap-implementation-a-step-by-step-guide-for-2025/). 
-
-#### **SAP Resource Job Description Generator**
-
-You can use this tool to generate a job description, if you are hiring someone for an [SAP Project](https://noeldcosta.com/creating-an-effective-sap-project-steering-committee/). 
-
-#### **Data Migration Effort and Cost Estimator**
-
-Through this tool, you can determine the data objects required and the related costs associated with Data Migration. 
-
-#### **Simple to Use ERP Implementation Cost Calculator**
-
-Get a quick Assessment of your estimated ERP Costs and timeline. It’s not perfect, but it gives you a good view of costs.
-
-#### **SAP Solution Builder and Roadmap Generator**
-
-You can use this tool to determine the SAP Modules you will need in your [SAP Implementation](https://noeldcosta.com/building-the-perfect-erp-implementation-team-in-2024/).
+</details>

@@ -55,12 +55,12 @@ function ModuleTable({
       <div className="overflow-x-auto">
         <table className="min-w-full text-[0.88rem]">
           <thead>
-            <tr className="bg-bone/60 border-b border-corbeau/8">
-              <th className="text-left font-mono font-semibold text-[0.65rem] tracking-[1.6px] uppercase text-corbeau/55 py-2.5 px-4">Module</th>
-              <th className="text-left font-mono font-semibold text-[0.65rem] tracking-[1.6px] uppercase text-corbeau/55 py-2.5 px-4">License</th>
-              <th className="text-left font-mono font-semibold text-[0.65rem] tracking-[1.6px] uppercase text-corbeau/55 py-2.5 px-4">Quantity</th>
-              <th className="text-left font-mono font-semibold text-[0.65rem] tracking-[1.6px] uppercase text-corbeau/55 py-2.5 px-4">Category</th>
-              <th className="text-left font-mono font-semibold text-[0.65rem] tracking-[1.6px] uppercase text-corbeau/55 py-2.5 px-4">Description</th>
+            <tr className="bg-[var(--surface-overlay)] border-b border-corbeau/10">
+              <th className="text-left font-mono font-semibold text-[0.65rem] tracking-[1.6px] uppercase text-eyebrow py-2.5 px-4">Module</th>
+              <th className="text-left font-mono font-semibold text-[0.65rem] tracking-[1.6px] uppercase text-eyebrow py-2.5 px-4">License</th>
+              <th className="text-left font-mono font-semibold text-[0.65rem] tracking-[1.6px] uppercase text-eyebrow py-2.5 px-4">Quantity</th>
+              <th className="text-left font-mono font-semibold text-[0.65rem] tracking-[1.6px] uppercase text-eyebrow py-2.5 px-4">Category</th>
+              <th className="text-left font-mono font-semibold text-[0.65rem] tracking-[1.6px] uppercase text-eyebrow py-2.5 px-4">Description</th>
             </tr>
           </thead>
           <tbody className="[&>tr]:transition-colors [&>tr:hover]:bg-papaya/[0.04]">
@@ -91,11 +91,11 @@ function SummaryCard({
 }) {
   const styles = {
     papaya:
-      "bg-gradient-to-br from-papaya to-[#fda66e] text-corbeau shadow-[0_8px_32px_rgba(252,152,90,0.25)]",
+      "bg-papaya text-corbeau shadow-[0_8px_32px_rgba(var(--accent-rgb),0.25)]",
     corbeau:
-      "bg-paper text-corbeau border border-corbeau/10 shadow-[0_2px_14px_rgba(14,16,32,0.04)]",
+      "bg-paper text-corbeau border border-corbeau/10 shadow-[0_2px_14px_rgba(var(--ink-rgb),0.04)]",
     night:
-      "bg-corbeau text-bone shadow-[0_8px_32px_rgba(14,16,32,0.18)]",
+      "bg-corbeau text-bone shadow-[0_8px_32px_rgba(var(--ink-rgb),0.18)]",
   }[accent];
 
   const labelStyles = {
@@ -129,10 +129,10 @@ function PhaseCard({
   return (
     <FadeUp delay={index * 80} className="relative pl-10">
       {/* timeline dot + connector */}
-      <span aria-hidden className="absolute left-3 top-3 w-3 h-3 rounded-full bg-papaya shadow-[0_0_0_4px_rgba(252,152,90,0.18)]" />
+      <span aria-hidden className="absolute left-3 top-3 w-3 h-3 rounded-full bg-papaya shadow-[0_0_0_4px_rgba(var(--accent-rgb),0.18)]" />
       <span aria-hidden className="absolute left-[18px] top-6 bottom-[-1.5rem] w-px bg-corbeau/15" />
 
-      <div className="rounded-xl border border-corbeau/10 bg-paper p-6 shadow-[0_2px_14px_rgba(14,16,32,0.04)]">
+      <div className="rounded-xl border border-corbeau/10 bg-paper p-6 shadow-[0_2px_14px_rgba(var(--ink-rgb),0.04)]">
         <div className="flex items-baseline justify-between gap-4 mb-2">
           <h4 className="font-display font-black text-corbeau text-[1.05rem] md:text-[1.15rem] tracking-[-0.02em]">
             {phase.label}
@@ -144,11 +144,11 @@ function PhaseCard({
         <p className="text-night/75 text-[0.92rem] leading-[1.55] mb-4">
           {phase.description}
         </p>
-        <p className="text-[0.78rem] text-night/65 mb-4">
+        <p className="text-[0.78rem] text-eyebrow mb-4">
           <span className="font-semibold text-corbeau">Focus:</span>{" "}
           {phase.focusAreas.join(" · ")}
         </p>
-        <p className="font-mono text-[0.62rem] tracking-[1.6px] uppercase text-corbeau/55 mb-2">
+        <p className="font-mono text-[0.62rem] tracking-[1.6px] uppercase text-eyebrow mb-2">
           Modules in this phase
         </p>
         <div className="flex flex-wrap gap-1.5">
@@ -267,25 +267,27 @@ export default function SolutionClient() {
     <div ref={containerRef}>
       {/* ─── Step 1 + 2 form (always visible until roadmap) ────────── */}
       {step < 3 && (
-        <div className="bg-paper border border-corbeau/[0.08] rounded-2xl p-6 md:p-8 shadow-[0_2px_20px_rgba(14,16,32,0.04)]">
-          <h2 className="font-display font-bold text-corbeau text-[1.35rem] tracking-[-0.02em] mb-6">
-            Create your SAP implementation roadmap
-          </h2>
+        <div>
+          <div className="nda-tool-head">
+            <h2>Create your SAP implementation roadmap</h2>
+            <p>Fields marked * are required.</p>
+          </div>
 
           {/* Industry + Size selectors */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
             <div>
-              <label className="block font-mono text-[0.68rem] font-semibold uppercase tracking-[1.6px] text-night mb-1.5">
-                Industry <span className="text-papaya">*</span>
+              <label htmlFor="sb-industry" className="nda-tool-label">
+                Industry <span className="req" aria-hidden>*</span>
               </label>
               <select
+                id="sb-industry"
                 value={industryId}
                 onChange={(e) => {
                   setIndustryId(e.target.value as IndustryId | "");
                   setExtraModuleIds([]);
                   setRemovedModuleIds(new Set());
                 }}
-                className="w-full rounded-md border border-corbeau/15 bg-paper px-3.5 py-2.5 text-corbeau focus:outline-none focus:border-papaya focus:ring-2 focus:ring-papaya/20"
+                className="w-full px-3.5 py-2.5 text-[15px]"
               >
                 <option value="">Select industry</option>
                 {INDUSTRIES.map((ind) => (
@@ -294,13 +296,14 @@ export default function SolutionClient() {
               </select>
             </div>
             <div>
-              <label className="block font-mono text-[0.68rem] font-semibold uppercase tracking-[1.6px] text-night mb-1.5">
-                Company size <span className="text-papaya">*</span>
+              <label htmlFor="sb-size" className="nda-tool-label">
+                Company size <span className="req" aria-hidden>*</span>
               </label>
               <select
+                id="sb-size"
                 value={companySizeId}
                 onChange={(e) => setCompanySizeId(e.target.value as CompanySizeId | "")}
-                className="w-full rounded-md border border-corbeau/15 bg-paper px-3.5 py-2.5 text-corbeau focus:outline-none focus:border-papaya focus:ring-2 focus:ring-papaya/20"
+                className="w-full px-3.5 py-2.5 text-[15px]"
               >
                 <option value="">Select company size</option>
                 {COMPANY_SIZES.map((s) => (
@@ -312,8 +315,8 @@ export default function SolutionClient() {
 
           {/* Best practices callout — visible once industry chosen */}
           {industry && (
-            <FadeUp className="rounded-xl bg-gradient-to-br from-canyon/8 to-papaya/8 border-l-[3px] border-canyon p-5 mb-6">
-              <p className="font-display font-bold text-canyon text-[1rem] tracking-[-0.015em] mb-2">
+            <FadeUp className="nda-note mb-6" >
+              <p className="font-display font-bold text-papaya text-[1rem] tracking-[-0.015em] mb-2">
                 Industry best practices: {industry.label}
               </p>
               <p className="text-night leading-[1.6] text-[0.94rem] mb-2">
@@ -332,7 +335,7 @@ export default function SolutionClient() {
                 type="button"
                 onClick={resetAll}
                 disabled={!industryId && !companySizeId}
-                className="rounded-md border border-corbeau/15 px-4 py-2.5 text-sm font-semibold text-night/70 hover:border-corbeau/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="nd-btn nd-btn-secondary"
               >
                 Reset
               </button>
@@ -340,7 +343,7 @@ export default function SolutionClient() {
                 type="button"
                 onClick={goToStep2}
                 disabled={!canGenerate}
-                className="inline-flex items-center gap-2 bg-papaya text-corbeau px-6 py-2.5 rounded-[10px] font-display font-bold text-[0.92rem] shadow-[0_4px_18px_rgba(252,152,90,0.25)] hover:bg-[#fda66e] hover:-translate-y-px hover:shadow-[0_8px_28px_rgba(252,152,90,0.35)] disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none transition-all"
+                className="nd-btn nd-btn-primary"
               >
                 Generate recommendations
                 <span aria-hidden>→</span>
@@ -358,7 +361,7 @@ export default function SolutionClient() {
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="text-[0.78rem] text-corbeau/60 hover:text-papaya transition-colors"
+                  className="nda-clear"
                 >
                   ← Change industry or size
                 </button>
@@ -372,14 +375,14 @@ export default function SolutionClient() {
                 <button
                   type="button"
                   onClick={resetAll}
-                  className="rounded-md border border-corbeau/15 px-4 py-2.5 text-sm font-semibold text-night/70 hover:border-corbeau/30 transition-colors"
+                  className="nd-btn nd-btn-secondary"
                 >
                   Reset
                 </button>
                 <button
                   type="button"
                   onClick={generateRoadmap}
-                  className="inline-flex items-center gap-2 bg-papaya text-corbeau px-6 py-2.5 rounded-[10px] font-display font-bold text-[0.92rem] shadow-[0_4px_18px_rgba(252,152,90,0.25)] hover:bg-[#fda66e] hover:-translate-y-px hover:shadow-[0_8px_28px_rgba(252,152,90,0.35)] transition-all"
+                  className="nd-btn nd-btn-primary"
                 >
                   Generate implementation roadmap
                   <span aria-hidden>→</span>
@@ -447,17 +450,17 @@ export default function SolutionClient() {
                           {formatUsd(line.amount)}
                         </span>
                       </div>
-                      <p className="text-[0.8rem] text-night/65 mb-1.5 leading-[1.45]">
+                      <p className="text-[0.8rem] text-eyebrow mb-1.5 leading-[1.45]">
                         {line.description}
                       </p>
                       <div className="flex items-center gap-3">
-                        <div className="flex-1 h-7 bg-bone rounded-md overflow-hidden">
+                        <div className="flex-1 h-7 bg-[var(--surface-overlay)] border border-corbeau/10 rounded-md overflow-hidden">
                           <div
                             style={{ width: `${pct}%` }}
                             className="h-full bg-gradient-to-r from-papaya to-[#fda66e] rounded-md flex items-center justify-end pr-2 transition-[width] duration-700 ease-out"
                           >
                             {line.share >= 0.08 && (
-                              <span className="font-mono font-bold text-corbeau text-xs tabular-nums">
+                              <span className="font-mono font-bold text-corbeau text-xs tabular-nums rounded px-1.5 py-0.5 bg-bone/85">
                                 {pct}%
                               </span>
                             )}
@@ -487,7 +490,7 @@ export default function SolutionClient() {
               </p>
             </FadeUp>
             <FadeUp>
-              <div className="rounded-xl border border-corbeau/10 bg-paper overflow-x-auto shadow-[0_2px_14px_rgba(14,16,32,0.04)]">
+              <div className="rounded-xl border border-corbeau/10 bg-paper overflow-x-auto shadow-[0_2px_14px_rgba(var(--ink-rgb),0.04)]">
                 <table className="min-w-full text-[0.9rem]">
                   <thead className="bg-papaya">
                     <tr>
@@ -526,14 +529,14 @@ export default function SolutionClient() {
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="inline-flex items-center gap-2 rounded-md border border-corbeau/15 bg-paper px-5 py-2.5 text-sm font-semibold text-corbeau hover:border-papaya/40 transition-colors"
+                className="nd-btn nd-btn-secondary"
               >
                 Print / save as PDF
               </button>
               <button
                 type="button"
                 onClick={resetAll}
-                className="inline-flex items-center gap-2 bg-papaya text-corbeau px-6 py-2.5 rounded-[10px] font-display font-bold text-[0.92rem] shadow-[0_4px_18px_rgba(252,152,90,0.25)] hover:bg-[#fda66e] hover:-translate-y-px transition-all"
+                className="nd-btn nd-btn-primary"
               >
                 <span aria-hidden>←</span>
                 Start over

@@ -1,0 +1,203 @@
+---
+title: "Savladajte SAP BTP Cockpit: jednostavni koraci za svakoga"
+h1: "Savladajte SAP BTP Cockpit: jednostavni koraci za svakoga"
+slug: "master-the-sap-btp-cockpit-simple-steps"
+date: "2025-03-27"
+updated: "2026-10-07"
+hero: "/images/wp/2025/03/SAP-BTP-Cockpit-3.webp"
+heroAlt: "Prijavni zaslon SAP BTP Cockpita pokraj bijelog humanoidnog robota na neonskoj pozadini"
+category: "sap-modules"
+tags: ["sap-technical-decisions", "sap-btp", "sap-cap", "cloud-foundry"]
+author: "Noel D'Costa"
+metaTitle: "SAP BTP Cockpit: jednostavni koraci za admine i programere"
+metaDescription: "Kako koristiti SAP BTP Cockpit: prijava, postavljanje subaccounta i entitlementa, povezivanje pružatelja identiteta, uvođenje aplikacija i kontrola troškova."
+excerpt: "SAP BTP Cockpit je mjesto odakle upravljate svim SAP cloud uslugama koje posjedujete. Evo kako se prijaviti, postaviti sve ispravnim redoslijedom i izbjeći pogreške koje timovima koštaju tjedne."
+experienceSource: "Noel's published WordPress article (published 2025-03-27) and its first-person examples (50+ subaccounts, entitlement savings, morning dashboard check, deployment script, 80% setup time). Cockpit URLs, trust setup, usage and alerting features checked against SAP Learning and SAP Developers pages on 2026-10-07."
+lastReviewed: "2026-05-21"
+keyTakeaways:
+  - "Prijavite se putem regionalnog pristupnika, na primjer emea.cockpit.btp.cloud.sap; probni računi koriste cockpit.hanatrial.ondemand.com i traju do 90 dana"
+  - "Planirajte strukturu subaccounta i imenovanje prije nego što išta stvorite; jedan klijent imao je više od 50 nasumično imenovanih subaccounta i nitko ništa nije mogao pronaći"
+  - "Povežite korporativnog pružatelja identiteta putem SAP Cloud Identity Services umjesto ručnog upravljanja BTP korisnicima"
+  - "Počnite s minimalnim entitlementima i dodajte po potrebi, zatim provjerite Usage Analytics ili Costs and Usage prije svake obnove"
+  - "Uskladite runtime (Cloud Foundry, Kyma ili ABAP environment) s vještinama svog tima, a ne samo s arhitektonskim dijagramom"
+  - "Zapišite strukturu računa i razloge iza nje; Cockpit pohranjuje što, a ne zašto"
+pullQuote: "Cockpit pohranjuje što. Nikad ne pohranjuje zašto. Taj dio zapišite sami."
+mentions:
+  - "SAP BTP"
+  - "SAP S/4HANA"
+  - "SAP Integration Suite"
+  - "SAP SuccessFactors"
+  - "SAP HANA Cloud"
+  - "SAP Build"
+  - "SAP Datasphere"
+  - "SAP Cloud Identity Services"
+  - "SAP Alert Notification service"
+originalUrl: "https://noeldcosta.com/master-the-sap-btp-cockpit-simple-steps/"
+canonicalUrl: "https://noeldcosta.com/hr/master-the-sap-btp-cockpit-simple-steps/"
+locale: "hr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP Business Technology Platform (BTP) Cockpit web je konzola iz koje upravljate svojim SAP cloud okruženjem: računima, uslugama, korisnicima, sigurnošću, uvedenim aplikacijama i troškovima. Ako administrirate BTP, uvodite aplikacije na njega ili odobravate njegov račun, to je zaslon na kojem ćete živjeti.
+
+Za ulazak otvorite regionalni pristupnik za svoju regiju: `https://emea.cockpit.btp.cloud.sap`, `https://amer.cockpit.btp.cloud.sap` ili `https://apac.cockpit.btp.cloud.sap` ([SAP Learning](https://learning.sap.com/courses/operating-sap-business-technology-platform/utilizing-sap-btp-cockpit)). Treba Vam SAP korisnički ID; Vaš administrator može ga postaviti. Probni računi koriste `https://cockpit.hanatrial.ondemand.com/trial/` i traju do 90 dana, uz potrebno produljenje nakon 30 ([SAP Developers](https://developers.sap.com/tutorials/cp-trial-quick-onboarding.html)).
+
+Zatim sve postavite redoslijedom u nastavku. Prvi sam put danima otkrivao taj redoslijed. Većina muke dolazila je od toga što sam četvrti korak radio prije prvog.
+
+## Kako je Cockpit organiziran
+
+Sve je u hijerarhiji. **Global account** je Vaš ugovor sa SAP-om i drži skup usluga koje ste kupili. **Directories** grupiraju subaccounte, na primjer po poslovnoj jedinici. **Subaccounts** su mjesto gdje se radi: svaki ima regiju, okruženje poput Cloud Foundryja ili Kyme, vlastite korisnike i vlastite instance usluga.
+
+<explainer-org title="Kako je organiziran BTP global account" caption="Svaki subaccount crpi iz jednog ograničenog skupa. Dogovorite nazive i podjelu prije nego što stvorite prvi." chain="Global account => Vaš ugovor sa SAP-om i usluge koje ste kupili|Directory => Grupira subaccounte, na primjer po poslovnoj jedinici" side="Entitlements => Ograničen skup iz kojeg svaki subaccount crpi" roles="Finance-Dev => Razvoj, na besplatnim ili malim planovima|Finance-Test => Testiranje, s vlastitim korisnicima i role collectionima|Finance-Prod => Produkcija, s upozorenjima postavljenim prije puštanja u rad" highlight="side"></explainer-org>
+
+BTP sam pokriva četiri područja: razvoj aplikacija i automatizaciju, integraciju, podatke i analitiku te AI. Sva ćete četiri susresti u Cockpitu, ali većina programa počinje integracijom i ekstenzijama za S/4HANA.
+
+## Redoslijed postavljanja u prvom tjednu
+
+Ovo je redoslijed kojim idem na novom global accountu. Svaki korak ima prirodnog vlasnika.
+
+1. **Dogovorite strukturu subaccounta i imenovanje** (vlasnik platforme). Razvoj, testiranje i produkcija po području, na primjer `Finance-Dev`, `Finance-Test`, `Finance-Prod`.
+2. **Povežite svog pružatelja identiteta** (voditelj sigurnosti). Učinite to prije nego što dodate ijednog korisnika.
+3. **Definirajte role collectione prema funkciji posla** (voditelj sigurnosti), uključujući jednu break-glass administratorsku kolekciju.
+4. **Rasporedite entitlemente, najprije minimalne** (vlasnik platforme). Dodajte još kad tim pokaže da ih treba.
+5. **Instalirajte i konfigurirajte Cloud Connector** (infrastrukturni tim) ako BTP mora dosegnuti on-premise sustave.
+6. **Uključite upozorenja i pregled korištenja** (vlasnik platforme). Odlučite tko što gleda i koliko često.
+7. **Sve zapišite izvan Cockpita** (arhitekt). Strukturu, pravila imenovanja, podjelu entitlementa i razloge za svako.
+
+### Subaccounti i entitlementi
+
+Tu većina timova stvori nered koji ih prati godinama.
+
+Jednom sam radio s klijentom koji je imao više od 50 nasumično imenovanih subaccounta i nitko ništa nije mogao pronaći. Raspetljavanje toga usred projekta je bolno. Odvojite dan da prvo na papiru mapirate strukturu. Ako radite u više regija, preslikajte strukturu kroz njih i koristite oznake za grupiranje povezanih subaccounta.
+
+**Entitlementi** odlučuju koje usluge svaki subaccount može koristiti i u kojoj mjeri. Vaš global account ima ograničen skup. Počinjem minimalno i povećavam po potrebi, a taj je pristup mojim klijentima uštedio tisuće na neiskorištenim uslugama. Mnoge usluge imaju besplatan plan, koji je dovoljan za testiranje.
+
+### Korisnici, povjerenje i role collectioni
+
+Ako Vaša tvrtka već ima pružatelja identiteta kao što je Microsoft Entra ID ili Okta, ne upravljajte BTP korisnicima ručno. SAP-ov preporučeni put je SAP Cloud Identity Services tenant, povezan sa subaccountom pod **Security > Trust Configuration**. Taj tenant tada djeluje kao proxy prema Vašem korporativnom pružatelju identiteta. Povjerenje se može postaviti automatski putem OpenID Connecta. Dvofaktorska autentifikacija i pravila pristupa tada su na jednom mjestu.
+
+Role collectioni su skupovi uloga koje dodjeljujete korisnicima ili grupama. Moj pristup:
+
+1. Gradite ih oko funkcija posla, a ne pojedinaca.
+2. Držite ih dovoljno specifičnima da nešto znače, ali ne toliko granularnima da održavate stotine.
+3. Držite jednu break-glass administratorsku kolekciju za hitne slučajeve.
+4. Pregledavajte dodjele svako tromjesečje. Ljudi mijenjaju posao i zadržavaju stari pristup.
+
+### Usluge, instance i ključevi
+
+Za stvaranje instance usluge otvorite **Services > Service Marketplace** u subaccountu, odaberite uslugu i plan. Plan određuje i mogućnosti i trošak. Postavke koje ste odabrali spremite negdje izvan Cockpita; trebat će Vam kad nešto pukne.
+
+Povežite (bind) instancu s aplikacijom i BTP ubrizgava vjerodajnice. Za vanjske alate koji nisu BTP aplikacije stvorite **service key**. Ključeve imenujte prema tome tko ih koristi, na primjer `jenkins-deployment`, a ne `key1`.
+
+## Izgradnja na BTP-u
+
+### Odabir runtimea
+
+Cockpit nudi tri glavna okruženja. Birajte s vještinama svog tima pred očima.
+
+| Runtime | Najbolje za | Na što paziti |
+|---|---|---|
+| Cloud Foundry | Java, Node.js i Python aplikacije, uključujući SAP Cloud Application Programming Model (CAP) | Zreli zadani izbor; najmanje iznenađenja za većinu timova |
+| Kyma | Kubernetes-native mikroservisi i ekstenzije vođene događajima | Traži Kubernetes vještine koje mnogi SAP timovi nemaju |
+| ABAP environment | ABAP Cloud ekstenzije uz S/4HANA | Prirodan izbor za ABAP programere; koristi samo objavljene API-je |
+
+Vidio sam projekte kojima su mjeseci kašnjenja uzrokovali programeri koji su morali naučiti novo okruženje koje je odgovaralo arhitektonskom planu, ali ne i njihovu iskustvu. Tehnički bolji runtime u kojem Vaš tim ne može graditi lošiji je izbor.
+
+Za uvođenje na Cloud Foundry opišite aplikaciju u `manifest.yml` (memorija, instance, buildpack, varijable okruženja), zatim je gurnite pomoću CF CLI-ja ili pipelinea. Cloud Foundry otkriva buildpack, povezuje usluge i postavlja rute.
+
+### Povezivanje BTP-a sa S/4HANA i drugim sustavima
+
+Većina BTP posla je integracija. Ovo su obrasci koje najčešće postavljam.
+
+| Scenarij | Kako ga postaviti |
+|---|---|
+| S/4HANA on-premise ili Private Edition | Cloud Connector u Vašoj mreži, destination u subaccountu, zatim OData ili SOAP API-ji |
+| SAP cloud aplikacije poput SuccessFactors | Destinations plus Integration Suite ili Event Mesh, s ekstenzijama u CAP-u |
+| Sustavi izvan SAP-a poput Salesforcea ili Workdaya | Adapteri za Integration Suite ili prilagođeni integracijski tokovi |
+| Izlaganje vlastitih API-ja | API Management u Integration Suiteu: dizajn, objava, praćenje |
+
+Cloud Connector otvara izlazni tunel prema BTP-u pa Vam ne trebaju ulazna pravila vatrozida. Izložite samo sustave i URL putanje koje BTP stvarno treba. Ako Vam je integracija glavna namjena, moj [članak o SAP CPI-ju](/hr/sap-cpi/) detaljnije pokriva izbore dizajna.
+
+## Svakodnevni rad s BTP-om
+
+### Praćenje i kontrola troškova
+
+Postavite praćenje prije nego što Vam zatreba. Svoje nadzorne ploče provjeravam svako jutro uz kavu. Postalo je ritual i spasilo me od više od nekoliko trenutaka „zašto sustav ne radi?“.
+
+Što postaviti:
+
+1. **Upozorenja.** SAP Alert Notification service šalje događaje platforme i aplikacija na e-poštu, Slack ili Vaš vlastiti alat za upozorenja. Moje uobičajeno postavljanje je e-pošta za kritične aplikacije i Slack webhook za sve što ne smije pasti.
+2. **Zdravlje aplikacija.** Vremena odziva i stope pogrešaka po aplikaciji, iz prikaza Cloud Foundryja ili Kyme.
+3. **Korištenje i trošak.** Usage Analytics u svakom subaccountu i Costs and Usage na razini global accounta. Vrijednosti korištenja osvježavaju se svakih 24 sata.
+
+Brišite neiskorištene instance usluga svaki mjesec. Smanjite razvojne prostore izvan radnog vremena. Provjerite potrošnju entitlementa prije obnove, jer su neiskorištene alokacije čest izvor prekomjerne potrošnje.
+
+### Automatizacija i vlastite domene
+
+Klikanje po Cockpitu ne skalira. Sučelje naredbenog retka BTP-a (btp CLI) i API-ji platforme mogu skriptirati gotovo sve što radi korisničko sučelje: stvaranje subaccounta, dodjelu entitlementa, osiguravanje programera.
+
+Na jednom angažmanu trebala su mi okruženja za 12 novih programera. Umjesto da po cijeli dan klikam po Cockpitu, pokrenuo sam svoju skriptu i otišao na kavu. Kad sam se vratio, sve je bilo spremno. Automatizacija uvođenja skratila je vrijeme postavljanja za 80 % na jednom angažmanu, a povezivanje service keyeva i CF CLI-ja u pipeline svela je uvođenje sa sati na minute.
+
+Vlastite domene vrijedne su truda za aplikacije okrenute korisnicima. Konfiguriraju se putem usluge SAP Custom Domain, a ne izbornika Cockpita. Na jednom klijentskom projektu rukovoditelji su odmah primijetili profesionalniji dojam.
+
+## Pogreške koje najčešće vidim
+
+1. Stvaranje subaccounta prije dogovora o konvenciji imenovanja.
+2. Dodjeljivanje uloga pojedincima umjesto role collectionima i grupama.
+3. Pokretanje razvojnih usluga na planovima veličine produkcije.
+4. Ostavljanje upozorenja za nakon prvog ispada.
+5. Nedokumentiranje strukture računa i razloga iza nje. Cockpit pohranjuje što, nikad zašto.
+
+Zapeli ste na određenoj pogrešci? Moj [vodič o problemima s BTP Cockpitom](/hr/sap-btp-cockpit-issues/) pokriva uobičajene. [Vodič za clean core](/hr/sap-clean-core-strategy-what-it-means-for-your-business/) objašnjava gdje BTP ekstenzije stoje u S/4HANA programu.
+
+## Često postavljana pitanja
+
+<details>
+<summary>Za što se koristi SAP BTP Cockpit?</summary>
+
+To je web-bazirana administrativna konzola za SAP Business Technology Platform. Koristite je za stvaranje subaccounta, raspodjelu entitlementa, upravljanje korisnicima i povjerenjem, stvaranje instanci usluga, uvođenje i praćenje aplikacija te praćenje korištenja i troška.
+
+</details>
+
+<details>
+<summary>Koji je URL za prijavu u SAP BTP Cockpit?</summary>
+
+Koristite svoj regionalni pristupnik: `https://emea.cockpit.btp.cloud.sap` za Europu, Bliski istok i Afriku, `https://amer.cockpit.btp.cloud.sap` za Ameriku ili `https://apac.cockpit.btp.cloud.sap` za Aziju i Pacifik. Probni računi koriste `https://cockpit.hanatrial.ondemand.com/trial/`. Za prijavu Vam treba SAP korisnički ID.
+
+</details>
+
+<details>
+<summary>Kako strukturirati subaccounte u SAP BTP-u?</summary>
+
+Odvojite razvoj, testiranje i produkciju u zasebne subaccounte od početka i imenujte ih tako da su područje i faza očiti, na primjer `Finance-Dev` i `Finance-Prod`. Veće organizacije dodaju directories po poslovnoj jedinici. Prvo planirajte na papiru; strukturu je teško mijenjati kad usluge već rade.
+
+</details>
+
+<details>
+<summary>Koja su četiri stupa SAP BTP-a?</summary>
+
+SAP BTP grupira u razvoj aplikacija i automatizaciju, integraciju, podatke i analitiku te umjetnu inteligenciju. Većina programa počinje integracijom i S/4HANA ekstenzijama, a zatim dodaje podatkovne i AI slučajeve uporabe kad se platforma stabilizira.
+
+</details>
+
+<details>
+<summary>Kako povezati svog pružatelja identiteta sa SAP BTP-om?</summary>
+
+Postavite SAP Cloud Identity Services tenant i uspostavite povjerenje sa svojim subaccountom pod Security > Trust Configuration; OpenID Connect to može učiniti automatski. Zatim povežite svog korporativnog pružatelja identiteta, kao što je Microsoft Entra ID ili Okta, s tim tenantom. Korisnicima i dvofaktorskom autentifikacijom tada se upravlja na jednom mjestu.
+
+</details>
+
+<details>
+<summary>Koji BTP runtime odabrati: Cloud Foundry, Kyma ili ABAP environment?</summary>
+
+Uskladite ga s timom. Cloud Foundry odgovara Java, Node.js i Python aplikacijama i najsigurniji je zadani izbor. Kyma odgovara Kubernetes-native mikroservisima, ali traži Kubernetes vještine. ABAP environment odgovara ABAP programerima koji grade clean core ekstenzije uz S/4HANA.
+
+</details>
+
+<details>
+<summary>Kako povezati SAP BTP s on-premise SAP sustavom?</summary>
+
+Instalirajte Cloud Connector unutar svoje mreže. On otvara siguran izlazni tunel prema BTP-u pa nisu potrebne promjene ulaznog vatrozida. Izložite samo sustave i putanje koje BTP treba, provjerite vezu pod Connectivity u subaccountu, zatim stvorite destinations koje pozivaju Vaše aplikacije i integracijski tokovi. Testirajte cijeli put prije produkcije.
+
+</details>

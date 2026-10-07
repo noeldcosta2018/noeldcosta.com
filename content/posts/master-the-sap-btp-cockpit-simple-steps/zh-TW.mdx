@@ -1,0 +1,203 @@
+---
+title: "精通 SAP BTP Cockpit：人人都能跟著做的簡單步驟"
+h1: "精通 SAP BTP Cockpit：人人都能跟著做的簡單步驟"
+slug: "master-the-sap-btp-cockpit-simple-steps"
+date: "2025-03-27"
+updated: "2026-10-07"
+hero: "/images/wp/2025/03/SAP-BTP-Cockpit-3.webp"
+heroAlt: "SAP BTP Cockpit 登入畫面，旁邊是霓虹背景前的一台白色人形機器人"
+category: "sap-modules"
+tags: ["sap-technical-decisions", "sap-btp", "sap-cap", "cloud-foundry"]
+author: "Noel D'Costa"
+metaTitle: "SAP BTP Cockpit：管理員與開發人員的簡單步驟"
+metaDescription: "如何使用 SAP BTP Cockpit，適合管理員與開發人員：登入、設定子帳戶與授權額度、連接您的身分提供者、部署應用程式，並讓成本維持在掌控之中。"
+excerpt: "SAP BTP Cockpit 是您管理所有 SAP 雲端服務的地方。以下說明如何登入、以正確的順序完成設定，並避開那些讓團隊白白耗上數週的錯誤。"
+experienceSource: "Noel's published WordPress article (published 2025-03-27) and its first-person examples (50+ subaccounts, entitlement savings, morning dashboard check, deployment script, 80% setup time). Cockpit URLs, trust setup, usage and alerting features checked against SAP Learning and SAP Developers pages on 2026-10-07."
+lastReviewed: "2026-05-21"
+keyTakeaways:
+  - "透過您所在區域的入口登入，例如 emea.cockpit.btp.cloud.sap；試用帳戶使用 cockpit.hanatrial.ondemand.com，最長可使用 90 天"
+  - "在建立任何東西之前，先規劃子帳戶結構與命名；有一位客戶有 50 個以上隨意命名的子帳戶，結果沒有人找得到任何東西"
+  - "透過 SAP Cloud Identity Services 連接公司的身分提供者，不要手動管理 BTP 使用者"
+  - "從最少的授權額度開始，需要再加，並在每次續約之前檢查 Usage Analytics 或 Costs and Usage"
+  - "讓執行環境（Cloud Foundry、Kyma 或 ABAP 環境）符合團隊的技能，而不只是符合架構圖"
+  - "把您的帳戶結構與背後的理由寫下來；Cockpit 儲存的是「是什麼」，不是「為什麼」"
+pullQuote: "Cockpit 儲存的是「是什麼」。它從不儲存「為什麼」。這一部分請您自己寫下來。"
+mentions:
+  - "SAP BTP"
+  - "SAP S/4HANA"
+  - "SAP Integration Suite"
+  - "SAP SuccessFactors"
+  - "SAP HANA Cloud"
+  - "SAP Build"
+  - "SAP Datasphere"
+  - "SAP Cloud Identity Services"
+  - "SAP Alert Notification service"
+originalUrl: "https://noeldcosta.com/master-the-sap-btp-cockpit-simple-steps/"
+canonicalUrl: "https://noeldcosta.com/zh-TW/master-the-sap-btp-cockpit-simple-steps/"
+locale: "zh-TW"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP Business Technology Platform（BTP）Cockpit 是您營運 SAP 雲端環境的網頁主控台：帳戶、服務、使用者、資安、已部署的應用程式與成本，都在其中。如果您負責管理 BTP、要把東西部署到上面，或是要核准它的帳單，這就是您會待最久的畫面。
+
+要進入，請開啟您所在區域的入口：`https://emea.cockpit.btp.cloud.sap`、`https://amer.cockpit.btp.cloud.sap` 或 `https://apac.cockpit.btp.cloud.sap`（[SAP Learning](https://learning.sap.com/courses/operating-sap-business-technology-platform/utilizing-sap-btp-cockpit)）。您需要一個 SAP 使用者 ID；您的管理員可以幫您建立。試用帳戶使用 `https://cockpit.hanatrial.ondemand.com/trial/`，最長可使用 90 天，且 30 天後需要延長（[SAP Developers](https://developers.sap.com/tutorials/cp-trial-quick-onboarding.html)）。
+
+接著依下列順序進行設定。我第一次摸索這個順序，花了好幾天。大部分的痛苦，都來自在第一步之前就先做了第四步。
+
+## Cockpit 的組織方式
+
+一切都放在一個階層裡。**全域帳戶**（global account）是您與 SAP 之間的合約，並持有您所購買的服務池。**目錄**（directory）用來為子帳戶分組，例如依事業單位分組。**子帳戶**（subaccount）是實際工作發生的地方：每個子帳戶都有一個區域、一個環境（例如 Cloud Foundry 或 Kyma）、自己的使用者，以及自己的服務執行個體。
+
+<explainer-org title="BTP 全域帳戶是如何組織的" caption="每個子帳戶都從同一個有限的資源池取用。在建立第一個子帳戶之前，先就名稱與劃分方式達成共識。" chain="全域帳戶 => 您與 SAP 之間的合約，以及您購買的服務|目錄 => 為子帳戶分組，例如依事業單位" side="授權額度 => 每個子帳戶從中取用的有限資源池" roles="Finance-Dev => 開發，使用免費或小型方案|Finance-Test => 測試，有自己的使用者與角色集合|Finance-Prod => 正式環境，在上線前先設好警示" highlight="side"></explainer-org>
+
+BTP 本身涵蓋四個領域：應用程式開發與自動化、整合、資料與分析，以及 AI。您在 Cockpit 中四個都會遇到，但多數專案是從整合與 S/4HANA 的擴充功能開始。
+
+## 第一週的設定順序
+
+這是我在新的全域帳戶上遵循的順序。每一步都有天然的負責人。
+
+1. **就子帳戶結構與命名達成共識**（平台負責人）。依領域分開發、測試與正式環境，例如 `Finance-Dev`、`Finance-Test`、`Finance-Prod`。
+2. **連接您的身分提供者**（資安負責人）。在新增任何一位使用者之前先做。
+3. **依職務功能定義角色集合**（資安負責人），包括一個緊急應變（break-glass）管理員角色集合。
+4. **分配授權額度，先從最少開始**（平台負責人）。當某個團隊能證明需要時，再增加。
+5. **安裝並設定 Cloud Connector**（基礎架構團隊），前提是 BTP 必須連到地端系統。
+6. **啟用警示與用量檢視**（平台負責人）。決定誰看什麼、多久看一次。
+7. **把一切寫在 Cockpit 之外**（架構師）。結構、命名規則、授權額度的劃分，以及每一項的理由。
+
+### 子帳戶與授權額度
+
+這是多數團隊搞出一團亂、而且一亂就是好幾年的地方。
+
+我曾與一位客戶合作，它有 50 個以上隨意命名的子帳戶，沒有人找得到任何東西。在專案進行中途理清這一團亂，非常痛苦。請先花一天，在紙上把結構畫出來。如果您在多個區域運行，請在各區域複製同樣的結構，並用標籤把相關的子帳戶分組。
+
+**授權額度**（entitlement）決定每個子帳戶能使用哪些服務，以及用量多少。您的全域帳戶擁有一個有限的資源池。我從最少開始，視需要再擴充，這個做法為我的客戶省下了數千美元用不到的服務費。許多服務都有免費方案，用來測試就夠了。
+
+### 使用者、信任與角色集合
+
+如果貴公司已經有身分提供者，例如 Microsoft Entra ID 或 Okta，請不要手動管理 BTP 使用者。SAP 建議的路線是使用一個 SAP Cloud Identity Services 租戶，並在子帳戶的 **Security > Trust Configuration** 下與之連接。該租戶接著會作為您公司身分提供者的代理。這個信任可以透過 OpenID Connect 自動建立。雙因素驗證與存取政策便集中在同一個地方。
+
+角色集合是一組您指派給使用者或群組的角色。我的做法：
+
+1. 圍繞職務功能來建立，而不是圍繞個人。
+2. 要具體到有意義，但不要細到您得維護數百個。
+3. 保留一個供緊急狀況使用的 break-glass 管理員角色集合。
+4. 每季檢視一次指派。人們會換工作，卻保留著舊的存取權限。
+
+### 服務、執行個體與金鑰
+
+要建立服務執行個體，請在子帳戶中開啟 **Services > Service Marketplace**，選擇服務並挑選一個方案。方案同時控制能力與成本。把您選擇的設定存在 Cockpit 之外的地方；出問題時您會需要它們。
+
+把執行個體綁定到您的應用程式，BTP 就會注入憑證。對於不是 BTP 應用程式的外部工具，請建立**服務金鑰**。金鑰要以使用它的對象來命名，例如 `jenkins-deployment`，而不是 `key1`。
+
+## 在 BTP 上建置
+
+### 選擇執行環境
+
+Cockpit 提供三種主要環境。請把您團隊的技能擺在眼前來選擇。
+
+| 執行環境 | 最適合 | 注意事項 |
+|---|---|---|
+| Cloud Foundry | Java、Node.js 與 Python 應用程式，包括 SAP Cloud Application Programming Model（CAP） | 成熟的預設選擇；對多數團隊來說驚喜最少 |
+| Kyma | 原生 Kubernetes 的微服務與事件驅動的擴充功能 | 需要許多 SAP 團隊並不具備的 Kubernetes 技能 |
+| ABAP 環境 | 與 S/4HANA 並行的 ABAP Cloud 擴充功能 | 對 ABAP 開發人員是自然的選擇；只使用已發布的 API |
+
+我看過專案因為開發人員得學習一個符合架構計畫、卻不符合他們經驗的新環境，而延誤了好幾個月。技術上更好、但您的團隊無法在上面建置的執行環境，是比較差的選擇。
+
+要部署到 Cloud Foundry，請在 `manifest.yml` 中描述應用程式（記憶體、執行個體數、buildpack、環境變數），再用 CF CLI 或管線推送。Cloud Foundry 會偵測 buildpack、綁定服務並設定路由。
+
+### 把 BTP 連接到 S/4HANA 與其他系統
+
+多數 BTP 的工作都是整合。以下是我最常設定的模式。
+
+| 情境 | 設定方式 |
+|---|---|
+| 地端或 Private Edition 的 S/4HANA | 在您的網路中安裝 Cloud Connector，在子帳戶中建立目的地（destination），再使用 OData 或 SOAP API |
+| SAP 雲端應用程式，例如 SuccessFactors | 目的地加上 Integration Suite 或 Event Mesh，並以 CAP 開發擴充功能 |
+| 非 SAP 系統，例如 Salesforce 或 Workday | Integration Suite 轉接器，或自訂的整合流程 |
+| 對外提供您自己的 API | Integration Suite 中的 API Management：設計、發布、監控 |
+
+Cloud Connector 會開啟一條通往 BTP 的對外通道，所以您不需要任何對內的防火牆規則。只開放 BTP 實際需要的系統與 URL 路徑。如果整合是您的主要用途，我的 [SAP CPI 文章](/zh-TW/sap-cpi/)更深入地說明了各種設計選擇。
+
+## BTP 的日常營運
+
+### 監控與成本控管
+
+在需要之前，就先設好監控。我每天早上喝咖啡時都會看我的儀表板。這已經成了一種儀式，也讓我避開了不只一次「系統為什麼掛了？」的時刻。
+
+要設定的項目：
+
+1. **警示。** SAP Alert Notification service 會把平台與應用程式事件，傳送到電子郵件、Slack 或您自己的警示工具。我平常的設定是：重要應用程式用電子郵件，任何不能中斷的則用 Slack webhook。
+2. **應用程式健康度。** 每個應用程式的回應時間與錯誤率，來自 Cloud Foundry 或 Kyma 的檢視畫面。
+3. **用量與成本。** 每個子帳戶中的 Usage Analytics，以及全域帳戶層級的 Costs and Usage。用量數值每 24 小時更新一次。
+
+每個月刪除用不到的服務執行個體。在非上班時間，縮減開發空間的規模。續約之前，先檢查授權額度的消耗情況，因為用不到的配額，是超支的常見來源。
+
+### 自動化與自訂網域
+
+在 Cockpit 裡一個一個點，無法擴展。BTP 命令列介面（btp CLI）與平台 API，幾乎能用腳本完成 UI 能做的一切：建立子帳戶、指派授權額度、為開發人員佈建環境。
+
+在一次專案中，我需要為 12 位新開發人員準備環境。我沒有整天在 Cockpit 裡點來點去，而是執行我的腳本，然後去喝咖啡。回來時，一切都準備好了。自動化部署在某次專案中，把設定時間縮短了 80%，而把服務金鑰與 CF CLI 接進管線，讓部署從數小時縮短到數分鐘。
+
+自訂網域對面向使用者的應用程式很值得投入。它們是透過 SAP Custom Domain service 設定，而不是 Cockpit 裡的某個選單。在一個客戶專案中，高階主管立刻就注意到那種更專業的質感。
+
+## 我最常看到的錯誤
+
+1. 在議定命名慣例之前，就先建立子帳戶。
+2. 把角色指派給個人，而不是角色集合與群組。
+3. 在正式環境規模的方案上跑開發服務。
+4. 等到第一次中斷之後，才設定警示。
+5. 沒有記錄帳戶結構以及背後的理由。Cockpit 儲存的是「是什麼」，從來不儲存「為什麼」。
+
+卡在某個特定的錯誤？我的 [BTP Cockpit 問題指南](/zh-TW/sap-btp-cockpit-issues/)涵蓋了常見的那些。[Clean Core 指南](/zh-TW/sap-clean-core-strategy-what-it-means-for-your-business/)說明了 BTP 擴充功能在 S/4HANA 專案中適用於哪裡。
+
+## 常見問題
+
+<details>
+<summary>SAP BTP Cockpit 是用來做什麼的？</summary>
+
+它是 SAP Business Technology Platform 的網頁式管理主控台。您用它來建立子帳戶、分配授權額度、管理使用者與信任、建立服務執行個體、部署與監控應用程式，以及追蹤用量與成本。
+
+</details>
+
+<details>
+<summary>SAP BTP Cockpit 的登入網址是什麼？</summary>
+
+請使用您所在區域的入口：歐洲、中東與非洲使用 `https://emea.cockpit.btp.cloud.sap`，美洲使用 `https://amer.cockpit.btp.cloud.sap`，亞太地區使用 `https://apac.cockpit.btp.cloud.sap`。試用帳戶使用 `https://cockpit.hanatrial.ondemand.com/trial/`。登入需要一個 SAP 使用者 ID。
+
+</details>
+
+<details>
+<summary>我該如何在 SAP BTP 中規劃子帳戶結構？</summary>
+
+從一開始就把開發、測試與正式環境分別放進各自的子帳戶，並讓名稱清楚呈現領域與階段，例如 `Finance-Dev` 與 `Finance-Prod`。較大的組織會依事業單位新增目錄。請先在紙上規劃；一旦服務開始運行，結構就很難更動。
+
+</details>
+
+<details>
+<summary>SAP BTP 的四大支柱是什麼？</summary>
+
+SAP 把 BTP 分為應用程式開發與自動化、整合、資料與分析，以及人工智慧。多數專案從整合與 S/4HANA 擴充功能開始，等平台穩定之後，再加入資料與 AI 的使用情境。
+
+</details>
+
+<details>
+<summary>我該如何把身分提供者連接到 SAP BTP？</summary>
+
+設定一個 SAP Cloud Identity Services 租戶，並在 Security > Trust Configuration 下，與您的子帳戶建立信任；OpenID Connect 可以自動完成這件事。接著把您公司的身分提供者，例如 Microsoft Entra ID 或 Okta，連接到該租戶。使用者與雙因素驗證便集中在同一個地方管理。
+
+</details>
+
+<details>
+<summary>我該選哪一種 BTP 執行環境：Cloud Foundry、Kyma 或 ABAP 環境？</summary>
+
+依您的團隊來決定。Cloud Foundry 適合 Java、Node.js 與 Python 應用程式，也是最安全的預設選擇。Kyma 適合原生 Kubernetes 的微服務，但需要 Kubernetes 技能。ABAP 環境則適合在 S/4HANA 旁建置 Clean Core 擴充功能的 ABAP 開發人員。
+
+</details>
+
+<details>
+<summary>我該如何把 SAP BTP 連接到地端的 SAP 系統？</summary>
+
+在您的網路內安裝 Cloud Connector。它會開啟一條通往 BTP 的安全對外通道，所以不需要變更任何對內的防火牆設定。只開放 BTP 需要的系統與路徑，在子帳戶的 Connectivity 下檢查連線，再建立供您的應用程式與整合流程呼叫的目的地。在上線到正式環境之前，先測試整條路徑。
+
+</details>

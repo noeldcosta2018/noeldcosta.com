@@ -2,206 +2,164 @@
 title: "Why SAP data migration fails and how to fix it"
 slug: "why-sap-data-migration-fails-and-how-to-fix-it"
 date: "2025-03-22"
-updated: "2026-05-21"
+updated: "2026-10-07"
 hero: "/images/wp/2025/03/Data-Migration-4.png"
 heroAlt: "Data migration team reviewing extraction errors and mapping tables during SAP implementation cutover preparation"
 category: "erp-strategy"
 tags: ["sap-crisis-management", "sap-data-migration", "sap-migration-cockpit", "sap-datasphere"]
 author: "Noel D'Costa"
 metaTitle: "Why SAP Data Migration Fails and How to Fix It in 2026"
-metaDescription: "Why SAP data migration fails on implementation projects in 2026: common mistakes, specific fixes, Migration Cockpit vs Data Services vs Datasphere, and what a working migration strategy looks like."
-excerpt: "A European manufacturing company in 2023 spent 18 months and seven figures on an SAP implementation. The configuration was solid. The testing was thorough. On cutover day, the data migration failed. Customer records were missing or duplicated. Inventory balances were wrong. The finance team could not close the opening period. The CEO halted the go-live. The root cause was not the SAP system. It was the data. The data quality assessment done at the start of the project had been based on what the business thought its data looked like, not what it actually looked like."
-experienceSource: "Direct experience managing SAP data migration workstreams across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets over 25 years of ERP implementations. Includes Material Management master data, Customer and Vendor master, Financial opening balances, and production order migration in manufacturing, public sector, and financial services. Anchored stories: European manufacturing 2023 (18-month programme, seven-figure cutover failure on data), GCC manufacturing 2024 (50,000 to 500,000 material record discovery), European financial services 2024 (vendor balance reconciliation gap surfaced three weeks late). 2026 SAP Migration Cockpit, Datasphere, and Joule for data migration positioning reflects current SAP product roadmap."
+metaDescription: "Why SAP data migration fails and how to fix it: the five mistakes behind most cutover failures, a mock-load plan, and the right S/4HANA tools in 2026."
+excerpt: "Most SAP data migrations fail because the plan was built on what the business thought its data looked like. This guide covers the five mistakes behind most cutover failures, a mock-load plan you can copy, and which S/4HANA tools fit which job."
+experienceSource: "Noel's SAP data migration experience as published in the original article: the manufacturing go-live that failed on data migration after 18 months and $4.5 million, and the client that estimated 50,000 material records and found closer to 500,000. Product facts (Migration Cockpit, Migrate Your Data app, business partner model) checked against SAP documentation in October 2026."
 lastReviewed: "2026-05-21"
 keyTakeaways:
-  - "SAP data migration is the highest-risk workstream on most implementations and the most consistently underestimated in the project plan"
-  - "Manufacturing client thought they had 50,000 material records. The actual count was closer to 500,000 when plant-specific records and variants were included. The migration was planned for three extraction cycles. It took seven"
-  - "The data quality assessment at the start of the project must be based on actual data extracts, not on what the business believes its data looks like"
-  - "Business involvement in data migration is not optional. Only the finance team knows which vendor records are duplicates. Only the warehouse team knows which material records are obsolete. IT cannot make those decisions"
-  - "The cutover data migration is not a separate exercise from the trial loads. It is the last of multiple runs that have been rehearsed. If you have not done mock runs, you are cutovering cold"
-  - "The cost of fixing data migration errors post-go-live is typically five to ten times higher than fixing them during the project. The errors that get through to go-live are the ones that were in the data but nobody looked at carefully enough"
-pullQuote: "The data quality assessment was based on what the business thought its data looked like. The first extraction load revealed the truth. By then, the project plan had already been set, the timeline was fixed, and the discovery consumed six weeks that had not been budgeted."
+  - "Base the data quality assessment on a full extract, not on what the business believes its data looks like"
+  - "One client thought it had about 50,000 material records. Counting all the variants and plant-specific records, the real number was closer to 500,000"
+  - "Business owners make the cleanup decisions. IT cannot decide which of two duplicate vendors is the right one"
+  - "Plan at least three mock loads and reconcile every one. The cutover load should repeat the final rehearsal exactly"
+  - "In S/4HANA, use the Migrate Your Data app (transaction LTMC is deprecated) and load customers and vendors as business partners"
+pullQuote: "Your SAP implementation will succeed or fail based on how well you handle your data migration. It's that simple."
 mentions:
   - "SAP S/4HANA"
   - "SAP LTMC"
   - "SAP Migration Cockpit"
   - "SAP Data Services"
   - "SAP Datasphere"
+  - "SAP Business Data Cloud"
   - "RISE with SAP"
-  - "Joule"
-  - "SAP Cloud ALM"
 ---
 
-A European manufacturing company in 2023 spent 18 months and approximately seven figures on an SAP implementation. The configuration team built a solid system. Testing ran for three months. The business was trained. On cutover day, the data migration failed.
+SAP data migration fails for one reason more than any other: the plan is built on what the business thinks its data looks like, not on what an extract shows. This guide is for programme directors, data leads and finance leaders on an S/4HANA programme. It covers why migrations break, the five mistakes behind most cutover failures, a mock-load plan you can copy, and which SAP tools fit which job in 2026. If you do one thing this week, take a full extract of your customer, vendor and material masters and count the records yourself.
 
-Customer records were missing or arrived with duplicated account numbers. Inventory balances in the new system did not match the balances in the legacy system. The finance team could not complete the opening period entries because the vendor balances were incomplete. The CEO halted the go-live after four hours.
+A manufacturing company spent 18 months and $4.5 million on its SAP implementation. Launch day arrived. Everyone was nervous but excited. Then the data migration failed.
 
-The SAP configuration was fine. The training was adequate. The failure was in the data, specifically in the difference between what the business thought its data looked like and what it actually looked like.
+Nothing worked right. Customer data was missing. Inventory numbers were wrong. Accounting could not close the books. The CEO was furious.
 
-That distinction is the starting point for understanding why SAP data migration fails.
+It was not the software and it was not the implementation team. The failure was in the gap between what the business thought its data looked like and what it actually looked like.
 
-## Why SAP data migration is different
+## Why SAP data is harder than it looks
 
-SAP's data model is more complex than most organisations anticipate. It is not a flat import. The system has strict interdependencies between records. A material master record links to plant-specific data in MARC, to valuation data in MBEW, to MRP parameters in MDMA. Load the material header without the dependent records and the material exists in the system but cannot be used in transactions.
+SAP's data model is not a flat import. Records depend on each other. A material master has a general record (MARA), plant data (MARC), valuation data (MBEW) and, where MRP areas are used, MRP area data (MDMA). Load the header without the dependent views and the material exists but cannot be used in a transaction.
 
-The dependency chain extends further. Sales orders reference customer masters, which reference credit management data, which references company code assignments. A customer record that is incomplete in a way that a legacy system tolerated will fail validation in SAP.
+S/4HANA adds its own rule. Customers and suppliers are business partners. A legacy customer becomes a business partner with a customer role, and a vendor becomes one with a supplier role. Credit limits, bank details and tax numbers hang off that business partner. A record that a legacy system tolerated with gaps will fail validation here.
 
-And then there is volume. A GCC manufacturing client in 2024 estimated they had approximately 50,000 material records. When we extracted the legacy system and counted all variants and plant-specific records, the actual number was closer to 500,000. The migration plan had been built for 50,000 records. The timeline, the resources, and the number of mock load cycles had all been calibrated to that estimate. The recovery cost the programme a six-figure overspend on contractor extension and revised cutover weekend planning.
+Then there is volume. Most companies are shocked by how much data they actually have. One client thought it had about 50,000 material records. Counting all the variants and plant-specific records, the number was closer to 500,000. A plan sized for the first number does not survive the second.
 
-That was not a data migration problem. It was a scoping problem that became a data migration problem.
+<explainer-before-after title="The data the plan assumed, and the data the extract found" caption="One client's approximate counts. The gap was a scoping problem before it became a migration problem." metric="Material records in scope" before-label="Business estimate" after-label="Full extract" before-value="50,000" after-value="500,000" before-points="Counted from what the business believed|Plan, effort and timeline sized on this number" after-points="Every variant and plant-specific record counted|A plan sized on the estimate does not survive it"></explainer-before-after>
+
+That was not a data migration problem. It was a scoping problem that became one.
 
 ## Why data quality is discovered late
 
-The data quality assessment at the start of a project is almost always based on a business description of the data, not on an actual examination of it. The finance director says "our vendor master is well maintained." The warehouse manager says "our materials are mostly clean, with a few duplicates." These descriptions are based on impressions, not analysis.
+The data quality assessment at the start of a project is usually a description of the data, not an examination of it. The finance director says the vendor master is well maintained. The warehouse manager says the materials are mostly clean. Those are impressions.
 
-The first extraction reveals the truth. Vendor records that were supposed to be cleaned up three years ago and were not. Material records for products that were discontinued in 2019 but never deactivated. Customer addresses with inconsistent country codes across different transactions. Bank details missing on vendors who are paid by EFT.
+The first extraction tells you the truth. Vendors that were meant to be cleaned up years ago and were not. Materials discontinued long ago and never deactivated. Customer addresses with inconsistent country codes. Bank details missing on vendors paid by electronic transfer.
 
-Each of these requires a business decision, not just a technical fix. Only the accounts payable team can decide which of two duplicate vendor records is the correct one. Only the procurement team can decide which obsolete materials should be deactivated versus archived. These decisions take time, and they require the people who know the data.
+Each of these needs a business decision, not a technical fix. Only accounts payable can say which of two duplicate vendors is correct. Only procurement can say which obsolete materials to block and which to leave behind. Those decisions take time, and they need the people who know the data. If the assessment is not based on a real extract, the plan is built on assumptions that will not survive contact with the data. My [free data migration estimator](/free-data-migration-estimator-sap-oracle-microsoft/) helps size the effort once you have real counts.
 
-If the data quality assessment is not based on a real extract and a real analysis, the project plan is built on assumptions. Those assumptions will not survive contact with the actual data.
+## The five mistakes behind most migration failures
 
-## The five most common data migration mistakes
+### 1. Treating migration as a late technical task
 
-### Treating migration as a late-stage technical activity
+Migration belongs in every SAP Activate phase. Explore defines the scope: objects, source systems, volumes and quality. Realize builds the templates and runs the mock loads. Deploy runs the final rehearsal and the cutover load. Run reconciles the first period close on live data.
 
-Data migration belongs in every phase of the project. In Explore, the data scope is defined: which objects, which legacy systems, which volumes, which quality state. In Realize, the migration templates are built and the first trial loads run. In Deploy, mock loads are executed and reconciled. In Run, the cutover migration is the final execution of a process that has been rehearsed multiple times.
+Projects that start migration work in Deploy are starting it months too late. The quality issues that should have been resolved in Realize turn up in the first mock, weeks before cutover. My [SAP timeline planning guide](/2024-sap-timeline-planning-implementation-guide-essentials/) shows where migration sits in the overall plan.
 
-Projects that start migration work in the Deploy phase are starting it six months too late. By then, the data quality issues that should have been identified and resolved during Realize are discovered in the first mock load, weeks before cutover.
+### 2. Too little business involvement
 
-### Insufficient business involvement
+Migration is technical in execution and a business activity in decision-making. IT cannot produce the list of duplicate vendors. Which customer accounts move as active and which stay as history is a finance decision. Obsolete material cleanup needs procurement, warehouse and product management.
 
-Data migration is a technical activity in execution. It is a business activity in decision-making. The list of which vendor records are duplicates cannot be produced by the IT team. The decision about which customer accounts to migrate active versus as history is a finance decision. The cleanup of obsolete material records requires input from procurement, warehouse, and product management.
+Programmes that staff migration only with technical people, and treat the business as a sign-off at the end, produce data that loads. Commercially, it is wrong.
 
-Programmes that staff the data migration workstream entirely with technical resources, and treat business involvement as a sign-off activity at the end, produce data that is technically loaded. Commercially, it is wrong.
+### 3. Planning too few mock loads
 
-### Planning for too few mock load cycles
+A well-run SAP data migration needs at least three mock loads before cutover, and complex programmes need more. Projects that plan for one or two are planning for clean data and clean mapping. That scenario is rare. More cycles are not a sign of a troubled migration. They are a sign of a properly planned one.
 
-A well-run SAP data migration typically requires four to six mock load cycles before the cutover load. The first cycle reveals the structural mapping gaps. The second cycle validates the fixes and reveals the data quality issues that the mapping fixes exposed. The third and fourth cycles work through the business rule decisions and the edge cases. The final mock is a full dress rehearsal of the cutover sequence.
+### 4. Not reconciling trial loads
 
-Projects that plan for two mock cycles are planning for the optimistic scenario where the data quality is good and the mapping is clean. That scenario is rare. More cycles are not a sign of a troubled migration. They are a sign of a properly planned one.
+A load job finishing without errors is not validation. Validation compares what was loaded with what was expected: record counts, financial totals, open item balances. Then a process smoke test confirms the data works in transactions.
 
-### Not reconciling trial load results
+A trial load that is not reconciled still costs time. The gap it produced is still there at the next mock, only now it is harder to trace back to its cause. Reconcile every load before starting the next one.
 
-Loading data into the SAP system is not validation. Validation requires comparing what was loaded against what was expected: record counts, financial totals, open item balances. It also requires process smoke tests that confirm the loaded data can be used in transactions.
+### 5. A cutover load that differs from the rehearsals
 
-On a European financial services programme in 2024 the trial load was considered complete when the load job finished with no errors. The reconciliation, which would have revealed that the vendor open item balances were 15 percent different from the legacy balances, was not done until the mock cutover three weeks later. Three weeks of investigation time that should have been used for other things was consumed chasing a reconciliation gap that the trial load had already produced.
+The cutover migration should repeat the final mock exactly: same extraction scripts, transformation logic, load sequence, checks and timing. Any change at cutover is untested risk at the highest-pressure point of the programme.
 
-### Cutover migration that is different from the trial loads
+The least-tested piece is usually the delta. Between the final mock and cutover, the business keeps adding vendors, changing orders and moving stock. Define the data freeze date and rehearse the delta load as part of the final mock.
 
-The cutover migration should be the final execution of a process that has been fully rehearsed. The extraction scripts, the transformation logic, the loading sequence, the validation checks, and the timing should all be identical to what was done in the final mock.
+## A mock-load plan you can copy
 
-Projects that change the migration process for the actual cutover introduce untested risk at the highest-pressure point in the programme. Any deviation from the tested process is a potential failure mode that has not been validated.
+Use this cycle structure as a starting point. Each cycle has an objective and an exit criterion, and it is not complete until the reconciliation is signed.
 
-## What a working migration strategy looks like
+| Cycle | Objective | Exit criterion | Owner |
+|---|---|---|---|
+| Mock 1 | Structure: every object loads in dependency order | Mapping gaps and format errors logged per object | Data migration lead |
+| Mock 2 | Quality: test the mapping fixes and expose data issues | Error rate falling per object; cleanup decisions logged | Data stewards |
+| Mock 3 | Business rules: exceptions and edge cases | Stewards accept a reconciled sample in each domain | Data stewards |
+| Mock 4 | Volume and timing at full production size | Full load completes inside the cutover window | Cutover manager |
+| Final rehearsal | Dress rehearsal of cutover, including delta and freeze | Counts and financial totals reconciled and signed | Financial controller and data lead |
 
-**Early data extract.** In the Prepare phase, extract the data. Not a sample. All of it. Run a data quality assessment on the actual records: completeness, accuracy, consistency, and duplicate analysis. Use the results to scope the cleanup work and to calibrate the migration timeline.
+Around that plan, five things make the difference:
 
-**Object-by-object migration mapping.** For each data object in scope (customer master, vendor master, material master, open purchase orders, open sales orders, financial open items, inventory balances), document the source-to-target field mapping. Document the transformation rules and the validation criteria. Document the business rules for handling exceptions.
-
-**Structured mock load programme.** Plan for a minimum of four mock cycles. Each cycle has a specific objective: structural validation, data quality analysis, business rule testing, full dress rehearsal. Each cycle has a reconciliation requirement before it is considered complete.
-
-**Business data stewards.** Assign named business owners for each data domain. The finance team owns vendor and customer financial data. Procurement owns material master. Warehouse management owns inventory. Each data steward is accountable for the cleanup decisions in their domain and for signing off that the trial load results are acceptable.
-
-**Cutover data freeze and sequence.** Define the data freeze point: the date after which no changes are made to the legacy system data that is in scope for migration. Document the cutover sequence: extract, transform, load, validate, business sign-off, go/no-go decision. The sequence is the same for the cutover as it was for the final mock.
+1. **A full extract in Prepare.** All of it, not a sample. Profile completeness, accuracy, consistency and duplicates, then size the cleanup and the timeline from the results.
+2. **Object-by-object mapping.** For each object (business partners, materials, open purchase and sales orders, open items, stock, fixed assets), document source-to-target fields, transformation rules, validation checks and exception rules.
+3. **Named data stewards.** Finance owns customer and vendor financial data. Procurement owns the material master. The warehouse owns stock. Each steward signs off their domain after every cycle.
+4. **Reconciliation defined upfront.** Agree which counts and totals prove a load is right before the first mock, so nobody argues about it at cutover.
+5. **A written cutover sequence.** Freeze, extract, transform, load, validate, business sign-off, go/no-go. The same sequence as the final rehearsal.
 
 ## Migration tools in 2026
 
-**SAP Migration Cockpit (LTMC/LTMOM)** is SAP's native migration tool for S/4HANA. It provides standard migration templates for the main object types. It validates data against SAP's own business logic before loading. It provides a staging area that allows business review before data is committed to the production system. For standard object types with SAP-standard structures, it is the right starting point.
+For a new S/4HANA implementation, the [SAP S/4HANA Migration Cockpit](https://pages.community.sap.com/topics/s4hana-migration-cockpit) is SAP's recommended tool for the initial load. Since S/4HANA 2020 it runs as the Fiori app Migrate Your Data. Transaction LTMC is deprecated, and existing LTMC projects can only be displayed. The app offers two approaches: migrate data using staging tables (filled from files or by your own tools) and migrate data directly from an SAP source system. On-premise and private cloud teams use transaction LTMOM, the migration object modeler, to adjust standard objects or build their own. The cockpit is built for initial loads, not for recurring interfaces or mass changes.
 
-**SAP Data Services** is SAP's ETL platform for complex migration scenarios. Use it for high data volumes, complex transformation logic, or non-standard source system structures. It also fits migration programmes that require a reusable framework for ongoing data management.
+**SAP Data Services** is SAP's ETL platform. Use it for high volumes, heavy transformation logic, several source systems, or when you want a reusable data quality framework that outlives the project.
 
-**SAP Datasphere** (the cloud data fabric formerly known as Data Warehouse Cloud) is the 2026 strategic data layer for new SAP cloud landscapes. For RISE with SAP and GROW with SAP programmes, Datasphere is increasingly the right answer for the analytical and reporting data layer post-migration, even when Migration Cockpit handles the core master data load.
+**Third-party ETL tools** such as Informatica, Talend or Microsoft SSIS make sense where the organisation already owns them and has the skills.
 
-**Third-party ETL tools** (Informatica, Talend, Microsoft SSIS) are used where the organisation has existing investment in these platforms or where the migration complexity requires capabilities beyond SAP's native tooling.
+**SAP Datasphere**, now part of SAP Business Data Cloud, is not a migration tool. Its place is the analytics layer after go-live. It matters if you leave history in the legacy system and still need to report on it.
 
-For most standard S/4HANA implementations, SAP Migration Cockpit covers the majority of objects. Complex scenarios involving high volumes, highly customised legacy systems, or non-standard source structures typically require Data Services or a third-party ETL tool. Under RISE with SAP, the SAP customer success engagement now provides hands-on data migration guidance during the early phases, which is worth using as a data quality forcing function rather than treating as a separate process. Joule on SAP Datasphere accelerates anomaly detection and mapping-rule drafting through 2026.
+For most standard implementations, the Migration Cockpit covers the majority of objects. High volumes, heavily customised legacy systems or unusual source structures usually need Data Services or an ETL tool alongside it. Conversions from ECC are a different exercise, covered in my [ECC to S/4HANA migration guide](/ecc-to-s4hana-migration/).
 
 ## Frequently asked questions
 
 <details>
 <summary>What is SAP data migration?</summary>
 
-SAP data migration is the process of extracting data from legacy systems, transforming it to match SAP's data structures and business rules, and loading it into the SAP system as part of an implementation or system conversion project.
-
-The objects typically migrated include: customer master and vendor master data, material master data with plant and storage location assignments, open purchase orders and sales orders, inventory balances, financial open items (outstanding invoices, payments in process), and fixed asset data.
-
-The complexity of SAP data migration comes from three factors. SAP's data model has strict interdependencies between objects: a material must exist before a purchase order can reference it, a customer must exist before a sales order can reference it. These dependencies mean the load sequence is tightly constrained. SAP also applies business validation rules during data loading that legacy systems often do not enforce, so data that was valid in the source system may fail validation in SAP. Finally, the volume and quality of data in most legacy systems is worse than the initial assessment suggests, which means the actual effort typically exceeds the estimate.
+SAP data migration is extracting data from legacy systems, transforming it to fit SAP's structures and rules, and loading it into SAP as part of an implementation or conversion. Typical objects are business partners (customers and suppliers), materials with plant data, open purchase and sales orders, stock balances, financial open items and fixed assets. It is hard because SAP enforces dependencies and validation rules that legacy systems often did not.
 
 </details>
 
 <details>
-<summary>What are the main types of data migration in SAP?</summary>
+<summary>What are the main approaches to SAP data migration?</summary>
 
-Three approaches account for most SAP migration scenarios.
-
-Full migration: all historical and open data is migrated from the legacy system to SAP. Used where the business needs access to full transaction history in the new system. Higher volume and higher complexity, but complete data continuity.
-
-Open item migration: only current open items are migrated. Historical transaction data remains in the legacy system and is accessed via a read-only archive or a parallel system. Lower migration complexity and volume, but the business must run two systems in parallel for historical queries.
-
-Selective data transition: a hybrid approach specific to SAP system conversions (brownfield). Some data moves as-is from ECC to S/4HANA. Selective objects are migrated fresh. Used where the ECC data quality is high in some domains and problematic in others.
-
-The right approach depends on regulatory requirements for data access, the quality and volume of the legacy data, and the business's tolerance for running parallel systems post-go-live.
+A new implementation (greenfield) loads selected master data and open items into a fresh S/4HANA system, leaving history in the legacy system or an archive. A system conversion (brownfield) converts an existing ECC system and its history in place. Selective data transition sits between the two, moving chosen company codes, objects or time slices. The right choice depends on data quality, history requirements and how much of the old process you want to keep.
 
 </details>
 
 <details>
-<summary>What is SAP Migration Cockpit (LTMC) and when should you use it?</summary>
+<summary>What is SAP Migration Cockpit and when should you use it?</summary>
 
-SAP Migration Cockpit, accessed via transaction LTMC (and its successor LTMOM), is SAP's native data migration tool for S/4HANA implementations. It provides pre-built migration templates for standard SAP object types (customer master, vendor master, material master, open purchase orders, financial balances, and others), validates data against SAP business rules in a staging area before loading, and produces error reports with specific field-level information on why records failed.
-
-Use LTMC when: the implementation is a standard S/4HANA project using SAP's standard object types; the data volumes are manageable (hundreds of thousands of records rather than tens of millions); and the transformation logic is relatively straightforward.
-
-It is less appropriate for: very high volume migrations where LTMC's performance may not meet cutover timing requirements; complex legacy source structures that require significant ETL processing before they conform to the LTMC template format; or organisations that have existing investment in a third-party ETL platform and want to reuse it.
+The SAP S/4HANA Migration Cockpit is SAP's recommended tool for the initial data load into S/4HANA, in all editions. Since S/4HANA 2020 it runs as the Fiori app Migrate Your Data; transaction LTMC is deprecated. It provides predefined migration objects, validates data before posting and reports errors at field level. Use it for standard objects at normal volumes. Add SAP Data Services or another ETL tool when volumes, transformation logic or source structures go beyond what the templates handle.
 
 </details>
 
 <details>
-<summary>How do you handle data quality issues in SAP migration?</summary>
+<summary>How many mock loads should an SAP data migration plan for?</summary>
 
-The sequence is: identify, decide, clean, validate.
-
-Identification comes from running the data through the migration templates and reviewing the error output. SAP Migration Cockpit produces field-level error reports. Data Services produces exception reports. Either way, the output is a list of records that failed validation and the specific reason for each failure.
-
-Decision is the business step. Technical errors (missing required fields, wrong format) can often be resolved by the migration team. Business errors (which of two duplicate vendors is correct, whether an inactive material should be archived or deactivated) require a business decision from the data owner.
-
-Cleaning is the technical implementation of the decision. This may happen in the source system, in the staging area, or in the transformation layer depending on what the data owner has decided and what the migration architecture allows.
-
-Validation confirms that the fix resolved the error and did not introduce new ones. Re-run the affected records through the migration process and reconcile the output against the expected result.
-
-The most important discipline: track every error, every decision, and every fix. The data migration log is the audit trail for every data quality decision made during the project. If a balance is wrong after go-live, the migration log is where the investigation starts.
+At least three, with the last one a full cutover rehearsal. Complex programmes need more. In a typical plan, the first finds structural mapping gaps. The second tests the fixes and exposes data quality issues. The third works through business rules and edge cases. The final run repeats the cutover exactly, and its reconciliation becomes the baseline for go-live day.
 
 </details>
 
 <details>
-<summary>How many mock loads should a SAP data migration project plan for?</summary>
+<summary>How do you migrate customers and vendors to SAP S/4HANA?</summary>
 
-A minimum of four, with the final one being a full cutover rehearsal.
-
-The first mock load is a structural validation run. The purpose is to identify mapping gaps, format errors, and dependency sequencing issues. The result is usually a high error rate that is expected and informative.
-
-The second mock load tests the fixes from the first run and reveals the data quality issues that the mapping corrections exposed. Error rates should be lower but will still be significant.
-
-The third mock load works through the business rule edge cases: how exceptions are handled, what happens with records that do not cleanly map to SAP structures, and whether the business data owners are satisfied with how specific categories of records are being handled.
-
-The fourth mock load (or final mock, which may be the fifth or sixth on complex projects) is the full dress rehearsal. It uses the same extraction scripts, the same transformation logic, the same loading sequence, and the same timing as the actual cutover. The reconciliation results from this run are the baseline the cutover team will compare against on go-live day.
-
-Projects that plan for two mock loads are planning for data migration to go well. Planning for four to six is planning for data migration to go right.
+As business partners. In S/4HANA, customer and supplier master data is maintained through the business partner, with customer and supplier roles attached. In a new implementation, the Migration Cockpit loads them through its business partner objects. In a conversion from ECC, customer-vendor integration has to be set up and run before the conversion itself.
 
 </details>
 
 <details>
 <summary>What causes SAP data migration to fail at cutover?</summary>
 
-Five patterns account for most cutover failures.
-
-Insufficient mock load cycles. The cutover is the first time the migration runs at full volume with production-quality data. Issues that would have been found and resolved in a fourth or fifth mock load appear for the first time during the cutover window.
-
-Cutover sequence that was never fully tested. The extraction, transformation, loading, and validation steps run in a specific sequence with dependencies between them. A sequence that has not been tested end-to-end will have timing and dependency issues that are not visible in individual step tests.
-
-Data changes after the final mock. Between the final mock load and the cutover, the legacy data continues to change: new vendors are added, open orders are updated, inventory moves happen. The delta migration that captures these changes is often the least-tested part of the process.
-
-Reconciliation gaps that were not resolved. Financial opening balances that are 3% different from the legacy system, inventory balances that are off by a handful of records: these gaps look small in testing and catastrophic on go-live day when the finance team cannot reconcile the opening period.
-
-Business sign-off based on extrapolation rather than validation. "The first 1,000 records looked fine, so the rest are probably fine" is not a validation methodology. Go-live readiness for data migration requires reconciliation of counts and totals, not a spot check.
+Five patterns cause most cutover failures. Too few mock loads. A cutover sequence never tested end to end. Legacy changes after the final mock with an untested delta load. Reconciliation gaps left open. Business sign-off based on a spot check. "The first 1,000 records looked fine" is not validation. Go-live needs reconciled counts and totals.
 
 </details>
