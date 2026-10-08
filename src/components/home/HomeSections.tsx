@@ -128,7 +128,17 @@ export function HomeHero({ locale }: L) {
           {/* Phones and tablets: a framed photo beside the numbers instead of the cut-out portrait. */}
           <picture>
             <source media="(min-width: 1024px)" srcSet={PIXEL} />
-            <img className="nd-hero-photo-m" src="/media/noel-headshot.webp" alt="Noel D'Costa" width={1122} height={1402} />
+            {/* Phones show it about 170 px wide: 360/560 px copies (9 and 17 KB) instead of the 180 KB original. It is the phone LCP, so it loads first. */}
+            <img
+              className="nd-hero-photo-m"
+              src="/media/noel-headshot-560.webp"
+              srcSet="/media/noel-headshot-360.webp 360w, /media/noel-headshot-560.webp 560w"
+              sizes="(min-width: 640px) 280px, 46vw"
+              alt="Noel D'Costa"
+              width={560}
+              height={700}
+              fetchPriority="high"
+            />
           </picture>
           <aside className="nd-stats nd-reveal-side" aria-label={tr("Experience in numbers")}>
             <div className="nd-stat">

@@ -4,7 +4,8 @@ import { Archivo, Outfit, JetBrains_Mono } from "next/font/google";
 // Free stand-in for the GT Standard Extended face in the MDLBeast reference.
 export const archivo = Archivo({
   variable: "--font-archivo",
-  subsets: ["latin", "latin-ext"],
+  // Only Latin is preloaded; latin-ext (Croatian, Turkish and others) still loads on demand.
+  subsets: ["latin"],
   axes: ["wdth"],
   display: "swap",
 });
@@ -12,7 +13,8 @@ export const archivo = Archivo({
 // Body: Outfit, as in the reference.
 export const outfit = Outfit({
   variable: "--font-outfit",
-  subsets: ["latin", "latin-ext"],
+  // Only Latin is preloaded; latin-ext (Croatian, Turkish and others) still loads on demand.
+  subsets: ["latin"],
   display: "swap",
 });
 

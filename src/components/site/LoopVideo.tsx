@@ -49,14 +49,17 @@ export default function LoopVideo({
   }, []);
 
   return (
+    // The still frame is a CSS background that only applies where the video is
+    // shown (1024 px and up, nd-theme.css). A poster attribute would be
+    // downloaded on phones too, where every loop is display:none.
     <video
       ref={ref}
-      className={className}
+      className={`nd-loop ${className ?? ""}`}
+      style={{ ["--poster" as string]: `url(${poster})` }}
       muted
       loop
       playsInline
       preload="none"
-      poster={poster}
       aria-hidden="true"
       tabIndex={-1}
     >
