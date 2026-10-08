@@ -229,18 +229,18 @@ const AREAS = [
     id: "area-data",
     num: "02",
     color: "var(--area-data)",
-    chip: "Databricks · SAP Analytics Cloud",
+    chip: "Databricks · Microsoft · SAP Analytics Cloud",
     name: "Data & analytics",
     claim: "Bring your data into the decisions that matter.",
-    text: "I help you shape the data and reporting work behind better decisions, including Databricks and SAP Analytics Cloud. The starting point is what people need to know, not how many dashboards to build.",
+    text: "I help you shape the data and reporting work behind better decisions, on Databricks, Microsoft or SAP. The starting point is what people need to know, not how many dashboards to build.",
     points: [
-      "Finance reporting that holds up at month-end close",
-      "Planning and reporting on SAP data with SAP Analytics Cloud",
-      "A data foundation for SAP and non-SAP data, including Databricks",
-      "Migration data quality, so the new system starts with numbers people trust",
+      "Finance and management reporting that holds up at month-end close",
+      "Planning and reporting across your ERP and other systems",
+      "A data foundation that joins ERP data with the rest of the business, including Databricks",
+      "Data quality for migrations, so the new system starts with numbers people trust",
     ],
-    products: "Databricks · SAP Analytics Cloud · SAP Business Data Cloud",
-    link: { label: "Data and analytics", href: "/erp-ai-services/#databricks" },
+    products: "Databricks · Microsoft reporting · SAP Analytics Cloud",
+    link: { label: "Data and analytics", href: "/erp-ai-services/#data-and-analytics" },
   },
   {
     id: "area-ai",
@@ -299,7 +299,15 @@ export function Expertise({ locale }: L) {
                   ))}
                 </ul>
                 <p className="nd-practice-note nd-in" style={{ ["--d" as string]: a.points.length + 2 }}>
-                  {tr(a.products).replace(/\s*·\s*/g, ", ")}
+                  {/* Each product is its own isolated run, so Latin names keep their order in Arabic. */}
+                  {tr(a.products)
+                    .split(/\s*·\s*/)
+                    .map((item, i) => (
+                      <span key={item}>
+                        {i > 0 && (locale === "ar" ? "، " : ", ")}
+                        <bdi>{item}</bdi>
+                      </span>
+                    ))}
                 </p>
               </div>
             </article>

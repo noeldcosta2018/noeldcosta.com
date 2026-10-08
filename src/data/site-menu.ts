@@ -40,9 +40,9 @@ export const EXPERTISE_GROUPS: MenuGroup[] = [
     area: "data",
     links: [
       { label: "Databricks", href: "/erp-ai-services/#databricks" },
-      { label: "SAP Analytics Cloud", href: "/sap-analytics-cloud/" },
+      { label: "Reporting and planning", href: "/erp-ai-services/#reporting" },
       { label: "Data migration", href: "/why-sap-data-migration-fails-and-how-to-fix-it/" },
-      { label: "Planning with SAP BPC", href: "/sap-bpc-features-deployment-best-practice-guide/" },
+      { label: "SAP Analytics Cloud", href: "/sap-analytics-cloud/" },
     ],
   },
   {

@@ -1,4 +1,4 @@
-import { Archivo, Outfit, JetBrains_Mono } from "next/font/google";
+import { Archivo, Outfit, JetBrains_Mono, Noto_Kufi_Arabic, IBM_Plex_Sans_Arabic } from "next/font/google";
 
 // Display: Archivo with its width axis, set to 125% (Expanded) by .nd-display.
 // Free stand-in for the GT Standard Extended face in the MDLBeast reference.
@@ -27,4 +27,22 @@ export const jetbrainsMono = JetBrains_Mono({
   preload: false,
 });
 
-export const fontVariables = `${archivo.variable} ${outfit.variable} ${jetbrainsMono.variable}`;
+// Arabic pages (html[lang="ar"], nd-theme.css): Noto Kufi Arabic for display
+// type, IBM Plex Sans Arabic for text. Not preloaded, and only Arabic text uses
+// them, so other languages never download these files.
+export const kufiArabic = Noto_Kufi_Arabic({
+  variable: "--font-kufi-arabic",
+  subsets: ["arabic"],
+  display: "swap",
+  preload: false,
+});
+
+export const plexArabic = IBM_Plex_Sans_Arabic({
+  variable: "--font-plex-arabic",
+  subsets: ["arabic"],
+  weight: ["400", "600", "700"],
+  display: "swap",
+  preload: false,
+});
+
+export const fontVariables = `${archivo.variable} ${outfit.variable} ${jetbrainsMono.variable} ${kufiArabic.variable} ${plexArabic.variable}`;

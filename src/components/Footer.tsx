@@ -28,7 +28,7 @@ const COLUMNS: MenuGroup[] = [
       { label: "All expertise", href: EXPERTISE },
       { label: "SAP implementation", href: "/sap-implementation/" },
       { label: "Oracle, Microsoft and ServiceNow", href: "/erp-ai-services/#oracle" },
-      { label: "Data and analytics", href: "/erp-ai-services/#databricks" },
+      { label: "Data and analytics", href: "/erp-ai-services/#data-and-analytics" },
       { label: "Enterprise and private AI", href: "/erp-ai-services/#enterprise-ai" },
       { label: "AI governance", href: "/ai-governance-services/" },
     ],

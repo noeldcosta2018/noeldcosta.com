@@ -51,13 +51,18 @@ const AREAS: Area[] = [
       {
         id: "databricks",
         title: "Databricks",
-        text: "A data foundation for SAP and non-SAP data, including Databricks. The starting point is what people need to know, not how many dashboards to build.",
+        text: "A data foundation that joins ERP data with the rest of the business, including Databricks. The starting point is what people need to know, not how many dashboards to build.",
         link: { label: "Why data migration fails", href: "/why-sap-data-migration-fails-and-how-to-fix-it/" },
+      },
+      {
+        id: "reporting",
+        title: "Reporting and planning",
+        text: "Finance and management reporting that holds up at month-end close, on Microsoft or SAP reporting tools, with planning across your ERP and other systems.",
       },
       {
         id: "sap-analytics-cloud",
         title: "SAP Analytics Cloud",
-        text: "Planning and reporting on SAP data with SAP Analytics Cloud, and finance reporting that holds up at month-end close.",
+        text: "Planning and reporting on SAP data with SAP Analytics Cloud.",
         link: { label: "SAP Analytics Cloud", href: "/sap-analytics-cloud/" },
       },
     ],

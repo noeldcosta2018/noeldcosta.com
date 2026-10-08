@@ -53,7 +53,7 @@ export async function GET() {
     `- [Contact](${SITE_URL}/contact-noel-erp-support/): Discovery call booking and ERP advisory enquiries`,
   );
   lines.push(
-    `- [Expertise](${SITE_URL}/erp-ai-services/): Enterprise applications (SAP, Oracle, Microsoft, ServiceNow), data and analytics (Databricks, SAP Analytics Cloud) and AI (enterprise AI, private AI, SAP Joule)`,
+    `- [Expertise](${SITE_URL}/erp-ai-services/): Enterprise applications (SAP, Oracle, Microsoft, ServiceNow), data and analytics (Databricks, Microsoft reporting, SAP Analytics Cloud) and AI (enterprise AI, private AI, SAP Joule)`,
   );
   lines.push(`- [Client work](${SITE_URL}/case-studies/): Case studies and recommendations`);
   lines.push(

@@ -56,8 +56,9 @@ export default function ReferencesMarquee({
 
   const card = (r: Reference, clone: boolean) => (
     <li key={r.name} className="nd-ref">
-      <figure>
-        <blockquote lang={quoteLang}>
+      {/* On translated pages the whole card is English: lang and direction set once. */}
+      <figure lang={quoteLang}>
+        <blockquote>
           <p>&ldquo;{r.quote}&rdquo;</p>
         </blockquote>
         <figcaption>
@@ -65,7 +66,7 @@ export default function ReferencesMarquee({
           <img src={r.avatarUrl} alt="" width={44} height={44} loading="lazy" decoding="async" />
           <span>
             <b>{r.name}</b>
-            <span lang={quoteLang}>{r.title}</span>
+            <span>{r.title}</span>
           </span>
         </figcaption>
         <span className="nd-ref-more" aria-hidden="true">
@@ -123,7 +124,7 @@ export default function ReferencesMarquee({
         onClick={(e) => e.target === e.currentTarget && hide()}
       >
         {open && (
-          <div className="nd-ref-dialog-inner">
+          <div className="nd-ref-dialog-inner" lang={quoteLang}>
             <button type="button" className="x" aria-label={closeLabel} onClick={hide}>
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                 <path d="M18 6 6 18M6 6l12 12" />
@@ -134,10 +135,10 @@ export default function ReferencesMarquee({
               <img src={open.avatarUrl} alt="" width={72} height={72} />
               <div>
                 <b id="ref-dialog-name">{open.name}</b>
-                <span lang={quoteLang}>{open.title}</span>
+                <span>{open.title}</span>
               </div>
             </div>
-            <blockquote lang={quoteLang}>
+            <blockquote>
               {open.full.map((p) => (
                 <p key={p}>{p}</p>
               ))}
