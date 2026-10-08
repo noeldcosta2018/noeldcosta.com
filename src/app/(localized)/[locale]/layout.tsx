@@ -15,6 +15,8 @@ import ThemeScript from "@/components/site/ThemeScript";
 import PointerLayer from "@/components/site/PointerLayer";
 import ChatWidget from "@/components/site/ChatWidget";
 import { chatCopy } from "@/components/site/chat-copy";
+import CookieConsent from "@/components/site/CookieConsent";
+import { consentCopy } from "@/components/site/consent-copy";
 
 // Same title template as the English root layout (src/app/(site)/layout.tsx)
 // so translated pages carry the brand suffix too.
@@ -97,6 +99,7 @@ export default async function LocalizedLayout({
         />
         {children}
         <ChatWidget copy={chatCopy(documentAttributes.contentLocale)} locale={documentAttributes.lang} />
+        <CookieConsent copy={consentCopy(documentAttributes.contentLocale)} policyHref="/privacy/" />
       </body>
     </html>
   );

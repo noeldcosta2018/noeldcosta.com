@@ -1,6 +1,8 @@
 import PageBanner, { type Crumb } from "@/components/site/PageBanner";
 import type { Locale } from "@/lib/content";
 import { getArticleMessages } from "@/lib/article-localization";
+import { translator } from "@/i18n";
+import ArticleActions from "@/components/article/ArticleActions";
 
 interface ArticleHeroProps {
   crumbs: Crumb[];
@@ -13,6 +15,8 @@ interface ArticleHeroProps {
   /** Article hero image, shown faintly behind the banner scrim. */
   coverImage?: string;
   locale?: Locale;
+  /** Canonical URL of the article, for share, print and save. */
+  url?: string;
 }
 
 const DISPLAY_AUTHOR = "Noel D'Costa";
@@ -42,7 +46,9 @@ export default function ArticleHero({
   readingMinutes,
   coverImage,
   locale = "en",
+  url,
 }: ArticleHeroProps) {
+  const tr = translator(locale);
   const messages = getArticleMessages(locale);
   const shownDate = updated || date;
   const dateLabel = formatDate(shownDate, messages.dateLocale);
@@ -84,6 +90,24 @@ export default function ArticleHero({
           </>
         )}
       </div>
+      {url && (
+        <ArticleActions
+          title={title}
+          url={url}
+          labels={{
+            share: tr("Share"),
+            print: tr("Print"),
+            pdf: tr("Save as PDF"),
+            save: tr("Save for later"),
+            saved: tr("Saved"),
+            copyLink: tr("Copy link"),
+            copied: tr("Link copied"),
+            linkedin: tr("Share on LinkedIn"),
+            x: tr("Share on X"),
+            email: tr("Send by email"),
+          }}
+        />
+      )}
     </PageBanner>
   );
 }

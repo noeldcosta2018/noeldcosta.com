@@ -256,6 +256,7 @@ export default function PostPage({
             readingMinutes={rt}
             coverImage={hero}
             locale={locale}
+            url={`${SITE_URL}${buildLocalizedPath(locale, fm.slug)}`}
           />
 
           <div className="nd-frame nd-article-frame">

@@ -10,6 +10,8 @@ import ThemeScript from "@/components/site/ThemeScript";
 import PointerLayer from "@/components/site/PointerLayer";
 import ChatWidget from "@/components/site/ChatWidget";
 import { chatCopy } from "@/components/site/chat-copy";
+import CookieConsent from "@/components/site/CookieConsent";
+import { consentCopy } from "@/components/site/consent-copy";
 
 
 // Search console ownership tags, set per environment in Vercel:
@@ -99,6 +101,7 @@ export default function SiteRootLayout({
         />
         {children}
         <ChatWidget copy={chatCopy("en")} />
+        <CookieConsent copy={consentCopy("en")} policyHref="/privacy/" />
       </body>
     </html>
   );

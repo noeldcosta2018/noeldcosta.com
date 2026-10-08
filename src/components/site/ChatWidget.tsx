@@ -44,6 +44,29 @@ export default function ChatWidget({ copy, locale = "en" }: { copy: ChatCopy; lo
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const launcherRef = useRef<HTMLButtonElement>(null);
+  const [hint, setHint] = useState(false);
+
+  // Show the prompt bubble a moment after load, unless dismissed earlier in this visit.
+  useEffect(() => {
+    let dismissed = false;
+    try {
+      dismissed = sessionStorage.getItem("nd-chat-hint") === "off";
+    } catch {
+      /* storage unavailable: show the hint */
+    }
+    if (dismissed) return;
+    const t = window.setTimeout(() => setHint(true), 2500);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  function dismissHint() {
+    setHint(false);
+    try {
+      sessionStorage.setItem("nd-chat-hint", "off");
+    } catch {
+      /* storage unavailable: hidden for this page only */
+    }
+  }
 
   useEffect(() => {
     const list = listRef.current;
@@ -267,19 +290,40 @@ export default function ChatWidget({ copy, locale = "en" }: { copy: ChatCopy; lo
         </section>
       )}
 
-      <button
-        ref={launcherRef}
-        type="button"
-        className="nd-chat-launcher"
-        aria-expanded={open}
-        aria-label={open ? copy.close : copy.open}
-        onClick={() => setOpen((o) => !o)}
-      >
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />
-        </svg>
-        <span className="lbl">{copy.launcher}</span>
-      </button>
+      <div className="nd-chat-dock">
+        {/* A one-line prompt beside the launcher, until the visitor opens the
+            chat or dismisses it (remembered for the visit). */}
+        {hint && !open && (
+          <div className="nd-chat-hint">
+            <button type="button" className="text" onClick={() => {
+                setOpen(true);
+                dismissHint();
+              }}>
+              {copy.hint}
+            </button>
+            <button type="button" className="x" aria-label={copy.dismiss} onClick={dismissHint}>
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+          </div>
+        )}
+        <button
+          ref={launcherRef}
+          type="button"
+          className="nd-chat-launcher"
+          aria-expanded={open}
+          aria-label={open ? copy.close : copy.open}
+          title={copy.launcher}
+          onClick={() => {
+            setOpen((o) => !o);
+            if (hint) dismissHint();
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/nd-monogram-on-dark.svg" alt="" width={34} height={21} />
+        </button>
+      </div>
     </div>
   );
 }

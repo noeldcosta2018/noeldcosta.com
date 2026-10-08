@@ -1,5 +1,6 @@
 import Link from "next/link";
 import SignupForm from "@/components/site/SignupForm";
+import CookieSettingsButton from "@/components/site/CookieSettingsButton";
 import { signupCopy } from "@/components/site/signup-copy";
 import { hasTranslation, translator } from "@/i18n";
 import { localizeHref } from "@/lib/link-repair";
@@ -97,7 +98,7 @@ export default function Footer({ locale = "en", signup = true }: { locale?: Loca
           </p>
         )}
         {signup && (
-          <div className="nd-footer-signup">
+          <div className="nd-footer-signup" id="newsletter">
             <div>
               <h2 className="nd-display">{tr("New articles, first.")}</h2>
               <p>{tr("Articles, videos and AI Academy updates by email. Leave any time.")}</p>
@@ -169,6 +170,7 @@ export default function Footer({ locale = "en", signup = true }: { locale?: Loca
             </a>
           </div>
           <span className="legal">
+            <CookieSettingsButton label={tr("Cookie settings")} />
             © 2026 Noel D&apos;Costa. {tr("This website is operated and maintained by Quantinoid LLC")}
           </span>
         </div>

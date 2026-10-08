@@ -108,9 +108,12 @@ export default async function PrivacyPage() {
 
               <h2 id="cookies-and-analytics">Cookies and analytics</h2>
               <p>
-                The site uses minimal first-party cookies for session and language preference. There is no
-                third-party advertising network. If analytics are added later, I will list them here before they go
-                live.
+                The site only stores what it needs to work, in your own browser: your light or dark theme, your
+                language, your cookie choice and, if you use it, the list of articles you save for later. The admin
+                pages use a sign-in cookie for me. There is no third-party advertising. Analytics cookies are only
+                set if you accept them in the cookie bar; none are in use yet, and any added later will be listed
+                here before they go live. You can change your choice at any time under Cookie settings at the
+                bottom of every page.
               </p>
 
               <p className="foot">

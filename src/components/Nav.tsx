@@ -72,6 +72,21 @@ export default function Nav({
     changeLanguage: tr("Change language"),
     primary: tr("Primary"),
     siteMenu: tr("Site menu"),
+    about: tr("About"),
+    utility: tr("Quick links"),
+    books: tr("Books"),
+    youtube: "YouTube",
+    subscribe: tr("Subscribe"),
+    contact: tr("Contact"),
+    saved: tr("Saved"),
+    savedEmpty: tr("Articles you save appear here. They stay in this browser."),
+    remove: tr("Remove"),
+    explore: tr("Explore"),
+    searchLabel: tr("Search articles and pages"),
+    searchPlaceholder: tr("Search articles, tools and services"),
+    noResults: tr("Nothing matches that yet."),
+    allArticles: tr("Browse all articles"),
+    closeSearch: tr("Close search"),
   };
 
   const menu: NavMenu = {
@@ -86,6 +101,8 @@ export default function Nav({
       about: href(ABOUT),
       contact: href(CONTACT),
       library: href(ARTICLES_INDEX),
+      books: href("/books/"),
+      searchIndex: `/search-index/${prefix ?? "en"}/`,
     },
   };
 

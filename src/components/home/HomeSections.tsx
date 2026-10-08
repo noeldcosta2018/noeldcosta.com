@@ -1,5 +1,4 @@
 import Link from "next/link";
-import type { CSSProperties } from "react";
 import LoopVideo from "@/components/site/LoopVideo";
 import SignupForm from "@/components/site/SignupForm";
 import { signupCopy } from "@/components/site/signup-copy";
@@ -255,46 +254,29 @@ export function Expertise({ locale }: L) {
           lede={tr("Each area stands on its own. Most of my work touches at least two of them.")}
           link={{ label: tr("All expertise"), href: href(EXPERTISE) }}
         />
-        {/* An editorial list, not three equal cards: each area is a row with
-            its promise on one side and the detail on the other. */}
-        <ol className="nd-areas">
+        {/* Typographic index: one promise per area and the work behind it,
+            separated by hairlines. No chips, numbers, dots or colour bars. */}
+        <div className="nd-practice">
           {AREAS.map((a) => (
-            <li key={a.id} className="nd-area-row" style={{ "--area": a.color } as CSSProperties} aria-labelledby={a.id}>
-              <div className="nd-area-lead">
-                <div className="nd-area-head">
-                  <span className="num">{a.num}</span>
-                  <span
-                    className="nd-chip"
-                    style={{
-                      borderColor: `color-mix(in srgb, ${a.color} 55%, transparent)`,
-                      background: `color-mix(in srgb, ${a.color} 10%, transparent)`,
-                    }}
-                  >
-                    <i style={{ background: a.color }} />
-                    {tr(a.chip)}
-                  </span>
-                </div>
-                <h3 id={a.id} className="nd-area-name">
-                  {tr(a.name)}
-                </h3>
-                <p className="claim">{tr(a.claim)}</p>
-                <Link className="nd-textlink" href={href(a.link.href)}>
+            <article key={a.id} className="nd-practice-row" aria-labelledby={a.id}>
+              <header>
+                <h3 id={a.id}>{tr(a.name)}</h3>
+                <p>{tr(a.claim)}</p>
+                <Link className="nd-practice-link" href={href(a.link.href)}>
                   {tr(a.link.label)} <span aria-hidden="true">→</span>
                 </Link>
-              </div>
-              <div className="nd-area-body">
-                <p className="text">{tr(a.text)}</p>
-                <div className="nd-label">{tr("Where I help")}</div>
-                <ul className="nd-points">
+              </header>
+              <div>
+                <ul>
                   {a.points.map((p) => (
                     <li key={p}>{tr(p)}</li>
                   ))}
                 </ul>
-                <p className="products">{tr(a.products)}</p>
+                <p className="nd-practice-note">{tr(a.products).replace(/\s*·\s*/g, ", ")}</p>
               </div>
-            </li>
+            </article>
           ))}
-        </ol>
+        </div>
         <AiProjects locale={locale} />
       </div>
     </section>

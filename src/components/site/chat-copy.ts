@@ -10,6 +10,8 @@ export type ChatCopy = {
   close: string;
   open: string;
   launcher: string;
+  hint: string;
+  dismiss: string;
   bookCall: string;
   careerPaid: string;
   placeholder: string;
@@ -52,6 +54,8 @@ export function chatCopy(locale: Locale | undefined): ChatCopy {
     close: tr("Close chat"),
     open: tr("Open chat: ask about your project"),
     launcher: tr("Ask Noel's assistant"),
+    hint: tr("Need help? Just ask."),
+    dismiss: tr("Dismiss"),
     bookCall: tr("Book an intro call"),
     careerPaid: tr("Career advice (paid)"),
     placeholder: tr("Ask a question…"),
