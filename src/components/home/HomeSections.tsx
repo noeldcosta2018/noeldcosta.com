@@ -90,18 +90,20 @@ export function HomeHero({ locale }: L) {
       <div className="scrim" aria-hidden="true" />
       <div className="wash nd-grid-wash" aria-hidden="true" />
       <div className="nd-spotlight" aria-hidden="true" />
-      {/* Desktop cut-out portrait. Phones get a 1px placeholder from <source>, so
-          the 120 KB image is only downloaded where it is shown. */}
+      {/* Desktop portrait: Noel in Dubai at sunset, filling the right half and
+          fading into the page. Phones get a 1px placeholder from <source>, so the
+          38 to 65 KB image is only downloaded where it is shown. Desktop LCP. */}
       <picture>
         <source media="(max-width: 1023px)" srcSet={PIXEL} />
         <img
-          className="media cutout parallax"
-          data-depth="14"
-          src="/media/noel-hero.webp"
+          className="media hero-photo"
+          src="/media/noel-dubai-1100.webp"
+          srcSet="/media/noel-dubai-760.webp 760w, /media/noel-dubai-1100.webp 1100w"
+          sizes="(min-width: 1024px) 52vw, 1px"
           alt=""
           aria-hidden="true"
-          width={1122}
-          height={1402}
+          width={1100}
+          height={1375}
           fetchPriority="high"
         />
       </picture>
@@ -128,11 +130,11 @@ export function HomeHero({ locale }: L) {
           {/* Phones and tablets: a framed photo beside the numbers instead of the cut-out portrait. */}
           <picture>
             <source media="(min-width: 1024px)" srcSet={PIXEL} />
-            {/* Phones show it about 170 px wide: 360/560 px copies (9 and 17 KB) instead of the 180 KB original. It is the phone LCP, so it loads first. */}
+            {/* Phones show it about 170 px wide: 360/560 px copies (13 and 23 KB). It is the phone LCP, so it loads first. */}
             <img
               className="nd-hero-photo-m"
-              src="/media/noel-headshot-560.webp"
-              srcSet="/media/noel-headshot-360.webp 360w, /media/noel-headshot-560.webp 560w"
+              src="/media/noel-dubai-560.webp"
+              srcSet="/media/noel-dubai-360.webp 360w, /media/noel-dubai-560.webp 560w"
               sizes="(min-width: 640px) 280px, 46vw"
               alt="Noel D'Costa"
               width={560}
@@ -604,7 +606,15 @@ export function WorkingWithMe({ locale }: L) {
             {tr("What you")} <span className="nd-hl">{tr("can expect.")}</span>
           </h2>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="nd-why-photo" src="/media/noel-headshot.webp" alt="Noel D'Costa" width={1122} height={1402} loading="lazy" />
+          <img
+            className="nd-why-photo"
+            src="/media/noel-hero-640.webp"
+            alt="Noel D'Costa"
+            width={640}
+            height={800}
+            loading="lazy"
+            decoding="async"
+          />
         </div>
         <ol>
           {points.map((p, i) => (
