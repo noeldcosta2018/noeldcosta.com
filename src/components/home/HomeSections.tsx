@@ -148,15 +148,15 @@ export function HomeHero({ locale }: L) {
           <aside className="nd-stats nd-reveal-side" aria-label={tr("Experience in numbers")}>
             <div className="nd-stat">
               <span className="k">{tr("Years in enterprise applications")}</span>
-              <span className="v">24+</span>
+              <span className="v" data-count>24+</span>
             </div>
             <div className="nd-stat">
               <span className="k">{tr("Government entities moved to Oracle Fusion")}</span>
-              <span className="v">84</span>
+              <span className="v" data-count>84</span>
             </div>
             <div className="nd-stat">
-              <span className="k">{tr("SAP, Oracle and Microsoft consultants led")}</span>
-              <span className="v">800+</span>
+              <span className="k">{tr("SAP, Oracle, Microsoft & AI consultants led")}</span>
+              <span className="v" data-count>800+</span>
             </div>
           </aside>
         </div>
@@ -219,16 +219,16 @@ const AREAS = [
     color: "var(--area-apps)",
     chip: "SAP · Oracle · Microsoft · ServiceNow",
     name: "Enterprise applications",
-    claim: "Choose the right system. Make the implementation work.",
-    text: "I help you work through SAP, Oracle, Microsoft and ServiceNow decisions, connect the work to business processes and keep delivery focused on what the business needs.",
+    claim: "Pick the right platform. Then make the programme deliver.",
+    text: "I help you choose between SAP, Oracle, Microsoft and ServiceNow, connect the work to your business processes and keep delivery focused on what the business needs.",
     points: [
-      "Selection and business case, before you sign with a vendor or an SI",
-      "S/4HANA route: greenfield, brownfield or selective",
-      "Oversight of an SI-led programme, blueprint to post-go-live",
-      "Recovery when a programme has slipped",
+      "Platform choice and business case across SAP, Oracle, Microsoft and ServiceNow, before you sign",
+      "The migration route: upgrade, re-implement or move in phases",
+      "Independent oversight of SI-led programmes, from design to go-live and after",
+      "Recovery when a programme has slipped on time, budget or scope",
     ],
-    products: "SAP S/4HANA, RISE and GROW with SAP · Oracle Fusion · Microsoft Dynamics 365 · ServiceNow",
-    link: { label: "SAP implementation", href: "/sap-implementation/" },
+    products: "SAP S/4HANA · Oracle Fusion · Microsoft Dynamics 365 · ServiceNow",
+    link: { label: "Enterprise applications", href: "/erp-ai-services/#enterprise-applications" },
   },
   {
     id: "area-data",
@@ -253,13 +253,13 @@ const AREAS = [
     color: "var(--area-ai)",
     chip: "Enterprise · Private · Joule",
     name: "AI",
-    claim: "Decide where AI is useful. Then make it work.",
-    text: "I help you assess and put AI to use, from enterprise and private AI to SAP Joule and practical applications for small businesses. Start with the task, the information involved and the controls the business needs.",
+    claim: "Make your systems smart, where it pays back.",
+    text: "I help you put AI to work on the systems you already run: the right use cases, private AI where data must stay inside, and AI steps in ERP processes with a person approving what matters.",
     points: [
-      "Choosing the few use cases worth funding",
-      "Private AI, where company information must stay under your control",
-      "SAP Joule: what your licence includes and what it needs",
-      "AI for small businesses, without an enterprise budget",
+      "Choosing the few AI use cases worth funding, and dropping the rest",
+      "Private AI that keeps company information inside your own environment",
+      "AI steps inside ERP processes, with a person approving what matters",
+      "SAP Joule and other built-in AI: what your licence includes and what it needs",
     ],
     products: "Most of my AI work: public sector, aviation, defence and retail",
     link: { label: "Enterprise and private AI", href: "/erp-ai-services/#enterprise-ai" },
@@ -474,12 +474,12 @@ export function AcademyChapter({ locale }: L) {
             {/* The figures restate the sentence beside them, so screen readers read the sentence only. */}
             <div className="nd-academy-figures" aria-hidden="true">
               <span>
-                <b>3</b>
+                <b data-count>3</b>
                 <small>{tr("working automations")}</small>
               </span>
               <i />
               <span>
-                <b>30</b>
+                <b data-count>30</b>
                 <small>{tr("days")}</small>
               </span>
             </div>

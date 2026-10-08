@@ -37,7 +37,50 @@ export default function PointerLayer() {
       { threshold: 0.2, rootMargin: "0px 0px -6% 0px" },
     );
     document.querySelectorAll("[data-inview]:not(.is-in)").forEach((el) => io.observe(el));
-    return () => io.disconnect();
+
+    // Count-up: [data-count] figures run fast from zero and ease into their
+    // value the first time they are on screen. The server HTML holds the final
+    // figure, so crawlers and no-JS visitors always read the real number.
+    const frames = new Set<number>();
+    const countUp = (el: HTMLElement) => {
+      // The original figure is kept on the element, so a re-run never counts to 0.
+      const text = el.dataset.countText ?? el.textContent ?? "";
+      el.dataset.countText = text;
+      const match = text.match(/\d+/);
+      if (!match) return;
+      const target = Number(match[0]);
+      const before = text.slice(0, match.index);
+      const after = text.slice((match.index ?? 0) + match[0].length);
+      const duration = 1300;
+      const start = performance.now();
+      const tick = (now: number) => {
+        const t = Math.min(1, (now - start) / duration);
+        const eased = 1 - Math.pow(1 - t, 4);
+        el.textContent = `${before}${Math.round(target * eased)}${after}`;
+        if (t < 1) frames.add(requestAnimationFrame(tick));
+      };
+      el.textContent = `${before}0${after}`;
+      frames.add(requestAnimationFrame(tick));
+    };
+    const counter = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          counter.unobserve(e.target);
+          countUp(e.target as HTMLElement);
+        }
+      },
+      { threshold: 0.6 },
+    );
+    document.querySelectorAll("[data-count]").forEach((el) => counter.observe(el));
+    return () => {
+      io.disconnect();
+      counter.disconnect();
+      frames.forEach((f) => cancelAnimationFrame(f));
+      document.querySelectorAll<HTMLElement>("[data-count-text]").forEach((el) => {
+        el.textContent = el.dataset.countText ?? el.textContent;
+      });
+    };
   }, [pathname]);
 
   useEffect(() => {
