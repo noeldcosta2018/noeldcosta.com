@@ -101,6 +101,12 @@ export default async function BookLeadsPage() {
             Signed in as {guard.user?.email}
           </p>
         </div>
+        <nav className="flex gap-4 text-[0.9rem]">
+          <Link href="/admin/contacts" className="text-night underline">
+            All contacts
+          </Link>
+          <span className="font-bold text-corbeau">Book leads</span>
+        </nav>
       </header>
 
       {fetchError ? (
