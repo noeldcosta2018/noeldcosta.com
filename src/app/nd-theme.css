@@ -787,3 +787,140 @@ html:not([lang="en"]) :is(.nd-display, h1, h2, h3) { hyphens: auto; overflow-wra
 .nd-nav-links .nd-panel.nd-panel-narrow { left: auto; inset-inline-start: 0; transform: none; animation-name: nd-panel-drop; }
 /* Japanese: break between phrases, not inside a word like スマート化. */
 :lang(ja) .nd-hero h1 { word-break: auto-phrase; }
+
+/* ---------- Reveal on view ----------
+   [data-inview] blocks get .is-in from PointerLayer's observer; their .nd-in
+   children rise in, staggered by --d. Only the individual `translate` property
+   animates, so hover transforms keep working. Nothing is hidden without the
+   head script's .reveal-run (motion allowed), and if the observer never starts
+   everything shows after 3 seconds. */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal-run [data-inview] .nd-in { opacity: 0; translate: 0 18px; }
+  .reveal-run [data-inview].is-in .nd-in { animation: nd-in 700ms var(--ease) both; animation-delay: calc(var(--d, 0) * 90ms); }
+  .reveal-run:not(.inview-ready) [data-inview] .nd-in { animation: nd-in 600ms var(--ease) 3s both; }
+}
+@keyframes nd-in { from { opacity: 0; translate: 0 18px; } to { opacity: 1; translate: none; } }
+
+/* ---------- Practice rows: premium bullets, lines that draw ---------- */
+.nd-practice-row li { --pt: 16px; position: relative; padding-inline-start: 46px; }
+.nd-practice-row li:first-child { --pt: 0px; }
+.nd-practice-row li::before { content: ""; position: absolute; inset-inline-start: 0; top: calc(var(--pt) + 0.75em - 13px); width: 26px; height: 26px; border-radius: 999px; border: 1px solid rgba(var(--accent-rgb), 0.45); background: radial-gradient(circle, rgba(var(--accent-rgb), 0.18), rgba(var(--accent-rgb), 0.03) 70%); transition: background 300ms ease, border-color 300ms ease, box-shadow 300ms ease; }
+.nd-practice-row li::after { content: ""; position: absolute; inset-inline-start: 9px; top: calc(var(--pt) + 0.75em - 4px); width: 8px; height: 8px; border-radius: 999px; background: var(--accent); box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.7); transition: background 300ms ease, box-shadow 300ms ease; }
+.nd-practice-row li:hover::before { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 6px rgba(var(--accent-rgb), 0.12); }
+.nd-practice-row li:hover::after { background: var(--accent-fg); box-shadow: none; }
+.nd-practice-row li + li { border-top: 0; background: linear-gradient(var(--line), var(--line)) 0 0 / 100% 1px no-repeat; }
+[dir="rtl"] .nd-practice-row li + li { background-position: 100% 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .inview-ready .nd-practice-row[data-inview]:not(.is-in) li + li { background-size: 0 1px; }
+  /* Points after the first also fade in (nd-in), so both animations are listed. */
+  .inview-ready .nd-practice-row[data-inview].is-in li + li { animation: nd-in 700ms var(--ease) both, nd-draw 900ms var(--ease) both; animation-delay: calc(var(--d, 0) * 90ms), calc(var(--d, 0) * 90ms + 120ms); }
+  .inview-ready .nd-practice-row[data-inview]:not(.is-in) li::before { scale: 0.4; opacity: 0; }
+  .inview-ready .nd-practice-row[data-inview].is-in li::before { animation: nd-ring 650ms var(--ease) both; animation-delay: calc(var(--d, 0) * 90ms + 180ms); }
+}
+@keyframes nd-draw { from { background-size: 0 1px; } to { background-size: 100% 1px; } }
+@keyframes nd-ring { from { scale: 0.4; opacity: 0; } to { scale: 1; opacity: 1; } }
+
+/* ---------- AI projects: image cards ---------- */
+.nd-aip { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 768px) { .nd-aip { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) {
+  .nd-aip { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .nd-aip-card:nth-child(-n + 2) { grid-column: span 3; }
+  .nd-aip-card:nth-child(n + 3) { grid-column: span 2; }
+  .nd-aip-card:nth-child(-n + 2) .nd-aip-media { aspect-ratio: 2 / 1; }
+}
+.nd-aip-card { margin: 0; display: flex; flex-direction: column; overflow: hidden; border-radius: var(--radius-card); border: 1px solid var(--line2); background: linear-gradient(158deg, var(--panel) 0%, var(--bg2) 100%); transition: transform 450ms var(--ease), border-color 300ms ease, box-shadow 450ms var(--ease); }
+.nd-aip-card:hover { transform: translateY(-6px); border-color: rgba(var(--accent-rgb), 0.45); box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(var(--accent-rgb), 0.12); }
+.nd-aip-media { position: relative; aspect-ratio: 3 / 2; overflow: hidden; background: #0a0f17; }
+.nd-aip-media img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 1200ms var(--ease); }
+.nd-aip-card:hover .nd-aip-media img { transform: scale(1.06); }
+.nd-aip-media::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, rgba(6, 9, 14, 0.78)); pointer-events: none; }
+.nd-aip-sector { position: absolute; z-index: 1; inset-inline-start: 16px; bottom: 14px; padding: 5px 11px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(6, 9, 14, 0.55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
+.nd-aip-body { padding: 20px 22px 24px; }
+.nd-aip-body :is(h3, h4) { margin: 0; font-size: 18px; line-height: 1.3; font-weight: 600; color: var(--ink); text-transform: none; letter-spacing: normal; }
+.nd-aip-body p { margin: 10px 0 0; font-size: 14.5px; line-height: 1.6; color: var(--mut); }
+
+/* ---------- AI Academy: goal panel and programme rail ---------- */
+.nd-academy { margin-top: 48px; }
+.nd-academy-goal { position: relative; overflow: hidden; display: grid; gap: 24px; align-items: center; padding: 28px; border-radius: var(--radius-figure); border: 1px solid rgba(var(--accent-rgb), 0.3); background: radial-gradient(60% 140% at 0% 0%, rgba(var(--accent-rgb), 0.16), transparent 60%), linear-gradient(158deg, var(--tile-grad-hi-a) 0%, var(--tile-grad-hi-b) 85%); }
+@media (min-width: 900px) { .nd-academy-goal { grid-template-columns: auto minmax(0, 1fr); gap: 56px; padding: 36px 44px; } }
+.nd-academy-figures { display: flex; align-items: stretch; gap: 28px; }
+.nd-academy-figures span { display: flex; flex-direction: column; }
+.nd-academy-figures b { font-family: var(--font-display), sans-serif; font-stretch: 125%; font-weight: 800; font-size: clamp(64px, 8vw, 104px); line-height: 0.9; letter-spacing: -0.02em; color: var(--accent); }
+.nd-academy-figures small { margin-top: 10px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--mut); }
+.nd-academy-figures i { width: 1px; background: var(--line2); }
+.nd-academy-goal-text p { margin: 14px 0 0; max-width: 36ch; font-size: clamp(18px, 1.8vw, 22px); line-height: 1.45; color: var(--ink); }
+
+.nd-jrail { --node: 42px; --gap: 16px; position: relative; list-style: none; margin: 56px 0 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
+.nd-rail-step { position: relative; display: grid; grid-template-columns: var(--node) minmax(0, 1fr); column-gap: 18px; padding-bottom: 26px; }
+.nd-rail-step:last-child { padding-bottom: 0; }
+.nd-rail-step .node { grid-row: span 2; position: relative; z-index: 1; width: var(--node); height: var(--node); display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid rgba(var(--accent-rgb), 0.6); background: var(--bg); color: var(--ink); font-family: var(--font-display), sans-serif; font-stretch: 125%; font-weight: 700; font-size: 12px; transition: border-color 400ms ease, color 400ms ease, background 400ms ease, box-shadow 400ms ease, scale 300ms var(--ease); }
+.nd-rail-step.loop .node { border-style: dashed; }
+.nd-rail-step:last-child .node { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); box-shadow: 0 0 0 6px rgba(var(--accent-rgb), 0.14); }
+.nd-rail-step:hover .node { scale: 1.08; box-shadow: 0 0 0 6px rgba(var(--accent-rgb), 0.14); }
+.nd-rail-step h3 { margin: 10px 0 0; font-family: var(--font-display), sans-serif; font-stretch: 125%; font-weight: 700; font-size: 14px; letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink); }
+.nd-rail-step p { margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--mut); }
+/* Segments from each stop to the next: a grey track and an accent fill. */
+.nd-rail-step:not(:last-child)::before, .nd-rail-step:not(:last-child)::after { content: ""; position: absolute; inset-inline-start: calc(var(--node) / 2); top: calc(var(--node) / 2); bottom: calc(var(--node) / -2); width: 1px; }
+.nd-rail-step:not(:last-child)::before { background: var(--line2); }
+.nd-rail-step:not(:last-child)::after { background: var(--accent); transform-origin: top; }
+.nd-jrail .loop-arc { display: none; }
+@media (min-width: 1024px) {
+  .nd-jrail { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--gap); padding-top: 40px; }
+  .nd-rail-step { display: block; padding: 0; }
+  .nd-rail-step h3 { margin-top: 18px; }
+  .nd-rail-step:not(:last-child)::before, .nd-rail-step:not(:last-child)::after { bottom: auto; width: calc(100% + var(--gap)); height: 1px; }
+  .nd-rail-step:not(:last-child)::after { transform-origin: left; }
+  [dir="rtl"] .nd-rail-step:not(:last-child)::after { transform-origin: right; }
+  /* Dashed loop from Fix back to Feedback, arrow landing on Feedback. */
+  .nd-jrail .loop-arc { display: block; position: absolute; inset-inline-start: calc(var(--node) / 2); top: -30px; width: calc(100% + var(--gap)); height: 30px; border: 1.5px dashed rgba(var(--accent-rgb), 0.75); border-bottom: 0; border-radius: 40px 40px 0 0; }
+  .nd-jrail .loop-arc::after { content: ""; position: absolute; inset-inline-start: -6px; bottom: -6px; border: 5px solid transparent; border-top-color: var(--accent); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .inview-ready .nd-academy[data-inview]:not(.is-in) .nd-rail-step::after { transform: scaleY(0); }
+  .inview-ready .nd-academy[data-inview]:not(.is-in) .node { border-color: var(--line2); color: var(--mut); background: var(--bg); box-shadow: none; }
+  .inview-ready .nd-academy[data-inview]:not(.is-in) .loop-arc { clip-path: inset(0 0 0 100%); }
+  [dir="rtl"].inview-ready .nd-academy[data-inview]:not(.is-in) .loop-arc { clip-path: inset(0 100% 0 0); }
+  .inview-ready .nd-academy.is-in .nd-rail-step::after { animation: nd-grow-y 520ms var(--ease) both; animation-delay: calc(var(--d, 0) * 170ms + 260ms); }
+  .inview-ready .nd-academy.is-in .node { animation: nd-node-on 420ms ease both; animation-delay: calc(var(--d, 0) * 170ms + 120ms); }
+  .inview-ready .nd-academy.is-in .loop-arc { animation: nd-loop-in 700ms var(--ease) 1400ms both; }
+  [dir="rtl"].inview-ready .nd-academy.is-in .loop-arc { animation-name: nd-loop-in-rtl; }
+  @media (min-width: 1024px) {
+    .inview-ready .nd-academy[data-inview]:not(.is-in) .nd-rail-step::after { transform: scaleX(0); }
+    .inview-ready .nd-academy.is-in .nd-rail-step::after { animation-name: nd-grow-x; }
+  }
+}
+@keyframes nd-grow-y { from { transform: scaleY(0); } to { transform: none; } }
+@keyframes nd-grow-x { from { transform: scaleX(0); } to { transform: none; } }
+@keyframes nd-node-on { from { border-color: var(--line2); color: var(--mut); background: var(--bg); box-shadow: none; } }
+@keyframes nd-loop-in { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0); } }
+@keyframes nd-loop-in-rtl { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
+
+/* ---------- Books shelf ---------- */
+.nd-books { position: relative; overflow: hidden; margin-top: 16px; display: grid; gap: 28px; align-items: end; padding: 32px 24px 0; border-radius: var(--radius-figure); border: 1px solid rgba(255, 255, 255, 0.08); background: radial-gradient(70% 120% at 100% 100%, rgba(var(--accent-rgb), 0.2), transparent 60%), linear-gradient(135deg, #0c1629 0%, #070b14 100%); color: #e8edf5; }
+@media (min-width: 900px) { .nd-books { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 48px; padding: 0 56px; } }
+.nd-books-copy { align-self: center; }
+@media (min-width: 900px) { .nd-books-copy { padding: 48px 0; } }
+.nd-books-copy .nd-label { color: var(--accent); }
+.nd-books-copy h3 { margin-top: 12px; font-size: clamp(28px, 3.2vw, 44px); line-height: 1.02; color: #fff; }
+.nd-books-copy p { margin-top: 14px; max-width: 40ch; font-size: 16px; line-height: 1.6; color: #b9c3d3; }
+.nd-books-copy .nd-btn { margin-top: 24px; }
+.nd-books .nd-btn-primary { background: #fff; border-color: #fff; color: #0a0a0a; }
+.nd-books-shelf { list-style: none; margin: 0; padding: 0; display: flex; justify-content: center; align-items: flex-end; perspective: 1400px; }
+.nd-books-shelf li { position: relative; width: clamp(108px, 15vw, 190px); margin-inline: -12px; }
+.nd-books-shelf li:nth-child(2) { z-index: 2; }
+.nd-books-shelf li:hover, .nd-books-shelf li:focus-within { z-index: 3; }
+.nd-books-shelf a { position: relative; display: block; border-radius: 3px 6px 6px 3px; box-shadow: -14px 18px 40px -12px rgba(0, 0, 0, 0.75); transform: rotateY(24deg) translateY(16px); transform-origin: bottom center; transition: transform 600ms var(--ease), filter 400ms ease; }
+.nd-books-shelf li:nth-child(2) a { transform: translateY(6px) scale(1.06); }
+.nd-books-shelf li:nth-child(3) a { transform: rotateY(-24deg) translateY(16px); }
+.nd-books-shelf a::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(90deg, rgba(255, 255, 255, 0.2) 0, rgba(255, 255, 255, 0) 5%, rgba(0, 0, 0, 0.28) 6%, rgba(0, 0, 0, 0) 10%), linear-gradient(120deg, rgba(255, 255, 255, 0.12), transparent 40%); pointer-events: none; }
+.nd-books-shelf img { display: block; width: 100%; height: auto; border-radius: inherit; }
+.nd-books-shelf:hover a { filter: brightness(0.7); }
+.nd-books-shelf li:hover a, .nd-books-shelf a:focus-visible { filter: none; transform: translateY(-14px) scale(1.08); }
+.nd-books-shelf a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+[dir="rtl"] .nd-books-shelf li:nth-child(1) a { transform: rotateY(-24deg) translateY(16px); }
+[dir="rtl"] .nd-books-shelf li:nth-child(3) a { transform: rotateY(24deg) translateY(16px); }
+/* Small caps pills need a wider word gap to read as two words. */
+.nd-pill { word-spacing: 0.25em; }
+/* Each book gets its own perspective so the side covers visibly turn. */
+.nd-books-shelf li { perspective: 900px; }

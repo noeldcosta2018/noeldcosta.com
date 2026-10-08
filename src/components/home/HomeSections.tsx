@@ -268,21 +268,29 @@ export function Expertise({ locale }: L) {
             separated by hairlines. No chips, numbers, dots or colour bars. */}
         <div className="nd-practice">
           {AREAS.map((a) => (
-            <article key={a.id} className="nd-practice-row" aria-labelledby={a.id}>
+            <article key={a.id} className="nd-practice-row" aria-labelledby={a.id} data-inview>
               <header>
-                <h3 id={a.id}>{tr(a.name)}</h3>
-                <p>{tr(a.claim)}</p>
-                <Link className="nd-practice-link" href={href(a.link.href)}>
+                <h3 id={a.id} className="nd-in">
+                  {tr(a.name)}
+                </h3>
+                <p className="nd-in" style={{ ["--d" as string]: 1 }}>
+                  {tr(a.claim)}
+                </p>
+                <Link className="nd-practice-link nd-in" style={{ ["--d" as string]: 2 }} href={href(a.link.href)}>
                   {tr(a.link.label)} <span aria-hidden="true">→</span>
                 </Link>
               </header>
               <div>
                 <ul>
-                  {a.points.map((p) => (
-                    <li key={p}>{tr(p)}</li>
+                  {a.points.map((p, i) => (
+                    <li key={p} className="nd-in" style={{ ["--d" as string]: i + 2 }}>
+                      {tr(p)}
+                    </li>
                   ))}
                 </ul>
-                <p className="nd-practice-note">{tr(a.products).replace(/\s*·\s*/g, ", ")}</p>
+                <p className="nd-practice-note nd-in" style={{ ["--d" as string]: a.points.length + 2 }}>
+                  {tr(a.products).replace(/\s*·\s*/g, ", ")}
+                </p>
               </div>
             </article>
           ))}
@@ -294,6 +302,8 @@ export function Expertise({ locale }: L) {
           link={{ label: tr("Read the recommendations"), href: `${href(ABOUT)}#recommendations` }}
           pauseLabel={tr("Pause")}
           playLabel={tr("Play")}
+          readLabel={tr("Read the full recommendation")}
+          closeLabel={tr("Close")}
           quoteLang={locale && locale !== "en" ? "en" : undefined}
         />
       </div>
@@ -323,6 +333,7 @@ const REFERENCES: Reference[] = TESTIMONIALS.map((t) => {
     title: t.title,
     avatarUrl: t.avatarUrl,
     quote: typeof pick === "string" ? pick : t.quote[pick],
+    full: t.quote,
   };
 });
 
@@ -393,15 +404,27 @@ export const JOURNEY = [
   { n: "07", t: "Certify", d: "Your certificate." },
 ];
 
-export function JourneyCards({ locale }: L) {
+/**
+ * The programme as one rail: seven stops on a line that draws itself when the
+ * section comes into view, with a dashed loop from Fix back to Feedback.
+ * Vertical on phones and tablets.
+ */
+export function JourneyRail({ locale }: L) {
   const { tr } = tools(locale);
   return (
-    <ol className="nd-journey">
-      {JOURNEY.map((s) => (
-        <li key={s.n} className={`nd-card nd-glow${s.loop ? " loop" : ""}`}>
-          <span className="num">{s.n}</span>
+    <ol className="nd-jrail">
+      {JOURNEY.map((s, i) => (
+        <li
+          key={s.n}
+          className={`nd-rail-step nd-in${s.loop ? " loop" : ""}${s.n === "04" ? " loop-start" : ""}`}
+          style={{ ["--d" as string]: i + 1 }}
+        >
+          <span className="node" aria-hidden="true">
+            {s.n}
+          </span>
+          {s.n === "04" && <span className="loop-arc" aria-hidden="true" />}
           <h3>{tr(s.t)}</h3>
-          <p className="text">{tr(s.d)}</p>
+          <p>{tr(s.d)}</p>
         </li>
       ))}
     </ol>
@@ -423,18 +446,27 @@ export function AcademyChapter({ locale }: L) {
           )}
           link={{ label: tr("See the programme"), href: href(ACADEMY) }}
         />
-        <div className="nd-band" style={{ marginTop: 40 }}>
-          <span className="star" aria-hidden="true">
-            ★
-          </span>
-          <p>
-            {tr("The goal: build and deploy three working business automations in 30 days.")}{" "}
-            <span className="nd-pill" style={{ marginLeft: 8, verticalAlign: 2 }}>
-              {tr("Launching soon")}
-            </span>
-          </p>
+        <div className="nd-academy" data-inview>
+          <div className="nd-academy-goal nd-in">
+            {/* The figures restate the sentence beside them, so screen readers read the sentence only. */}
+            <div className="nd-academy-figures" aria-hidden="true">
+              <span>
+                <b>3</b>
+                <small>{tr("working automations")}</small>
+              </span>
+              <i />
+              <span>
+                <b>30</b>
+                <small>{tr("days")}</small>
+              </span>
+            </div>
+            <div className="nd-academy-goal-text">
+              <span className="nd-pill">{tr("Launching soon")}</span>
+              <p>{tr("The goal: build and deploy three working business automations in 30 days.")}</p>
+            </div>
+          </div>
+          <JourneyRail locale={locale} />
         </div>
-        <JourneyCards locale={locale} />
       </div>
     </section>
   );
@@ -464,6 +496,14 @@ const READS = [
   },
 ];
 
+// Covers on the homepage shelf: 440 px WebP copies (about 15 KB each) of the
+// covers in public/books/covers/. Titles are the books' own (English) titles.
+const BOOK_COVERS = [
+  { slug: "sap-careers-200k-ai-era", title: "SAP Careers in the $200K AI Era", cover: "/books/covers/sap-careers-200k-ai-era-440.webp" },
+  { slug: "enterprise-ai-what-works", title: "10 Areas That Burn Costs in Enterprise AI with SAP", cover: "/books/covers/enterprise-ai-what-works-440.webp" },
+  { slug: "autonomous-agents-enterprise", title: "Autonomous Agents in the SAP Enterprise", cover: "/books/covers/autonomous-agents-enterprise-440.webp" },
+];
+
 export function ArticlesAndTools({ locale }: L) {
   const { tr, href } = tools(locale);
   // On translated homepages, show the translated article title when one is published.
@@ -484,7 +524,7 @@ export function ArticlesAndTools({ locale }: L) {
           lede={tr("Articles, calculators and books I wrote for people making these decisions.")}
           link={{ label: tr("All articles"), href: href(ARTICLES_INDEX) }}
         />
-        <ul className="nd-grid-4">
+        <ul className="nd-grid-3">
           {reads.map((r) => (
             <li key={r.slug}>
               <Link className="nd-card banded nd-glow" href={r.href}>
@@ -495,23 +535,27 @@ export function ArticlesAndTools({ locale }: L) {
               </Link>
             </li>
           ))}
-          <li>
-            <Link className="nd-card nd-media-card nd-glow" href={href("/books/")}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/media/noel-with-book.webp"
-                alt={tr("Noel D'Costa holding one of his books")}
-                width={1139}
-                height={1128}
-                loading="lazy"
-              />
-              <div className="inner">
-                <div className="nd-label">{tr("Books")}</div>
-                <h3 style={{ marginTop: 10 }}>{tr("Books by Noel")}</h3>
-              </div>
-            </Link>
-          </li>
         </ul>
+        <div className="nd-books" data-inview>
+          <div className="nd-books-copy nd-in">
+            <div className="nd-label">{tr("Books")}</div>
+            <h3 className="nd-display">{tr("Books by Noel")}</h3>
+            <p>{tr("Short, practical books on SAP careers and enterprise AI, published by SAPopedia Press.")}</p>
+            <Link className="nd-btn nd-btn-primary" href={href("/books/")}>
+              {tr("See the books")} <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+          <ul className="nd-books-shelf">
+            {BOOK_COVERS.map((b, i) => (
+              <li key={b.slug} className="nd-in" style={{ ["--d" as string]: i + 1 }}>
+                <Link href={`${href("/books/")}#book-card-${b.slug}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={b.cover} alt={b.title} width={440} height={622} loading="lazy" decoding="async" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
         <div className="nd-tools">
           <span className="nd-label">{tr("Free tools")}</span>
           <Link href={href("/sap-implementation-cost-calculator/")}>{tr("SAP cost calculator")}</Link>

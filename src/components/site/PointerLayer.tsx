@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
 /**
@@ -11,9 +12,34 @@ import { useEffect } from "react";
  * - Primary actions (.magnetic): lean a few pixels toward the cursor.
  *
  * Event delegation on the document, so client-side navigation needs no rebinding.
- * Off for touch, coarse pointers and reduced motion.
+ * Off for touch, coarse pointers and reduced motion. The reveal-on-view
+ * observer (below) runs on touch screens too, never with reduced motion.
  */
 export default function PointerLayer() {
+  const pathname = usePathname();
+
+  // Reveal on view: blocks marked [data-inview] get .is-in the first time a
+  // fifth of them is on screen; CSS staggers their .nd-in children. Rescans
+  // after client-side navigation. The CSS hides nothing unless the head script
+  // set .reveal-run (motion allowed), and .inview-ready tells it this observer runs.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (!root.classList.contains("reveal-run") || !("IntersectionObserver" in window)) return;
+    root.classList.add("inview-ready");
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          e.target.classList.add("is-in");
+          io.unobserve(e.target);
+        }
+      },
+      { threshold: 0.2, rootMargin: "0px 0px -6% 0px" },
+    );
+    document.querySelectorAll("[data-inview]:not(.is-in)").forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [pathname]);
+
   useEffect(() => {
     const fine =
       window.matchMedia("(pointer: fine)").matches &&
