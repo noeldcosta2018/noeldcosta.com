@@ -90,24 +90,27 @@ export function HomeHero({ locale }: L) {
       <div className="scrim" aria-hidden="true" />
       <div className="wash nd-grid-wash" aria-hidden="true" />
       <div className="nd-spotlight" aria-hidden="true" />
-      {/* Desktop portrait: Noel in Dubai at sunset, filling the right half and
-          fading into the page. Phones get a 1px placeholder from <source>, so the
-          38 to 65 KB image is only downloaded where it is shown. Desktop LCP. */}
-      <picture>
-        <source media="(max-width: 1023px)" srcSet={PIXEL} />
-        <img
-          className="media hero-photo"
-          src="/media/noel-dubai-1100.webp"
-          srcSet="/media/noel-dubai-760.webp 760w, /media/noel-dubai-1100.webp 1100w"
-          sizes="(min-width: 1024px) 52vw, 1px"
-          alt=""
-          aria-hidden="true"
-          width={1100}
-          height={1375}
-          fetchPriority="high"
-        />
-      </picture>
       <div className="nd-hero-inner">
+        {/* Desktop portrait: Noel in a grey suit, on the right of the content
+            column, placed against the headline so the top of the head sits just
+            above its first line (nd-theme.css). Phones get a 1px placeholder from
+            <source>, so the 39 to 68 KB image only downloads where it is shown.
+            Desktop LCP. The desktop copies have extra plain wall above the head
+            so every edge can fade. */}
+        <picture>
+          <source media="(max-width: 1023px)" srcSet={PIXEL} />
+          <img
+            className="media hero-photo"
+            src="/media/noel-office-tall-1100.webp"
+            srcSet="/media/noel-office-tall-760.webp 760w, /media/noel-office-tall-1100.webp 1100w"
+            sizes="(min-width: 1024px) 600px, 1px"
+            alt=""
+            aria-hidden="true"
+            width={1100}
+            height={1522}
+            fetchPriority="high"
+          />
+        </picture>
         <div className="nd-reveal nd-hero-copy">
           <h1 id="hero-title" className="nd-display">
             <span className="l1">{heroLead}</span> <span className="nd-hl">{heroHighlight}</span>
@@ -130,11 +133,11 @@ export function HomeHero({ locale }: L) {
           {/* Phones and tablets: a framed photo beside the numbers instead of the cut-out portrait. */}
           <picture>
             <source media="(min-width: 1024px)" srcSet={PIXEL} />
-            {/* Phones show it about 170 px wide: 360/560 px copies (13 and 23 KB). It is the phone LCP, so it loads first. */}
+            {/* Phones show it about 170 px wide: 360/560 px copies (11 and 23 KB). It is the phone LCP, so it loads first. */}
             <img
               className="nd-hero-photo-m"
-              src="/media/noel-dubai-560.webp"
-              srcSet="/media/noel-dubai-360.webp 360w, /media/noel-dubai-560.webp 560w"
+              src="/media/noel-office-560.webp"
+              srcSet="/media/noel-office-360.webp 360w, /media/noel-office-560.webp 560w"
               sizes="(min-width: 640px) 280px, 46vw"
               alt="Noel D'Costa"
               width={560}
@@ -607,11 +610,13 @@ export function WorkingWithMe({ locale }: L) {
           </h2>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            className="nd-why-photo"
-            src="/media/noel-hero-640.webp"
+            className="nd-why-photo is-photo"
+            src="/media/noel-navy-720.webp"
+            srcSet="/media/noel-navy-480.webp 480w, /media/noel-navy-720.webp 720w"
+            sizes="(min-width: 1024px) 360px, 280px"
             alt="Noel D'Costa"
-            width={640}
-            height={800}
+            width={720}
+            height={900}
             loading="lazy"
             decoding="async"
           />
