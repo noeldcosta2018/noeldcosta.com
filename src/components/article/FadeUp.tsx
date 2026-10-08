@@ -28,6 +28,7 @@ export default function FadeUp({
   distance = 16,
   as: Tag = "div",
   className = "",
+  id,
 }: {
   children: ReactNode;
   delay?: number;
@@ -35,6 +36,7 @@ export default function FadeUp({
   distance?: number;
   as?: "div" | "section" | "figure";
   className?: string;
+  id?: string;
 }) {
   const ref = useRef<HTMLElement | null>(null);
   const [visible, setVisible] = useState(false);
@@ -83,6 +85,7 @@ export default function FadeUp({
   return (
     <Tag
       ref={ref as never}
+      id={id}
       className={className}
       style={style}
       data-motion-reveal=""

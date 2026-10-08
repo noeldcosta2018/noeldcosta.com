@@ -2,7 +2,8 @@ import Link from "next/link";
 
 // Anchored expertise sections on /erp-ai-services/ (English). Each anchor is a
 // destination in the Expertise menu. Copy comes from the approved revamp plan
-// (section 4.3); no claims beyond it.
+// (section 4.3), plus ServiceNow (added by Noel, 8 October 2026); no claims
+// beyond them.
 
 type Item = { id: string; title: string; text: string; link?: { label: string; href: string } };
 type Area = { id: string; num: string; name: string; color: string; claim: string; items: Item[] };
@@ -31,6 +32,12 @@ const AREAS: Area[] = [
         id: "microsoft",
         title: "Microsoft",
         text: "Microsoft Dynamics 365 and Microsoft reporting, chosen and delivered against the business processes they have to support.",
+      },
+      {
+        id: "servicenow",
+        title: "ServiceNow",
+        text: "ServiceNow for the workflows around your ERP. SAP runs the structured transactions, ServiceNow runs the service and approval work around them, and the value comes from connecting the two.",
+        link: { label: "ERP modernization with SAP and ServiceNow", href: "/erp-modernization-sap-servicenow/" },
       },
     ],
   },

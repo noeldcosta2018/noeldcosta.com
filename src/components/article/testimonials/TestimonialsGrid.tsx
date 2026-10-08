@@ -35,7 +35,7 @@ function Quote({ t }: { t: Testimonial }) {
 
 export default function TestimonialsGrid() {
   return (
-    <FadeUp as="section" className="not-prose nd-block nd-testimonials">
+    <FadeUp as="section" id="recommendations" className="not-prose nd-block nd-testimonials">
       {TESTIMONIALS.map((t, i) => {
         // The last testimonial spans both columns with the identity beside
         // the quote, so it doesn't sit alone on its row.

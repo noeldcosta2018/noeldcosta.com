@@ -29,12 +29,10 @@ export const EXPERTISE_GROUPS: MenuGroup[] = [
     title: "Enterprise applications",
     area: "apps",
     links: [
-      { label: "SAP implementation", href: "/sap-implementation/", note: "Hub and programme guides" },
-      { label: "SAP S/4HANA", href: "/sap-implementation/s4hana/" },
-      { label: "RISE with SAP", href: "/sap-implementation/rise-with-sap/" },
-      { label: "SAP Business One", href: "/sap-implementation/business-one/" },
+      { label: "SAP", href: "/sap-implementation/", note: "Hub and programme guides" },
       { label: "Oracle", href: "/erp-ai-services/#oracle" },
-      { label: "Microsoft Dynamics 365", href: "/erp-ai-services/#microsoft" },
+      { label: "Microsoft", href: "/erp-ai-services/#microsoft" },
+      { label: "ServiceNow", href: "/erp-ai-services/#servicenow" },
     ],
   },
   {

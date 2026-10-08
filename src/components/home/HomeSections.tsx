@@ -7,7 +7,10 @@ import { getPost, type Locale } from "@/lib/content";
 import { localizeHref } from "@/lib/link-repair";
 import { publicPrefixFromContentLocale } from "@/lib/locale-url";
 import AiProjects from "@/components/pages/AiProjects";
+import { TESTIMONIALS } from "@/components/article/testimonials/data";
+import ReferencesMarquee, { type Reference } from "./ReferencesMarquee";
 import {
+  ABOUT,
   ACADEMY,
   ARTICLES_INDEX,
   CLIENT_WORK,
@@ -71,8 +74,15 @@ function SectionHead({
   );
 }
 
+/** " / " in a translated headline marks where the highlighted second line starts. */
+function splitHeadline(text: string): [string, string] {
+  const at = text.indexOf(" / ");
+  return at < 0 ? [text, ""] : [text.slice(0, at).trim(), text.slice(at + 3).trim()];
+}
+
 export function HomeHero({ locale }: L) {
   const { tr, href } = tools(locale);
+  const [heroLead, heroHighlight] = splitHeadline(tr("I help you build systems / and then make them smart."));
   return (
     <section className="nd-hero" aria-labelledby="hero-title">
       <div className="bg" aria-hidden="true" />
@@ -98,7 +108,7 @@ export function HomeHero({ locale }: L) {
       <div className="nd-hero-inner">
         <div className="nd-reveal nd-hero-copy">
           <h1 id="hero-title" className="nd-display">
-            <span className="l1">{tr("Systems that")}</span> <span className="nd-hl">{tr("actually work.")}</span>
+            <span className="l1">{heroLead}</span> <span className="nd-hl">{heroHighlight}</span>
           </h1>
           <p className="sub">
             {tr(
@@ -166,7 +176,7 @@ export function HowIHelp({ locale }: L) {
               </cite>
             </blockquote>
             <div style={{ marginTop: 24, paddingLeft: 18 }}>
-              <Link className="nd-textlink" href={`${href(CLIENT_WORK)}#recommendations`}>
+              <Link className="nd-textlink" href={`${href(ABOUT)}#recommendations`}>
                 {tr("Read the recommendations")} <span aria-hidden="true">→</span>
               </Link>
             </div>
@@ -192,17 +202,17 @@ const AREAS = [
     id: "area-apps",
     num: "01",
     color: "var(--area-apps)",
-    chip: "SAP · Oracle · Microsoft",
+    chip: "SAP · Oracle · Microsoft · ServiceNow",
     name: "Enterprise applications",
     claim: "Choose the right system. Make the implementation work.",
-    text: "I help you work through SAP, Oracle and Microsoft application decisions, connect the work to business processes and keep delivery focused on what the business needs.",
+    text: "I help you work through SAP, Oracle, Microsoft and ServiceNow decisions, connect the work to business processes and keep delivery focused on what the business needs.",
     points: [
       "Selection and business case, before you sign with a vendor or an SI",
       "S/4HANA route: greenfield, brownfield or selective",
       "Oversight of an SI-led programme, blueprint to post-go-live",
       "Recovery when a programme has slipped",
     ],
-    products: "SAP S/4HANA, RISE and GROW with SAP · Oracle Fusion · Microsoft Dynamics 365",
+    products: "SAP S/4HANA, RISE and GROW with SAP · Oracle Fusion · Microsoft Dynamics 365 · ServiceNow",
     link: { label: "SAP implementation", href: "/sap-implementation/" },
   },
   {
@@ -278,13 +288,46 @@ export function Expertise({ locale }: L) {
           ))}
         </div>
         <AiProjects locale={locale} />
+        <ReferencesMarquee
+          references={REFERENCES}
+          title={tr("Recommendations")}
+          link={{ label: tr("Read the recommendations"), href: `${href(ABOUT)}#recommendations` }}
+          pauseLabel={tr("Pause")}
+          playLabel={tr("Play")}
+          quoteLang={locale && locale !== "en" ? "en" : undefined}
+        />
       </div>
     </section>
   );
 }
 
+// One verbatim passage per recommendation (src/components/article/testimonials/data.ts),
+// the passage that says the most on its own. "…" marks words left out.
+const PASSAGE: Record<string, number | string> = {
+  "Tareq Ashmawy":
+    "Noel is … a go-getter with an unprecedented focus on cost optimisation and over-delivering objectives.",
+  "Adam Boukadida": 1,
+  "Andrew Stotter Brooks": 0,
+  "Andrew MacFarlane": 1,
+  "Ruchira Dasanayake": 0,
+  "Farouq Al Kabarity": 0,
+  "Mike Papamichael": 1,
+  "Anubhav Agarwal": 1,
+  "Takhliq Hanif": 1,
+};
+
+const REFERENCES: Reference[] = TESTIMONIALS.map((t) => {
+  const pick = PASSAGE[t.name] ?? 0;
+  return {
+    name: t.name,
+    title: t.title,
+    avatarUrl: t.avatarUrl,
+    quote: typeof pick === "string" ? pick : t.quote[pick],
+  };
+});
+
 export function ClientWork({ locale }: L) {
-  const { tr, href, en } = tools(locale);
+  const { tr, href } = tools(locale);
   return (
     <section className="nd-section" id="client-work" aria-labelledby="work-title">
       <div className="nd-container">
@@ -335,35 +378,6 @@ export function ClientWork({ locale }: L) {
             </tbody>
           </table>
         </div>
-        <ul className="nd-grid-2">
-          <li>
-            <figure className="nd-card nd-quote nd-glow" lang={en}>
-              <blockquote>
-                <p>
-                  &ldquo;His functional expertise, combined with his financial /accounting knowledge and detailed
-                  business process understanding and attention to detail gained from working in Internal Audit are
-                  invaluable tools that Noel uses to drive business change and deliver amazing results.&rdquo;
-                </p>
-              </blockquote>
-              <footer>
-                <b>Mike Papamichael</b>PRISM Consulting Services, Cyprus. EX Chief Information Officer at EAG
-              </footer>
-            </figure>
-          </li>
-          <li>
-            <figure className="nd-card nd-quote nd-glow" lang={en}>
-              <blockquote>
-                <p>
-                  &ldquo;We had an opportunity to transform the Finance function in Etihad by automating our processes
-                  and providing more transparency in financial reporting.&rdquo;
-                </p>
-              </blockquote>
-              <footer>
-                <b>Adam Boukadida</b>Chief Financial Officer, Riyadh Air
-              </footer>
-            </figure>
-          </li>
-        </ul>
       </div>
     </section>
   );

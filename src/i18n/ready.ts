@@ -11,7 +11,7 @@ import { hasTranslation } from "./index";
 // then the English page stays the only version, so English is never served as
 // a "translation". The sentinel strings below are present in every table that
 // was translated in full.
-const SENTINELS = ["Discuss your project", "Systems that", "All articles", "Expertise"];
+const SENTINELS = ["Discuss your project", "I help you build systems / and then make them smart.", "All articles", "Expertise"];
 
 export function interfaceReady(locale: string): boolean {
   // Accepts a public prefix (zh-CN) or a content locale (zh).

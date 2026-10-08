@@ -29,7 +29,7 @@ export default function HomePage({ locale = "en" }: { locale?: Locale }) {
     description: tr(
       "I help leadership teams choose the right SAP, Oracle and Microsoft platforms, deliver programmes, fix reporting and put AI to work where it solves a real problem.",
     ),
-    serviceType: "Enterprise applications (SAP, Oracle, Microsoft), data and analytics, enterprise AI",
+    serviceType: "Enterprise applications (SAP, Oracle, Microsoft, ServiceNow), data and analytics, enterprise AI",
   });
   const blogLd = blogJsonLd();
   const languages = homeAlternates();
