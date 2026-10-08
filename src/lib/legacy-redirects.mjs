@@ -73,3 +73,33 @@ export function legacyRedirectRules(root = process.cwd()) {
   );
   return rules;
 }
+
+/**
+ * WordPress system addresses that outside sites, feed readers and search
+ * engines still request (approved by Noel, 8 October 2026, for the move off
+ * WordPress):
+ * - media: /wp-content/uploads/... is mirrored at /images/wp/... (same paths;
+ *   thumbnail sizes like name-300x200.webp go to the full-size file)
+ * - per-page feeds (/slug/feed/, /category/x/feed/) go to the page itself;
+ *   the site feed lives at /feed/ (src/app/feed/route.ts)
+ * - Rank Math sitemaps that Search Console may still hold go to /sitemap.xml
+ * - /ka/, /ml/, /da/ and /tl/ pages go to the English page (Noel, 8 Oct 2026)
+ */
+export function wordpressSystemRedirects() {
+  const sitemaps = ["sitemap_index", "post-sitemap", "page-sitemap", "category-sitemap", "post_tag-sitemap", "author-sitemap"];
+  return [
+    // WordPress thumbnail sizes (name-300x200.webp) go to the full-size image.
+    {
+      source: "/wp-content/uploads/:year([0-9]{4})/:month([0-9]{2})/:base([^/]+?)-:size([0-9]+x[0-9]+).:ext(webp|png|jpg|jpeg|gif)",
+      destination: "/images/wp/:year/:month/:base.:ext",
+      permanent: true,
+    },
+    { source: "/wp-content/uploads/:path*", destination: "/images/wp/:path*", permanent: true },
+    { source: "/:path+/feed/", destination: "/:path+/", permanent: true },
+    // Languages the WordPress site machine-translated but the new site does not
+    // publish (Georgian, Malayalam, Danish, Tagalog) go to the English page.
+    { source: "/:lang(ka|ml|da|tl)/", destination: "/", permanent: true },
+    { source: "/:lang(ka|ml|da|tl)/:path+/", destination: "/:path+/", permanent: true },
+    ...sitemaps.map((name) => ({ source: `/${name}.xml`, destination: "/sitemap.xml", permanent: true })),
+  ];
+}

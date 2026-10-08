@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import { legacyRedirectRules } from "./src/lib/legacy-redirects.mjs";
+import { legacyRedirectRules, wordpressSystemRedirects } from "./src/lib/legacy-redirects.mjs";
 
 const nextConfig: NextConfig = {
   // Preserve the WordPress URL contract: every legacy URL ends in `/`, and
@@ -73,7 +73,8 @@ const nextConfig: NextConfig = {
   ],
   // Old WordPress URLs that the live site 301-redirects today, recreated on
   // Noel's approval (7 October 2026). Checked before pages and the proxy.
-  redirects: async () => legacyRedirectRules(),
+  // WordPress media, feed and sitemap addresses: see wordpressSystemRedirects.
+  redirects: async () => [...legacyRedirectRules(), ...wordpressSystemRedirects()],
   // Security headers — applied globally. CSP intentionally omitted because
   // the site loads external resources (Calendly embed, Google Fonts, OG
   // image previews) that need a careful per-resource allowlist; doing it

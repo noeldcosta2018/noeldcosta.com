@@ -81,6 +81,7 @@ export default function SiteRootLayout({
     >
       <head>
         <ThemeScript />
+        <link rel="alternate" type="application/rss+xml" title="Noel D'Costa" href="/feed/" />
       </head>
       <body>
         <PointerLayer />
