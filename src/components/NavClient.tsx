@@ -230,7 +230,7 @@ function NavForPath({
     const next = order[(current + 1) % order.length];
     doc.setAttribute("data-theme", next);
     try {
-      localStorage.setItem("nd-theme", next);
+      localStorage.setItem("nd-theme-v2", next);
     } catch {
       /* storage unavailable: the choice lasts for this page only */
     }
