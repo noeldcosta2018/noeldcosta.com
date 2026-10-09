@@ -86,9 +86,18 @@ export function cleanWordPressArtifacts(body: string): string {
  * WordPress testimonial sliders were exported as one run-on paragraph of
  * quotes, avatars, names and roles. On English pages, replace each such
  * paragraph with the structured testimonials grid (verbatim quotes from
- * src/components/article/testimonials/data.ts), once per page.
+ * src/components/article/testimonials/data.ts), once per page. Translated
+ * pages keep the quotes in English as well, so they get the same grid with
+ * their own link line under it.
  */
-export function replaceTestimonialSliders(body: string, names: readonly string[]): string {
+export const TESTIMONIAL_LINKS =
+  "[See the case studies](/case-studies/) · [All recommendations on LinkedIn](https://www.linkedin.com/in/noeldcosta/)";
+
+export function replaceTestimonialSliders(
+  body: string,
+  names: readonly string[],
+  links: string = TESTIMONIAL_LINKS,
+): string {
   let inserted = false;
   return body
     .split(/(\n\s*\n)/)
@@ -100,7 +109,7 @@ export function replaceTestimonialSliders(body: string, names: readonly string[]
       return [
         "<testimonials-grid></testimonials-grid>",
         "",
-        "[See the case studies](/case-studies/) · [All recommendations on LinkedIn](https://www.linkedin.com/in/noeldcosta/)",
+        links,
       ].join("\n");
     })
     .join("")

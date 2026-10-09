@@ -20,7 +20,7 @@ import {
   toolPath,
 } from "./localized-interface-routes";
 import { getLocalizedContentParams } from "./localized-page-routing";
-import { localizeHref } from "./link-repair";
+import { localizeHref, repairLinks } from "./link-repair";
 
 const CATEGORIES = [
   "erp-consulting-guide",
@@ -155,5 +155,24 @@ describe("translated interface routes", () => {
     expect(localizeHref("de", "/sap-solution-builder/")).toBe("/de/sap-solution-builder/");
     expect(localizeHref("de", "/author/noeldcosta/")).toBe("/de/author/noeldcosta/");
     expect(localizeHref("fr", "/category/erp-strategy/")).toBe("/category/erp-strategy/");
+  });
+
+  it("points unprefixed body links on a translated page at the same language", () => {
+    const post = "/2024-sap-timeline-planning-implementation-guide-essentials/";
+    const body = [
+      `[a](https://noeldcosta.com${post})`,
+      `[b](${post}#faq)`,
+      `[c](https://noeldcosta.com/de${post})`,
+      `[d](/tag/sap-fico/)`,
+      `<a href="https://noeldcosta.com/images/wp/x.webp">e</a>`,
+    ].join("\n");
+    expect(repairLinks(body, "de").split("\n")).toEqual([
+      `[a](/de${post})`,
+      `[b](/de${post}#faq)`,
+      `[c](/de${post})`,
+      `[d](/tag/sap-fico/)`,
+      `<a href="/images/wp/x.webp">e</a>`,
+    ]);
+    expect(repairLinks(`[a](https://noeldcosta.com${post})`)).toBe(`[a](${post})`);
   });
 });

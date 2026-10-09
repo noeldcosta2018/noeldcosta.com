@@ -165,7 +165,7 @@ export default function ToolShell({
   if (page && isEnglish) {
     [aboveMdx = "", belowMdx = ""] = page.body.split(SPLIT_MARKER);
   } else if (page) {
-    const body = normalizeHeadingLevels(repairLinks(cleanWordPressArtifacts(page.body.replace(H1_LINE, ""))));
+    const body = normalizeHeadingLevels(repairLinks(cleanWordPressArtifacts(page.body.replace(H1_LINE, "")), prefix));
     if (SPLIT_MARKER.test(body)) [aboveMdx = "", belowMdx = ""] = body.split(SPLIT_MARKER);
     else belowMdx = body;
   }

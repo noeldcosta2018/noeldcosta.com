@@ -12,14 +12,21 @@ import {
   pageWebPageJsonLd,
 } from "./seo.ts";
 
+// Public prefixes with translated pages.
+const PAGE_LOCALES = [
+  "ar", "de", "es", "fr", "hi", "it", "ja", "ko", "nl", "pt", "ru", "tr", "zh-CN", "zh-TW",
+];
+
 describe("Phase 3B localized MDX page routing", () => {
   it("generates only approved non-tool page paths for translated locales", () => {
     const params = getLocalizedPageParams();
 
-    // 29 routed pages in 12 languages. Simplified Chinese pages are English
-    // text under Chinese metadata and stay unpublished; Greek, Croatian and
-    // Traditional Chinese have no translated pages yet.
-    expect(params).toHaveLength(29 * 12);
+    // 29 routed pages in each language that has translated pages (9 October
+    // 2026); Greek and Croatian have none yet.
+    expect(params).toHaveLength(29 * PAGE_LOCALES.length);
+    for (const locale of PAGE_LOCALES) {
+      expect(params.filter((p) => p.locale === locale)).toHaveLength(29);
+    }
     expect(params).toContainEqual({
       locale: "es",
       slug: ["sap-implementation", "sap-modules"],
@@ -29,8 +36,8 @@ describe("Phase 3B localized MDX page routing", () => {
       slug: ["contact-noel-erp-support"],
     });
     expect(params).toContainEqual({ locale: "ar", slug: ["case-studies"] });
-    expect(params.some(({ locale }) => locale === "zh-CN")).toBe(false);
     expect(params.some(({ locale }) => locale === "el")).toBe(false);
+    expect(params.some(({ locale }) => locale === "hr")).toBe(false);
     expect(params.some(({ slug }) => slug.join("/") === "about")).toBe(false);
     expect(
       params.some(({ slug }) => slug.join("/") === "sap-solution-builder"),
@@ -81,7 +88,7 @@ describe("Phase 3B localized MDX page routing", () => {
     const keys = params.map(({ locale, slug }) => `${locale}/${slug.join("/")}`);
 
     // 81 articles in 16 languages plus the routed pages above.
-    expect(params).toHaveLength(81 * 16 + 29 * 12);
+    expect(params).toHaveLength(81 * 16 + 29 * PAGE_LOCALES.length);
     expect(new Set(keys).size).toBe(params.length);
   });
 

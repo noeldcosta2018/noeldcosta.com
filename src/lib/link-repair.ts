@@ -57,10 +57,20 @@ export function repairPath(raw: string): string {
 const MD_LINK = /\]\(((?:https?:\/\/(?:www\.)?noeldcosta\.com)?\/[^)\s]*)\)/gi;
 const HTML_HREF = /href="((?:https?:\/\/(?:www\.)?noeldcosta\.com)?\/[^"\s]*)"/gi;
 
-export function repairLinks(body: string): string {
+/**
+ * prefix: the public locale prefix of a translated page (de, zh-CN ...). Its
+ * internal links that carry no locale (including absolute noeldcosta.com links
+ * kept from the English source) then point at the same-language page when
+ * that page is published, and stay English otherwise.
+ */
+export function repairLinks(body: string, prefix?: string | null): string {
+  const fix = (url: string) => {
+    const path = repairPath(url);
+    return prefix && path.startsWith("/") && !LOCALE_PREFIX.test(path) ? localizeHref(prefix, path) : path;
+  };
   return body
-    .replace(MD_LINK, (_m, url: string) => `](${repairPath(url)})`)
-    .replace(HTML_HREF, (_m, url: string) => `href="${repairPath(url)}"`);
+    .replace(MD_LINK, (_m, url: string) => `](${fix(url)})`)
+    .replace(HTML_HREF, (_m, url: string) => `href="${fix(url)}"`);
 }
 
 

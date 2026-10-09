@@ -157,10 +157,11 @@ export default function MdxPageLayout({
   const media = bannerMedia(section, fm.slug);
 
   // Body: strip leftover WordPress shortcodes (they rendered as literal text).
-  const cleaned = normalizeHeadingLevels(repairLinks(cleanWordPressArtifacts(page.body)));
-  const body = (
-    isEnglish ? replaceTestimonialSliders(cleaned, TESTIMONIALS.map((t) => t.name)) : cleaned
-  ).trim();
+  const cleaned = normalizeHeadingLevels(repairLinks(cleanWordPressArtifacts(page.body), prefix));
+  const testimonialLinks = isEnglish
+    ? undefined
+    : `[${tr("All case studies")}](${lhref("/case-studies/")}) · [${tr("Read the recommendations")}](https://www.linkedin.com/in/noeldcosta/)`;
+  const body = replaceTestimonialSliders(cleaned, TESTIMONIALS.map((t) => t.name), testimonialLinks).trim();
   const isLibrary = fm.slug === LIBRARY_SLUG;
   const isCaseStudies = fm.slug === "case-studies";
   const isPartners = fm.slug === PARTNERS_SLUG;

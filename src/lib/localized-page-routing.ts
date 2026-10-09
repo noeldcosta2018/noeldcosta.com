@@ -91,13 +91,14 @@ export function getLocalizedPage(
   if (!item) return null;
 
   const page = getPage(item.slug, contentLocale);
-  if (
-    !page ||
-    page.isFallback ||
-    page.locale !== contentLocale ||
-    !isTextMdxBody(page.body) ||
-    !hasExpectedLocaleScript(page.body, contentLocale)
-  ) {
+  if (!page || page.isFallback || page.locale !== contentLocale) return null;
+  // Component pages (the articles library, the partner directory) have little
+  // or no body text, so their title and description count too. On a long page
+  // they are too short to pass English text off as a translation.
+  const text = [page.frontmatter.title, page.frontmatter.metaDescription, page.body]
+    .filter(Boolean)
+    .join("\n");
+  if (!isTextMdxBody(text) || !hasExpectedLocaleScript(text, contentLocale)) {
     return null;
   }
 

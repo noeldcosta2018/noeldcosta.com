@@ -182,7 +182,7 @@ export default function PostPage({
   // clones) are removed before anything reads the body, so the ToC, the
   // segments and the rendered headings all see the same text. Heading ids
   // are unaffected: no heading contains those artefacts.
-  const body = normalizeHeadingLevels(repairLinks(cleanWordPressArtifacts(post.body)));
+  const body = normalizeHeadingLevels(repairLinks(cleanWordPressArtifacts(post.body), prefix));
 
   // ToC ids come from one slug pass over the full body; each rendered
   // segment is handed its slice so heading ids match the ToC hrefs.
