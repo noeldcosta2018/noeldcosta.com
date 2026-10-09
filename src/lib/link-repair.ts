@@ -54,7 +54,8 @@ export function repairPath(raw: string): string {
   return path + tail;
 }
 
-const MD_LINK = /\]\(((?:https?:\/\/(?:www\.)?noeldcosta\.com)?\/[^)\s]*)\)/gi;
+// The optional group is a link title: [text](/path/ "Title").
+const MD_LINK = /\]\(((?:https?:\/\/(?:www\.)?noeldcosta\.com)?\/[^)\s]*)(\s+"[^"]*")?\)/gi;
 const HTML_HREF = /href="((?:https?:\/\/(?:www\.)?noeldcosta\.com)?\/[^"\s]*)"/gi;
 
 /**
@@ -69,7 +70,7 @@ export function repairLinks(body: string, prefix?: string | null): string {
     return prefix && path.startsWith("/") && !LOCALE_PREFIX.test(path) ? localizeHref(prefix, path) : path;
   };
   return body
-    .replace(MD_LINK, (_m, url: string) => `](${fix(url)})`)
+    .replace(MD_LINK, (_m, url: string, title = "") => `](${fix(url)}${title})`)
     .replace(HTML_HREF, (_m, url: string) => `href="${fix(url)}"`);
 }
 

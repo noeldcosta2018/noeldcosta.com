@@ -165,6 +165,7 @@ describe("translated interface routes", () => {
       `[c](https://noeldcosta.com/de${post})`,
       `[d](/tag/sap-fico/)`,
       `<a href="https://noeldcosta.com/images/wp/x.webp">e</a>`,
+      `[f](https://noeldcosta.com${post} "A title")`,
     ].join("\n");
     expect(repairLinks(body, "de").split("\n")).toEqual([
       `[a](/de${post})`,
@@ -172,6 +173,7 @@ describe("translated interface routes", () => {
       `[c](/de${post})`,
       `[d](/tag/sap-fico/)`,
       `<a href="/images/wp/x.webp">e</a>`,
+      `[f](/de${post} "A title")`,
     ]);
     expect(repairLinks(`[a](https://noeldcosta.com${post})`)).toBe(`[a](${post})`);
   });
