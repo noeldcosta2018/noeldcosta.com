@@ -14,15 +14,14 @@ import {
 
 // Public prefixes with translated pages.
 const PAGE_LOCALES = [
-  "ar", "de", "es", "fr", "hi", "it", "ja", "ko", "nl", "pt", "ru", "tr", "zh-CN", "zh-TW",
+  "ar", "de", "el", "es", "fr", "hi", "hr", "it", "ja", "ko", "nl", "pt", "ru", "tr", "zh-CN", "zh-TW",
 ];
 
 describe("Phase 3B localized MDX page routing", () => {
   it("generates only approved non-tool page paths for translated locales", () => {
     const params = getLocalizedPageParams();
 
-    // 29 routed pages in each language that has translated pages (9 October
-    // 2026); Greek and Croatian have none yet.
+    // 29 routed pages in every published language (9 October 2026).
     expect(params).toHaveLength(29 * PAGE_LOCALES.length);
     for (const locale of PAGE_LOCALES) {
       expect(params.filter((p) => p.locale === locale)).toHaveLength(29);
@@ -36,8 +35,6 @@ describe("Phase 3B localized MDX page routing", () => {
       slug: ["contact-noel-erp-support"],
     });
     expect(params).toContainEqual({ locale: "ar", slug: ["case-studies"] });
-    expect(params.some(({ locale }) => locale === "el")).toBe(false);
-    expect(params.some(({ locale }) => locale === "hr")).toBe(false);
     expect(params.some(({ slug }) => slug.join("/") === "about")).toBe(false);
     expect(
       params.some(({ slug }) => slug.join("/") === "sap-solution-builder"),

@@ -22,14 +22,13 @@ import {
 import { buildLanguageAlternates } from "./seo-graph.ts";
 
 // hreflang keys (public locale codes). Articles exist in all 16 published
-// translations (7 October 2026); routed pages in 14 (no Greek or Croatian
-// pages yet, 9 October 2026).
+// translations (7 October 2026); routed pages in all 16 (9 October 2026).
 const POST_LANGUAGE_KEYS = [
   "en", "ar", "de", "el", "es", "fr", "hi", "hr", "it", "ja", "ko", "nl", "pt", "ru", "tr", "zh-CN", "zh-TW",
   "x-default",
 ];
 const PAGE_LANGUAGE_KEYS = [
-  "en", "ar", "de", "es", "fr", "hi", "it", "ja", "ko", "nl", "pt", "ru", "tr", "zh-CN", "zh-TW",
+  "en", "ar", "de", "el", "es", "fr", "hi", "hr", "it", "ja", "ko", "nl", "pt", "ru", "tr", "zh-CN", "zh-TW",
   "x-default",
 ];
 
@@ -472,7 +471,7 @@ describe("Phase 4A reciprocal manifest-backed SEO language graph", () => {
 
   it("preserves the approved route parameter inventory", () => {
     expect(getLocalizedArticleParams()).toHaveLength(81 * 16);
-    expect(getLocalizedPageParams()).toHaveLength(29 * 14);
-    expect(getLocalizedContentParams()).toHaveLength(81 * 16 + 29 * 14);
+    expect(getLocalizedPageParams()).toHaveLength(29 * 16);
+    expect(getLocalizedContentParams()).toHaveLength(81 * 16 + 29 * 16);
   });
 });
