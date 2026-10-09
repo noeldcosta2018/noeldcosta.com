@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Doodle from "./Doodle";
+import Doodle, { HandNote } from "@/components/doodles/Doodle";
 
 export type OutputCard = {
   caption: string;
@@ -33,10 +33,9 @@ export default function OutputCards({ cards, width, height }: { cards: OutputCar
         {cards.map((card) => (
           <li key={card.file} className="ar-output">
             {card.note && (
-              <p className="ar-hand-note ar-output-note" aria-hidden="true">
-                <span className="ar-hand">{card.note}</span>
+              <HandNote text={card.note} className="ar-output-note">
                 <Doodle name="arrow-down" />
-              </p>
+              </HandNote>
             )}
             {card.src ? (
               <button type="button" className="ar-output-zoom" onClick={() => show(card)} aria-label={`View larger: ${card.alt}`}>

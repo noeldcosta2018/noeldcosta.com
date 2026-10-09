@@ -10,9 +10,11 @@ import "../../nd-theme.css";
 import "../../nd-articles.css";
 import "../../nd-archives.css";
 import "../../nd-pages.css";
+import "../../nd-doodles.css";
 import { fontVariables } from "@/components/site/fonts";
 import ThemeScript from "@/components/site/ThemeScript";
 import PointerLayer from "@/components/site/PointerLayer";
+import { DoodleSprite } from "@/components/doodles/Doodle";
 import ChatWidget from "@/components/site/ChatWidget";
 import { chatCopy } from "@/components/site/chat-copy";
 import CookieConsent from "@/components/site/CookieConsent";
@@ -84,6 +86,7 @@ export default async function LocalizedLayout({
       </head>
       <body>
         <PointerLayer />
+        <DoodleSprite />
         {/* Site-wide WebSite + Person JSON-LD, as on English pages. */}
         <script
           type="application/ld+json"

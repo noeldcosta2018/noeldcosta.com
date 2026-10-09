@@ -7,6 +7,7 @@ import { getPost, type Locale } from "@/lib/content";
 import { localizeHref } from "@/lib/link-repair";
 import { publicPrefixFromContentLocale } from "@/lib/locale-url";
 import AiProjects from "@/components/pages/AiProjects";
+import Doodle, { HandNote } from "@/components/doodles/Doodle";
 import { TESTIMONIALS } from "@/components/article/testimonials/data";
 import ReferencesMarquee, { type Reference } from "./ReferencesMarquee";
 import {
@@ -47,6 +48,7 @@ function SectionHead({
   highlight,
   lede,
   link,
+  underline,
 }: {
   /** Section label. Used sparingly: at most one section in three carries one. */
   eyebrow?: string;
@@ -55,13 +57,23 @@ function SectionHead({
   highlight: string;
   lede?: string;
   link?: { label: string; href: string };
+  /** A hand-drawn underline under the highlight. Keep it to short highlights. */
+  underline?: boolean;
 }) {
   return (
     <div className="nd-header-row">
       <div>
         {eyebrow && <div className="nd-eyebrow">{eyebrow}</div>}
         <h2 id={id} className="nd-display nd-h2">
-          {title} <span className="nd-hl">{highlight}</span>
+          {title}{" "}
+          {underline ? (
+            <span className="nd-hl nd-u">
+              {highlight}
+              <Doodle name="underline" />
+            </span>
+          ) : (
+            <span className="nd-hl">{highlight}</span>
+          )}
         </h2>
         {lede && <p className="nd-lede">{lede}</p>}
       </div>
@@ -128,8 +140,14 @@ export function HomeHero({ locale }: L) {
               {tr("Explore my expertise")}
             </a>
           </div>
+          <HandNote text={tr("Hi, I'm Noel.")} className="nd-hero-note">
+            <Doodle name="arrow-swoop" />
+          </HandNote>
         </div>
         <div className="nd-hero-side">
+          <HandNote text={tr("Hi, I'm Noel.")} className="nd-hero-note-m">
+            <Doodle name="arrow-swoop" />
+          </HandNote>
           {/* Phones and tablets: a framed photo beside the numbers instead of the cut-out portrait. */}
           <picture>
             <source media="(min-width: 1024px)" srcSet={PIXEL} />
@@ -152,7 +170,11 @@ export function HomeHero({ locale }: L) {
             </div>
             <div className="nd-stat">
               <span className="k">{tr("Government entities moved to Oracle Fusion")}</span>
-              <span className="v" data-count>84</span>
+              {/* The circle sits beside the figure, not inside it: the count-up rewrites the figure's text. */}
+              <span className="nd-stat-ring">
+                <span className="v" data-count>84</span>
+                <Doodle name="circle" className="nd-stat-circle" />
+              </span>
             </div>
             <div className="nd-stat">
               <span className="k">{tr("SAP, Oracle, Microsoft & AI consultants led")}</span>
@@ -181,7 +203,10 @@ export function HowIHelp({ locale }: L) {
               )}
             </p>
           </div>
-          <div>
+          <div className="nd-quote-col">
+            <HandNote text={tr("People I've worked with")} className="nd-quote-note">
+              <Doodle name="arrow-down" />
+            </HandNote>
             <blockquote className="nd-punchline" lang={en}>
               &ldquo;Noel led the technical delivery of the SAP Finance Transformation project at Etihad &hellip; the
               programme has delivered on time (18 months), on budget and with no major issues.&rdquo;
@@ -276,6 +301,7 @@ export function Expertise({ locale }: L) {
           id="expertise-title"
           title={tr("Applications, data and AI.")}
           highlight={tr("Connected.")}
+          underline
           lede={tr("Each area stands on its own. Most of my work touches at least two of them.")}
           link={{ label: tr("All expertise"), href: href(EXPERTISE) }}
         />
@@ -375,42 +401,47 @@ export function ClientWork({ locale }: L) {
           )}
           link={{ label: tr("All case studies"), href: href(CLIENT_WORK) }}
         />
-        <div className="nd-table-wrap" tabIndex={0} role="region" aria-label={tr("Programmes table")}>
-          <table>
-            <caption className="sr-only">{tr("Programmes, Noel's relationship to each, platforms and what changed")}</caption>
-            <thead>
-              <tr>
-                <th scope="col">{tr("Programme")}</th>
-                <th scope="col">{tr("My role")}</th>
-                <th scope="col">{tr("Platforms")}</th>
-                <th scope="col">{tr("What changed")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <th scope="row">{tr("National airline")}</th>
-                <td>{tr("In-house, IT leadership team")}</td>
-                <td>{tr("SAP, Microsoft reporting, RPA")}</td>
-                <td>
-                  {tr(
-                    "Built and ran the SAP centre of excellence. Technical delivery of the SAP finance transformation: 18 months, on time, on budget.",
-                  )}
-                </td>
-              </tr>
-              <tr>
-                <th scope="row">{tr("Government department")}</th>
-                <td>{tr("Adviser")}</td>
-                <td>{tr("Oracle E-Business Suite to Oracle Fusion")}</td>
-                <td>{tr("Move to Oracle Fusion across 84 entities.")}</td>
-              </tr>
-              <tr>
-                <th scope="row">{tr("Global IT services firm")}</th>
-                <td>{tr("Leadership, now CTO")}</td>
-                <td>{tr("SAP, Oracle, Microsoft")}</td>
-                <td>{tr("Practices across the Middle East and Africa, 800+ consultants.")}</td>
-              </tr>
-            </tbody>
-          </table>
+        <div className="nd-role-wrap">
+          <HandNote text={tr("Read this column")} className="nd-role-note">
+            <Doodle name="arrow-down" />
+          </HandNote>
+          <div className="nd-table-wrap" tabIndex={0} role="region" aria-label={tr("Programmes table")}>
+            <table>
+              <caption className="sr-only">{tr("Programmes, Noel's relationship to each, platforms and what changed")}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">{tr("Programme")}</th>
+                  <th scope="col">{tr("My role")}</th>
+                  <th scope="col">{tr("Platforms")}</th>
+                  <th scope="col">{tr("What changed")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">{tr("National airline")}</th>
+                  <td>{tr("In-house, IT leadership team")}</td>
+                  <td>{tr("SAP, Microsoft reporting, RPA")}</td>
+                  <td>
+                    {tr(
+                      "Built and ran the SAP centre of excellence. Technical delivery of the SAP finance transformation: 18 months, on time, on budget.",
+                    )}
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">{tr("Government department")}</th>
+                  <td>{tr("Adviser")}</td>
+                  <td>{tr("Oracle E-Business Suite to Oracle Fusion")}</td>
+                  <td>{tr("Move to Oracle Fusion across 84 entities.")}</td>
+                </tr>
+                <tr>
+                  <th scope="row">{tr("Global IT services firm")}</th>
+                  <td>{tr("Leadership, now CTO")}</td>
+                  <td>{tr("SAP, Oracle, Microsoft")}</td>
+                  <td>{tr("Practices across the Middle East and Africa, 800+ consultants.")}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -548,8 +579,13 @@ export function ArticlesAndTools({ locale }: L) {
           link={{ label: tr("All articles"), href: href(ARTICLES_INDEX) }}
         />
         <ul className="nd-grid-3">
-          {reads.map((r) => (
+          {reads.map((r, i) => (
             <li key={r.slug}>
+              {i === 0 && (
+                <HandNote text={tr("Start here")} className="nd-start-note">
+                  <Doodle name="arrow-down" />
+                </HandNote>
+              )}
               <Link className="nd-card banded nd-glow" href={r.href}>
                 <span className="nd-card-band" style={{ background: r.color }} aria-hidden="true" />
                 <div className="nd-label">{tr(r.label)}</div>
@@ -620,6 +656,9 @@ export function WorkingWithMe({ locale }: L) {
             loading="lazy"
             decoding="async"
           />
+          <HandNote text={tr("In the room myself")} className="nd-why-note">
+            <Doodle name="arrow-swoop" />
+          </HandNote>
         </div>
         <ol>
           {points.map((p, i) => (
@@ -659,10 +698,12 @@ export function CloseBand({
           </h2>
           <p className="nd-lede">{tr(lede)}</p>
         </div>
-        <div style={{ flex: "none" }}>
+        <div className="nd-hook-row" style={{ flex: "none" }}>
+          <Doodle name="arrow-hook" />
           <Link className="nd-btn nd-btn-primary magnetic" href={href(CONTACT)}>
             {tr("Discuss your project")} <span aria-hidden="true">→</span>
           </Link>
+          <Doodle name="arrow-hook" flip />
         </div>
       </div>
     </section>
@@ -758,7 +799,10 @@ export function SignupBand({ locale }: L) {
             )}
           </p>
         </div>
-        <SignupForm source="newsletter" copy={signupCopy(locale)} privacyHref={href("/privacy-policy-noeldcosta/")} />
+        <div className="nd-signup-col">
+          <SignupForm source="newsletter" copy={signupCopy(locale)} privacyHref={href("/privacy-policy-noeldcosta/")} />
+          <HandNote text={tr("Takes 20 seconds.")} className="nd-signup-note" />
+        </div>
       </div>
     </section>
   );

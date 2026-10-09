@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Doodle from "./Doodle";
+import Doodle from "@/components/doodles/Doodle";
 
 /**
  * Section 2: the reader ticks what applies. From two ticks a circled line
@@ -22,7 +22,7 @@ export default function WorryCheck({ items, verdict }: { items: string[]; verdic
                 checked={ticked[i]}
                 onChange={(e) => setTicked((prev) => prev.map((v, j) => (j === i ? e.target.checked : v)))}
               />
-              <span className="ar-box" aria-hidden="true">
+              <span className="ar-box" aria-hidden="true" data-dd-manual>
                 <Doodle name="tick" />
               </span>
               <span>{item}</span>
@@ -30,7 +30,7 @@ export default function WorryCheck({ items, verdict }: { items: string[]; verdic
           </li>
         ))}
       </ul>
-      <div className="ar-verdict" aria-live="polite">
+      <div className="ar-verdict" aria-live="polite" data-dd-manual>
         {show && (
           <p className="ar-ring">
             {verdict}

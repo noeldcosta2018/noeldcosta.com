@@ -1,7 +1,8 @@
 /**
- * Hand-drawn marks for the AI Academy page. The sprite is copied unchanged from
- * the approved style reference (ai-ready-style-reference.html); every doodle is
- * a <use> of one of its symbols, stroked in currentColor. All decorative.
+ * Hand-drawn marks used across the site. The sprite is copied unchanged from
+ * the approved style reference (ai-ready-style-reference.html) and rendered
+ * once by the root layouts; every doodle is a <use> of one of its symbols,
+ * stroked in currentColor. All decorative. Styles: nd-doodles.css.
  */
 
 const SPRITE = `<defs>
@@ -31,18 +32,35 @@ export type DoodleName =
   | "cross"
   | "burst";
 
-/** Rendered once per page, before any doodle. */
+/** Rendered once by each root layout, before any doodle. */
 export function DoodleSprite() {
   return (
     <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true" dangerouslySetInnerHTML={{ __html: SPRITE }} />
   );
 }
 
-/** One hand-drawn mark. It draws itself on screen (AcademyMotion); flip mirrors it. */
+/**
+ * One hand-drawn mark. It draws itself the first time it is on screen
+ * (PointerLayer); flip mirrors it. Arrows also mirror on right-to-left pages.
+ */
 export default function Doodle({ name, className, flip }: { name: DoodleName; className?: string; flip?: boolean }) {
+  const cls = ["dd", name.startsWith("arrow") ? "dd-arrow" : "", flip ? "flip" : "", className ?? ""].filter(Boolean).join(" ");
   return (
-    <svg className={`dd${flip ? " flip" : ""}${className ? ` ${className}` : ""}`} aria-hidden="true" focusable="false">
+    <svg className={cls} aria-hidden="true" focusable="false">
       <use href={`#d-${name}`} />
     </svg>
+  );
+}
+
+/**
+ * A few handwritten words (Caveat), usually with an arrow to what they describe.
+ * Decorative: hidden from assistive tech, and the page reads the same without it.
+ */
+export function HandNote({ text, className, children }: { text: string; className: string; children?: React.ReactNode }) {
+  return (
+    <p className={`nd-hand-note ${className}`} aria-hidden="true">
+      <span className="nd-hand">{text}</span>
+      {children}
+    </p>
   );
 }

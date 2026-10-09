@@ -5,9 +5,11 @@ import "../nd-theme.css";
 import "../nd-articles.css";
 import "../nd-archives.css";
 import "../nd-pages.css";
+import "../nd-doodles.css";
 import { fontVariables } from "@/components/site/fonts";
 import ThemeScript from "@/components/site/ThemeScript";
 import PointerLayer from "@/components/site/PointerLayer";
+import { DoodleSprite } from "@/components/doodles/Doodle";
 import ChatWidget from "@/components/site/ChatWidget";
 import { chatCopy } from "@/components/site/chat-copy";
 import CookieConsent from "@/components/site/CookieConsent";
@@ -85,6 +87,7 @@ export default function SiteRootLayout({
       </head>
       <body>
         <PointerLayer />
+        <DoodleSprite />
         {/* Site-wide WebSite + Person JSON-LD — emitted on every page so
             branded search picks up the entity graph and the about-the-author
             authority signal travels with every URL, not just the post page. */}

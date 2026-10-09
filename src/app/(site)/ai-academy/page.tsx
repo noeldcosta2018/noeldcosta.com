@@ -4,12 +4,10 @@ import LoopVideo from "@/components/site/LoopVideo";
 import SignupForm from "@/components/site/SignupForm";
 import AcademyChrome from "@/components/academy/AcademyChrome";
 import AcademyImage, { ACADEMY_MEDIA, academyImageExists } from "@/components/academy/AcademyImage";
-import AcademyMotion from "@/components/academy/AcademyMotion";
 import CountUp from "@/components/academy/CountUp";
-import Doodle, { DoodleSprite } from "@/components/academy/Doodle";
+import Doodle, { HandNote } from "@/components/doodles/Doodle";
 import OutputCards from "@/components/academy/OutputCards";
 import WorryCheck from "@/components/academy/WorryCheck";
-import { caveat } from "@/components/academy/fonts";
 import { SITE_NAME, SITE_URL, breadcrumbJsonLd } from "@/lib/seo";
 import "../../nd-academy.css";
 
@@ -223,16 +221,6 @@ function Cta({ className }: { className?: string }) {
   );
 }
 
-/** A few handwritten words. Decorative: the page reads the same without them. */
-function HandNote({ text, className, children }: { text: string; className: string; children?: React.ReactNode }) {
-  return (
-    <p className={`ar-hand-note ${className}`} aria-hidden="true">
-      <span className="ar-hand">{text}</span>
-      {children}
-    </p>
-  );
-}
-
 export default function AiAcademyPage() {
   const crumbs = breadcrumbJsonLd([
     { name: "Home", url: `${SITE_URL}/` },
@@ -259,8 +247,7 @@ export default function AiAcademyPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(course) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faq) }} />
       <AcademyChrome line={BAR_LINE} cta={CTA} />
-      <main id="main-content" className={`nd-main nd-tones ar-page ${caveat.variable}`}>
-        <DoodleSprite />
+      <main id="main-content" className="nd-main nd-tones ar-page">
 
         {/* 1. Hero */}
         <section className="ar-hero" id="ar-hero" aria-labelledby="ar-title">
@@ -306,7 +293,7 @@ export default function AiAcademyPage() {
         <section data-tone="light" className="nd-section ar-nums" aria-labelledby="ar-nums-title">
           <div className="nd-container">
             <h2 id="ar-nums-title" className="nd-display nd-h2">
-              The whole programme, <span className="ar-mark">in four numbers</span>
+              The whole programme, <span className="nd-mark">in four numbers</span>
             </h2>
             <ul className="ar-num-row">
               {NUMBERS.map(({ value, label }) => (
@@ -350,7 +337,7 @@ export default function AiAcademyPage() {
                 </HandNote>
                 <p>This is not about ability. Nobody has shown you a method.</p>
                 <p>
-                  And your experience is <span className="ar-mark">the one thing AI can&apos;t supply.</span> It needs your judgment to
+                  And your experience is <span className="nd-mark">the one thing AI can&apos;t supply.</span> It needs your judgment to
                   produce good work.
                 </p>
               </div>
@@ -377,7 +364,7 @@ export default function AiAcademyPage() {
                 </ul>
               </div>
               <div className="ar-ba-arrow" aria-hidden="true">
-                <span className="ar-hand">30 days</span>
+                <span className="nd-hand">30 days</span>
                 <Doodle name="arrow-straight" className="ar-wide-only" />
                 <Doodle name="arrow-down" className="ar-narrow-only" />
               </div>
@@ -406,7 +393,7 @@ export default function AiAcademyPage() {
         <section className="nd-section ar-lanes" aria-labelledby="ar-lanes-title">
           <div className="nd-container">
             <h2 id="ar-lanes-title" className="nd-display nd-h2">
-              One rule. <span className="ar-mark">Two lanes.</span>
+              One rule. <span className="nd-mark">Two lanes.</span>
             </h2>
             <p className="ar-lanes-intro">This is the first thing I teach. Every piece of work goes down one of two lanes.</p>
             <div className="ar-diagram">
@@ -448,7 +435,7 @@ export default function AiAcademyPage() {
         <section data-tone="light" className="nd-section ar-weeks" aria-labelledby="ar-weeks-title">
           <div className="nd-container ar-narrow-wide">
             <h2 id="ar-weeks-title" className="nd-display nd-h2">
-              Four weeks. <span className="ar-mark">One result</span> each week.
+              Four weeks. <span className="nd-mark">One result</span> each week.
             </h2>
             <ol className="ar-timeline">
               {WEEKS.map(({ label, title, text, learn, finish, bridge }, i) => (
@@ -469,7 +456,7 @@ export default function AiAcademyPage() {
                     <p className="ar-finish">
                       <Doodle name="tick" />
                       <span>
-                        <span className="k">You finish with:</span> <span className="ar-mark">{finish}</span>
+                        <span className="k">You finish with:</span> <span className="nd-mark">{finish}</span>
                       </span>
                     </p>
                   </div>
@@ -643,13 +630,13 @@ export default function AiAcademyPage() {
               <p>My job is to decide how AI gets used inside real organisations.</p>
               <p className="nd-display ar-stack">
                 <span>
-                  <span className="ar-mark">What is safe.</span>
+                  <span className="nd-mark">What is safe.</span>
                 </span>{" "}
                 <span>
-                  <span className="ar-mark">What is hype.</span>
+                  <span className="nd-mark">What is hype.</span>
                 </span>{" "}
                 <span>
-                  <span className="ar-mark">What works.</span>
+                  <span className="nd-mark">What works.</span>
                 </span>
               </p>
               <p>I use everything in this programme in my own work. Every week. That is what I will show you.</p>
@@ -711,7 +698,7 @@ export default function AiAcademyPage() {
           <Doodle name="scribble" className="ar-edge ar-final-scribble" />
           <div className="nd-container ar-final-inner">
             <h2 id="ar-final-title" className="nd-display nd-h2">
-              Thirty days from now, <span className="ar-mark">you are AI ready.</span>
+              Thirty days from now, <span className="nd-mark">you are AI ready.</span>
             </h2>
             <p className="ar-final-line">{SCARCITY}</p>
             {SHOW_FORM ? (
@@ -742,7 +729,6 @@ export default function AiAcademyPage() {
             )}
           </div>
         </section>
-        <AcademyMotion />
       </main>
       <Footer signup={false} contact={false} />
     </>

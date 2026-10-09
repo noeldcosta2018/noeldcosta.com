@@ -13,7 +13,8 @@ import { useEffect } from "react";
  *
  * Event delegation on the document, so client-side navigation needs no rebinding.
  * Off for touch, coarse pointers and reduced motion. The reveal-on-view
- * observer (below) runs on touch screens too, never with reduced motion.
+ * observer (below) runs on touch screens too, never with reduced motion. It also
+ * draws the hand-drawn marks (Doodle, .nd-mark) once each is on screen.
  */
 export default function PointerLayer() {
   const pathname = usePathname();
@@ -37,6 +38,22 @@ export default function PointerLayer() {
       { threshold: 0.2, rootMargin: "0px 0px -6% 0px" },
     );
     document.querySelectorAll("[data-inview]:not(.is-in)").forEach((el) => io.observe(el));
+
+    // Hand-drawn marks: each draws (or sweeps, for .nd-mark) once, the first
+    // time it is on screen. Marks inside [data-dd-manual] follow their own state.
+    const draw = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          e.target.classList.add("on");
+          draw.unobserve(e.target);
+        }
+      },
+      { threshold: 0.4 },
+    );
+    document.querySelectorAll(".dd:not(.on), .nd-mark:not(.on)").forEach((el) => {
+      if (!el.closest("[data-dd-manual]")) draw.observe(el);
+    });
 
     // Count-up: [data-count] figures run fast from zero and ease into their
     // value the first time they are on screen. The server HTML holds the final
@@ -75,6 +92,7 @@ export default function PointerLayer() {
     document.querySelectorAll("[data-count]").forEach((el) => counter.observe(el));
     return () => {
       io.disconnect();
+      draw.disconnect();
       counter.disconnect();
       frames.forEach((f) => cancelAnimationFrame(f));
       document.querySelectorAll<HTMLElement>("[data-count-text]").forEach((el) => {
