@@ -187,7 +187,7 @@ export function AuthorStrip({ locale = "en" }: { locale?: Locale }) {
         <h3>{tr("Written by Noel D'Costa")}</h3>
         <p>
           {tr(
-            "More than two decades in ERP delivery across SAP, Oracle and Microsoft, now a chief technology officer. I write from the programmes I have run, for the people making these decisions.",
+            "25 years in ERP delivery across SAP, Oracle and Microsoft, now a chief technology officer. I write from the programmes I have run, for the people making these decisions.",
           )}
         </p>
       </div>

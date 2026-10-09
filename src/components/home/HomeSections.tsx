@@ -148,7 +148,7 @@ export function HomeHero({ locale }: L) {
           <aside className="nd-stats nd-reveal-side" aria-label={tr("Experience in numbers")}>
             <div className="nd-stat">
               <span className="k">{tr("Years in enterprise applications")}</span>
-              <span className="v" data-count>24+</span>
+              <span className="v" data-count>25</span>
             </div>
             <div className="nd-stat">
               <span className="k">{tr("Government entities moved to Oracle Fusion")}</span>

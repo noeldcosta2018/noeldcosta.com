@@ -1,8 +1,12 @@
 #!/usr/bin/env node
-// Checks a translated article against its reviewed English source.
+// Checks a translated article or page against its reviewed English source.
 //
 //   node scripts/check-translation.mjs <locale> [slug ...]
 //   node scripts/check-translation.mjs <locale> --all
+//   node scripts/check-translation.mjs <locale> --pages [slug ...|--all]
+//
+// --pages checks content/pages instead of content/posts; a page canonical
+// uses the public path from src/data/locale-content-manifest.json.
 //
 // Errors (exit 1): frontmatter does not parse, protected keys differ from
 // English, heading / FAQ / table / code / custom tag structure differs,
@@ -14,13 +18,21 @@ import { join } from "node:path";
 import matter from "gray-matter";
 
 const ROOT = process.cwd();
-const POSTS = join(ROOT, "content", "posts");
+const PAGES_MODE = process.argv.includes("--pages");
+const POSTS = join(ROOT, "content", PAGES_MODE ? "pages" : "posts");
+const PAGE_PATHS = PAGES_MODE
+  ? Object.fromEntries(
+      JSON.parse(readFileSync(join(ROOT, "src", "data", "locale-content-manifest.json"), "utf8"))
+        .items.filter((i) => i.kind === "page")
+        .map((i) => [i.slug, i.public_path]),
+    )
+  : {};
 const LOCALES = ["ar", "de", "el", "es", "fr", "hi", "hr", "it", "ja", "ko", "nl", "pt", "ru", "tr", "zh", "zh-TW"];
 // Content locale "zh" (Simplified Chinese) is published under /zh-CN/.
 const PREFIX = { zh: "zh-CN" };
 const SITE = "https://noeldcosta.com";
 
-const [locale, ...rest] = process.argv.slice(2);
+const [locale, ...rest] = process.argv.slice(2).filter((a) => a !== "--pages");
 if (!LOCALES.includes(locale)) {
   console.error(`usage: node scripts/check-translation.mjs <${LOCALES.join("|")}> <slug ...|--all>`);
   process.exit(2);
@@ -31,7 +43,8 @@ const slugs = rest.includes("--all")
 
 const SAME_KEYS = ["slug", "date", "updated", "lastReviewed", "category", "hero", "author"];
 const SAME_ARRAY_KEYS = ["tags", "mentions"];
-const TRANSLATED_KEYS = ["title", "metaTitle", "metaDescription", "excerpt"];
+// Pages carry fewer keys than articles; only keys the English has are required.
+const TRANSLATED_KEYS = PAGES_MODE ? ["title", "h1", "metaTitle", "metaDescription", "excerpt"] : ["title", "metaTitle", "metaDescription", "excerpt"];
 
 function stripCode(body) {
   return body.replace(/```[\s\S]*?```/g, "");
@@ -151,6 +164,7 @@ for (const slug of slugs) {
     if (ef[k] !== undefined && JSON.stringify(ef[k]) !== JSON.stringify(tf[k])) errors.push(`frontmatter ${k} differs from English`);
   }
   for (const k of TRANSLATED_KEYS) {
+    if (PAGES_MODE && !ef[k]) continue;
     if (!tf[k]) errors.push(`frontmatter ${k} missing`);
     else if (ef[k] && tf[k] === ef[k]) warnings.push(`frontmatter ${k} identical to English`);
   }
@@ -161,7 +175,7 @@ for (const slug of slugs) {
   if (ef.pullQuote && !tf.pullQuote) errors.push("pullQuote missing");
   if (tf.locale !== locale) errors.push(`frontmatter locale must be "${locale}"`);
   const prefix = PREFIX[locale] ?? locale;
-  const canonical = `${SITE}/${prefix}/${slug}/`;
+  const canonical = `${SITE}/${prefix}/${PAGES_MODE ? (PAGE_PATHS[slug] ?? `${slug}/`) : `${slug}/`}`;
   if (tf.canonicalUrl !== canonical) errors.push(`canonicalUrl must be ${canonical}`);
   if (tf.metaTitle && [...tf.metaTitle].length > 70) warnings.push(`metaTitle is ${[...tf.metaTitle].length} characters`);
   if (tf.metaDescription) {

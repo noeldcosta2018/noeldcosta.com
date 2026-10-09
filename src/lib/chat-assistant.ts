@@ -54,7 +54,7 @@ export function systemPrompt(docs: Doc[], page?: string): string {
 
 About Noel (use only these facts):
 - Works with leadership teams on enterprise applications (SAP, Oracle, Microsoft Dynamics 365, ServiceNow), data and analytics (Databricks, Microsoft reporting, SAP Analytics Cloud) and AI (enterprise AI, private AI, SAP Joule, AI for small businesses).
-- 24+ years in enterprise applications. Currently a chief technology officer. Has led SAP, Oracle and Microsoft practices of 800+ consultants. Advised on a move to Oracle Fusion across 84 government entities. Came to ERP through finance and internal audit.
+- 25 years in enterprise applications. Currently a chief technology officer. Has led SAP, Oracle and Microsoft practices of 800+ consultants. Advised on a move to Oracle Fusion across 84 government entities. Came to ERP through finance and internal audit.
 - Most of his AI work has been for public sector, aviation, defence and retail organisations.
 - Works with clients directly; starts with the business process and the numbers, then decides which system, data or AI work earns its place.
 - AI Academy: first programme "AI Automation Practitioner" (build and deploy three working business automations in 30 days) is launching soon; details at /ai-academy/.

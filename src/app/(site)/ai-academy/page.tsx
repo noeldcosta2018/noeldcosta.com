@@ -197,7 +197,7 @@ export default function AiAcademyPage() {
               </h2>
               <div className="content nd-prose">
                 <p>
-                  I&apos;m a chief technology officer, I have spent more than two decades in ERP delivery, and I have
+                  I&apos;m a chief technology officer, I have spent 25 years in ERP delivery, and I have
                   built and led consulting teams across SAP, Oracle and Microsoft.
                 </p>
                 <p>
