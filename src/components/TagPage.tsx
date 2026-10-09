@@ -37,13 +37,28 @@ export const LIBRARY_LINKS = [
   { label: "Case studies", href: `${ARTICLES_INDEX}#case-studies` },
 ];
 
+/**
+ * Meta description for an English tag archive without a written description:
+ * the topic, how many articles it holds and what they cover, kept within the
+ * 120 to 160 characters search engines show.
+ */
+export function tagFallbackDescription(label: string, count: number): string {
+  const lead = `${label}: ${count} ${count === 1 ? "article" : "articles"} by Noel D'Costa on SAP, ERP and AI programmes`;
+  const endings = [
+    ", with practical guidance on planning, delivery and the mistakes to avoid.",
+    ", with practical guidance on planning and delivery.",
+    ".",
+  ];
+  return endings.map((end) => lead + end).find((text) => text.length <= 160) ?? `${lead}.`;
+}
+
 /** Title and description for a tag archive in any locale. */
 export function tagMetadata(tag: string, locale: Locale = "en"): Metadata {
   const { tr } = archiveTools(locale);
   const info = tagInfo(tag);
   const description = info.description
     ? tr(info.description)
-    : `Articles tagged ${info.label} from Noel D'Costa: field-tested ERP and AI advisory.`;
+    : tagFallbackDescription(info.label, getPostsByAnyTag(tagSynonyms(tag), "en").length);
   return interfaceMetadata({
     locale,
     englishPath: tagPath(tag),
@@ -71,7 +86,7 @@ export default function TagPage({ tag, locale = "en" }: { tag: string; locale?: 
   const collectionLd = collectionPageJsonLd({
     url: tagUrl,
     name: tr(info.label),
-    description: info.description ? tr(info.description) : `Articles tagged ${info.label} by Noel D'Costa.`,
+    description: info.description ? tr(info.description) : tagFallbackDescription(info.label, posts.length),
     posts: posts.map((p) => ({
       slug: p.frontmatter.slug,
       title: p.frontmatter.title,
