@@ -69,6 +69,9 @@ const ORPHAN_LINK_LINE = /^\s*(?:\*\*\]\([^)\s]+\)\*\*|\[\]\([^)\s]+\))+\s*$/gm;
 const EMPTY_LINK = /\[\]\([^)\s]+\)/g;
 // The same accordion fragment at the start of a line that carries more content.
 const LEADING_LINK_FRAGMENT = /^(\s*)\*\*\]\([^)\s]+\)\*\*/gm;
+// A line holding only "**" or "[**" can never open or close bold (the marker
+// touches whitespace), so it would print as literal asterisks.
+const STRAY_BOLD_LINE = /^[ \t]*\[?\*\*[ \t]*$/gm;
 
 export function cleanWordPressArtifacts(body: string): string {
   const cleaned = repairCardLinks(body)
@@ -77,6 +80,7 @@ export function cleanWordPressArtifacts(body: string): string {
     .replace(ORPHAN_LINK_LINE, "")
     .replace(LEADING_LINK_FRAGMENT, "$1")
     .replace(EMPTY_LINK, "")
+    .replace(STRAY_BOLD_LINE, "")
     .replace(ICON_RUN, " · ")
     .replace(/ · (\s*\n)/g, "$1");
   return dropRepeatedParagraphs(dropRepeatedHeadingBlocks(cleaned)).replace(/\n{3,}/g, "\n\n");
