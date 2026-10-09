@@ -39,7 +39,7 @@ export default function HomePage({ locale = "en" }: { locale?: Locale }) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(blogLd) }} />
       <Nav locale={locale} languages={Object.keys(languages).length > 2 ? languages : undefined} />
-      <main id="main-content" className="nd-main nd-home">
+      <main id="main-content" className="nd-main nd-tones">
         <HomeHero locale={locale} />
         <HowIHelp locale={locale} />
         <Expertise locale={locale} />

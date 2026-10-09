@@ -27,11 +27,22 @@ export default function SignupForm({
   compact = false,
   copy = ENGLISH,
   privacyHref = "/privacy-policy-noeldcosta/",
+  serverErrors = true,
+  endpoint = "/api/subscribe/",
+  buttonBefore,
+  buttonAfter,
 }: {
-  source?: "newsletter" | "footer" | "article" | "academy";
+  source?: "newsletter" | "footer" | "article" | "academy" | "ai-ready-waitlist";
   compact?: boolean;
   copy?: SignupCopy;
   privacyHref?: string;
+  /** false: always show copy.generic instead of the server's message. */
+  serverErrors?: boolean;
+  /** Where the form posts; the /api/subscribe handler by default. */
+  endpoint?: string;
+  /** Optional decoration either side of the submit button (AI Academy arrows). */
+  buttonBefore?: React.ReactNode;
+  buttonAfter?: React.ReactNode;
 }) {
   const id = useId();
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
@@ -43,7 +54,7 @@ export default function SignupForm({
     setState("sending");
     setMessage("");
     try {
-      const res = await fetch("/api/subscribe/", {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -62,13 +73,19 @@ export default function SignupForm({
         setMessage(copy.done);
       } else {
         setState("error");
-        setMessage(data.error || copy.generic);
+        setMessage((serverErrors && data.error) || copy.generic);
       }
     } catch {
       setState("error");
-      setMessage(copy.network);
+      setMessage(serverErrors ? copy.network : copy.generic);
     }
   }
+
+  const submit = (
+    <button className="nd-btn nd-btn-primary" type="submit" disabled={state === "sending"}>
+      {state === "sending" ? copy.sending : copy.button} <span aria-hidden="true">→</span>
+    </button>
+  );
 
   if (state === "done") {
     return (
@@ -89,9 +106,15 @@ export default function SignupForm({
           {copy.email}
         </label>
         <input id={`${id}-email`} name="email" type="email" autoComplete="email" placeholder={copy.email} required maxLength={254} />
-        <button className="nd-btn nd-btn-primary" type="submit" disabled={state === "sending"}>
-          {state === "sending" ? copy.sending : copy.button} <span aria-hidden="true">→</span>
-        </button>
+        {buttonBefore || buttonAfter ? (
+          <div className="nd-signup-btnrow">
+            {buttonBefore}
+            {submit}
+            {buttonAfter}
+          </div>
+        ) : (
+          submit
+        )}
       </div>
       {/* Honeypot: hidden from people, filled by bots. */}
       <div aria-hidden="true" className="nd-hp">

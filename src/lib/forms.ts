@@ -8,6 +8,10 @@ import type { NextRequest } from "next/server";
 export const CONSENT_TEXT =
   "I agree to receive occasional emails from Noel D'Costa about new articles, videos and the AI Academy. I can unsubscribe at any time.";
 
+/** Consent wording shown on the AI Ready in 30 Days waitlist form (/ai-academy/). */
+export const WAITLIST_CONSENT_TEXT =
+  "I agree to receive emails from Noel D'Costa about AI Ready in 30 Days. I can unsubscribe at any time.";
+
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function clientIp(request: NextRequest): string {

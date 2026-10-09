@@ -2,7 +2,7 @@ export const runtime = "nodejs";
 
 import type { NextRequest } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { CONSENT_TEXT, EMAIL_RE, allow, clean, clientIp, json } from "@/lib/forms";
+import { CONSENT_TEXT, EMAIL_RE, WAITLIST_CONSENT_TEXT, allow, clean, clientIp, json } from "@/lib/forms";
 
 /**
  * POST /api/subscribe
@@ -11,7 +11,7 @@ import { CONSENT_TEXT, EMAIL_RE, allow, clean, clientIp, json } from "@/lib/form
  * `website` is a honeypot: real visitors never fill it.
  */
 
-const SOURCES = new Set(["newsletter", "footer", "article", "academy", "chatbot", "contact"]);
+const SOURCES = new Set(["newsletter", "footer", "article", "academy", "ai-ready-waitlist", "chatbot", "contact"]);
 
 export async function POST(request: NextRequest) {
   const ip = clientIp(request);
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       page: clean(body.page, 300) || null,
       locale: clean(body.locale, 12) || null,
       consent: true,
-      consent_text: CONSENT_TEXT,
+      consent_text: source === "ai-ready-waitlist" ? WAITLIST_CONSENT_TEXT : CONSENT_TEXT,
       user_agent: clean(request.headers.get("user-agent"), 300) || null,
       unsubscribed_at: null,
     },

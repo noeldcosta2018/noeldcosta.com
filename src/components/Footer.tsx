@@ -79,8 +79,19 @@ const COLUMNS: MenuGroup[] = [
   },
 ];
 
-/** signup: false on pages that already show the sign-up band (the homepage), so one page never carries two identical forms. */
-export default function Footer({ locale = "en", signup = true }: { locale?: Locale; signup?: boolean }) {
+/**
+ * signup: false on pages that already show the sign-up band (the homepage), so one page never carries two identical forms.
+ * contact: false on single-offer pages (AI Academy) whose only call to action is their own.
+ */
+export default function Footer({
+  locale = "en",
+  signup = true,
+  contact = true,
+}: {
+  locale?: Locale;
+  signup?: boolean;
+  contact?: boolean;
+}) {
   const messages = getArticleMessages(locale);
   const tr = translator(locale);
   const prefix = publicPrefixFromContentLocale(locale);
@@ -120,11 +131,13 @@ export default function Footer({ locale = "en", signup = true }: { locale?: Loca
                 "Enterprise applications, data and AI. I work with leadership teams to choose the right platforms, deliver programmes and put AI to work where it earns its place.",
               )}
             </p>
-            <div style={{ marginTop: 20 }}>
-              <Link className="nd-btn nd-btn-primary magnetic" href={href(CONTACT)}>
-                {tr("Discuss your project")} <span aria-hidden="true">→</span>
-              </Link>
-            </div>
+            {contact && (
+              <div style={{ marginTop: 20 }}>
+                <Link className="nd-btn nd-btn-primary magnetic" href={href(CONTACT)}>
+                  {tr("Discuss your project")} <span aria-hidden="true">→</span>
+                </Link>
+              </div>
+            )}
           </div>
           {COLUMNS.map((col) => (
             <div key={col.title}>
