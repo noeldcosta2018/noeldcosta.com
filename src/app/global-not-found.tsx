@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function GlobalNotFound() {
   return (
-    <html lang="en" dir="ltr" className={fontVariables} data-theme="dark" suppressHydrationWarning>
+    <html lang="en" dir="ltr" className={fontVariables} data-theme="hybrid" suppressHydrationWarning>
       <head>
         <ThemeScript />
       </head>

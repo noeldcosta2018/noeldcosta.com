@@ -225,7 +225,9 @@ function NavForPath({
 
   const toggleTheme = () => {
     const doc = document.documentElement;
-    const next = doc.getAttribute("data-theme") === "light" ? "dark" : "light";
+    const order = ["hybrid", "light", "dark"];
+    const current = order.indexOf(doc.getAttribute("data-theme") ?? "hybrid");
+    const next = order[(current + 1) % order.length];
     doc.setAttribute("data-theme", next);
     try {
       localStorage.setItem("nd-theme", next);
@@ -328,6 +330,7 @@ function NavForPath({
             <button type="button" className="nd-theme-toggle nd-theme-sm" onClick={toggleTheme} aria-label={copy.themeToggle}>
               <SunIcon />
               <MoonIcon />
+              <HalfIcon />
             </button>
           </div>
         </div>
@@ -445,6 +448,7 @@ function NavForPath({
           <button type="button" className="nd-theme-toggle nd-mobile-only" onClick={toggleTheme} aria-label={copy.themeToggle}>
             <SunIcon />
             <MoonIcon />
+            <HalfIcon />
           </button>
         </nav>
 
@@ -715,6 +719,15 @@ function MoonIcon() {
   return (
     <svg className="moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+    </svg>
+  );
+}
+
+function HalfIcon() {
+  return (
+    <svg className="half" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor" />
     </svg>
   );
 }

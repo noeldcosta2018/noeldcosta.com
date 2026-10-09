@@ -76,7 +76,7 @@ export default function SiteRootLayout({
       lang="en"
       dir="ltr"
       className={fontVariables}
-      data-theme="dark"
+      data-theme="hybrid"
       suppressHydrationWarning
     >
       <head>

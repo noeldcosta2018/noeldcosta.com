@@ -168,7 +168,7 @@ export function HomeHero({ locale }: L) {
 export function HowIHelp({ locale }: L) {
   const { tr, href, en } = tools(locale);
   return (
-    <section className="nd-section" aria-labelledby="how-title">
+    <section data-tone="light" className="nd-section" aria-labelledby="how-title">
       <div className="nd-container">
         <div className="nd-split">
           <div>
@@ -363,7 +363,7 @@ const REFERENCES: Reference[] = TESTIMONIALS.map((t) => {
 export function ClientWork({ locale }: L) {
   const { tr, href } = tools(locale);
   return (
-    <section className="nd-section" id="client-work" aria-labelledby="work-title">
+    <section data-tone="light" className="nd-section" id="client-work" aria-labelledby="work-title">
       <div className="nd-container">
         <SectionHead
           eyebrow={tr("Client work")}
@@ -538,7 +538,7 @@ export function ArticlesAndTools({ locale }: L) {
     return { ...r, href: target, title };
   });
   return (
-    <section className="nd-section" id="articles" aria-labelledby="read-title">
+    <section data-tone="light" className="nd-section" id="articles" aria-labelledby="read-title">
       <div className="nd-container">
         <SectionHead
           id="read-title"
@@ -672,7 +672,7 @@ export function CloseBand({
 export function Ecosystem({ locale }: L) {
   const { tr } = tools(locale);
   return (
-    <section className="nd-section" id="also-by-noel" aria-labelledby="eco-title">
+    <section data-tone="light" className="nd-section" id="also-by-noel" aria-labelledby="eco-title">
       <div className="nd-container">
         <SectionHead
           id="eco-title"

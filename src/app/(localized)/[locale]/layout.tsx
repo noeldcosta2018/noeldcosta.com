@@ -76,7 +76,7 @@ export default async function LocalizedLayout({
       lang={documentAttributes.lang}
       dir={documentAttributes.dir}
       className={fontVariables}
-      data-theme="dark"
+      data-theme="hybrid"
       suppressHydrationWarning
     >
       <head>

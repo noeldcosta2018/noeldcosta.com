@@ -73,7 +73,7 @@ export default async function VideoMarquee({ locale = "en" }: { locale?: Locale 
   const bottom = videos.slice(half);
 
   return (
-    <section className="nd-section nd-videos" id="videos" aria-labelledby="videos-title">
+    <section data-tone="light" className="nd-section nd-videos" id="videos" aria-labelledby="videos-title">
       <div className="nd-container">
         <div className="nd-header-row">
           <div>
