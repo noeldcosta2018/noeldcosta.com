@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { loadAudience, signupSource, type SourceKey } from "@/lib/audience";
+import { contactSites } from "@/lib/audience-sites";
 
 /**
  * Key numbers for the admin overview: noeldcosta.com, ERPCV and SAPopedia in
@@ -27,7 +28,7 @@ export interface Metric {
 
 export interface ActivityItem {
   at: string;
-  product: "noeldcosta.com" | "ERPCV";
+  product: "noeldcosta.com" | "ERPCV" | "SAPopedia";
   what: string;
   who: string;
 }
@@ -37,6 +38,7 @@ export interface Overview {
   noeldcosta: Metric[];
   erpcv: Metric[];
   erpcvEarlier: Metric[];
+  sapopedia: Metric[];
   activity: ActivityItem[];
   errors: string[];
 }
@@ -66,7 +68,7 @@ export async function loadOverview(): Promise<Overview> {
       loadAudience(),
       read("nd_contacts", "email,name,source,interests,consent,created_at,unsubscribed_at", errors),
       read("nd_meeting_requests", "name,email,topic,status,created_at", errors),
-      read("book_leads", "name,email,book_title,marketing_opt_in,created_at", errors),
+      read("book_leads", "name,email,book_title,book_type,marketing_opt_in,source_page,created_at", errors),
       read("erpcv_next_orders", "customer_id,product,amount,currency,payment_status,refunded_amount,test_mode,created_at,paid_at,ready_at", errors),
       read("erpcv_next_customers", "id,name,email,created_at", errors),
       read("erpcv_next_assessments", "status,created_at", errors),
@@ -80,7 +82,6 @@ export async function loadOverview(): Promise<Overview> {
 
   // ---------- People across all sites ----------
   const contacts = audience.contacts;
-  const isNd = (s: SourceKey) => s.startsWith("nd-");
   const people: Metric[] = [
     { label: "People", value: contacts.length.toLocaleString("en-GB"), note: "unique emails across all sites" },
     {
@@ -95,8 +96,8 @@ export async function loadOverview(): Promise<Overview> {
     },
     {
       label: "On more than one site",
-      value: contacts.filter((c) => c.sources.some(isNd) && c.sources.some((s) => !isNd(s))).length.toLocaleString("en-GB"),
-      note: "noeldcosta.com and ERPCV",
+      value: contacts.filter((c) => contactSites(c.sources).length > 1).length.toLocaleString("en-GB"),
+      note: "noeldcosta.com, ERPCV, SAPopedia",
     },
   ];
 
@@ -115,6 +116,10 @@ export async function loadOverview(): Promise<Overview> {
     value: (lists[key]?.total ?? 0).toLocaleString("en-GB"),
     note: `${lists[key]?.week ?? 0} new in 7 days`,
   });
+  // Book requests from SAPopedia share book_leads; their page is on sapopedia.com.
+  const isSapopedia = (r: Row) => /sapopedia/i.test(str(r.source_page) ?? "");
+  const ndBooks = bookLeads.filter((r) => !isSapopedia(r));
+  const sapoBooks = bookLeads.filter(isSapopedia);
   const openMeetings = ndMeetings.filter((r) => (str(r.status) ?? "new") === "new").length;
   const noeldcosta: Metric[] = [
     list("nd-newsletter", "Newsletter sign-ups"),
@@ -128,8 +133,8 @@ export async function loadOverview(): Promise<Overview> {
     },
     {
       label: "Book leads",
-      value: bookLeads.length.toLocaleString("en-GB"),
-      note: `${bookLeads.filter((r) => within(str(r.created_at), 7, now)).length} new in 7 days, ${bookLeads.filter((r) => r.marketing_opt_in === true).length} opted in to emails`,
+      value: ndBooks.length.toLocaleString("en-GB"),
+      note: `${ndBooks.filter((r) => within(str(r.created_at), 7, now)).length} new in 7 days, ${ndBooks.filter((r) => r.marketing_opt_in === true).length} opted in to emails`,
     },
   ];
 
@@ -188,6 +193,20 @@ export async function loadOverview(): Promise<Overview> {
     },
   ];
 
+  // ---------- SAPopedia (ai.sapopedia.com) ----------
+  const freeBooks = sapoBooks.filter((r) => r.book_type !== "paid");
+  const playbook = sapoBooks.filter((r) => r.book_type === "paid");
+  const byTitle = new Map<string, number>();
+  for (const r of freeBooks) byTitle.set(str(r.book_title) ?? "", (byTitle.get(str(r.book_title) ?? "") ?? 0) + 1);
+  const top = [...byTitle].sort((a, b) => b[1] - a[1])[0];
+  const week = (rows: Row[]) => rows.filter((r) => within(str(r.created_at), 7, now)).length;
+  const sapopedia: Metric[] = [
+    { label: "Free book downloads", value: freeBooks.length.toLocaleString("en-GB"), note: `${week(freeBooks)} in 7 days` },
+    { label: "Playbook checkouts started", value: playbook.length.toLocaleString("en-GB"), note: `${week(playbook)} in 7 days; payment completes in Stripe` },
+    list("sapopedia-newsletter", "New-book list"),
+    { label: "Most requested free book", value: top ? top[1].toLocaleString("en-GB") : "0", note: top ? top[0] : "no downloads yet" },
+  ];
+
   const legacyPaid = legacyOrders.filter((r) => r.status === "paid" || r.status === "delivered").length;
   const erpcvEarlier: Metric[] = [
     { label: "Paid orders", value: legacyPaid.toLocaleString("en-GB"), note: "first version of ERPCV" },
@@ -198,9 +217,23 @@ export async function loadOverview(): Promise<Overview> {
   const customerById = new Map(customers.map((c) => [str(c.id), c]));
   const who = (name: unknown, email: unknown) => [str(name), str(email)].filter(Boolean).join(" · ") || "Unknown";
   const activity: ActivityItem[] = [
-    ...ndContacts.map((r) => ({ at: str(r.created_at) ?? "", product: "noeldcosta.com" as const, what: `Signed up (${str(r.source) ?? "newsletter"})`, who: who(r.name, r.email) })),
+    ...ndContacts.map((r) => {
+      const form = str(r.source) ?? "newsletter";
+      const sapo = form.startsWith("sapopedia");
+      return {
+        at: str(r.created_at) ?? "",
+        product: sapo ? ("SAPopedia" as const) : ("noeldcosta.com" as const),
+        what: sapo ? "Joined the new-book list" : `Signed up (${form})`,
+        who: who(r.name, r.email),
+      };
+    }),
     ...ndMeetings.map((r) => ({ at: str(r.created_at) ?? "", product: "noeldcosta.com" as const, what: `Meeting request${str(r.topic) ? `: ${str(r.topic)}` : ""}`, who: who(r.name, r.email) })),
-    ...bookLeads.map((r) => ({ at: str(r.created_at) ?? "", product: "noeldcosta.com" as const, what: `Book lead: ${str(r.book_title) ?? "book"}`, who: who(r.name, r.email) })),
+    ...bookLeads.map((r) => ({
+      at: str(r.created_at) ?? "",
+      product: isSapopedia(r) ? ("SAPopedia" as const) : ("noeldcosta.com" as const),
+      what: `${r.book_type === "paid" ? "Playbook checkout" : "Book"}: ${str(r.book_title) ?? "book"}`,
+      who: who(r.name, r.email),
+    })),
     ...sold.map((r) => {
       const c = customerById.get(str(r.customer_id));
       return {
@@ -216,5 +249,5 @@ export async function loadOverview(): Promise<Overview> {
     .sort((a, b) => b.at.localeCompare(a.at))
     .slice(0, 15);
 
-  return { people, noeldcosta, erpcv, erpcvEarlier, activity, errors };
+  return { people, noeldcosta, erpcv, erpcvEarlier, sapopedia, activity, errors };
 }

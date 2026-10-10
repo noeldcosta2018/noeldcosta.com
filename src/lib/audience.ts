@@ -28,7 +28,9 @@ export type SourceKey =
   | "erpcv-customer"
   | "erpcv-advisory"
   | "erpcv-profile"
-  | "erpcv-order";
+  | "erpcv-order"
+  | "sapopedia-book"
+  | "sapopedia-newsletter";
 
 export const SOURCE_LABELS: Record<SourceKey, string> = {
   "nd-academy-waitlist": "AI Academy waitlist (AI Ready in 30 Days)",
@@ -42,6 +44,8 @@ export const SOURCE_LABELS: Record<SourceKey, string> = {
   "erpcv-advisory": "ERPCV advisory request",
   "erpcv-profile": "ERPCV profile (first version)",
   "erpcv-order": "ERPCV order (first version)",
+  "sapopedia-book": "SAPopedia free book or Playbook checkout",
+  "sapopedia-newsletter": "SAPopedia new-book list",
 };
 
 export { SITES, sourceSite, type Site } from "@/lib/audience-sites";
@@ -69,6 +73,7 @@ const str = (v: unknown) => (typeof v === "string" ? v : null);
 
 /** Which list a noeldcosta.com form belongs to (nd_contacts.source / interests). */
 export function signupSource(form: string): SourceKey {
+  if (form.startsWith("sapopedia")) return "sapopedia-newsletter";
   if (form === "ai-ready-waitlist") return "nd-academy-waitlist";
   if (form === "academy") return "nd-academy-updates";
   if (form === "chatbot" || form === "contact") return "nd-chat";
@@ -90,7 +95,7 @@ export async function loadAudience(): Promise<{ contacts: AudienceContact[]; err
   const [signups, meetings, books, erpcvNews, customers, advisory, profiles, orders] = await Promise.all([
     read("nd_contacts", "email,name,source,interests,consent,created_at,updated_at,unsubscribed_at", errors),
     read("nd_meeting_requests", "email,name,created_at", errors),
-    read("book_leads", "email,name,marketing_opt_in,created_at", errors),
+    read("book_leads", "email,name,marketing_opt_in,source_page,created_at", errors),
     read("erpcv_next_newsletter_subscriptions", "email,status,confirmed_at,consent_at,unsubscribed_at,updated_at", errors),
     read("erpcv_next_customers", "email,name,marketing_consent,created_at", errors),
     read("erpcv_next_advisory_requests", "email,name,created_at", errors),
@@ -110,7 +115,7 @@ export async function loadAudience(): Promise<{ contacts: AudienceContact[]; err
         at: str(r.updated_at) ?? str(r.created_at),
         // Newsletter consent comes only from the newsletter-type forms. The
         // waitlist consent covers AI Ready in 30 Days emails, not the newsletter.
-        consent: r.consent === true && (source === "nd-newsletter" || source === "nd-academy-updates"),
+        consent: r.consent === true && (source === "nd-newsletter" || source === "nd-academy-updates" || source === "sapopedia-newsletter"),
         unsubscribed: !!r.unsubscribed_at,
       }));
     }),
@@ -118,7 +123,8 @@ export async function loadAudience(): Promise<{ contacts: AudienceContact[]; err
     ...books.map((r) => ({
       email: str(r.email),
       name: str(r.name),
-      source: "nd-book" as const,
+      // SAPopedia book requests are stored with their sapopedia.com page.
+      source: (/sapopedia/i.test(str(r.source_page) ?? "") ? "sapopedia-book" : "nd-book") as SourceKey,
       at: str(r.created_at),
       consent: r.marketing_opt_in === true,
     })),

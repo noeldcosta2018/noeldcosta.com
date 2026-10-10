@@ -90,11 +90,13 @@ export default function OverviewView({ data: o, email }: { data: Overview; email
         <Tiles items={o.erpcvEarlier} />
       </Section>
 
-      <Section name="SAPopedia" detail="sapopedia.com" band="var(--area-data)">
-        <div className="adm-empty">
-          <b>Not connected yet.</b> SAPopedia is moving to Netlify. Once its sign-ups and sales are saved to this database, its
-          numbers appear here and its people join the People list.
-        </div>
+      <Section
+        name="SAPopedia"
+        detail="ai.sapopedia.com books"
+        band="var(--area-data)"
+        links={[{ label: "Book leads", href: "/admin/book-leads/" }]}
+      >
+        <Tiles items={o.sapopedia} />
       </Section>
 
       <Section name="Latest activity" detail="newest first" band="var(--mut2)">
