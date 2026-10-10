@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type CSSProperties } from "react";
 import type { AudienceContact, AudienceStatus, SourceKey } from "@/lib/audience";
+import { SITES, contactSites, type Site } from "@/lib/audience-sites";
 
 /**
  * Filterable view of the merged contact list. The whole list (a few hundred
@@ -29,15 +30,18 @@ export default function ContactsTable({
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<AudienceStatus | "">("");
   const [source, setSource] = useState<SourceKey | "">("");
+  const [site, setSite] = useState<Site | "">("");
 
   const counts = useMemo(() => {
     const byStatus: Record<AudienceStatus, number> = { subscribed: 0, unsubscribed: 0, "no-consent": 0 };
     const bySource = {} as Record<SourceKey, number>;
+    const bySite = {} as Record<Site, number>;
     for (const c of contacts) {
       byStatus[c.status]++;
       for (const s of c.sources) bySource[s] = (bySource[s] ?? 0) + 1;
+      for (const s of contactSites(c.sources)) bySite[s] = (bySite[s] ?? 0) + 1;
     }
-    return { byStatus, bySource };
+    return { byStatus, bySource, bySite };
   }, [contacts]);
 
   const rows = useMemo(() => {
@@ -46,9 +50,10 @@ export default function ContactsTable({
       (c) =>
         (!status || c.status === status) &&
         (!source || c.sources.includes(source)) &&
+        (!site || contactSites(c.sources).includes(site)) &&
         (!needle || c.email.includes(needle) || c.name.toLowerCase().includes(needle)),
     );
-  }, [contacts, q, status, source]);
+  }, [contacts, q, status, source, site]);
 
   const sourceKeys = Object.keys(sourceLabels) as SourceKey[];
 
@@ -80,6 +85,17 @@ export default function ContactsTable({
           <label className="adm-field">
             <span>Search</span>
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Name or email" />
+          </label>
+          <label className="adm-field">
+            <span>Site</span>
+            <select value={site} onChange={(e) => setSite(e.target.value as Site | "")}>
+              <option value="">All sites</option>
+              {SITES.map((s) => (
+                <option key={s} value={s}>
+                  {s} ({counts.bySite[s] ?? 0})
+                </option>
+              ))}
+            </select>
           </label>
           <label className="adm-field">
             <span>Newsletter status</span>
@@ -128,6 +144,7 @@ export default function ContactsTable({
             <tr>
               <th>Email</th>
               <th>Name</th>
+              <th>Site</th>
               <th>Newsletter</th>
               <th>Sources</th>
               <th>First seen</th>
@@ -137,7 +154,7 @@ export default function ContactsTable({
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="adm-none">
+                <td colSpan={7} className="adm-none">
                   No contacts match.
                 </td>
               </tr>
@@ -146,6 +163,7 @@ export default function ContactsTable({
                 <tr key={c.email}>
                   <td className="mono">{c.email}</td>
                   <td>{c.name}</td>
+                  <td>{contactSites(c.sources).join(", ")}</td>
                   <td>
                     <span className={`adm-badge ${c.status}`}>{STATUS_LABEL[c.status]}</span>
                   </td>

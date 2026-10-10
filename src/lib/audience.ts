@@ -44,6 +44,8 @@ export const SOURCE_LABELS: Record<SourceKey, string> = {
   "erpcv-order": "ERPCV order (first version)",
 };
 
+export { SITES, sourceSite, type Site } from "@/lib/audience-sites";
+
 export interface AudienceContact {
   email: string;
   name: string;
