@@ -158,7 +158,7 @@ export async function generateMetadata(
   if (slug.length === 1 && lastSlug === CASE_STUDIES_INDEX_SLUG) {
     const casePage = getPage(CASE_STUDIES_INDEX_SLUG, "en");
     return buildArchiveMetadata({
-      title: "SAP and ERP case studies: programmes I've worked on | Noel D'Costa",
+      title: "SAP and ERP case studies I've worked on | Noel D'Costa",
       description:
         "What each SAP and ERP programme needed, what I did and what changed. Named where I can, anonymous under NDA, with the numbers that were signed off.",
       canonical: `${SITE_URL}/${CASE_STUDIES_INDEX_SLUG}/`,

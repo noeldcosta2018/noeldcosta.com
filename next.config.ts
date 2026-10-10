@@ -81,6 +81,12 @@ const nextConfig: NextConfig = {
   // wrong silently breaks features. Will revisit as a dedicated task.
   // Strict-Transport-Security is set at the Vercel platform layer already.
   headers: async () => [
+    // The site-search data files are JSON for the search box, not pages:
+    // keep them out of search results and SEO reports.
+    {
+      source: "/search-index/:path*",
+      headers: [{ key: "X-Robots-Tag", value: "noindex" }],
+    },
     {
       source: "/:path*",
       headers: [
