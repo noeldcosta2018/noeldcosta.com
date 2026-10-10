@@ -30,7 +30,8 @@ export interface ActivityItem {
   at: string;
   product: "noeldcosta.com" | "ERPCV" | "SAPopedia";
   what: string;
-  who: string;
+  name: string;
+  email: string;
 }
 
 export interface Overview {
@@ -223,7 +224,7 @@ export async function loadOverview(): Promise<Overview> {
 
   // ---------- Latest activity ----------
   const customerById = new Map(customers.map((c) => [str(c.id), c]));
-  const who = (name: unknown, email: unknown) => [str(name), str(email)].filter(Boolean).join(" · ") || "Unknown";
+  const who = (name: unknown, email: unknown) => ({ name: str(name)?.trim() ?? "", email: str(email)?.trim() ?? "" });
   const activity: ActivityItem[] = [
     ...ndContacts.map((r) => {
       const form = str(r.source) ?? "newsletter";
@@ -232,15 +233,15 @@ export async function loadOverview(): Promise<Overview> {
         at: str(r.created_at) ?? "",
         product: sapo ? ("SAPopedia" as const) : ("noeldcosta.com" as const),
         what: form === "sapopedia-tally-import" ? "Book form (imported from Tally)" : sapo ? "Joined the new-book list" : `Signed up (${form})`,
-        who: who(r.name, r.email),
+        ...who(r.name, r.email),
       };
     }),
-    ...ndMeetings.map((r) => ({ at: str(r.created_at) ?? "", product: "noeldcosta.com" as const, what: `Meeting request${str(r.topic) ? `: ${str(r.topic)}` : ""}`, who: who(r.name, r.email) })),
+    ...ndMeetings.map((r) => ({ at: str(r.created_at) ?? "", product: "noeldcosta.com" as const, what: `Meeting request${str(r.topic) ? `: ${str(r.topic)}` : ""}`, ...who(r.name, r.email) })),
     ...bookLeads.map((r) => ({
       at: str(r.created_at) ?? "",
       product: isSapopedia(r) ? ("SAPopedia" as const) : ("noeldcosta.com" as const),
       what: `${r.book_type === "paid" ? "Playbook checkout" : "Book"}: ${str(r.book_title) ?? "book"}`,
-      who: who(r.name, r.email),
+      ...who(r.name, r.email),
     })),
     ...sold.map((r) => {
       const c = customerById.get(str(r.customer_id));
@@ -248,10 +249,10 @@ export async function loadOverview(): Promise<Overview> {
         at: str(r.paid_at) ?? str(r.created_at) ?? "",
         product: "ERPCV" as const,
         what: `${r.payment_status === "refunded" ? "Refunded" : "Paid"}: ${(str(r.product) ?? "order").replace(/_/g, " ")}, ${money(num(r.amount), str(r.currency) ?? currency)}`,
-        who: who(c?.name, c?.email),
+        ...who(c?.name, c?.email),
       };
     }),
-    ...advisory.map((r) => ({ at: str(r.created_at) ?? "", product: "ERPCV" as const, what: `Advisory request${str(r.topic) ? `: ${str(r.topic)}` : ""}`, who: who(r.name, r.email) })),
+    ...advisory.map((r) => ({ at: str(r.created_at) ?? "", product: "ERPCV" as const, what: `Advisory request${str(r.topic) ? `: ${str(r.topic)}` : ""}`, ...who(r.name, r.email) })),
   ]
     .filter((a) => a.at)
     .sort((a, b) => b.at.localeCompare(a.at))

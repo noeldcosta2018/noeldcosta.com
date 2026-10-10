@@ -110,7 +110,8 @@ export default function OverviewView({ data: o, email }: { data: Overview; email
                   <th>When</th>
                   <th>Site</th>
                   <th>What</th>
-                  <th>Who</th>
+                  <th>Name</th>
+                  <th>Email</th>
                 </tr>
               </thead>
               <tbody>
@@ -119,7 +120,8 @@ export default function OverviewView({ data: o, email }: { data: Overview; email
                     <td className="mono">{when(a.at)}</td>
                     <td>{a.product}</td>
                     <td>{a.what}</td>
-                    <td>{a.who}</td>
+                    <td>{a.name || "Not given"}</td>
+                    <td>{a.email || "Not given"}</td>
                   </tr>
                 ))}
               </tbody>
