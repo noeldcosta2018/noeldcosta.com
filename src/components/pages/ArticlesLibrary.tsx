@@ -80,13 +80,13 @@ export function PostCard({ item, dateLocale, readSuffix, area }: { item: Library
         <div className="thumb">
           {heroAvailable(fm.hero) ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={fm.hero} alt="" loading="lazy" decoding="async" width={dims?.width} height={dims?.height} />
+            <img src={fm.hero} alt={fm.h1 || fm.title} aria-hidden="true" loading="lazy" decoding="async" width={dims?.width} height={dims?.height} />
           ) : (
             <span className="nd-thumb-fallback" style={area ? { ["--area" as string]: area } : undefined} aria-hidden="true">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="nd-on-dark" src="/brand/nd-monogram-on-dark.svg" alt="" width={72} height={44} />
+              <img className="nd-on-dark" src="/brand/nd-monogram-on-dark.svg" alt="Noel D'Costa" width={72} height={44} />
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="nd-on-light" src="/brand/nd-monogram.svg" alt="" width={72} height={44} />
+              <img className="nd-on-light" src="/brand/nd-monogram.svg" alt="Noel D'Costa" width={72} height={44} />
             </span>
           )}
         </div>

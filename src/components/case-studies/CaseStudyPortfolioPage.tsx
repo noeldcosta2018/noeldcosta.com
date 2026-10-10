@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import PageBanner from "@/components/site/PageBanner";
+import Doodle from "@/components/doodles/Doodle";
 import { CloseBand } from "@/components/home/HomeSections";
 import {
   CASE_STUDIES,
@@ -64,7 +65,12 @@ export default function CaseStudyPortfolioPage() {
           crumbs={[{ label: "Client work" }, { label: "Case studies" }]}
           title="Programmes"
           highlight="I've worked on."
-          lede="What each programme needed, what I did and what changed. Named where I can, anonymous where an NDA applies, and the numbers are the ones that were signed off."
+          lede={
+            <>
+              What each programme needed, what I did and what changed. Named where I can, anonymous where an NDA applies, and{" "}
+              <span className="nd-mark">the numbers are the ones that were signed off.</span>
+            </>
+          }
           video={{ src: "/media/video/hero-loop.mp4", poster: "/media/video/hero-loop-poster.jpg" }}
         >
           <div className="nda-banner-meta">
@@ -85,7 +91,11 @@ export default function CaseStudyPortfolioPage() {
               <div>
                 <div className="nd-eyebrow">Hand-picked</div>
                 <h2 id="anchor-title" className="nd-display nd-h2">
-                  Programmes that show <span className="nd-hl">the range.</span>
+                  Programmes that show{" "}
+                  <span className="nd-hl nd-u">
+                    the range.
+                    <Doodle name="underline" />
+                  </span>
                 </h2>
                 <p className="nd-lede">Different industries, same playbook.</p>
               </div>

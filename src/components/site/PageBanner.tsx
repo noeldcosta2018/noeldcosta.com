@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import Doodle, { HandNote } from "@/components/doodles/Doodle";
 import LoopVideo from "./LoopVideo";
 
 export type Crumb = { label: string; href?: string };
@@ -24,6 +25,7 @@ export default function PageBanner({
   children,
   label,
   crumbLang,
+  portraitNote,
 }: {
   crumbs: Crumb[];
   title: ReactNode;
@@ -38,6 +40,8 @@ export default function PageBanner({
   label?: string;
   /** Set to "en" when the crumb labels are English on a translated page. */
   crumbLang?: string;
+  /** A few handwritten words with an arrow to the portrait (desktop, where the portrait shows). */
+  portraitNote?: string;
 }) {
   return (
     <section className={`nd-banner${compact ? " compact" : ""}`} aria-label={label}>
@@ -45,7 +49,7 @@ export default function PageBanner({
       {video && <LoopVideo className="media loop" src={video.src} poster={video.poster} />}
       {cover && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img className="media cover" src={cover.src} alt="" aria-hidden="true" />
+        <img className="media cover" src={cover.src} alt={cover.alt || label || ""} aria-hidden="true" />
       )}
       <div className="scrim" aria-hidden="true" />
       <div className="nd-spotlight" aria-hidden="true" />
@@ -59,10 +63,15 @@ export default function PageBanner({
             src={portrait.src}
             width={portrait.width}
             height={portrait.height}
-            alt=""
+            alt="Noel D'Costa"
             aria-hidden="true"
           />
         </picture>
+      )}
+      {portrait && portraitNote && (
+        <HandNote text={portraitNote} className="nd-banner-note">
+          <Doodle name="arrow-swoop" />
+        </HandNote>
       )}
       <div className="wash nd-grid-wash" aria-hidden="true" />
       <div className="nd-banner-inner nd-reveal">

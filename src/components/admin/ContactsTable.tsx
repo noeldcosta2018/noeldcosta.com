@@ -80,7 +80,9 @@ export default function ContactsTable({
       <p className="text-night text-[0.88rem] leading-[1.6] max-w-[80ch]">
         Send the newsletter only to <b>Subscribed</b> contacts: they ticked a newsletter or marketing box, or confirmed an
         ERPCV newsletter sign-up. &ldquo;No newsletter consent&rdquo; means they gave their email for something else (an
-        order, a profile, a meeting); ask them to opt in before adding them. Unsubscribes always win across both sites.
+        order, a profile, a meeting); ask them to opt in before adding them. The <b>AI Academy waitlist</b> agreed to
+        emails about AI Ready in 30 Days only: use the waitlist export for those, not the newsletter. Unsubscribes always
+        win across both sites.
       </p>
 
       <div className="flex flex-wrap items-end gap-3 justify-between">
@@ -120,6 +122,13 @@ export default function ContactsTable({
             className="inline-flex items-center justify-center bg-papaya text-corbeau font-bold text-[0.85rem] px-4 py-2.5 min-h-[44px] rounded-[8px] no-underline"
           >
             Export subscribers (CSV)
+          </a>
+          <a
+            href="/api/admin/audience/export/?source=nd-academy-waitlist"
+            download
+            className="inline-flex items-center justify-center text-corbeau font-bold text-[0.85rem] px-4 py-2.5 min-h-[44px] rounded-[8px] border border-corbeau/30 no-underline"
+          >
+            Export AI Academy waitlist (CSV)
           </a>
           <a
             href="/api/admin/audience/export/?status=all"

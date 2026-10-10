@@ -26,7 +26,8 @@ function VideoCard({ video, hidden, titleLang }: { video: ChannelVideo; hidden?:
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`}
-            alt=""
+            alt={plainTitle(video.title)}
+            aria-hidden="true"
             loading="lazy"
             decoding="async"
             width={480}

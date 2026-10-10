@@ -63,7 +63,7 @@ export default function ReferencesMarquee({
         </blockquote>
         <figcaption>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={r.avatarUrl} alt="" width={44} height={44} loading="lazy" decoding="async" />
+          <img src={r.avatarUrl} alt={r.name} aria-hidden="true" width={44} height={44} loading="lazy" decoding="async" />
           <span>
             <b>{r.name}</b>
             <span>{r.title}</span>
@@ -132,7 +132,7 @@ export default function ReferencesMarquee({
             </button>
             <div className="who">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={open.avatarUrl} alt="" width={72} height={72} />
+              <img src={open.avatarUrl} alt={open.name} aria-hidden="true" width={72} height={72} />
               <div>
                 <b id="ref-dialog-name">{open.name}</b>
                 <span>{open.title}</span>

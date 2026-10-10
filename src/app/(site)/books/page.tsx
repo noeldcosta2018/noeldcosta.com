@@ -157,6 +157,7 @@ export default async function BooksPage() {
           long
           lede="I write for SAP consultants, CIOs, CFOs and programme leaders who need clear answers. The things I wish more teams knew before they spent millions getting it wrong."
           portrait={{ src: "/media/noel-with-book.webp", width: 1139, height: 1128 }}
+          portraitNote="That's me"
         >
           <div className="nda-banner-actions">
             <a className="nd-btn nd-btn-primary magnetic" href={SAPOPEDIA_BOOKS} target="_blank" rel="noopener">

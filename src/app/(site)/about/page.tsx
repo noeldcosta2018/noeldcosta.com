@@ -5,6 +5,7 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import MdxBody from "@/components/mdx/MdxBody";
 import PageBanner from "@/components/site/PageBanner";
+import Doodle from "@/components/doodles/Doodle";
 import SideRail from "@/components/site/SideRail";
 import { CloseBand } from "@/components/home/HomeSections";
 import { getPage } from "@/lib/content";
@@ -58,6 +59,7 @@ export default async function AboutPage() {
           long={title.length > 40}
           lede={fm.excerpt}
           portrait={{ src: "/media/noel-hero.webp", width: 1122, height: 1402 }}
+          portraitNote="That's me"
         >
           <div className="nda-banner-actions">
             <Link className="nd-btn nd-btn-secondary" href={ABOUT}>
@@ -78,6 +80,7 @@ export default async function AboutPage() {
                   <Link className="nd-btn nd-btn-primary" href={CONTACT} style={{ padding: "9px 14px", fontSize: 13 }}>
                     Discuss your project <span aria-hidden="true">→</span>
                   </Link>
+                  <Doodle name="arrow-hook" flip className="nd-rail-hook" />
                 </div>
               }
             />

@@ -5,6 +5,8 @@ const TABLES: Record<string, Record<string, unknown>[]> = {
   nd_contacts: [
     { email: "Ana@Example.com ", name: "Ana", consent: true, created_at: "2026-10-01T00:00:00Z", unsubscribed_at: null },
     { email: "gone@example.com", name: "Gone", consent: true, created_at: "2026-09-01T00:00:00Z", unsubscribed_at: "2026-09-20T00:00:00Z" },
+    { email: "wait@example.com", name: "Wait", source: "ai-ready-waitlist", interests: ["ai-ready-waitlist"], consent: true, created_at: "2026-10-09T00:00:00Z", unsubscribed_at: null },
+    { email: "both@example.com", name: "Both", source: "newsletter", interests: ["ai-ready-waitlist", "newsletter"], consent: true, created_at: "2026-10-09T00:00:00Z", unsubscribed_at: null },
   ],
   nd_meeting_requests: [{ email: "meet@example.com", name: "Meet", created_at: "2026-10-02T00:00:00Z" }],
   book_leads: [
@@ -41,7 +43,7 @@ describe("merged newsletter audience", () => {
     const by = Object.fromEntries(contacts.map((c) => [c.email, c]));
 
     // Case and spaces folded; any explicit consent makes a subscriber; first name kept.
-    expect(by["ana@example.com"]).toMatchObject({ name: "Ana", status: "subscribed", sources: ["nd-signup", "nd-book"] });
+    expect(by["ana@example.com"]).toMatchObject({ name: "Ana", status: "subscribed", sources: ["nd-newsletter", "nd-book"] });
     expect(by["ana@example.com"].firstSeen).toBe("2026-10-01T00:00:00Z");
     expect(by["ana@example.com"].lastSeen).toBe("2026-10-05T00:00:00Z");
     expect(by["reader@example.com"].status).toBe("subscribed");
@@ -56,6 +58,17 @@ describe("merged newsletter audience", () => {
 
     // Abandoned checkouts are left out.
     expect(by["abandoned@example.com"]).toBeUndefined();
+  });
+
+  it("keeps the AI Academy waitlist as its own list, without newsletter consent", async () => {
+    const { contacts } = await loadAudience();
+    const by = Object.fromEntries(contacts.map((c) => [c.email, c]));
+
+    // The waitlist consent covers AI Ready in 30 Days emails only.
+    expect(by["wait@example.com"]).toMatchObject({ status: "no-consent", sources: ["nd-academy-waitlist"] });
+    // Someone on both lists keeps both, and the newsletter consent counts.
+    expect(by["both@example.com"].status).toBe("subscribed");
+    expect([...by["both@example.com"].sources].sort()).toEqual(["nd-academy-waitlist", "nd-newsletter"]);
   });
 
   it("neutralises spreadsheet formulas and quotes CSV cells", () => {

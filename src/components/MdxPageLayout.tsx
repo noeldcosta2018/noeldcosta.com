@@ -9,6 +9,7 @@ import ArticlesLibrary, { getLibrary } from "@/components/pages/ArticlesLibrary"
 import AiProjects from "@/components/pages/AiProjects";
 import ExpertiseAreas from "@/components/pages/ExpertiseAreas";
 import ComingSoon from "@/components/pages/ComingSoon";
+import Doodle from "@/components/doodles/Doodle";
 import { getPage, type PageRecord } from "@/lib/content";
 import { getArticleMessages } from "@/lib/article-localization";
 import { extractHeadings } from "@/lib/article-headings";
@@ -204,6 +205,7 @@ export default function MdxPageLayout({
           lede={lede}
           long={visualLength(title) > 46}
           {...media}
+          portraitNote={media.portrait ? tr("That's me") : undefined}
         >
           {isLibrary && (
             <div className="nd-meta">
@@ -227,6 +229,7 @@ export default function MdxPageLayout({
                   <a className="nd-btn nd-btn-primary magnetic" href={lhref(CONTACT)} style={{ padding: "9px 14px", fontSize: 13 }}>
                     {tr("Discuss your project")} <span aria-hidden="true">→</span>
                   </a>
+                  <Doodle name="arrow-hook" flip className="nd-rail-hook" />
                 </div>
                 )
               }

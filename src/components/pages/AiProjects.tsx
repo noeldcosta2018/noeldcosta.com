@@ -60,7 +60,7 @@ export default function AiProjects({ locale, level = 3 }: { locale?: Locale; lev
           <li key={p.title} className="nd-aip-card nd-in" style={{ ["--d" as string]: i }}>
             <div className="nd-aip-media">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.image} alt="" width={800} height={538} loading="lazy" decoding="async" />
+              <img src={p.image} alt={tr(p.title)} aria-hidden="true" width={800} height={538} loading="lazy" decoding="async" />
               <span className="nd-aip-sector">{tr(p.sector)}</span>
             </div>
             <div className="nd-aip-body">

@@ -53,9 +53,9 @@ export default function AcademyChrome({
         <nav className="nd-nav ar-nav" aria-label="AI Ready in 30 Days">
           <Link className="nd-brand" href="/" aria-label="Noel D'Costa, home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="nd-on-dark" src="/brand/nd-monogram-on-dark.svg" alt="" width={36} height={22} />
+            <img className="nd-on-dark" src="/brand/nd-monogram-on-dark.svg" alt="Noel D'Costa" width={36} height={22} />
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="nd-on-light" src="/brand/nd-monogram.svg" alt="" width={36} height={22} />
+            <img className="nd-on-light" src="/brand/nd-monogram.svg" alt="Noel D'Costa" width={36} height={22} />
             <span className="word">NOEL DCOSTA</span>
           </Link>
           <p className="ar-bar-line" aria-hidden={!pastHero}>

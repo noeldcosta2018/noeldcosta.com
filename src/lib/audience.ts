@@ -18,7 +18,10 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 export type AudienceStatus = "subscribed" | "unsubscribed" | "no-consent";
 
 export type SourceKey =
-  | "nd-signup"
+  | "nd-academy-waitlist"
+  | "nd-newsletter"
+  | "nd-academy-updates"
+  | "nd-chat"
   | "nd-meeting"
   | "nd-book"
   | "erpcv-newsletter"
@@ -28,7 +31,10 @@ export type SourceKey =
   | "erpcv-order";
 
 export const SOURCE_LABELS: Record<SourceKey, string> = {
-  "nd-signup": "noeldcosta.com sign-up",
+  "nd-academy-waitlist": "AI Academy waitlist (AI Ready in 30 Days)",
+  "nd-newsletter": "noeldcosta.com newsletter",
+  "nd-academy-updates": "AI Academy updates",
+  "nd-chat": "noeldcosta.com chat or contact form",
   "nd-meeting": "noeldcosta.com meeting request",
   "nd-book": "noeldcosta.com book lead",
   "erpcv-newsletter": "ERPCV newsletter",
@@ -59,6 +65,14 @@ type Touch = {
 type Row = Record<string, unknown>;
 const str = (v: unknown) => (typeof v === "string" ? v : null);
 
+/** Which list a noeldcosta.com form belongs to (nd_contacts.source / interests). */
+function signupSource(form: string): SourceKey {
+  if (form === "ai-ready-waitlist") return "nd-academy-waitlist";
+  if (form === "academy") return "nd-academy-updates";
+  if (form === "chatbot" || form === "contact") return "nd-chat";
+  return "nd-newsletter"; // newsletter, footer, article
+}
+
 /** Reads one table; a missing table or column is reported, not fatal. */
 async function read(table: string, columns: string, errors: string[]): Promise<Row[]> {
   const { data, error } = await getSupabaseAdmin().from(table).select(columns).limit(10000);
@@ -72,7 +86,7 @@ async function read(table: string, columns: string, errors: string[]): Promise<R
 export async function loadAudience(): Promise<{ contacts: AudienceContact[]; errors: string[] }> {
   const errors: string[] = [];
   const [signups, meetings, books, erpcvNews, customers, advisory, profiles, orders] = await Promise.all([
-    read("nd_contacts", "email,name,consent,created_at,updated_at,unsubscribed_at", errors),
+    read("nd_contacts", "email,name,source,interests,consent,created_at,updated_at,unsubscribed_at", errors),
     read("nd_meeting_requests", "email,name,created_at", errors),
     read("book_leads", "email,name,marketing_opt_in,created_at", errors),
     read("erpcv_next_newsletter_subscriptions", "email,status,confirmed_at,consent_at,unsubscribed_at,updated_at", errors),
@@ -83,14 +97,21 @@ export async function loadAudience(): Promise<{ contacts: AudienceContact[]; err
   ]);
 
   const touches: Touch[] = [
-    ...signups.map((r) => ({
-      email: str(r.email),
-      name: str(r.name),
-      source: "nd-signup" as const,
-      at: str(r.updated_at) ?? str(r.created_at),
-      consent: r.consent === true,
-      unsubscribed: !!r.unsubscribed_at,
-    })),
+    // One noeldcosta.com row per email; `interests` lists every form used, `source` the latest.
+    ...signups.flatMap((r) => {
+      const forms = new Set([...(Array.isArray(r.interests) ? (r.interests as unknown[]).map(String) : []), str(r.source) ?? "newsletter"]);
+      const keys = new Set([...forms].map(signupSource));
+      return [...keys].map((source) => ({
+        email: str(r.email),
+        name: str(r.name),
+        source,
+        at: str(r.updated_at) ?? str(r.created_at),
+        // Newsletter consent comes only from the newsletter-type forms. The
+        // waitlist consent covers AI Ready in 30 Days emails, not the newsletter.
+        consent: r.consent === true && (source === "nd-newsletter" || source === "nd-academy-updates"),
+        unsubscribed: !!r.unsubscribed_at,
+      }));
+    }),
     ...meetings.map((r) => ({ email: str(r.email), name: str(r.name), source: "nd-meeting" as const, at: str(r.created_at) })),
     ...books.map((r) => ({
       email: str(r.email),

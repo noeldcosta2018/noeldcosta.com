@@ -105,6 +105,9 @@ export default async function BookLeadsPage() {
           <Link href="/admin/contacts" className="text-night underline">
             All contacts
           </Link>
+          <Link href="/admin/meetings" className="text-night underline">
+            Meetings
+          </Link>
           <span className="font-bold text-corbeau">Book leads</span>
         </nav>
       </header>

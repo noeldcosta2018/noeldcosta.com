@@ -338,9 +338,9 @@ function NavForPath({
         <nav lang={navLang} className={`nd-nav${scrolled ? " is-scrolled" : ""}`} aria-label={copy.primary}>
           <Link className="nd-brand" href={menu.href.home} aria-label={copy.homeLabel}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="nd-on-dark" src="/brand/nd-monogram-on-dark.svg" alt="" width={36} height={22} />
+            <img className="nd-on-dark" src="/brand/nd-monogram-on-dark.svg" alt="Noel D'Costa" width={36} height={22} />
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="nd-on-light" src="/brand/nd-monogram.svg" alt="" width={36} height={22} />
+            <img className="nd-on-light" src="/brand/nd-monogram.svg" alt="Noel D'Costa" width={36} height={22} />
             <span className="word">NOEL DCOSTA</span>
           </Link>
 

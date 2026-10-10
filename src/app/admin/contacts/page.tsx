@@ -49,6 +49,9 @@ export default async function ContactsPage() {
         </div>
         <nav className="flex gap-4 text-[0.9rem]">
           <span className="font-bold text-corbeau">Contacts</span>
+          <Link href="/admin/meetings" className="text-night underline">
+            Meetings
+          </Link>
           <Link href="/admin/book-leads" className="text-night underline">
             Book leads
           </Link>

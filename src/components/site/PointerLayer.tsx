@@ -37,7 +37,6 @@ export default function PointerLayer() {
       },
       { threshold: 0.2, rootMargin: "0px 0px -6% 0px" },
     );
-    document.querySelectorAll("[data-inview]:not(.is-in)").forEach((el) => io.observe(el));
 
     // Hand-drawn marks: each draws (or sweeps, for .nd-mark) once, the first
     // time it is on screen. Marks inside [data-dd-manual] follow their own state.
@@ -51,9 +50,6 @@ export default function PointerLayer() {
       },
       { threshold: 0.4 },
     );
-    document.querySelectorAll(".dd:not(.on), .nd-mark:not(.on)").forEach((el) => {
-      if (!el.closest("[data-dd-manual]")) draw.observe(el);
-    });
 
     // Count-up: [data-count] figures run fast from zero and ease into their
     // value the first time they are on screen. The server HTML holds the final
@@ -89,8 +85,31 @@ export default function PointerLayer() {
       },
       { threshold: 0.6 },
     );
-    document.querySelectorAll("[data-count]").forEach((el) => counter.observe(el));
+
+    // Watch what is on the page now, and anything added later: long pages
+    // stream in after this effect first runs, and client components can mount
+    // marks afterwards. A mark that is never observed would stay hidden.
+    const INVIEW = "[data-inview]:not(.is-in)";
+    const MARK = ".dd:not(.on), .nd-mark:not(.on)";
+    const COUNT = "[data-count]";
+    const watch = (el: Element) => {
+      if (el.matches(INVIEW)) io.observe(el);
+      if (el.matches(MARK) && !el.closest("[data-dd-manual]")) draw.observe(el);
+      if (el.matches(COUNT) && !(el as HTMLElement).dataset.countText) counter.observe(el);
+    };
+    document.querySelectorAll(`${INVIEW}, ${MARK}, ${COUNT}`).forEach(watch);
+    const added = new MutationObserver((records) => {
+      for (const r of records) {
+        r.addedNodes.forEach((node) => {
+          if (!(node instanceof Element)) return;
+          watch(node);
+          node.querySelectorAll(`${INVIEW}, ${MARK}, ${COUNT}`).forEach(watch);
+        });
+      }
+    });
+    added.observe(document.body, { childList: true, subtree: true });
     return () => {
+      added.disconnect();
       io.disconnect();
       draw.disconnect();
       counter.disconnect();

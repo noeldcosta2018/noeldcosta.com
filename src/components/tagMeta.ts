@@ -36,10 +36,12 @@ export const TAG_META: Record<string, TagInfo> = {
       "Moving ERP forward: ECC to S/4HANA, RISE and GROW with SAP, clean core, cloud migration and what changes by industry.",
     icon: RefreshCw,
   },
+  // Same articles as sap-erp-modernization (see TAG_ALIASES), but its own name
+  // and description, so the two archive URLs do not share a title.
   "sap-industry-topics": {
-    label: "Modernization & Industry",
+    label: "Industry topics",
     description:
-      "Moving ERP forward: ECC to S/4HANA, RISE and GROW with SAP, clean core, cloud migration and what changes by industry.",
+      "SAP and ERP articles on industry topics: how S/4HANA moves, RISE with SAP and clean core decisions play out across different sectors.",
     icon: RefreshCw,
   },
   "sap-crisis-management": {

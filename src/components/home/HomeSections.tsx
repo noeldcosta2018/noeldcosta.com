@@ -116,7 +116,7 @@ export function HomeHero({ locale }: L) {
             src="/media/noel-office-tall-1100.webp"
             srcSet="/media/noel-office-tall-760.webp 760w, /media/noel-office-tall-1100.webp 1100w"
             sizes="(min-width: 1024px) 600px, 1px"
-            alt=""
+            alt="Noel D'Costa"
             aria-hidden="true"
             width={1100}
             height={1522}

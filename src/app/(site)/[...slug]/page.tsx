@@ -150,16 +150,17 @@ export async function generateMetadata(
     });
   }
 
-  // Flat /case-studies/ index URL — borrows the sap-case-studies category
-  // metadata since both URLs render the same portfolio page. Its translated
-  // variants (/de/case-studies/ etc.) are published, so it carries the same
+  // Flat /case-studies/ index URL: the portfolio page. Its own title and
+  // description (from the page banner), so it does not share them with the
+  // /category/sap-case-studies/ archive. Its translated variants
+  // (/de/case-studies/ etc.) are published, so it carries the same
   // reciprocal hreflang set they do.
   if (slug.length === 1 && lastSlug === CASE_STUDIES_INDEX_SLUG) {
-    const meta = CATEGORIES["sap-case-studies"];
     const casePage = getPage(CASE_STUDIES_INDEX_SLUG, "en");
     return buildArchiveMetadata({
-      title: `${meta.label} | Noel D'Costa`,
-      description: meta.description,
+      title: "SAP and ERP case studies: programmes I've worked on | Noel D'Costa",
+      description:
+        "What each SAP and ERP programme needed, what I did and what changed. Named where I can, anonymous under NDA, with the numbers that were signed off.",
       canonical: `${SITE_URL}/${CASE_STUDIES_INDEX_SLUG}/`,
       languages: casePage
         ? buildLanguageAlternates("page", casePage)

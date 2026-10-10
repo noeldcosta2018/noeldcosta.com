@@ -321,7 +321,7 @@ export default function ChatWidget({ copy, locale = "en" }: { copy: ChatCopy; lo
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/nd-monogram-on-dark.svg" alt="" width={34} height={21} />
+          <img src="/brand/nd-monogram-on-dark.svg" alt="Noel D'Costa" width={34} height={21} />
         </button>
       </div>
     </div>

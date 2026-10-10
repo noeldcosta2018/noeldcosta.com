@@ -63,12 +63,12 @@ export default function ArticleHero({
       title={title}
       long
       lede={deck}
-      cover={coverImage ? { src: coverImage } : undefined}
+      cover={coverImage ? { src: coverImage, alt: title } : undefined}
     >
       <div className="nd-meta nd-article-meta">
         <span className="who">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={AUTHOR_AVATAR} alt="" width={32} height={32} />
+          <img src={AUTHOR_AVATAR} alt={DISPLAY_AUTHOR} aria-hidden="true" width={32} height={32} />
           <b>{DISPLAY_AUTHOR}</b>
         </span>
         <span className="dot" aria-hidden="true" />

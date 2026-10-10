@@ -8,6 +8,10 @@ import { CONSENT_TEXT, EMAIL_RE, WAITLIST_CONSENT_TEXT, allow, clean, clientIp, 
  * POST /api/subscribe
  * Body: { name, email, consent, page?, locale?, source?, website? }
  * Saves or refreshes a contact in nd_contacts (upsert on lower-cased email).
+ * One row per email, so a person can sign up from several forms: `source` is
+ * the latest form, `interests` keeps every form they have used (the AI
+ * Academy waitlist and the newsletter stay separate lists), and consent_text
+ * keeps each distinct wording they agreed to.
  * `website` is a honeypot: real visitors never fill it.
  */
 
@@ -43,15 +47,24 @@ export async function POST(request: NextRequest) {
     return json({ ok: false, error: "Sign-ups are being set up. Please try again shortly." }, 503);
   }
 
+  // Keep what an earlier sign-up recorded: the forms used and the wording agreed to.
+  const consentText = source === "ai-ready-waitlist" ? WAITLIST_CONSENT_TEXT : CONSENT_TEXT;
+  const { data: existing } = await supabase.from("nd_contacts").select("source, interests, consent_text").eq("email", email).maybeSingle();
+  const earlierForms = [...((existing?.interests as string[] | null) ?? []), ...(existing?.source ? [existing.source as string] : [])];
+  const interests = Array.from(new Set([...earlierForms, source]));
+  const earlierTexts = ((existing?.consent_text as string | null) ?? "").split(" || ").filter(Boolean);
+  const consentTexts = Array.from(new Set([...earlierTexts, consentText])).join(" || ");
+
   const { error } = await supabase.from("nd_contacts").upsert(
     {
       email,
       name,
       source,
+      interests,
       page: clean(body.page, 300) || null,
       locale: clean(body.locale, 12) || null,
       consent: true,
-      consent_text: source === "ai-ready-waitlist" ? WAITLIST_CONSENT_TEXT : CONSENT_TEXT,
+      consent_text: consentTexts,
       user_agent: clean(request.headers.get("user-agent"), 300) || null,
       unsubscribed_at: null,
     },

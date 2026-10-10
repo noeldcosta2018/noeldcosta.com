@@ -1,11 +1,19 @@
 import Link from "next/link";
+import Doodle from "@/components/doodles/Doodle";
 
 // Anchored expertise sections on /erp-ai-services/ (English). Each anchor is a
 // destination in the Expertise menu. Copy comes from the approved revamp plan
 // (section 4.3), plus ServiceNow (added by Noel, 8 October 2026); no claims
 // beyond them.
 
-type Item = { id: string; title: string; text: string; link?: { label: string; href: string } };
+type Item = {
+  id: string;
+  title: string;
+  text: string;
+  link?: { label: string; href: string };
+  /** Words in the text to circle by hand (one phrase per page at most). */
+  circle?: string;
+};
 type Area = { id: string; num: string; name: string; color: string; claim: string; items: Item[] };
 
 const AREAS: Area[] = [
@@ -27,6 +35,7 @@ const AREAS: Area[] = [
         title: "Oracle",
         text: "Oracle Fusion decisions and programme oversight. I advised on a move from Oracle E-Business Suite to Oracle Fusion across 84 government entities.",
         link: { label: "Oracle ERP vs SAP", href: "/oracle-erp-vs-sap/" },
+        circle: "84 government entities",
       },
       {
         id: "microsoft",
@@ -102,6 +111,22 @@ const AREAS: Area[] = [
   },
 ];
 
+/** The text with one phrase circled by hand. */
+function Circled({ text, phrase }: { text: string; phrase: string }) {
+  const at = text.indexOf(phrase);
+  if (at < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, at)}
+      <span className="nd-circled">
+        {phrase}
+        <Doodle name="circle" />
+      </span>
+      {text.slice(at + phrase.length)}
+    </>
+  );
+}
+
 export default function ExpertiseAreas() {
   return (
     <div className="nd-areas">
@@ -119,7 +144,7 @@ export default function ExpertiseAreas() {
             {area.items.map((item) => (
               <li key={item.id} id={item.id} className="nd-card nd-glow">
                 <h3>{item.title}</h3>
-                <p className="text">{item.text}</p>
+                <p className="text">{item.circle ? <Circled text={item.text} phrase={item.circle} /> : item.text}</p>
                 {item.link && (
                   <Link className="nd-textlink" href={item.link.href}>
                     {item.link.label} <span aria-hidden="true">→</span>
