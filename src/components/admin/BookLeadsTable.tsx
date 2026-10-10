@@ -1,13 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { createBrowserClient } from "@supabase/ssr";
 
 /**
  * BookLeadsTable — search/filter/sort over the leads list.
  *
- * Fetches /api/admin/leads with debounced search. Calls the server-side
- * Supabase Auth signOut by clearing cookies through the browser client.
+ * Fetches /api/admin/leads with debounced search. Sign-out lives in the
+ * admin top bar (AdminShell).
  *
  * No virtualisation. The table caps at 500 rows per page; pagination
  * controls under the table jump by `limit`.
@@ -82,21 +81,6 @@ export default function BookLeadsTable({
     }, 300);
     return () => clearTimeout(handle);
   }, [refetch]);
-
-  async function signOut() {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!url || !key) {
-      window.location.href = "/admin/login";
-      return;
-    }
-    try {
-      const supabase = createBrowserClient(url, key);
-      await supabase.auth.signOut();
-    } finally {
-      window.location.href = "/admin/login";
-    }
-  }
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
   const currentPage = Math.floor(offset / limit) + 1;
@@ -174,13 +158,6 @@ export default function BookLeadsTable({
           >
             Export CSV
           </a>
-          <button
-            type="button"
-            onClick={signOut}
-            className="inline-flex items-center justify-center bg-transparent text-corbeau font-bold text-[0.85rem] px-4 py-2.5 min-h-[44px] rounded-[8px] border border-corbeau/30 transition-all hover:bg-cream"
-          >
-            Sign out
-          </button>
         </div>
       </div>
 

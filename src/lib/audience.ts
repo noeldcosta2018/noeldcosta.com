@@ -66,7 +66,7 @@ type Row = Record<string, unknown>;
 const str = (v: unknown) => (typeof v === "string" ? v : null);
 
 /** Which list a noeldcosta.com form belongs to (nd_contacts.source / interests). */
-function signupSource(form: string): SourceKey {
+export function signupSource(form: string): SourceKey {
   if (form === "ai-ready-waitlist") return "nd-academy-waitlist";
   if (form === "academy") return "nd-academy-updates";
   if (form === "chatbot" || form === "contact") return "nd-chat";

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import type { AudienceContact, AudienceStatus, SourceKey } from "@/lib/audience";
 
 /**
@@ -14,16 +14,6 @@ const STATUS_LABEL: Record<AudienceStatus, string> = {
   unsubscribed: "Unsubscribed",
   "no-consent": "No newsletter consent",
 };
-
-const STATUS_CLASS: Record<AudienceStatus, string> = {
-  subscribed: "bg-[#e6f4ea] text-[#1e6b34]",
-  unsubscribed: "bg-[#fdecea] text-[#9b2c2c]",
-  "no-consent": "bg-cream text-night",
-};
-
-const label = "font-mono text-[0.65rem] tracking-[1.5px] uppercase text-eyebrow";
-const field = "bg-paper border border-corbeau/[0.15] rounded-md px-3 py-2 text-[0.9rem] text-corbeau";
-const th = "px-3 py-2.5 font-mono text-[0.7rem] tracking-[1.5px] uppercase text-eyebrow";
 
 function day(iso: string | null) {
   return iso ? iso.slice(0, 10) : "";
@@ -63,37 +53,37 @@ export default function ContactsTable({
   const sourceKeys = Object.keys(sourceLabels) as SourceKey[];
 
   return (
-    <div className="flex flex-col gap-6">
-      <section className="grid gap-3 sm:grid-cols-4">
-        <div className="bg-paper border border-corbeau/[0.08] rounded-xl p-4">
-          <p className={label}>All contacts</p>
-          <p className="font-display font-black text-corbeau text-[1.8rem]">{contacts.length}</p>
+    <div className="adm-stack">
+      <div className="adm-kpis" style={{ "--cols": 4 } as CSSProperties}>
+        <div className="adm-kpi">
+          <span className="k">All contacts</span>
+          <span className="v">{contacts.length.toLocaleString("en-GB")}</span>
         </div>
         {(Object.keys(STATUS_LABEL) as AudienceStatus[]).map((s) => (
-          <div key={s} className="bg-paper border border-corbeau/[0.08] rounded-xl p-4">
-            <p className={label}>{STATUS_LABEL[s]}</p>
-            <p className="font-display font-black text-corbeau text-[1.8rem]">{counts.byStatus[s]}</p>
+          <div key={s} className="adm-kpi">
+            <span className="k">{STATUS_LABEL[s]}</span>
+            <span className="v">{counts.byStatus[s].toLocaleString("en-GB")}</span>
           </div>
         ))}
-      </section>
+      </div>
 
-      <p className="text-night text-[0.88rem] leading-[1.6] max-w-[80ch]">
-        Send the newsletter only to <b>Subscribed</b> contacts: they ticked a newsletter or marketing box, or confirmed an
+      <p className="adm-muted">
+        Send the newsletter only to <b>Subscribed</b>{" "}contacts: they ticked a newsletter or marketing box, or confirmed an
         ERPCV newsletter sign-up. &ldquo;No newsletter consent&rdquo; means they gave their email for something else (an
         order, a profile, a meeting); ask them to opt in before adding them. The <b>AI Academy waitlist</b> agreed to
         emails about AI Ready in 30 Days only: use the waitlist export for those, not the newsletter. Unsubscribes always
         win across both sites.
       </p>
 
-      <div className="flex flex-wrap items-end gap-3 justify-between">
-        <div className="flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1">
-            <span className={label}>Search</span>
-            <input className={`${field} w-[220px]`} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Name or email" />
+      <div className="adm-toolbar">
+        <div className="adm-filters">
+          <label className="adm-field">
+            <span>Search</span>
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Name or email" />
           </label>
-          <label className="flex flex-col gap-1">
-            <span className={label}>Newsletter status</span>
-            <select className={field} value={status} onChange={(e) => setStatus(e.target.value as AudienceStatus | "")}>
+          <label className="adm-field">
+            <span>Newsletter status</span>
+            <select value={status} onChange={(e) => setStatus(e.target.value as AudienceStatus | "")}>
               <option value="">All</option>
               {(Object.keys(STATUS_LABEL) as AudienceStatus[]).map((s) => (
                 <option key={s} value={s}>
@@ -102,9 +92,9 @@ export default function ContactsTable({
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1">
-            <span className={label}>Source</span>
-            <select className={`${field} min-w-[240px]`} value={source} onChange={(e) => setSource(e.target.value as SourceKey | "")}>
+          <label className="adm-field">
+            <span>Source</span>
+            <select value={source} onChange={(e) => setSource(e.target.value as SourceKey | "")}>
               <option value="">All sources</option>
               {sourceKeys.map((s) => (
                 <option key={s} value={s}>
@@ -114,68 +104,54 @@ export default function ContactsTable({
             </select>
           </label>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="adm-actions">
           {/* File downloads need a full request, not client-side navigation. */}
-          <a
-            href="/api/admin/audience/export/?status=subscribed"
-            download
-            className="inline-flex items-center justify-center bg-papaya text-corbeau font-bold text-[0.85rem] px-4 py-2.5 min-h-[44px] rounded-[8px] no-underline"
-          >
+          <a href="/api/admin/audience/export/?status=subscribed" download className="nd-btn nd-btn-primary adm-btn-sm">
             Export subscribers (CSV)
           </a>
-          <a
-            href="/api/admin/audience/export/?source=nd-academy-waitlist"
-            download
-            className="inline-flex items-center justify-center text-corbeau font-bold text-[0.85rem] px-4 py-2.5 min-h-[44px] rounded-[8px] border border-corbeau/30 no-underline"
-          >
+          <a href="/api/admin/audience/export/?source=nd-academy-waitlist" download className="nd-btn nd-btn-secondary adm-btn-sm">
             Export AI Academy waitlist (CSV)
           </a>
-          <a
-            href="/api/admin/audience/export/?status=all"
-            download
-            className="inline-flex items-center justify-center text-corbeau font-bold text-[0.85rem] px-4 py-2.5 min-h-[44px] rounded-[8px] border border-corbeau/30 no-underline"
-          >
+          <a href="/api/admin/audience/export/?status=all" download className="nd-btn nd-btn-secondary adm-btn-sm">
             Export all contacts (CSV)
           </a>
         </div>
       </div>
 
-      <p className="font-mono text-[0.75rem] text-night">
+      <p className="adm-count">
         Showing {rows.length} of {contacts.length}
       </p>
 
-      <div className="overflow-x-auto rounded-xl border border-corbeau/[0.08] bg-paper">
-        <table className="w-full text-left text-[0.88rem]">
-          <thead className="bg-cream">
+      <div className="adm-table">
+        <table>
+          <thead>
             <tr>
-              <th className={th}>Email</th>
-              <th className={th}>Name</th>
-              <th className={th}>Newsletter</th>
-              <th className={th}>Sources</th>
-              <th className={th}>First seen</th>
-              <th className={th}>Last seen</th>
+              <th>Email</th>
+              <th>Name</th>
+              <th>Newsletter</th>
+              <th>Sources</th>
+              <th>First seen</th>
+              <th>Last seen</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-3 py-6 text-night text-center">
+                <td colSpan={6} className="adm-none">
                   No contacts match.
                 </td>
               </tr>
             ) : (
               rows.map((c) => (
-                <tr key={c.email} className="border-t border-corbeau/[0.06] align-top">
-                  <td className="px-3 py-2.5 text-night font-mono text-[0.82rem]">{c.email}</td>
-                  <td className="px-3 py-2.5 text-corbeau">{c.name}</td>
-                  <td className="px-3 py-2.5">
-                    <span className={`inline-block rounded-full px-2.5 py-0.5 text-[0.75rem] font-semibold ${STATUS_CLASS[c.status]}`}>
-                      {STATUS_LABEL[c.status]}
-                    </span>
+                <tr key={c.email}>
+                  <td className="mono">{c.email}</td>
+                  <td>{c.name}</td>
+                  <td>
+                    <span className={`adm-badge ${c.status}`}>{STATUS_LABEL[c.status]}</span>
                   </td>
-                  <td className="px-3 py-2.5 text-night text-[0.82rem]">{c.sources.map((s) => sourceLabels[s]).join(", ")}</td>
-                  <td className="px-3 py-2.5 text-night font-mono text-[0.78rem] whitespace-nowrap">{day(c.firstSeen)}</td>
-                  <td className="px-3 py-2.5 text-night font-mono text-[0.78rem] whitespace-nowrap">{day(c.lastSeen)}</td>
+                  <td>{c.sources.map((s) => sourceLabels[s]).join(", ")}</td>
+                  <td className="mono">{day(c.firstSeen)}</td>
+                  <td className="mono">{day(c.lastSeen)}</td>
                 </tr>
               ))
             )}

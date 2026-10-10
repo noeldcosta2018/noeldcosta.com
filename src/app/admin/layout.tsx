@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import { Epilogue, JetBrains_Mono } from "next/font/google";
 import "../globals.css";
+import "../nd-theme.css";
+import "./admin.css";
+import { fontVariables } from "@/components/site/fonts";
 
 /**
  * Admin layout. English-only — admin is not localised.
@@ -11,28 +13,10 @@ import "../globals.css";
  * document shell itself; without this, /admin/* routes 404 in production
  * even though they build cleanly.
  *
- * Per-route guards live in each page (so /admin/login can render publicly
- * while /admin/book-leads requires requireAdmin()).
+ * Same fonts and dark theme tokens as the public site (nd-theme.css); the
+ * older Tailwind colour names in the table components follow those tokens.
+ * Per-route guards live in each page (src/components/admin/guard.tsx).
  */
-
-// Not preloaded: the build hoisted these preloads onto every public page,
-// where they competed with the page's own CSS and fonts on slow connections.
-// Admin is a handful of screens; a late font swap there costs nothing.
-const epilogue = Epilogue({
-  variable: "--font-epilogue",
-  subsets: ["latin"],
-  weight: ["400", "600", "700", "800", "900"],
-  display: "swap",
-  preload: false,
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  display: "swap",
-  preload: false,
-});
 
 export const metadata: Metadata = {
   title: "Admin · Noel D'Costa",
@@ -41,10 +25,8 @@ export const metadata: Metadata = {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${epilogue.variable} ${jetbrainsMono.variable}`}>
-      <body className="min-h-screen bg-bone text-corbeau antialiased">
-        {children}
-      </body>
+    <html lang="en" className={fontVariables} data-theme="dark">
+      <body className="nd-admin">{children}</body>
     </html>
   );
 }
