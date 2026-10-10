@@ -36,12 +36,12 @@ export const TAG_META: Record<string, TagInfo> = {
       "Moving ERP forward: ECC to S/4HANA, RISE and GROW with SAP, clean core, cloud migration and what changes by industry.",
     icon: RefreshCw,
   },
-  // Same articles as sap-erp-modernization (see TAG_ALIASES), but its own name
-  // and description, so the two archive URLs do not share a title.
+  // Same articles as sap-erp-modernization (see TAG_ALIASES) and the same name:
+  // this is the canonical archive of the pair (CANONICAL_TAG below).
   "sap-industry-topics": {
-    label: "Industry topics",
+    label: "Modernization & Industry",
     description:
-      "SAP and ERP articles on industry topics: how S/4HANA moves, RISE with SAP and clean core decisions play out across different sectors.",
+      "Moving ERP forward: ECC to S/4HANA, RISE and GROW with SAP, clean core, cloud migration and what changes by industry.",
     icon: RefreshCw,
   },
   "sap-crisis-management": {
@@ -80,6 +80,19 @@ const TAG_ALIASES: Record<string, string[]> = {
 
 export function tagSynonyms(tag: string): string[] {
   return [tag, ...(TAG_ALIASES[tag] ?? [])];
+}
+
+// Of each alias pair, the archive search engines should index (Noel, 10 October
+// 2026). Both listed the same articles, so Google indexed neither. The other URL
+// stays live, names this one as canonical and leaves the sitemap; internal links
+// point here. sap-industry-topics is the tag the articles actually carry.
+const CANONICAL_TAG: Record<string, string> = {
+  "sap-erp-modernization": "sap-industry-topics",
+};
+
+/** The tag whose archive is canonical for this one (itself for most tags). */
+export function canonicalTag(tag: string): string {
+  return CANONICAL_TAG[tag] ?? tag;
 }
 
 // WordPress publishes these six tag archive URLs in its post_tag-sitemap.xml.

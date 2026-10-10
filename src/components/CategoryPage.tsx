@@ -28,7 +28,7 @@ import {
   interfaceUrl,
   localizedCategoryPosts,
 } from "@/lib/localized-interface-routes";
-import { tagDisplayName } from "@/components/tagMeta";
+import { canonicalTag, tagDisplayName } from "@/components/tagMeta";
 import { ABOUT, ARTICLES_INDEX } from "@/data/site-menu";
 
 // Category archive (/category/<slug>/, the root aliases and the translated
@@ -66,10 +66,10 @@ const ALL_CATEGORIES = [
   { slug: "sap-case-studies", label: "SAP Case Studies" },
 ];
 
-// Tags that only restate the category ("sap-industry-topics" is merged into
-// the WordPress "sap-erp-modernization" archive, as before).
+// Topic chips link to the canonical archive of an alias pair
+// (/tag/sap-industry-topics/, not /tag/sap-erp-modernization/).
 function topicKey(tag: string): string {
-  return tag === "sap-industry-topics" ? "sap-erp-modernization" : tag;
+  return canonicalTag(tag);
 }
 
 // A few migrated posts point at hero files that were never copied into

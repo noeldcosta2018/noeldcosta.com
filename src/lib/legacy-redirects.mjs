@@ -35,6 +35,9 @@ export const LEGACY_REDIRECTS = [
   { from: "sap-for-aviation", to: "sap-implementation/sap-for-aviation", target: "pages/sap-for-aviation" },
   { from: "sap-integration-platforms", to: "sap-implementation/sap-integration-platforms", target: "pages/sap-integration-platforms" },
   { from: "erp-implementation-cost-calculator", to: "ai-insights-shiftgearx-noeldcosta/erp-implementation-cost-calculator", target: "pages/erp-implementation-cost-calculator" },
+  // Short /about/ URL (English only) to the My story page it already named as
+  // canonical; Google kept both indexed (Noel, 10 October 2026).
+  { from: "about", to: "sap-erp-consultant-my-story-noel-dcosta", target: "pages/about" },
 ];
 
 // Content locale file name to public URL prefix (Simplified Chinese lives in

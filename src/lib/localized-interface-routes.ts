@@ -238,20 +238,25 @@ export function interfaceUrl(locale: Locale, englishPath: string): string {
 export function interfaceMetadata({
   locale,
   englishPath,
+  canonicalPath = englishPath,
   title,
   description,
 }: {
   locale: Locale;
   englishPath: string;
+  /** English path of the page this one defers to, when it duplicates another
+   *  (same locale). A deferring page carries no hreflang of its own. */
+  canonicalPath?: string;
   /** Final document title (absolute, brand included where wanted). */
   title: string;
   description: string;
 }): Metadata {
+  const defers = canonicalPath !== englishPath;
   const base = buildArchiveMetadata({
     title,
     description,
-    canonical: interfaceUrl(locale, englishPath),
-    languages: interfaceAlternates(englishPath),
+    canonical: interfaceUrl(locale, canonicalPath),
+    languages: defers ? undefined : interfaceAlternates(englishPath),
   });
   const prefix = publicPrefixFromContentLocale(locale);
   if (!prefix || !isPublishedTranslatedLocale(prefix)) return base;

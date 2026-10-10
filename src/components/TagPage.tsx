@@ -16,6 +16,7 @@ import {
   tagPath,
 } from "@/lib/localized-interface-routes";
 import {
+  canonicalTag,
   tagDisplayName,
   tagInfo,
   tagSynonyms,
@@ -62,6 +63,7 @@ export function tagMetadata(tag: string, locale: Locale = "en"): Metadata {
   return interfaceMetadata({
     locale,
     englishPath: tagPath(tag),
+    canonicalPath: tagPath(canonicalTag(tag)),
     title: `${tr(info.label)} | Noel D'Costa`,
     description,
   });
@@ -108,8 +110,8 @@ export default function TagPage({ tag, locale = "en" }: { tag: string; locale?: 
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, 12);
 
-  // The six WordPress topic archives, without the page itself or its alias.
-  const mainTopics = WORDPRESS_TAG_SLUGS.filter((t) => t !== "sap-industry-topics" && !synonyms.includes(t));
+  // The WordPress topic archives, canonical ones only, without the page itself or its alias.
+  const mainTopics = WORDPRESS_TAG_SLUGS.filter((t) => canonicalTag(t) === t && !synonyms.includes(t));
 
   const lede = info.description
     ? tr(info.description)

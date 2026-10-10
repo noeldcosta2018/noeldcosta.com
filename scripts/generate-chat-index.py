@@ -30,7 +30,8 @@ for kind in ("posts", "pages"):
         if fm.get("noindex") or not fm.get("title"):
             continue
         url = url_for(fm, slug) if kind == "pages" else f"/{slug}/"
-        if slug in ("https-noeldcosta-com-sap-implementation-expert",):
+        # /about/ redirects to the My story page, which is indexed on its own.
+        if slug in ("https-noeldcosta-com-sap-implementation-expert", "about"):
             continue
         section = SECTIONS.get(url, {})
         items.append({

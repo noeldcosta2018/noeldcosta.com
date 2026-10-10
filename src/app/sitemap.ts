@@ -8,7 +8,7 @@ import {
   getPage,
 } from "../lib/content";
 import { SITE_URL, toIso } from "../lib/seo";
-import { WORDPRESS_TAG_SLUGS } from "../components/tagMeta";
+import { WORDPRESS_TAG_SLUGS, canonicalTag } from "../components/tagMeta";
 import { resolveCanonicalUrl } from "../lib/seo-graph";
 import { getLocalizedArticle, getLocalizedArticleParams } from "../lib/localized-article-routing";
 import { getLocalizedPage, getLocalizedPageParams } from "../lib/localized-page-routing";
@@ -50,6 +50,12 @@ const SHORT_URL_SLUGS = new Set<string>([
   "category",
 ]);
 
+/** A /tag/<slug>/ path whose archive names another tag's as canonical. */
+function deferringTag(englishPath: string): boolean {
+  const m = englishPath.match(/^\/tag\/([^/]+)\/$/);
+  return !!m && canonicalTag(m[1]) !== m[1];
+}
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const items: MetadataRoute.Sitemap = [];
 
@@ -76,6 +82,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     });
     for (const path of localizedInterfacePaths(l)) {
+      if (deferringTag(path.slice(l.length + 1))) continue;
       items.push({
         url: `${SITE_URL}${path}`,
         changeFrequency: "weekly",
@@ -111,6 +118,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const tagSet = new Set<string>(WORDPRESS_TAG_SLUGS);
   for (const t of getAllTagSlugs()) tagSet.add(t);
   for (const t of tagSet) {
+    if (canonicalTag(t) !== t) continue;
     items.push({
       url: `${SITE_URL}/tag/${t}/`,
       changeFrequency: "weekly",
