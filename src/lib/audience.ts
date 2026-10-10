@@ -30,7 +30,8 @@ export type SourceKey =
   | "erpcv-profile"
   | "erpcv-order"
   | "sapopedia-book"
-  | "sapopedia-newsletter";
+  | "sapopedia-newsletter"
+  | "sapopedia-tally";
 
 export const SOURCE_LABELS: Record<SourceKey, string> = {
   "nd-academy-waitlist": "AI Academy waitlist (AI Ready in 30 Days)",
@@ -46,6 +47,7 @@ export const SOURCE_LABELS: Record<SourceKey, string> = {
   "erpcv-order": "ERPCV order (first version)",
   "sapopedia-book": "SAPopedia free book or Playbook checkout",
   "sapopedia-newsletter": "SAPopedia new-book list",
+  "sapopedia-tally": "SAPopedia book form (Tally, before 10 Oct 2026)",
 };
 
 export { SITES, sourceSite, type Site } from "@/lib/audience-sites";
@@ -73,6 +75,8 @@ const str = (v: unknown) => (typeof v === "string" ? v : null);
 
 /** Which list a noeldcosta.com form belongs to (nd_contacts.source / interests). */
 export function signupSource(form: string): SourceKey {
+  // Imported from the Tally export: the form did not record the book or the list.
+  if (form === "sapopedia-tally-import") return "sapopedia-tally";
   if (form.startsWith("sapopedia")) return "sapopedia-newsletter";
   if (form === "ai-ready-waitlist") return "nd-academy-waitlist";
   if (form === "academy") return "nd-academy-updates";

@@ -201,10 +201,18 @@ export async function loadOverview(): Promise<Overview> {
   const top = [...byTitle].sort((a, b) => b[1] - a[1])[0];
   const week = (rows: Row[]) => rows.filter((r) => within(str(r.created_at), 7, now)).length;
   const sapopedia: Metric[] = [
-    { label: "Free book downloads", value: freeBooks.length.toLocaleString("en-GB"), note: `${week(freeBooks)} in 7 days` },
+    {
+      label: "Free book downloads",
+      value: freeBooks.length.toLocaleString("en-GB"),
+      note: `${week(freeBooks)} in 7 days${top ? `; most requested: ${top[0]} (${top[1]})` : ""}`,
+    },
     { label: "Playbook checkouts started", value: playbook.length.toLocaleString("en-GB"), note: `${week(playbook)} in 7 days; payment completes in Stripe` },
     list("sapopedia-newsletter", "New-book list"),
-    { label: "Most requested free book", value: top ? top[1].toLocaleString("en-GB") : "0", note: top ? top[0] : "no downloads yet" },
+    {
+      label: "Earlier sign-ups (Tally)",
+      value: (lists["sapopedia-tally"]?.total ?? 0).toLocaleString("en-GB"),
+      note: "28 May to 9 Oct 2026; book not recorded",
+    },
   ];
 
   const legacyPaid = legacyOrders.filter((r) => r.status === "paid" || r.status === "delivered").length;
@@ -223,7 +231,7 @@ export async function loadOverview(): Promise<Overview> {
       return {
         at: str(r.created_at) ?? "",
         product: sapo ? ("SAPopedia" as const) : ("noeldcosta.com" as const),
-        what: sapo ? "Joined the new-book list" : `Signed up (${form})`,
+        what: form === "sapopedia-tally-import" ? "Book form (imported from Tally)" : sapo ? "Joined the new-book list" : `Signed up (${form})`,
         who: who(r.name, r.email),
       };
     }),
