@@ -38,29 +38,29 @@ export function readConsent(): Consent | null {
  * Cookie bar. Essential storage only until the visitor chooses; analytics
  * (none installed yet) must check readConsent()?.analytics before loading.
  * Rejecting is one click, as easy as accepting.
+ *
+ * The bar is in the server HTML on every page and hidden by CSS. The head
+ * script (ThemeScript) adds html.consent-needed before the first paint when no
+ * choice is saved, so first-time visitors see it with the page itself instead
+ * of popping in after the scripts load (which made it the page's largest late
+ * paint on mobile). "open" shows it again from the footer link; "closed" hides
+ * it once the visitor has chosen.
  */
 export default function CookieConsent({ copy, policyHref }: { copy: ConsentCopy; policyHref: string }) {
-  const [open, setOpen] = useState(false);
+  const [state, setState] = useState<"auto" | "open" | "closed">("auto");
   const [prefs, setPrefs] = useState(false);
   const [analytics, setAnalytics] = useState(false);
 
+  // The bar only shows on its own when no choice is saved, so the analytics switch
+  // starts off; reopening it from the footer reads the saved choice first.
   useEffect(() => {
-    // Shown just after first paint so the bar never competes with the page itself.
-    const show = window.setTimeout(() => {
-      const existing = readConsent();
-      if (!existing) setOpen(true);
-      else setAnalytics(existing.analytics);
-    }, 400);
     const reopen = () => {
       setAnalytics(readConsent()?.analytics ?? false);
       setPrefs(true);
-      setOpen(true);
+      setState("open");
     };
     window.addEventListener(OPEN_CONSENT_EVENT, reopen);
-    return () => {
-      window.clearTimeout(show);
-      window.removeEventListener(OPEN_CONSENT_EVENT, reopen);
-    };
+    return () => window.removeEventListener(OPEN_CONSENT_EVENT, reopen);
   }, []);
 
   function decide(allowAnalytics: boolean) {
@@ -71,13 +71,18 @@ export default function CookieConsent({ copy, policyHref }: { copy: ConsentCopy;
       /* storage unavailable: the bar shows again next time */
     }
     window.dispatchEvent(new CustomEvent(CONSENT_EVENT, { detail: consent }));
-    setOpen(false);
+    document.documentElement.classList.remove("consent-needed");
+    setState("closed");
     setPrefs(false);
   }
 
-  if (!open) return null;
   return (
-    <section className="nd-cookie" role="dialog" aria-modal="false" aria-label={copy.title}>
+    <section
+      className={`nd-cookie${state === "open" ? " is-open" : state === "closed" ? " is-closed" : ""}`}
+      role="dialog"
+      aria-modal="false"
+      aria-label={copy.title}
+    >
       <div className="nd-cookie-inner">
         <p className="nd-cookie-text">
           {copy.text}{" "}

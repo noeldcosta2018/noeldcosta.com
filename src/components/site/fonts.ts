@@ -30,10 +30,15 @@ export const jetbrainsMono = JetBrains_Mono({
 // Arabic pages (html[lang="ar"], nd-theme.css): Noto Kufi Arabic for display
 // type, IBM Plex Sans Arabic for text. Not preloaded, and only Arabic text uses
 // them, so other languages never download these files.
+// display "optional": they can't be preloaded for Arabic pages alone, so on slow
+// connections they arrived after the first paint and every Arabic heading and
+// paragraph re-wrapped (layout shift up to 0.3 on mobile). Now a page keeps the
+// font it first painted with: fast connections and later pages get these fonts,
+// a slow first visit keeps the system Arabic font instead of jumping.
 export const kufiArabic = Noto_Kufi_Arabic({
   variable: "--font-kufi-arabic",
   subsets: ["arabic"],
-  display: "swap",
+  display: "optional",
   preload: false,
 });
 
@@ -41,7 +46,7 @@ export const plexArabic = IBM_Plex_Sans_Arabic({
   variable: "--font-plex-arabic",
   subsets: ["arabic"],
   weight: ["400", "600", "700"],
-  display: "swap",
+  display: "optional",
   preload: false,
 });
 

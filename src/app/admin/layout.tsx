@@ -15,11 +15,15 @@ import "../globals.css";
  * while /admin/book-leads requires requireAdmin()).
  */
 
+// Not preloaded: the build hoisted these preloads onto every public page,
+// where they competed with the page's own CSS and fonts on slow connections.
+// Admin is a handful of screens; a late font swap there costs nothing.
 const epilogue = Epilogue({
   variable: "--font-epilogue",
   subsets: ["latin"],
   weight: ["400", "600", "700", "800", "900"],
   display: "swap",
+  preload: false,
 });
 
 const jetbrainsMono = JetBrains_Mono({
@@ -27,6 +31,7 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {

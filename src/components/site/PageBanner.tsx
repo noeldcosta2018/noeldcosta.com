@@ -48,8 +48,10 @@ export default function PageBanner({
       <div className="bg" aria-hidden="true" />
       {video && <LoopVideo className="media loop" src={video.src} poster={video.poster} />}
       {cover && (
+        // The page's largest image (article heroes): high priority, so on slow phones
+        // it no longer waits behind the scripts.
         // eslint-disable-next-line @next/next/no-img-element
-        <img className="media cover" src={cover.src} alt={cover.alt || label || ""} aria-hidden="true" />
+        <img className="media cover" src={cover.src} alt={cover.alt || label || ""} aria-hidden="true" fetchPriority="high" />
       )}
       <div className="scrim" aria-hidden="true" />
       <div className="nd-spotlight" aria-hidden="true" />

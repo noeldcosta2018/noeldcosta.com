@@ -276,8 +276,17 @@ export default function AiAcademyPage() {
                 <Doodle name="arrow-swoop" />
               </HandNote>
               <div className="ar-hero-media">
+                {/* The page's largest image: phones get a 480 or 720px copy (31 / 59 KB) instead of the 152 KB original. */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/media/noel-academy.webp" alt="Noel D'Costa" width={1122} height={1402} fetchPriority="high" decoding="async" />
+                <img
+                  src="/media/noel-academy.webp"
+                  srcSet="/media/noel-academy-480.webp 480w, /media/noel-academy-720.webp 720w, /media/noel-academy.webp 1122w"
+                  sizes="(min-width: 960px) 420px, 360px"
+                  alt="Noel D'Costa"
+                  width={1122}
+                  height={1402}
+                  fetchPriority="high"
+                />
                 <LoopVideo className="ar-hero-video" src="/media/video/academy-loop.mp4" poster="/media/noel-academy.webp" />
               </div>
             </div>
