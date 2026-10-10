@@ -189,8 +189,9 @@ export default async function LocalizedRoute(
   if (slug.length === 1 && RESERVED_SLUGS.has(lastSlug)) notFound();
 
   // Flat /case-studies/ index URL — WordPress publishes this alongside
-  // the /category/sap-case-studies/ archive. Both render the bespoke
-  // portfolio layout (hero + filters + anchor/archive grids).
+  // the /category/sap-case-studies/ archive. This one renders the bespoke
+  // portfolio layout (hero + filters + anchor/archive grids); the archive
+  // lists the case-study articles.
   if (slug.length === 1 && lastSlug === CASE_STUDIES_INDEX_SLUG) {
     return <CaseStudyPortfolioPage />;
   }
@@ -198,10 +199,7 @@ export default async function LocalizedRoute(
   // Category slug shortcut: /<category-slug> renders the same
   // CategoryPage component as /category/<category-slug>. Canonical
   // URL points at the /category/ form (set in generateMetadata).
-  // Special case: "sap-case-studies" gets the bespoke portfolio layout
-  // instead of the generic category listing.
   if (slug.length === 1 && isCategorySlug(lastSlug)) {
-    if (lastSlug === "sap-case-studies") return <CaseStudyPortfolioPage />;
     return <CategoryPage category={lastSlug} />;
   }
 

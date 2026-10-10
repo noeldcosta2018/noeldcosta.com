@@ -20,7 +20,6 @@ import {
   ERPCV_ADVISORY,
   EXPERTISE,
   SAPOPEDIA,
-  SAPOPEDIA_BOOKS,
 } from "@/data/site-menu";
 
 // Homepage sections. Structure and style follow the MDLBeast reference
@@ -711,7 +710,7 @@ export function CloseBand({
 }
 
 export function Ecosystem({ locale }: L) {
-  const { tr } = tools(locale);
+  const { tr, href } = tools(locale);
   return (
     <section data-tone="light" className="nd-section" id="also-by-noel" aria-labelledby="eco-title">
       <div className="nd-container">
@@ -772,9 +771,10 @@ export function Ecosystem({ locale }: L) {
                 <a className="nd-btn nd-btn-primary" href={SAPOPEDIA} target="_blank" rel="noopener">
                   {tr("Visit SAPopedia")} <span aria-hidden="true">↗</span>
                 </a>
-                <a className="nd-textlink" href={SAPOPEDIA_BOOKS} target="_blank" rel="noopener">
-                  {tr("See the books")} <span aria-hidden="true">↗</span>
-                </a>
+                {/* Same label as the books band above, so it goes to the same page. */}
+                <Link className="nd-textlink" href={href("/books/")}>
+                  {tr("See the books")} <span aria-hidden="true">→</span>
+                </Link>
               </div>
             </article>
           </li>

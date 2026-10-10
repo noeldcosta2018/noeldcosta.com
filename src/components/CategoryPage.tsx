@@ -182,7 +182,7 @@ export function AuthorStrip({ locale = "en" }: { locale?: Locale }) {
   return (
     <div className="nda-author">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/media/noel-headshot.webp" alt="Noel D'Costa" width={72} height={72} loading="lazy" />
+      <img src="/media/noel-headshot-320.webp" alt="Noel D'Costa" width={72} height={72} loading="lazy" />
       <div>
         <h3>{tr("Written by Noel D'Costa")}</h3>
         <p>

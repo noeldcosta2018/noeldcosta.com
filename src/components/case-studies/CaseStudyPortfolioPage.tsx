@@ -5,6 +5,7 @@ import PageBanner from "@/components/site/PageBanner";
 import Doodle from "@/components/doodles/Doodle";
 import { CloseBand } from "@/components/home/HomeSections";
 import {
+  type CaseStudy,
   CASE_STUDIES,
   INDUSTRY_LABEL,
   getAnchorCaseStudies,
@@ -14,12 +15,34 @@ import {
 import { getPage } from "@/lib/content";
 import { buildLanguageAlternates } from "@/lib/seo-graph";
 import CaseStudyHero from "./CaseStudyHero";
+import CaseStudyCard from "./CaseStudyCard";
 import FilterChips from "./FilterChips";
 import CaseStudyGrid from "./CaseStudyGrid";
 import CaseStudyMethodology from "./CaseStudyMethodology";
 
 /**
- * /case-studies/ and /category/sap-case-studies/ portfolio page.
+ * The cards as plain server HTML, newest first (the filter grid's default
+ * order). The filter grid reads the URL, so it only renders in the browser;
+ * without this its Suspense fallback was empty and the page's HTML carried no
+ * links to the case studies at all.
+ */
+function StaticCaseStudyGrid({ items, variant }: { items: CaseStudy[]; variant: "anchor" | "compact" }) {
+  return (
+    <div className={`nda-cs-grid ${variant}`}>
+      {items.map((c) => (
+        <div key={c.slug} style={{ display: "flex", minWidth: 0 }}>
+          <CaseStudyCard c={c} variant={variant} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const newestFirst = (items: CaseStudy[]) =>
+  [...items].sort((a, b) => (a.publishedAt < b.publishedAt ? 1 : a.publishedAt > b.publishedAt ? -1 : 0));
+
+/**
+ * /case-studies/ portfolio page (/category/sap-case-studies/ lists the articles).
  *
  * Composition (top to bottom):
  *   1. Banner       Client work / Case studies, page H1
@@ -100,9 +123,8 @@ export default function CaseStudyPortfolioPage() {
                 <p className="nd-lede">Different industries, same playbook.</p>
               </div>
             </div>
-            <Suspense fallback={null}>
-              <CaseStudyGrid items={anchors} variant="anchor" unfiltered />
-            </Suspense>
+            {/* Hand-picked and never filtered, so it needs no client grid. */}
+            <StaticCaseStudyGrid items={anchors} variant="anchor" />
           </div>
         </section>
 
@@ -120,7 +142,7 @@ export default function CaseStudyPortfolioPage() {
                   </h2>
                 </div>
               </div>
-              <Suspense fallback={null}>
+              <Suspense fallback={<StaticCaseStudyGrid items={newestFirst(archive)} variant="compact" />}>
                 <CaseStudyGrid items={archive} variant="compact" />
               </Suspense>
             </div>

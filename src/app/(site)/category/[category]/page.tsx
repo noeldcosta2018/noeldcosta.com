@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import CategoryPage, { categoryMetadata } from "@/components/CategoryPage";
-import CaseStudyPortfolioPage from "@/components/case-studies/CaseStudyPortfolioPage";
 import { CATEGORIES } from "@/lib/content";
 
 export function generateStaticParams() {
@@ -22,8 +21,8 @@ export default async function Route(
   props: { params: Promise<{ category: string }> }
 ) {
   const { category } = await props.params;
-  // Case studies get the bespoke portfolio layout (hero + filters +
-  // anchor/archive grids). Other categories use the generic listing.
-  if (category === "sap-case-studies") return <CaseStudyPortfolioPage />;
+  // Every category, case studies included, lists its articles. The case-study
+  // portfolio lives at /case-studies/; rendering it here too made this URL a
+  // duplicate Google left unindexed, and the articles were barely linked.
   return <CategoryPage category={category} />;
 }

@@ -418,6 +418,7 @@ function NavForPath({
           <button
             type="button"
             className="nd-explore"
+            aria-label={copy.explore}
             aria-expanded={panel === "search"}
             aria-controls="nd-search"
             onClick={(e) => togglePanel("search", e)}

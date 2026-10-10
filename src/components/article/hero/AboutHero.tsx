@@ -25,7 +25,7 @@ export default function AboutHero() {
       </div>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/media/noel-headshot.webp"
+        src="/media/noel-headshot-320.webp"
         alt="Portrait of Noel D'Costa"
         width={148}
         height={148}

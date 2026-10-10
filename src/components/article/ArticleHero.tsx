@@ -20,7 +20,9 @@ interface ArticleHeroProps {
 }
 
 const DISPLAY_AUTHOR = "Noel D'Costa";
-const AUTHOR_AVATAR = "/media/noel-headshot.webp";
+// 96 px wide copy (2 KB) for the 32 px byline avatar; the full portrait is 176 KB
+// and loaded ahead of the article's cover image on phones.
+const AUTHOR_AVATAR = "/media/noel-headshot-96.webp";
 
 function formatDate(value: string, dateLocale: string): string {
   return new Date(value).toLocaleDateString(dateLocale, {

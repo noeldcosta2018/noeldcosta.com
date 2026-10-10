@@ -19,7 +19,7 @@ export default function AuthorBox({ locale = "en" }: { locale?: Locale }) {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className="nd-author-photo"
-        src="/media/noel-headshot.webp"
+        src="/media/noel-headshot-320.webp"
         alt="Noel D'Costa"
         width={96}
         height={96}
