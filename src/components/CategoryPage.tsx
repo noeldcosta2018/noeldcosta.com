@@ -65,7 +65,7 @@ const ALL_CATEGORIES = [
   { slug: "erp-strategy", label: "ERP Strategy & Cost" },
   { slug: "ai-governance", label: "AI Governance" },
   { slug: "agentic-ai", label: "Agentic AI" },
-  { slug: "data-and-ai", label: "Data and AI" },
+  { slug: "data-and-ai", label: "Data & analytics" },
   { slug: "sap-case-studies", label: "SAP Case Studies" },
 ];
 

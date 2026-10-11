@@ -28,6 +28,7 @@ const CATEGORIES = [
   "erp-strategy",
   "ai-governance",
   "agentic-ai",
+  "data-and-ai",
   "sap-case-studies",
 ];
 const WP_TAGS = [

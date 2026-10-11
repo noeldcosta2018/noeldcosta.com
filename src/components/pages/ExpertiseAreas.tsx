@@ -61,7 +61,13 @@ const AREAS: Area[] = [
         id: "databricks",
         title: "Databricks",
         text: "A data foundation that joins ERP data with the rest of the business, including Databricks. The starting point is what people need to know, not how many dashboards to build.",
-        link: { label: "Why data migration fails", href: "/why-sap-data-migration-fails-and-how-to-fix-it/" },
+        link: { label: "What Databricks is used for", href: "/what-is-databricks-used-for/" },
+      },
+      {
+        id: "snowflake",
+        title: "Snowflake",
+        text: "Snowflake for analytics across your ERP and operations data. I connect the ERP through middleware that can serve your other systems too, and size the contract from real usage.",
+        link: { label: "Snowflake vs Databricks", href: "/snowflake-vs-databricks/" },
       },
       {
         id: "reporting",

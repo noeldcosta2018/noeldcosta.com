@@ -65,3 +65,9 @@ Bright, photorealistic scenes generated with Higgsfield (GPT Image 2.5, 16:9) un
 18. Maintenance and quality assistant as first pilot: yes.
 19. Operations data landed in Snowflake: production planning.
 20. Supplier data exchange: still mostly file transfers.
+## Combined with Data & analytics (11 October 2026, approved by Noel)
+
+- The category is now labelled "Data & analytics" everywhere (URL unchanged: /category/data-and-ai/). It holds 14 articles: the 10 new ones plus SAP Analytics Cloud, SAP BPC, data migration and the CFOs-and-Excel piece, moved from sap-modules and erp-strategy in all 16 languages. No URL changes.
+- Menu Articles > Data & analytics now opens the category. The articles library's Data & analytics group lists all 14.
+- Translated archives now exist for the four moved articles, e.g. /de/category/data-and-ai/ (4 articles, translated description).
+- Expertise page: Databricks links to "What Databricks is used for"; new Snowflake entry (#snowflake) linking to "Snowflake vs Databricks"; menu link added.

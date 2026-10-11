@@ -40,6 +40,7 @@ export const EXPERTISE_GROUPS: MenuGroup[] = [
     area: "data",
     links: [
       { label: "Databricks", href: "/erp-ai-services/#databricks" },
+      { label: "Snowflake", href: "/erp-ai-services/#snowflake" },
       { label: "Reporting and planning", href: "/erp-ai-services/#reporting" },
       { label: "Data migration", href: "/why-sap-data-migration-fails-and-how-to-fix-it/" },
       { label: "SAP Analytics Cloud", href: "/sap-analytics-cloud/" },
@@ -64,7 +65,7 @@ export const ARTICLE_GROUPS: MenuGroup[] = [
     links: [
       { label: "All articles", href: ARTICLES_INDEX, note: "The full library, by area" },
       { label: "Enterprise applications", href: `${ARTICLES_INDEX}#enterprise-applications` },
-      { label: "Data & analytics", href: `${ARTICLES_INDEX}#data-analytics` },
+      { label: "Data & analytics", href: "/category/data-and-ai/" },
       { label: "AI", href: `${ARTICLES_INDEX}#ai` },
       { label: "Consulting practice", href: `${ARTICLES_INDEX}#consulting-practice` },
       { label: "Case studies", href: "/category/sap-case-studies/" },
