@@ -16,6 +16,7 @@ export type Category =
   | "erp-strategy"
   | "ai-governance"
   | "agentic-ai"
+  | "data-and-ai"
   | "sap-case-studies";
 
 export const CATEGORIES: Record<Category, { label: string; slug: string; description: string }> = {
@@ -43,6 +44,11 @@ export const CATEGORIES: Record<Category, { label: string; slug: string; descrip
     label: "Agentic AI",
     slug: "agentic-ai",
     description: "Generative and agentic AI inside enterprise ERP: SAP Joule, AI agents on BTP and what works today in finance, HR and supply chain, and what does not.",
+  },
+  "data-and-ai": {
+    label: "Data and AI",
+    slug: "data-and-ai",
+    description: "Data platforms for enterprise AI: Databricks, Snowflake and Microsoft Fabric compared, what they cost, how to govern them and how to bring ERP data in.",
   },
   "sap-case-studies": {
     label: "SAP Case Studies",

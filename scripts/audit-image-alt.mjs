@@ -72,7 +72,7 @@ function resolveRoute({ url, locale, srcRoute, $, sources, localizedPages }) {
   const segments = url.split("/").filter(Boolean);
   if (locale !== "en") segments.shift();
   const requested = `/${segments.join("/")}/`, slug = segments.at(-1);
-  const categories = ["agentic-ai", "ai-governance", "erp-consulting-guide", "erp-strategy", "sap-case-studies", "sap-modules"];
+  const categories = ["agentic-ai", "ai-governance", "data-and-ai", "erp-consulting-guide", "erp-strategy", "sap-case-studies", "sap-modules"];
   if (locale === "en" && segments.length === 1 && (categories.includes(slug) || slug === "case-studies")) return { template: ["case-studies", "sap-case-studies"].includes(slug) ? "case-study-portfolio" : "category-archive", source: null };
   const post = (locale === "en" || segments.length === 1) ? candidates.find((item) => item.kind === "post" && item.slug === slug) : null;
   if (post) return { template: $("article header.mb-12 h1").length === 1 ? "post" : "case-study-post", source: post };

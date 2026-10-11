@@ -384,6 +384,9 @@ function defaultMentionsForCategory(category: string): { name: string; sameAs?: 
     case "agentic-ai":
     case "ai-governance":
       return [ENTITY_MAP["sap"], ENTITY_MAP["joule"]];
+    case "data-and-ai":
+      // Vendor-neutral: the article's own `mentions` name the platforms.
+      return [];
     default:
       return [ENTITY_MAP["sap"]];
   }

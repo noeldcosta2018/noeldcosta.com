@@ -81,7 +81,7 @@ function resolveSource({ route, locale, srcRoute, sources, localizedPages }) {
   const segments = route.split('/').filter(Boolean);
   if (locale !== 'en') segments.shift();
   const slug = segments.at(-1), requested = imagePublicUrl(`/${segments.join('/')}`);
-  if (locale === 'en' && segments.length === 1 && ['agentic-ai', 'ai-governance', 'erp-consulting-guide', 'erp-strategy', 'sap-case-studies', 'sap-modules', 'case-studies'].includes(slug)) return { template: 'archive-or-portfolio', source: null };
+  if (locale === 'en' && segments.length === 1 && ['agentic-ai', 'ai-governance', 'data-and-ai', 'erp-consulting-guide', 'erp-strategy', 'sap-case-studies', 'sap-modules', 'case-studies'].includes(slug)) return { template: 'archive-or-portfolio', source: null };
   const post = locale === 'en' || segments.length === 1 ? candidates.find(source => source.kind === 'post' && source.slug === slug) : null;
   if (post) return { template: 'post-or-case-study', source: post };
   let pageSlug = slug;

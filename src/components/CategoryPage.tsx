@@ -45,6 +45,7 @@ const AREA_BY_CATEGORY: Record<string, { label: string; color: string; anchor: s
   "erp-strategy": { label: "Enterprise applications", color: "var(--area-apps)", anchor: "#enterprise-applications" },
   "ai-governance": { label: "AI", color: "var(--area-ai)", anchor: "#ai" },
   "agentic-ai": { label: "AI", color: "var(--area-ai)", anchor: "#ai" },
+  "data-and-ai": { label: "Data and analytics", color: "var(--area-data)", anchor: "#data-and-analytics" },
   "sap-case-studies": { label: "Client work", color: "var(--accent)", anchor: "#case-studies" },
 };
 
@@ -54,6 +55,7 @@ export const CATEGORY_TAGLINES: Record<string, string> = {
   "erp-strategy": "Real numbers. Not estimates.",
   "ai-governance": "Grounded. Not hype.",
   "agentic-ai": "What works now.",
+  "data-and-ai": "Platforms, costs, trade-offs.",
   "sap-case-studies": "Real programmes. Real outcomes.",
 };
 
@@ -63,6 +65,7 @@ const ALL_CATEGORIES = [
   { slug: "erp-strategy", label: "ERP Strategy & Cost" },
   { slug: "ai-governance", label: "AI Governance" },
   { slug: "agentic-ai", label: "Agentic AI" },
+  { slug: "data-and-ai", label: "Data and AI" },
   { slug: "sap-case-studies", label: "SAP Case Studies" },
 ];
 

@@ -51,6 +51,7 @@ const COLUMNS: MenuGroup[] = [
       { label: "SAP modules", href: "/category/sap-modules/" },
       { label: "AI governance", href: "/category/ai-governance/" },
       { label: "Agentic AI", href: "/category/agentic-ai/" },
+      { label: "Data and AI", href: "/category/data-and-ai/" },
       { label: "Books", href: "/books/" },
     ],
   },

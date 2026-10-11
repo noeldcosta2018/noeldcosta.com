@@ -1,0 +1,186 @@
+---
+title: "Snowflake Cortex AI and Snowflake Intelligence explained"
+slug: "snowflake-cortex-ai-snowflake-intelligence"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/snowflake-cortex-ai-snowflake-intelligence.webp"
+heroAlt: "Factory maintenance area with a sensor-fitted machine and a tablet showing an equipment health dashboard"
+category: "data-and-ai"
+tags: ["snowflake", "enterprise-ai"]
+author: "Noel D'Costa"
+metaTitle: "Snowflake Cortex AI and Snowflake Intelligence Guide"
+metaDescription: "Snowflake Cortex AI explained: AI functions, Cortex Analyst, Search, Agents and Snowflake Intelligence (now CoWork), with list prices, risks and a pilot plan."
+primaryKeyword: "snowflake cortex ai"
+excerpt: "Snowflake Cortex AI is the set of AI services that run inside your Snowflake account. Here is what each part does, what it costs at list price, where the risks sit and how to run a first pilot in manufacturing or defence."
+experienceSource: "Noel's first-person experience with Snowflake on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts and prices checked against official Snowflake documentation, October 2026."
+keyTakeaways:
+  - "Snowflake Cortex AI is a family of services: AI SQL functions, Cortex Analyst, Cortex Search, Cortex Agents and the CoWork app"
+  - "Snowflake Intelligence went GA on 4 November 2025 and was renamed Snowflake CoWork in June 2026"
+  - "Answer quality depends on semantic views, not on the model you pick"
+  - "Cross-region inference is a residency decision; pinning to a region costs $2.20 per AI Credit instead of $2.00"
+  - "AI Credits are billed separately from Platform Credits, and capacity discounts do not apply to them"
+  - "Start with one governed question set and one document set, measured against a baseline"
+pullQuote: "The model is the cheapest part to change. The semantic layer is where the answers are won or lost."
+mentions:
+  - "Snowflake Cortex AI"
+  - "Snowflake Intelligence"
+  - "Snowflake CoWork"
+  - "Cortex Analyst"
+  - "Cortex Search"
+  - "Cortex Agents"
+  - "Semantic views"
+  - "Snowflake-managed MCP server"
+  - "AI_EXTRACT"
+  - "Document AI"
+---
+
+Snowflake Cortex AI is the set of AI services that run inside your Snowflake account. It covers SQL functions that call large language models, Cortex Analyst for questions over tables and Cortex Search for documents. Cortex Agents orchestrate them, and Snowflake Intelligence, now renamed Snowflake CoWork, is the chat app on top.
+
+The appeal is simple. Your data stays under the same account, roles and policies you already run. The risk is also simple. It is easy to switch on and easy to spend money on. If the data underneath is not modelled properly, it gives confident wrong answers.
+
+In the manufacturing and defence programmes I've worked on, the question was never "can Snowflake do AI?". It was "can we trust the answer, and can we prove who saw what?". This guide is written for that conversation.
+
+## What Snowflake Cortex AI actually includes
+
+Product names in this area have moved fast. Two changes matter. Snowflake [announced Snowflake Intelligence as generally available on 4 November 2025](https://www.snowflake.com/en/news/press-releases/snowflake-intelligence-brings-agentic-AI-to-the-enterprise/), alongside Cortex Agents and the Snowflake-managed MCP server. Then at Summit in June 2026 it [renamed the product Snowflake CoWork](https://www.snowflake.com/en/news/press-releases/snowflake-cowork-powers-the-agentic-enterprise-as-the-personal-agent-for-knowledge-workers-to-work-smarter/). Some SQL privileges and object names still use the old name.
+
+Document AI is gone. Snowflake [decommissioned the Document AI interface on 16 March 2026](https://docs.snowflake.com/en/release-notes/bcr-bundles/un-bundled/bcr-2156) and moved document extraction to the `AI_EXTRACT` function. If an SI proposal still mentions Document AI model builds, it is out of date.
+
+Here is the stack as it stands in October 2026, with status and billing basis from Snowflake's documentation.
+
+| Component | What it does | Status | Billed on |
+|---|---|---|---|
+| Cortex AI Functions | SQL functions such as `AI_COMPLETE`, `AI_CLASSIFY`, `AI_FILTER`, `AI_AGG`, `AI_EXTRACT`, `AI_PARSE_DOCUMENT`, `AI_REDACT` | GA, some functions in preview | AI Credits per million tokens, or per page for parsing |
+| Cortex Analyst | Turns a business question into SQL over a semantic view | Available; since August 2026 Snowflake recommends calling it through Cortex Agents, and the REST API stays supported | Per message via the API, per token via Agents |
+| Cortex Search | Hybrid keyword and vector search over text, used for retrieval | GA since October 2024 | AI Credits per GB of index per month, plus refresh warehouse |
+| Cortex Agents | Plans a task and calls Analyst, Search, custom tools and MCP connectors | GA since November 2025 | Orchestration tokens plus each tool's own cost |
+| Snowflake CoWork (formerly Snowflake Intelligence) | The chat app for business users, built on Cortex Agents | GA since November 2025; several features announced in June 2026 were labelled preview or "coming soon" | Tokens, plus tool and warehouse costs |
+| Snowflake-managed MCP server | Exposes agents, Analyst, Search and SQL to outside AI clients | GA since November 2025 | Underlying tool costs |
+
+The models come from Anthropic, OpenAI, Google, Meta, Mistral AI and others, plus Snowflake's own Arctic models for embedding and extraction. Which ones you can call depends on your region and your cross-region setting. More on that below, because it is the decision defence clients care about most.
+
+## Semantic views decide whether answers are right
+
+Cortex Analyst does not read your tables and guess. It reads a semantic view: a schema-level object that names your business entities, measures, joins and synonyms. Only that metadata goes to the model to write SQL. The SQL then runs in your warehouse under the caller's role.
+
+So the quality of every Snowflake CoWork answer about revenue, scrap rate or on-time delivery rests on that semantic view. In my experience this is where the real work sits. The hard part was agreeing metric definitions in the semantic layer, not data cleanliness. Defining "on-time delivery" once, in a way that sales, supply chain and finance all accept, takes more meetings than any model configuration.
+
+Two features help. Verified queries let you store a known-good question and its SQL, so the model has worked examples. Snowflake also lets you run evaluations against them, which gives you an accuracy number instead of a demo impression.
+
+The older approach, YAML semantic model files on a stage, still works. Avoid it for new work. Snowflake's own documentation recommends semantic views, and anyone with access to the stage can use a YAML model, which is a governance gap.
+
+If your ERP data is not landed and modelled cleanly yet, start there. My guide on [getting SAP, Oracle and Dynamics 365 data into Snowflake](/erp-data-into-snowflake/) covers that step.
+
+## Governance, residency and the MCP question
+
+The strongest argument for Snowflake Cortex AI is governance. Cortex Analyst, Cortex Agents and CoWork respect your existing role-based access control, row access policies and masking. Model access itself is now controlled by role grants. The older account-wide model allowlist parameter is being retired during 2026.
+
+There are nuances worth checking before anyone signs off.
+
+1. **Cortex Search runs with owner's rights.** Anyone with USAGE on a search service sees results from everything the owning role indexed. Build separate services per audience, not one big index.
+2. **Agents use the caller's default role.** If users carry broad default roles, the agent inherits that breadth. Tidy roles first.
+3. **Cross-region inference moves prompts.** The `CORTEX_ENABLED_CROSS_REGION` parameter controls whether inference can run outside your home region. Snowflake says data stays stored in the home region and prompts are not persisted elsewhere, but the payload does travel. Some newer organisations default to `ANY_REGION`. The [cross-region inference documentation](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cross-region-inference) recommends setting it explicitly if you have residency requirements.
+4. **The MCP server can bypass your agent.** Snowflake advises exposing a Cortex Agent as the only tool for governed questions. Exposing raw SQL execution on the same server lets an outside client go around the agent's controls.
+
+For defence, point 3 is the conversation. Setting the parameter to `DISABLED` or a regional value keeps inference within your boundary, but it narrows the models you can use and costs more per credit. Snowflake's US government regions keep requests inside the same compliance boundary. Its MCP documentation also states that a formal FedRAMP assessment of the MCP server has not been completed. Classified data has no place in any of this. Keep the pilot on unclassified, non-export-controlled data, and get your export control lead to agree the boundary in writing.
+
+My [AI governance framework guide](/ai-governance-framework-guide-building-a-responsible-ai-plan/) covers the policy side.
+
+## What Snowflake Cortex AI costs
+
+AI features are billed in AI Credits, which are separate from the Platform Credits that pay for warehouses. Per [Snowflake's AI pricing page](https://docs.snowflake.com/en/user-guide/snowflake-cortex/pricing), an AI Credit costs $2.00 on demand with global routing and $2.20 when you restrict inference to your region or disable cross-region routing. AI Credit pricing is the same across editions. Your Platform Credit capacity discount does not apply to it.
+
+The rates below are list prices from the Snowflake Service Consumption Table effective 9 October 2026, checked October 2026. Enterprise agreements, AI Credit capacity tiers and new model releases will change the numbers.
+
+| Item | List rate |
+|---|---|
+| AI Credit, global routing / regional routing | $2.00 / $2.20 |
+| `AI_COMPLETE` with llama3.3-70b (input / output) | 0.432 / 0.432 AI Credits per million tokens |
+| `AI_COMPLETE` with openai-gpt-4.1 (input / output) | 1.20 / 4.80 AI Credits per million tokens |
+| `AI_COMPLETE` with claude-sonnet-4-5 (input / output) | 1.80 / 9.00 AI Credits per million tokens |
+| `AI_CLASSIFY` or `AI_FILTER` | 1.62 AI Credits per million tokens |
+| `AI_EXTRACT` (arctic-extract) | 5.55 AI Credits per million tokens |
+| `AI_PARSE_DOCUMENT`, layout mode | 3.66 AI Credits per 1,000 pages |
+| Cortex Search serving | 6.3 AI Credits per GB per month of indexed data |
+| Cortex Analyst via the REST API | 67 Platform Credits per 1,000 messages |
+
+The spread between models is large. On output tokens, claude-sonnet-4-5 costs about 20 times llama3.3-70b. Running a classification over ten years of maintenance notes on the wrong model is how AI budgets get blown in a week.
+
+Three cost traps catch people. Multi-turn conversations reprocess the full history on each turn, so long chats cost more per question. Agent costs stack: orchestration tokens, then each tool, then the warehouse running the SQL. Provisioned throughput, if you reserve it, is non-cancellable and billed whether you use it or not.
+
+The controls exist. Use resource budgets, per-user quotas and orchestration budgets on agents. Monitor the usage views, such as `CORTEX_FUNCTIONS_QUERY_USAGE_HISTORY`, `CORTEX_AGENT_USAGE_HISTORY` and `SNOWFLAKE_COWORK_USAGE_HISTORY`. Test every batch job on a sample first. My [Snowflake pricing and credits guide](/snowflake-pricing-credits-explained/) covers the platform side.
+
+## Limits and risks to accept up front
+
+Snowflake's own documentation is honest here. Cortex Analyst answers questions that SQL can answer. It does not do open-ended "why did margin fall?" reasoning, and it cannot reuse results from earlier queries. Snowflake also warns that agent responses and citations are not guaranteed to be accurate.
+
+My judgment: treat every AI answer that feeds a decision as a draft that a named person signs. That matters more in defence, where a wrong figure can end up in a contractual or audit document.
+
+Lock-in is the other risk. Semantic views, agents and search services are Snowflake objects. Your prompts and evaluation sets are portable; the plumbing is not. If you are still choosing a platform, my [Snowflake vs Databricks comparison](/snowflake-vs-databricks/) sets out that trade-off.
+
+## A first pilot in manufacturing or defence
+
+The first use case I'd pick in both sectors is the same shape: one structured question set and one document set, for one team.
+
+In manufacturing, I'd make the first pilot a maintenance and quality assistant. A semantic view sits over work orders, downtime, scrap and non-conformance data from the ERP and MES. A Cortex Search service sits over maintenance procedures and closed quality reports. A maintenance planner asks "which lines had the most unplanned downtime last quarter, and what did we find last time?" and gets figures plus the relevant reports.
+
+In defence, the same pattern works for supplier quality on an unclassified programme: delivery and quality metrics from ERP, plus supplier corrective action documents. Keep classified and export-controlled material out of scope entirely.
+
+<stepper title="A 90-day Cortex AI pilot" steps="Scope|Model|Build|Test|Decide" bodies="Pick one team, 20 to 30 real questions and one document set. Set the cross-region parameter and roles before anything else.|Build the semantic view and write verified queries for the top questions. Agree metric definitions with the business owner.|Create the Cortex Search service per audience and one Cortex Agent. Set budgets and per-user quotas on day one.|Run evaluations against the question set. Users rate answers. Compare with how long the same answers take today.|Scale, fix the data, or stop. Write down which, and why."></stepper>
+
+Measure four things, and record a baseline before you start.
+
+1. **Answer accuracy** against the verified question set, scored by the business owner.
+2. **Time to answer** compared with the current route, usually an analyst request or a report hunt.
+3. **Cost per answered question**, from the usage views, including warehouse time.
+4. **Access exceptions**: any case where a user saw data their role should not reach. The target is zero.
+
+## Where to start
+
+Before you buy anything, pull your current `CORTEX_ENABLED_CROSS_REGION` setting, list who has broad default roles, and pick the 20 questions your operations director asks every month. That one-page brief will tell you more about readiness than any vendor demo.
+
+If you want a second opinion on the pilot scope, the residency settings or an SI's proposal, I help organisations with these decisions. You can [get in touch here](/contact-noel-erp-support/). For the Databricks equivalent, see my piece on [Databricks Genie and Agent Bricks](/databricks-genie-agent-bricks/).
+
+## Frequently asked questions
+
+<details>
+<summary>What is Snowflake Cortex AI?</summary>
+
+Snowflake Cortex AI is Snowflake's family of AI services that run inside your Snowflake account. It includes AI SQL functions that call large language models, Cortex Analyst for questions over tables and Cortex Search for documents. Cortex Agents orchestrate the tools, and the Snowflake CoWork app serves business users.
+
+</details>
+
+<details>
+<summary>Is Snowflake Intelligence the same as Snowflake CoWork?</summary>
+
+Yes. Snowflake Intelligence became generally available on 4 November 2025 and was renamed Snowflake CoWork at Snowflake Summit in June 2026. Some SQL privileges and default object names still use the Snowflake Intelligence name.
+
+</details>
+
+<details>
+<summary>Does Snowflake Cortex send my data outside Snowflake?</summary>
+
+Models run inside Snowflake's service perimeter, and your stored data stays in your account's home region. With cross-region inference enabled, prompts and responses can be processed in another region and are not persisted there. If you have residency rules, set the CORTEX_ENABLED_CROSS_REGION parameter explicitly.
+
+</details>
+
+<details>
+<summary>How much does Snowflake Cortex AI cost?</summary>
+
+Most Cortex features bill in AI Credits, at $2.00 each with global routing or $2.20 with regional routing, list price checked October 2026. Rates vary by model and feature, from fractions of a credit to several credits per million tokens. Cortex Analyst via the REST API bills 67 Platform Credits per 1,000 messages. Enterprise agreements change these numbers.
+
+</details>
+
+<details>
+<summary>What are Snowflake semantic views?</summary>
+
+Semantic views are schema-level Snowflake objects that describe business entities, measures, relationships and synonyms. Cortex Analyst and Cortex Agents use them to turn questions into accurate SQL. They replace the older YAML semantic model files and are the main factor in answer quality.
+
+</details>
+
+<details>
+<summary>What replaced Snowflake Document AI?</summary>
+
+The AI_EXTRACT function. Snowflake decommissioned the Document AI interface and its PREDICT method on 16 March 2026. AI_EXTRACT pulls entities, lists and tables from documents in a single SQL call and bills on tokens.
+
+</details>
