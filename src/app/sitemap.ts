@@ -9,6 +9,7 @@ import {
 } from "../lib/content";
 import { SITE_URL, toIso } from "../lib/seo";
 import { WORDPRESS_TAG_SLUGS, canonicalTag } from "../components/tagMeta";
+import { isThinTag } from "../lib/thin-tags";
 import { resolveCanonicalUrl } from "../lib/seo-graph";
 import { getLocalizedArticle, getLocalizedArticleParams } from "../lib/localized-article-routing";
 import { getLocalizedPage, getLocalizedPageParams } from "../lib/localized-page-routing";
@@ -119,6 +120,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   for (const t of getAllTagSlugs()) tagSet.add(t);
   for (const t of tagSet) {
     if (canonicalTag(t) !== t) continue;
+    if (isThinTag(t)) continue;
     items.push({
       url: `${SITE_URL}/tag/${t}/`,
       changeFrequency: "weekly",

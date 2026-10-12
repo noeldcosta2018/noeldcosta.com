@@ -23,6 +23,7 @@ import {
   WORDPRESS_TAG_SLUGS,
 } from "@/components/tagMeta";
 import { ARTICLES_INDEX } from "@/data/site-menu";
+import { isThinTag } from "@/lib/thin-tags";
 import { plural } from "@/i18n";
 
 // Tag archive (/tag/<slug>/ and, for the six WordPress topics, the translated
@@ -60,13 +61,14 @@ export function tagMetadata(tag: string, locale: Locale = "en"): Metadata {
   const description = info.description
     ? tr(info.description)
     : tagFallbackDescription(info.label, getPostsByAnyTag(tagSynonyms(tag), "en").length);
-  return interfaceMetadata({
+  const meta = interfaceMetadata({
     locale,
     englishPath: tagPath(tag),
     canonicalPath: tagPath(canonicalTag(tag)),
     title: `${tr(info.label)} | Noel D'Costa`,
     description,
   });
+  return isThinTag(tag) ? { ...meta, robots: { index: false, follow: true } } : meta;
 }
 
 export default function TagPage({ tag, locale = "en" }: { tag: string; locale?: Locale }) {

@@ -76,6 +76,7 @@ describe("Phase 4A reciprocal manifest-backed SEO language graph", () => {
             item.public_path &&
             ![
               "about",
+              "all-our-partners",
               "erp-implementation-cost-calculator",
               "free-data-migration-estimator-sap-oracle-microsoft",
               "sap-implementation-cost-calculator",
@@ -85,11 +86,11 @@ describe("Phase 4A reciprocal manifest-backed SEO language graph", () => {
         )
         .map((item) => item.slug),
     );
-    expect(pageFamilies).toHaveLength(29);
+    expect(pageFamilies).toHaveLength(28);
   });
 
   it(
-    "proves reciprocity, self-inclusion, URL shape, and x-default across every member of all 110 eligible families",
+    "proves reciprocity, self-inclusion, URL shape, and x-default across every member of all 109 eligible families",
     () => {
       const eligiblePosts = localeContentManifest.items.filter(
         (item) =>
@@ -103,7 +104,7 @@ describe("Phase 4A reciprocal manifest-backed SEO language graph", () => {
       );
 
       expect(eligiblePosts).toHaveLength(81);
-      expect(eligiblePages).toHaveLength(29);
+      expect(eligiblePages).toHaveLength(28);
 
       for (const item of eligiblePosts) {
         const english = getPost(item.slug, "en");
@@ -154,7 +155,7 @@ describe("Phase 4A reciprocal manifest-backed SEO language graph", () => {
           item.kind === "page" &&
           !buildPageMetadata(getPage(item.slug, "en")).alternates?.languages,
       );
-      expect(excludedPages).toHaveLength(7);
+      expect(excludedPages).toHaveLength(8);
       expect(excludedPages.map((item) => item.slug)).toEqual(
         expect.arrayContaining([
           "about",

@@ -38,7 +38,9 @@ mentions:
 
 Unity Catalog is the governance layer in Databricks. It controls who can see and change every table, view, file volume, function and AI model, records lineage between them, and logs access so you can prove it to an auditor.
 
-If you run Databricks today, you are already on it or migrating to it. The legacy Hive metastore is on its way out, and every newer Databricks feature assumes Unity Catalog underneath. The question is no longer whether to adopt it. It is whether your catalog design will still make sense after three years of new teams, new data and an audit or two.
+If you run Databricks today, you are already on it or migrating to it. The legacy Hive metastore is on its way out, and every newer Databricks feature assumes Unity Catalog underneath.
+
+The question is no longer whether to adopt it. It is whether your catalog design will still make sense after three years of new teams, new data and an audit or two.
 
 In the manufacturing and defence programmes I've worked on, the technology was rarely the hard part. Agreeing who owns which data, how environments are separated and what evidence the security team needs was.
 
@@ -55,7 +57,9 @@ Two of those metastore-level objects deserve a plain explanation, because they d
 
 A **storage credential** wraps a cloud identity, such as an IAM role or a managed identity, that can reach a storage account or bucket. An **external location** pairs a storage path with a credential. Together they let Unity Catalog read and write cloud storage without handing keys to users.
 
-Then managed versus external. With managed tables, Unity Catalog governs the table and manages its files. With external tables, it governs access only. Databricks now recommends managed tables for all new data, keeping external tables mainly for Hive upgrades. I agree. Other tools writing to the same paths is usually a reason to fix the pipeline, not to keep the table external forever.
+Then managed versus external. With managed tables, Unity Catalog governs the table and manages its files. With external tables, it governs access only.
+
+Databricks now recommends managed tables for all new data, keeping external tables mainly for Hive upgrades. I agree. Other tools writing to the same paths is usually a reason to fix the pipeline, not to keep the table external forever.
 
 One constraint shapes everything: you can have only one metastore per cloud region. You cannot solve isolation with more metastores. You solve it with catalogs.
 
@@ -85,21 +89,31 @@ The table below summarises the main access controls and their status as of Octob
 
 Dates come from the [Databricks April 2026 release notes](https://docs.databricks.com/aws/en/release-notes/product/2026/april) and the October 2026 notes.
 
-ABAC (attribute-based access control) is the change that matters most for large estates. Instead of writing a mask per table, you tag columns, say `classification = export_controlled`, and write one policy that masks every tagged column for everyone outside a named group. New tables are protected as soon as they are tagged. Data classification can propose the tags.
+ABAC (attribute-based access control) is the change that matters most for large estates. Instead of writing a mask per table, you tag columns, say `classification = export_controlled`, and write one policy that masks every tagged column for everyone outside a named group.
+
+New tables are protected as soon as they are tagged. Data classification can propose the tags.
 
 Check compute first. ABAC-secured tables need serverless compute or Databricks Runtime 16.4 or above. Older clusters cannot read them at all.
 
-Two traps I'd flag early. Conflicting policies on the same column for the same user block the query with an error. And if a pipeline's run-as identity falls under a mask, refreshed data can be stored masked. Exempt service identities deliberately, and document why.
+Two traps I'd flag early. Conflicting policies on the same column for the same user block the query with an error.
+
+And if a pipeline's run-as identity falls under a mask, refreshed data can be stored masked. Exempt service identities deliberately, and document why.
 
 ## Lineage, audit and sharing
 
 Lineage is captured automatically, down to column level, for queries run through Databricks SQL and Spark DataFrames in any workspace attached to the metastore. It covers notebooks, jobs, pipelines and dashboards. Column lineage is lost when code references tables by storage path, one more reason to retire path-based access.
 
-Audit evidence comes from system tables. `system.access.audit` holds audit events and is still labelled Public Preview in the [system tables documentation](https://docs.databricks.com/aws/en/admin/system-tables/). Lineage and billing tables sit alongside it, with 365 days of free retention. Only account and metastore admins see system tables by default, so decide early who gets read access and whether you copy the audit data into your SIEM for longer retention.
+Audit evidence comes from system tables. `system.access.audit` holds audit events and is still labelled Public Preview in the [system tables documentation](https://docs.databricks.com/aws/en/admin/system-tables/).
 
-Sharing changed name this year. Databricks [announced OpenSharing on 10 June 2026](https://www.databricks.com/company/newsroom/press-releases/databricks-announces-opensharing) as the next version of the Delta Sharing protocol, now hosted by the Linux Foundation and extended to AI assets and Iceberg clients. You will still see "Delta Sharing" in older docs and contracts. A share is a Unity Catalog object, and Databricks-to-Databricks sharing is also how you move data between regional metastores.
+Lineage and billing tables sit alongside it, with 365 days of free retention. Only account and metastore admins see system tables by default, so decide early who gets read access and whether you copy the audit data into your SIEM for longer retention.
 
-For mixed estates, managed and foreign Apache Iceberg tables became generally available on 21 May 2026. Foreign tables are read through Lakehouse Federation from catalogs such as AWS Glue or Snowflake Horizon. Engines such as Spark, Flink and Trino can use Unity Catalog's Iceberg REST catalog endpoint. There is also an open-source Unity Catalog under the LF AI & Data Foundation, but it is a sandbox-stage project, not the managed service. Do not build an exit plan on it without testing.
+Sharing changed name this year. Databricks [announced OpenSharing on 10 June 2026](https://www.databricks.com/company/newsroom/press-releases/databricks-announces-opensharing) as the next version of the Delta Sharing protocol, now hosted by the Linux Foundation and extended to AI assets and Iceberg clients.
+
+You will still see "Delta Sharing" in older docs and contracts. A share is a Unity Catalog object, and Databricks-to-Databricks sharing is also how you move data between regional metastores.
+
+For mixed estates, managed and foreign Apache Iceberg tables became generally available on 21 May 2026. Foreign tables are read through Lakehouse Federation from catalogs such as AWS Glue or Snowflake Horizon. Engines such as Spark, Flink and Trino can use Unity Catalog's Iceberg REST catalog endpoint.
+
+There is also an open-source Unity Catalog under the LF AI & Data Foundation, but it is a sandbox-stage project, not the managed service. Do not build an exit plan on it without testing.
 
 ## Governance design that works
 
@@ -116,11 +130,15 @@ The rest of the design comes down to four rules:
 3. **Bind catalogs to workspaces.** A production catalog bound only to production workspaces cannot be queried from a sandbox, whatever the grants say.
 4. **Classify before you grant.** Agree a short tag vocabulary (sensitivity, personal data, export control, source system) as governed tags, and write ABAC policies against it.
 
-In manufacturing, I organised catalogs by factory system, the OT and source-system domain, not by plant. OT data from historians, MES and sensors sits in its own catalogs, owned by the operations or engineering data team. IT data from ERP (SAP, Oracle or Microsoft Dynamics 365), quality and supply chain sits in others. Curated, joined data for analysts lives in a third set. The OT/IT boundary becomes visible in the catalog itself. If ERP extraction is in scope, my notes on [why SAP data migration fails](/why-sap-data-migration-fails-and-how-to-fix-it/) apply to ERP data feeds too.
+In manufacturing, I organised catalogs by factory system, the OT and source-system domain, not by plant. OT data from historians, MES and sensors sits in its own catalogs, owned by the operations or engineering data team. IT data from ERP (SAP, Oracle or Microsoft Dynamics 365), quality and supply chain sits in others.
+
+Curated, joined data for analysts lives in a third set. The OT/IT boundary becomes visible in the catalog itself. If ERP extraction is in scope, my notes on [why SAP data migration fails](/why-sap-data-migration-fails-and-how-to-fix-it/) apply to ERP data feeds too.
 
 ## The defence angle: least privilege, segregation and evidence
 
-In defence programmes, expect the security team to ask four questions. Who can see export-controlled data? How is it separated from everything else? Where is it stored? Can you prove all of that for any day in the last year?
+In defence programmes, expect the security team to ask four questions. Who can see export-controlled data? How is it separated from everything else?
+
+Where is it stored? Can you prove all of that for any day in the last year?
 
 Unity Catalog answers most of them, if you design for it:
 
@@ -129,7 +147,9 @@ Unity Catalog answers most of them, if you design for it:
 3. **Residency.** One metastore per region means data stays in the region of its storage unless someone shares it. Treat every OpenSharing share and every cross-region link as a residency decision that needs approval.
 4. **Audit evidence.** Lineage plus `system.access.audit`, exported to your SIEM, gives you who accessed what and where it went. Keep in mind the audit table is still Public Preview. On my defence work, the security teams wanted the audit logs copied into their own SIEM, not just left in the Databricks system tables. Build that feed into the plan from the start.
 
-Unity Catalog does not decide what counts as classified or ITAR-controlled data, and it does not replace accreditation. Some defence workloads cannot run in a commercial cloud region at all. The catalog design still helps there: it draws a clear line between what may go to the platform and what may not. If you are writing the policy layer that sits above the platform, my [AI governance framework guide](/ai-governance-framework-guide-building-a-responsible-ai-plan/) covers the roles and approvals side.
+Unity Catalog does not decide what counts as classified or ITAR-controlled data, and it does not replace accreditation. Some defence workloads cannot run in a commercial cloud region at all.
+
+The catalog design still helps there: it draws a clear line between what may go to the platform and what may not. If you are writing the policy layer that sits above the platform, my [AI governance framework guide](/ai-governance-framework-guide-building-a-responsible-ai-plan/) covers the roles and approvals side.
 
 ## A practical rollout sequence
 

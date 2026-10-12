@@ -52,13 +52,19 @@ Databricks' [own platform overview](https://docs.databricks.com/aws/en/introduct
 4. **Machine learning.** Demand forecasting, predictive maintenance, quality prediction, pricing. MLflow tracks experiments and models, and model serving puts them into production.
 5. **Generative AI and agents.** Agent Bricks is the current home for building and governing AI agents on your data. Genie One, launched as generally available in June 2026, is the business-user front end. Older material calls much of this AI tooling Mosaic AI; current product pages lead with Agent Bricks and Genie.
 
-Two newer pieces matter for some buyers. Lakebase is a managed Postgres database inside the platform, for applications that need fast transactional reads and writes next to analytical data. Databricks [announced Lakebase as generally available](https://www.databricks.com/blog/databricks-lakebase-generally-available) in early 2026. Databricks Apps, generally available since May 2025, lets teams build and host internal data and AI applications on the platform.
+Two newer pieces matter for some buyers. Lakebase is a managed Postgres database inside the platform, for applications that need fast transactional reads and writes next to analytical data.
 
-One naming note, because it confuses search results. Databricks spent two years marketing the "Data Intelligence Platform". Its product pages now say "Databricks Data + AI Platform". Same platform. And Databricks One was renamed Genie One.
+Databricks [announced Lakebase as generally available](https://www.databricks.com/blog/databricks-lakebase-generally-available) in early 2026. Databricks Apps, generally available since May 2025, lets teams build and host internal data and AI applications on the platform.
+
+One naming note, because it confuses search results. Databricks spent two years marketing the "Data Intelligence Platform". Its product pages now say "Databricks Data + AI Platform".
+
+Same platform. And Databricks One was renamed Genie One.
 
 ## The lakehouse and medallion layers, explained simply
 
-Before Databricks, most companies ran two systems. A data lake held cheap raw files, including sensor logs, documents and images, for data scientists. A data warehouse held clean, structured tables for finance and BI. Data was copied between them, and the two copies drifted.
+Before Databricks, most companies ran two systems. A data lake held cheap raw files, including sensor logs, documents and images, for data scientists.
+
+A data warehouse held clean, structured tables for finance and BI. Data was copied between them, and the two copies drifted.
 
 The lakehouse is Databricks' answer: keep one copy of the data in open formats (Delta Lake tables on your cloud storage) and run both BI and AI on it. Unity Catalog sits over the top and governs who can see what, tracks lineage, and logs access. That governance layer is what turns a pile of files into something an auditor will accept.
 
@@ -68,7 +74,9 @@ Most teams organise the lakehouse with the [medallion architecture](https://docs
 
 The business leader's version: bronze is the evidence, silver is the cleaned record, gold is the answer to a business question. Your CFO should only ever see gold. Your data scientists will spend most of their time in silver.
 
-In the manufacturing programmes I have worked on, silver is where the real effort sits. Material numbers that differ between plants. Units of measure that do not reconcile. Sensor timestamps in local time against ERP postings in UTC. None of that is a Databricks problem, but Databricks is where you end up solving it.
+In the manufacturing programmes I have worked on, silver is where the real effort sits. Material numbers that differ between plants. Units of measure that do not reconcile.
+
+Sensor timestamps in local time against ERP postings in UTC. None of that is a Databricks problem, but Databricks is where you end up solving it.
 
 ## How Databricks sits next to your ERP
 
@@ -80,15 +88,29 @@ The ERP data usually arrives through one of three routes:
 2. **Extracts from the ERP's own data layer.** Exports from SAP, Oracle or Dynamics analytics and data services, landed into bronze.
 3. **The ERP vendor's data product.** For SAP shops, SAP Business Data Cloud is one option. It includes SAP Databricks, a managed Databricks service inside SAP's offering, which Databricks [announced as generally available](https://www.databricks.com/blog/announcing-general-availability-sap-databricks-sap-business-data-cloud). There is also a zero-copy sharing route from Business Data Cloud to an existing Databricks estate.
 
-Which route fits depends on licensing, data volumes and how much non-ERP data matters. The hard part is never the extract. It is the business meaning: which plant, which ledger, which version of a customer. If you have not sorted that out, my piece on [why data migrations fail](/why-sap-data-migration-fails-and-how-to-fix-it/) covers the same root causes.
+Which route fits depends on licensing, data volumes and how much non-ERP data matters. The hard part is never the extract.
+
+It is the business meaning: which plant, which ledger, which version of a customer. If you have not sorted that out, my piece on [why data migrations fail](/why-sap-data-migration-fails-and-how-to-fix-it/) covers the same root causes.
 
 ## Manufacturing and defence: where it earns its place
 
-**Manufacturing.** The strongest case is joining ERP data with plant data. Machine and sensor readings from historians and IoT platforms, manufacturing execution system (MES) records, quality inspection results and maintenance logs. Joined to ERP orders, materials and costs, that data answers questions finance and operations both care about: scrap cost by line, maintenance before a breakdown, supplier quality against price paid. Sensor volumes are large and messy. A lakehouse handles that better than a traditional warehouse. In my manufacturing work, the first use case that paid for the platform was costing: bringing raw material and labour costs together to arrive at a standard cost. Finance already owns that number, so the value is easy to see. If you are still choosing the ERP underneath, see my comparison of [ERP for manufacturing](/best-erp-for-manufacturing/).
+**Manufacturing.** The strongest case is joining ERP data with plant data. Machine and sensor readings from historians and IoT platforms, manufacturing execution system (MES) records, quality inspection results and maintenance logs. Joined to ERP orders, materials and costs, that data answers questions finance and operations both care about: scrap cost by line, maintenance before a breakdown, supplier quality against price paid.
 
-**Defence.** The questions are different. Where does the data physically sit? Who operates the platform? Can classified and unclassified data be kept apart, with access proved in an audit? Programmes run for decades, so the platform choice has to outlive several technology cycles. On my defence work, keeping classified and unclassified data apart shaped the design more than anything else. Settle that separation before you design a single pipeline.
+Sensor volumes are large and messy. A lakehouse handles that better than a traditional warehouse. In my manufacturing work, the first use case that paid for the platform was costing: bringing raw material and labour costs together to arrive at a standard cost.
 
-Architecture matters here. In Databricks, the control plane runs in Databricks' account. Classic compute runs in your own cloud account. Serverless compute runs in Databricks' account, in the same region. For a defence data lead, that difference is the first conversation, before any feature demo. For US government work there is a separate Databricks on AWS GovCloud deployment. Outside the US, check region and sovereign-cloud availability against your residency and export-control rules (ITAR-type obligations included) before you shortlist. I have found that Unity Catalog's fine-grained access control and audit logs carry a lot of weight in these reviews.
+Finance already owns that number, so the value is easy to see. If you are still choosing the ERP underneath, see my comparison of [ERP for manufacturing](/best-erp-for-manufacturing/).
+
+**Defence.** The questions are different. Where does the data physically sit? Who operates the platform?
+
+Can classified and unclassified data be kept apart, with access proved in an audit? Programmes run for decades, so the platform choice has to outlive several technology cycles.
+
+On my defence work, keeping classified and unclassified data apart shaped the design more than anything else. Settle that separation before you design a single pipeline.
+
+Architecture matters here. In Databricks, the control plane runs in Databricks' account. Classic compute runs in your own cloud account.
+
+Serverless compute runs in Databricks' account, in the same region. For a defence data lead, that difference is the first conversation, before any feature demo. For US government work there is a separate Databricks on AWS GovCloud deployment.
+
+Outside the US, check region and sovereign-cloud availability against your residency and export-control rules (ITAR-type obligations included) before you shortlist. I have found that Unity Catalog's fine-grained access control and audit logs carry a lot of weight in these reviews.
 
 ## What Databricks is not good for
 
@@ -113,7 +135,9 @@ The question I hear most: do we need Databricks, or would a simpler warehouse do
 | Team skills | SQL and Python engineers in house or contracted | Mostly BI and Excel skills |
 | Governance needs | Fine-grained access, lineage, audit across many sources | Standard role-based access |
 
-If most of your answers sit in the right-hand column, start with your ERP vendor's analytics or a managed warehouse. For a closer comparison, read my sibling pieces on [Snowflake vs Databricks](/snowflake-vs-databricks/) and [Databricks vs Microsoft Fabric](/databricks-vs-microsoft-fabric/). For cost, see [Databricks pricing explained](/databricks-pricing-explained/). Databricks bills compute in Databricks Units (DBUs), on pay-as-you-go or committed-use terms, and the cloud storage and networking sit on top.
+If most of your answers sit in the right-hand column, start with your ERP vendor's analytics or a managed warehouse. For a closer comparison, read my sibling pieces on [Snowflake vs Databricks](/snowflake-vs-databricks/) and [Databricks vs Microsoft Fabric](/databricks-vs-microsoft-fabric/).
+
+For cost, see [Databricks pricing explained](/databricks-pricing-explained/). Databricks bills compute in Databricks Units (DBUs), on pay-as-you-go or committed-use terms, and the cloud storage and networking sit on top.
 
 ### A decision checklist
 
@@ -128,11 +152,13 @@ If most of your answers sit in the right-hand column, start with your ERP vendor
 
 ## Where to start
 
-Pick one use case with a named business owner and real money attached. In manufacturing that is often scrap, downtime or inventory. Build it through bronze, silver and gold with Unity Catalog governance switched on from the first table. Measure the result and the run cost. Then decide whether to scale.
+Pick one use case with a named business owner and real money attached. In manufacturing that is often scrap, downtime or inventory. Build it through bronze, silver and gold with Unity Catalog governance switched on from the first table.
+
+Measure the result and the run cost. Then decide whether to scale.
 
 I would not start with an enterprise-wide migration or an AI agent. Governance belongs in that first build, not in a later phase; my [AI governance framework guide](/ai-governance-framework-guide-building-a-responsible-ai-plan/) explains why.
 
-If you are weighing Databricks against other platforms, or working out how it sits next to SAP, Oracle or Dynamics 365, I help organisations with these decisions. You can [get in touch here](/contact-noel-erp-support/).
+If you are weighing Databricks against other platforms, or working out how it sits next to SAP, Oracle or Dynamics 365, I give [independent advice on these decisions](/erp-ai-tech-consulting-advisory/). You can [get in touch here](/contact-noel-erp-support/).
 
 ## Frequently asked questions
 

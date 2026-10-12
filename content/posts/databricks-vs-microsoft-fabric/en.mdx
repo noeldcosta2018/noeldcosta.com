@@ -38,7 +38,9 @@ mentions:
 
 Databricks vs Microsoft Fabric comes down to who consumes the data. If most of it ends up in Power BI and your team thinks in SQL, Fabric is usually the faster and simpler choice. If your hard problems are engineering, streaming, machine learning or more than one cloud, Databricks is the stronger platform.
 
-For many Microsoft-heavy organisations the honest answer is both. Azure Databricks does the heavy engineering. Fabric and Power BI serve the business. That works, but only if you design the seam between them on purpose.
+For many Microsoft-heavy organisations the honest answer is both. Azure Databricks does the heavy engineering.
+
+Fabric and Power BI serve the business. That works, but only if you design the seam between them on purpose.
 
 In the manufacturing and defence programmes I've worked on, the decision rarely turns on feature lists. It turns on cost model, skills, security boundaries and where the data is allowed to live.
 
@@ -46,28 +48,44 @@ In the manufacturing and defence programmes I've worked on, the decision rarely 
 
 Both are lakehouses on open table formats. They differ in who owns the storage and how you pay for compute.
 
-**Microsoft Fabric** is a SaaS platform. Everything lands in OneLake, one logical lake per tenant, with tables stored in Delta format. Lakehouse, warehouse, pipelines, Real-Time Intelligence and Power BI all draw on one shared capacity. Shortcuts point at data in other stores without copying it. Mirroring brings in databases and external catalogues.
+**Microsoft Fabric** is a SaaS platform. Everything lands in OneLake, one logical lake per tenant, with tables stored in Delta format. Lakehouse, warehouse, pipelines, Real-Time Intelligence and Power BI all draw on one shared capacity.
+
+Shortcuts point at data in other stores without copying it. Mirroring brings in databases and external catalogues.
 
 **Databricks** runs in your cloud account (on Azure as Azure Databricks, a first-party Microsoft service). Your data sits in your own storage, governed by Unity Catalog. Compute is clusters, SQL warehouses or serverless, metered per workload in Databricks Units (DBUs).
 
-On openness, the gap has narrowed. OneLake virtualises metadata so a Delta table can be read as Iceberg and an Iceberg table can be read as Delta. There are real limits: Parquet only, Iceberg V2 output, and equality deletes break conversion. Unity Catalog managed Iceberg tables are generally available, with external engines reading and writing through Unity Catalog's Iceberg REST Catalog API. Neither platform locks your data into a proprietary format. Both lock in your pipelines, security model and skills, which is where switching cost really sits.
+On openness, the gap has narrowed. OneLake virtualises metadata so a Delta table can be read as Iceberg and an Iceberg table can be read as Delta. There are real limits: Parquet only, Iceberg V2 output, and equality deletes break conversion.
 
-The bridge between them matters most for a Microsoft shop. Fabric can [mirror an Azure Databricks Unity Catalog](https://learn.microsoft.com/en-us/fabric/mirroring/azure-databricks) as a catalogue item, generally available. Only the metadata is mirrored. The data is read in place through shortcuts. One catch: Unity Catalog permissions are not carried across. Fabric applies its own permission model.
+Unity Catalog managed Iceberg tables are generally available, with external engines reading and writing through Unity Catalog's Iceberg REST Catalog API. Neither platform locks your data into a proprietary format. Both lock in your pipelines, security model and skills, which is where switching cost really sits.
+
+The bridge between them matters most for a Microsoft shop. Fabric can [mirror an Azure Databricks Unity Catalog](https://learn.microsoft.com/en-us/fabric/mirroring/azure-databricks) as a catalogue item, generally available. Only the metadata is mirrored.
+
+The data is read in place through shortcuts. One catch: Unity Catalog permissions are not carried across. Fabric applies its own permission model.
 
 ## Databricks vs Fabric pricing: capacity versus consumption
 
-**Fabric** sells capacity in F-SKUs, from F2 to F8192, measured in capacity units (CUs). Azure bills it per second with no commitment, or you reserve it for a year. In East US, pay-as-you-go list price is $0.18 per CU-hour. That puts an F64 at about $11.52 an hour, roughly $8,400 a month if left running. Microsoft says a reservation saves about 41% against pay-as-you-go. OneLake hot storage lists at $0.026 per GB a month. See the [Microsoft Fabric pricing page](https://azure.microsoft.com/en-us/pricing/details/microsoft-fabric/).
+**Fabric** sells capacity in F-SKUs, from F2 to F8192, measured in capacity units (CUs). Azure bills it per second with no commitment, or you reserve it for a year. In East US, pay-as-you-go list price is $0.18 per CU-hour.
 
-F64 is also a licensing threshold. Per the [Fabric licensing documentation](https://learn.microsoft.com/en-us/fabric/enterprise/licenses), below F64 every person viewing Power BI content needs a Pro or Premium Per User licence. At F64 and above, viewers with a free licence and a viewer role can read reports. For a few hundred report readers, that alone can decide the SKU.
+That puts an F64 at about $11.52 an hour, roughly $8,400 a month if left running. Microsoft says a reservation saves about 41% against pay-as-you-go.
 
-**Azure Databricks** charges DBUs per workload type, plus the Azure virtual machines underneath for classic compute. Serverless rates include the compute. East US Premium list prices are below. See the [Azure Databricks pricing page](https://azure.microsoft.com/en-us/pricing/details/databricks/).
+OneLake hot storage lists at $0.026 per GB a month. See the [Microsoft Fabric pricing page](https://azure.microsoft.com/en-us/pricing/details/microsoft-fabric/).
+
+F64 is also a licensing threshold. Per the [Fabric licensing documentation](https://learn.microsoft.com/en-us/fabric/enterprise/licenses), below F64 every person viewing Power BI content needs a Pro or Premium Per User licence.
+
+At F64 and above, viewers with a free licence and a viewer role can read reports. For a few hundred report readers, that alone can decide the SKU.
+
+**Azure Databricks** charges DBUs per workload type, plus the Azure virtual machines underneath for classic compute. Serverless rates include the compute.
+
+East US Premium list prices are below. See the [Azure Databricks pricing page](https://azure.microsoft.com/en-us/pricing/details/databricks/).
 
 1. Jobs compute: $0.30 per DBU-hour.
 2. All-purpose compute (interactive notebooks): $0.55 per DBU-hour.
 3. SQL Pro: $0.55 per DBU-hour. Serverless SQL: $0.70 per DBU-hour.
 4. Serverless jobs: $0.45 per DBU-hour. Serverless interactive compute: $0.95 per DBU-hour.
 
-All figures are list prices, checked October 2026, for East US. Other regions differ. Enterprise agreements, Databricks pre-purchase commitments and Azure reservations change the real number. My [Databricks pricing guide](/databricks-pricing-explained/) goes deeper on DBUs.
+All figures are list prices, checked October 2026, for East US. Other regions differ.
+
+Enterprise agreements, Databricks pre-purchase commitments and Azure reservations change the real number. My [Databricks pricing guide](/databricks-pricing-explained/) goes deeper on DBUs.
 
 What this means in practice:
 
@@ -90,11 +108,19 @@ The table covers the points that usually decide it for a Microsoft-heavy organis
 | Multi-cloud | Azure only | Azure, AWS and Google Cloud |
 | Skills fit | Power BI, SQL and Microsoft data teams | Data engineers, Python and Spark, ML engineers |
 
-**Power BI and Direct Lake.** Direct Lake lets a Power BI semantic model read Delta tables in OneLake straight into memory, with no import refresh. It is the strongest reason to use Fabric. It needs a Fabric capacity, and the table limits rise with the SKU. A mirrored Azure Databricks catalogue is a supported Direct Lake source, so Databricks-built gold tables can feed Direct Lake reports.
+**Power BI and Direct Lake.** Direct Lake lets a Power BI semantic model read Delta tables in OneLake straight into memory, with no import refresh. It is the strongest reason to use Fabric.
 
-**ML and GenAI.** Fabric data agents, which answer plain-English questions over OneLake data, are generally available. Some integrations, such as consuming them from Microsoft 365 Copilot, are still in preview. Copilot in Fabric needs a paid F2 or larger capacity and draws on it. On Databricks, Genie lets business users query governed tables in plain English. Agent Bricks is the platform for building and deploying custom agents in code. Databricks now lists Knowledge Assistant and Supervisor Agent as legacy and points new low-code work to Genie Agents. My [Genie and Agent Bricks article](/databricks-genie-agent-bricks/) covers this in detail.
+It needs a Fabric capacity, and the table limits rise with the SKU. A mirrored Azure Databricks catalogue is a supported Direct Lake source, so Databricks-built gold tables can feed Direct Lake reports.
 
-**Governance.** Unity Catalog is the more mature single control plane for tables, models, lineage and fine-grained access across workspaces and clouds. Fabric governance is improving fast. In a Microsoft estate, Purview is often the enterprise catalogue already, and it can scan Unity Catalog metadata and lineage. My [Unity Catalog governance guide](/databricks-unity-catalog-data-governance/) covers the Databricks side.
+**ML and GenAI.** Fabric data agents, which answer plain-English questions over OneLake data, are generally available. Some integrations, such as consuming them from Microsoft 365 Copilot, are still in preview. Copilot in Fabric needs a paid F2 or larger capacity and draws on it.
+
+On Databricks, Genie lets business users query governed tables in plain English. Agent Bricks is the platform for building and deploying custom agents in code.
+
+Databricks now lists Knowledge Assistant and Supervisor Agent as legacy and points new low-code work to Genie Agents. My [Genie and Agent Bricks article](/databricks-genie-agent-bricks/) covers this in detail.
+
+**Governance.** Unity Catalog is the more mature single control plane for tables, models, lineage and fine-grained access across workspaces and clouds. Fabric governance is improving fast.
+
+In a Microsoft estate, Purview is often the enterprise catalogue already, and it can scan Unity Catalog metadata and lineage. My [Unity Catalog governance guide](/databricks-unity-catalog-data-governance/) covers the Databricks side.
 
 ## The "use both" pattern, honestly
 
@@ -112,9 +138,13 @@ For ERP data (SAP, Oracle or Microsoft Dynamics 365), the same logic applies. La
 
 ## Defence and manufacturing considerations
 
-**Manufacturing.** Plant data is the stress test. Historian and MES feeds, sensor streams at high frequency, quality and maintenance records joined to ERP. Fabric's Real-Time Intelligence (eventstreams and eventhouses) handles operational dashboards well. For large-scale streaming engineering, feature pipelines for predictive maintenance and ML on sensor data, I use Databricks. Streaming and machine learning on sensor and machine data is where it earns its place in my work.
+**Manufacturing.** Plant data is the stress test. Historian and MES feeds, sensor streams at high frequency, quality and maintenance records joined to ERP. Fabric's Real-Time Intelligence (eventstreams and eventhouses) handles operational dashboards well.
 
-**Defence.** Sovereignty and separation come first. Classified and unclassified environments stay apart. Export-controlled data (ITAR as a category) needs strict access control and audit. Programmes run for decades. Here, verify availability before you design anything, because the government clouds lag commercial Azure.
+For large-scale streaming engineering, feature pipelines for predictive maintenance and ML on sensor data, I use Databricks. Streaming and machine learning on sensor and machine data is where it earns its place in my work.
+
+**Defence.** Sovereignty and separation come first. Classified and unclassified environments stay apart. Export-controlled data (ITAR as a category) needs strict access control and audit.
+
+Programmes run for decades. Here, verify availability before you design anything, because the government clouds lag commercial Azure.
 
 1. **Fabric in GCC High.** Per [Microsoft Learn](https://learn.microsoft.com/en-us/fabric/enterprise/us-government-community-cloud-high), checked October 2026, Fabric runs in US Gov Virginia and US Gov Texas. Core workloads are available, including lakehouse, warehouse, pipelines and Power BI with Direct Lake. Customer-managed keys, most mirroring sources, workspace Private Link and Copilot for Power BI are not supported. FedRAMP High authorisation for GCC High is still under assessment.
 2. **Azure Databricks in Azure Government.** Per the [Azure Databricks regional feature list](https://learn.microsoft.com/en-us/azure/databricks/resources/feature-region-support), updated 1 October 2026, the US Gov regions do not support Databricks SQL or Unity Catalog. They also lack serverless and the newer AI features. Databricks has announced plans to bring the full platform to Azure Government. Confirm what is live in your region on the day you decide.

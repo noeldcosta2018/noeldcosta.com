@@ -76,6 +76,7 @@ These trigger an instant rewrite, not a suggestion.
 - Max one list per H2 section unless the items are genuinely different categories. More than that is a generated-content tell.
 
 ### Paragraph rhythm
+- **Maximum three sentences per paragraph** (Noel, 12 October 2026). Two or three is the norm. Anything longer gets split, or turned into a numbered or bulleted list when the items are parallel. Short blocks scan better on mobile and are easier for search engines and AI answers to quote.
 - Vary length. A 4-sentence paragraph followed by a 1-sentence paragraph reads human. Four 4-sentence paragraphs in a row reads generated.
 - One idea per paragraph. If a paragraph has more than one idea, split it.
 - Short paragraphs are normal. A single line is allowed.

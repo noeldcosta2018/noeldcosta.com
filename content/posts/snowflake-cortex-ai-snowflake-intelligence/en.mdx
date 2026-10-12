@@ -36,13 +36,17 @@ mentions:
 
 Snowflake Cortex AI is the set of AI services that run inside your Snowflake account. It covers SQL functions that call large language models, Cortex Analyst for questions over tables and Cortex Search for documents. Cortex Agents orchestrate them, and Snowflake Intelligence, now renamed Snowflake CoWork, is the chat app on top.
 
-The appeal is simple. Your data stays under the same account, roles and policies you already run. The risk is also simple. It is easy to switch on and easy to spend money on. If the data underneath is not modelled properly, it gives confident wrong answers.
+The appeal is simple. Your data stays under the same account, roles and policies you already run. The risk is also simple.
+
+It is easy to switch on and easy to spend money on. If the data underneath is not modelled properly, it gives confident wrong answers.
 
 In the manufacturing and defence programmes I've worked on, the question was never "can Snowflake do AI?". It was "can we trust the answer, and can we prove who saw what?". This guide is written for that conversation.
 
 ## What Snowflake Cortex AI actually includes
 
-Product names in this area have moved fast. Two changes matter. Snowflake [announced Snowflake Intelligence as generally available on 4 November 2025](https://www.snowflake.com/en/news/press-releases/snowflake-intelligence-brings-agentic-AI-to-the-enterprise/), alongside Cortex Agents and the Snowflake-managed MCP server. Then at Summit in June 2026 it [renamed the product Snowflake CoWork](https://www.snowflake.com/en/news/press-releases/snowflake-cowork-powers-the-agentic-enterprise-as-the-personal-agent-for-knowledge-workers-to-work-smarter/). Some SQL privileges and object names still use the old name.
+Product names in this area have moved fast. Two changes matter. Snowflake [announced Snowflake Intelligence as generally available on 4 November 2025](https://www.snowflake.com/en/news/press-releases/snowflake-intelligence-brings-agentic-AI-to-the-enterprise/), alongside Cortex Agents and the Snowflake-managed MCP server.
+
+Then at Summit in June 2026 it [renamed the product Snowflake CoWork](https://www.snowflake.com/en/news/press-releases/snowflake-cowork-powers-the-agentic-enterprise-as-the-personal-agent-for-knowledge-workers-to-work-smarter/). Some SQL privileges and object names still use the old name.
 
 Document AI is gone. Snowflake [decommissioned the Document AI interface on 16 March 2026](https://docs.snowflake.com/en/release-notes/bcr-bundles/un-bundled/bcr-2156) and moved document extraction to the `AI_EXTRACT` function. If an SI proposal still mentions Document AI model builds, it is out of date.
 
@@ -61,9 +65,13 @@ The models come from Anthropic, OpenAI, Google, Meta, Mistral AI and others, plu
 
 ## Semantic views decide whether answers are right
 
-Cortex Analyst does not read your tables and guess. It reads a semantic view: a schema-level object that names your business entities, measures, joins and synonyms. Only that metadata goes to the model to write SQL. The SQL then runs in your warehouse under the caller's role.
+Cortex Analyst does not read your tables and guess. It reads a semantic view: a schema-level object that names your business entities, measures, joins and synonyms.
 
-So the quality of every Snowflake CoWork answer about revenue, scrap rate or on-time delivery rests on that semantic view. In my experience this is where the real work sits. The hard part was agreeing metric definitions in the semantic layer, not data cleanliness. Defining "on-time delivery" once, in a way that sales, supply chain and finance all accept, takes more meetings than any model configuration.
+Only that metadata goes to the model to write SQL. The SQL then runs in your warehouse under the caller's role.
+
+So the quality of every Snowflake CoWork answer about revenue, scrap rate or on-time delivery rests on that semantic view. In my experience this is where the real work sits.
+
+The hard part was agreeing metric definitions in the semantic layer, not data cleanliness. Defining "on-time delivery" once, in a way that sales, supply chain and finance all accept, takes more meetings than any model configuration.
 
 Two features help. Verified queries let you store a known-good question and its SQL, so the model has worked examples. Snowflake also lets you run evaluations against them, which gives you an accuracy number instead of a demo impression.
 
@@ -73,7 +81,9 @@ If your ERP data is not landed and modelled cleanly yet, start there. My guide o
 
 ## Governance, residency and the MCP question
 
-The strongest argument for Snowflake Cortex AI is governance. Cortex Analyst, Cortex Agents and CoWork respect your existing role-based access control, row access policies and masking. Model access itself is now controlled by role grants. The older account-wide model allowlist parameter is being retired during 2026.
+The strongest argument for Snowflake Cortex AI is governance. Cortex Analyst, Cortex Agents and CoWork respect your existing role-based access control, row access policies and masking.
+
+Model access itself is now controlled by role grants. The older account-wide model allowlist parameter is being retired during 2026.
 
 There are nuances worth checking before anyone signs off.
 
@@ -82,13 +92,17 @@ There are nuances worth checking before anyone signs off.
 3. **Cross-region inference moves prompts.** The `CORTEX_ENABLED_CROSS_REGION` parameter controls whether inference can run outside your home region. Snowflake says data stays stored in the home region and prompts are not persisted elsewhere, but the payload does travel. Some newer organisations default to `ANY_REGION`. The [cross-region inference documentation](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cross-region-inference) recommends setting it explicitly if you have residency requirements.
 4. **The MCP server can bypass your agent.** Snowflake advises exposing a Cortex Agent as the only tool for governed questions. Exposing raw SQL execution on the same server lets an outside client go around the agent's controls.
 
-For defence, point 3 is the conversation. Setting the parameter to `DISABLED` or a regional value keeps inference within your boundary, but it narrows the models you can use and costs more per credit. Snowflake's US government regions keep requests inside the same compliance boundary. Its MCP documentation also states that a formal FedRAMP assessment of the MCP server has not been completed. Classified data has no place in any of this. Keep the pilot on unclassified, non-export-controlled data, and get your export control lead to agree the boundary in writing.
+For defence, point 3 is the conversation. Setting the parameter to `DISABLED` or a regional value keeps inference within your boundary, but it narrows the models you can use and costs more per credit. Snowflake's US government regions keep requests inside the same compliance boundary.
+
+Its MCP documentation also states that a formal FedRAMP assessment of the MCP server has not been completed. Classified data has no place in any of this. Keep the pilot on unclassified, non-export-controlled data, and get your export control lead to agree the boundary in writing.
 
 My [AI governance framework guide](/ai-governance-framework-guide-building-a-responsible-ai-plan/) covers the policy side.
 
 ## What Snowflake Cortex AI costs
 
-AI features are billed in AI Credits, which are separate from the Platform Credits that pay for warehouses. Per [Snowflake's AI pricing page](https://docs.snowflake.com/en/user-guide/snowflake-cortex/pricing), an AI Credit costs $2.00 on demand with global routing and $2.20 when you restrict inference to your region or disable cross-region routing. AI Credit pricing is the same across editions. Your Platform Credit capacity discount does not apply to it.
+AI features are billed in AI Credits, which are separate from the Platform Credits that pay for warehouses. Per [Snowflake's AI pricing page](https://docs.snowflake.com/en/user-guide/snowflake-cortex/pricing), an AI Credit costs $2.00 on demand with global routing and $2.20 when you restrict inference to your region or disable cross-region routing.
+
+AI Credit pricing is the same across editions. Your Platform Credit capacity discount does not apply to it.
 
 The rates below are list prices from the Snowflake Service Consumption Table effective 9 October 2026, checked October 2026. Enterprise agreements, AI Credit capacity tiers and new model releases will change the numbers.
 
@@ -106,23 +120,33 @@ The rates below are list prices from the Snowflake Service Consumption Table eff
 
 The spread between models is large. On output tokens, claude-sonnet-4-5 costs about 20 times llama3.3-70b. Running a classification over ten years of maintenance notes on the wrong model is how AI budgets get blown in a week.
 
-Three cost traps catch people. Multi-turn conversations reprocess the full history on each turn, so long chats cost more per question. Agent costs stack: orchestration tokens, then each tool, then the warehouse running the SQL. Provisioned throughput, if you reserve it, is non-cancellable and billed whether you use it or not.
+Three cost traps catch people. Multi-turn conversations reprocess the full history on each turn, so long chats cost more per question.
 
-The controls exist. Use resource budgets, per-user quotas and orchestration budgets on agents. Monitor the usage views, such as `CORTEX_FUNCTIONS_QUERY_USAGE_HISTORY`, `CORTEX_AGENT_USAGE_HISTORY` and `SNOWFLAKE_COWORK_USAGE_HISTORY`. Test every batch job on a sample first. My [Snowflake pricing and credits guide](/snowflake-pricing-credits-explained/) covers the platform side.
+Agent costs stack: orchestration tokens, then each tool, then the warehouse running the SQL. Provisioned throughput, if you reserve it, is non-cancellable and billed whether you use it or not.
+
+The controls exist. Use resource budgets, per-user quotas and orchestration budgets on agents. Monitor the usage views, such as `CORTEX_FUNCTIONS_QUERY_USAGE_HISTORY`, `CORTEX_AGENT_USAGE_HISTORY` and `SNOWFLAKE_COWORK_USAGE_HISTORY`.
+
+Test every batch job on a sample first. My [Snowflake pricing and credits guide](/snowflake-pricing-credits-explained/) covers the platform side.
 
 ## Limits and risks to accept up front
 
-Snowflake's own documentation is honest here. Cortex Analyst answers questions that SQL can answer. It does not do open-ended "why did margin fall?" reasoning, and it cannot reuse results from earlier queries. Snowflake also warns that agent responses and citations are not guaranteed to be accurate.
+Snowflake's own documentation is honest here. Cortex Analyst answers questions that SQL can answer.
+
+It does not do open-ended "why did margin fall?" reasoning, and it cannot reuse results from earlier queries. Snowflake also warns that agent responses and citations are not guaranteed to be accurate.
 
 My judgment: treat every AI answer that feeds a decision as a draft that a named person signs. That matters more in defence, where a wrong figure can end up in a contractual or audit document.
 
-Lock-in is the other risk. Semantic views, agents and search services are Snowflake objects. Your prompts and evaluation sets are portable; the plumbing is not. If you are still choosing a platform, my [Snowflake vs Databricks comparison](/snowflake-vs-databricks/) sets out that trade-off.
+Lock-in is the other risk. Semantic views, agents and search services are Snowflake objects.
+
+Your prompts and evaluation sets are portable; the plumbing is not. If you are still choosing a platform, my [Snowflake vs Databricks comparison](/snowflake-vs-databricks/) sets out that trade-off.
 
 ## A first pilot in manufacturing or defence
 
 The first use case I'd pick in both sectors is the same shape: one structured question set and one document set, for one team.
 
-In manufacturing, I'd make the first pilot a maintenance and quality assistant. A semantic view sits over work orders, downtime, scrap and non-conformance data from the ERP and MES. A Cortex Search service sits over maintenance procedures and closed quality reports. A maintenance planner asks "which lines had the most unplanned downtime last quarter, and what did we find last time?" and gets figures plus the relevant reports.
+In manufacturing, I'd make the first pilot a maintenance and quality assistant. A semantic view sits over work orders, downtime, scrap and non-conformance data from the ERP and MES.
+
+A Cortex Search service sits over maintenance procedures and closed quality reports. A maintenance planner asks "which lines had the most unplanned downtime last quarter, and what did we find last time?" and gets figures plus the relevant reports.
 
 In defence, the same pattern works for supplier quality on an unclassified programme: delivery and quality metrics from ERP, plus supplier corrective action documents. Keep classified and export-controlled material out of scope entirely.
 

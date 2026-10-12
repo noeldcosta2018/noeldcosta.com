@@ -42,9 +42,13 @@ In the manufacturing and defence programmes I've worked on, the price per credit
 
 ## How Snowflake credits work
 
-Snowflake has two billing units now. Platform credits pay for virtual warehouses, Snowpark Container Services, serverless features and cloud services. AI credits pay for Cortex AI features. When an older contract says "credits", it means platform credits.
+Snowflake has two billing units now. Platform credits pay for virtual warehouses, Snowpark Container Services, serverless features and cloud services.
 
-A virtual warehouse is a named block of compute. You pick a size, and the size sets the credit rate. Each step up doubles the rate. A running warehouse is billed per second, with a minimum of 60 seconds every time it starts or resumes. A suspended warehouse costs nothing.
+AI credits pay for Cortex AI features. When an older contract says "credits", it means platform credits.
+
+A virtual warehouse is a named block of compute. You pick a size, and the size sets the credit rate. Each step up doubles the rate.
+
+A running warehouse is billed per second, with a minimum of 60 seconds every time it starts or resumes. A suspended warehouse costs nothing.
 
 The table below is from Snowflake's [warehouse documentation](https://docs.snowflake.com/en/user-guide/warehouses-overview) and the Service Consumption Table effective 9 October 2026.
 
@@ -80,7 +84,9 @@ The edition you choose sets the price of every credit you burn, so it is the sin
 
 The cheapest regions are the main US regions. The most expensive are places like Zurich, Switzerland North, Hong Kong and Dammam. For a GCC or European buyer, region choice can move the bill by 30% or more before you write a single query.
 
-For defence, this matters more. In the US government regions in the table (including AWS US Gov West 1, the DoD region and the FedRAMP High Plus regions), Standard and Enterprise are not offered. Business Critical starts at $4.80 to $5.60 a credit. If your programme has sovereignty or export-control constraints, budget for Business Critical from the start. Standard edition lacks the encryption and private connectivity controls a defence security review will ask about. I have not deployed Snowflake in a government or GCC region myself, so treat these regional figures as list-price guidance and confirm with Snowflake which services are live in your target region.
+For defence, this matters more. In the US government regions in the table (including AWS US Gov West 1, the DoD region and the FedRAMP High Plus regions), Standard and Enterprise are not offered. Business Critical starts at $4.80 to $5.60 a credit.
+
+If your programme has sovereignty or export-control constraints, budget for Business Critical from the start. Standard edition lacks the encryption and private connectivity controls a defence security review will ask about. I have not deployed Snowflake in a government or GCC region myself, so treat these regional figures as list-price guidance and confirm with Snowflake which services are live in your target region.
 
 For most manufacturers I'd start on Enterprise. Multi-cluster warehouses and Query Acceleration are what keep month-end reporting from queuing behind the data science team.
 
@@ -88,9 +94,13 @@ For most manufacturers I'd start on Enterprise. Multi-cluster warehouses and Que
 
 **Storage** is billed on the monthly average of compressed data. On demand it lists at $23 per TB per month in the main US regions, $24.50 in Frankfurt and $39 in AWS US Gov West 1. Capacity contracts with larger annual commitments bring it down, to $13.80 per TB at the top tier in US East.
 
-**Data transfer** is free within the same cloud and region. Moving data out costs money. From AWS US East it lists at $20 per TB to another AWS region and $90 per TB to another cloud or the internet. Government regions charge more. If your ERP sits on Azure and Snowflake on AWS, every extract that leaves Snowflake back to Azure carries that cross-cloud rate. My guide to [getting ERP data into Snowflake](/erp-data-into-snowflake/) covers where to place the account.
+**Data transfer** is free within the same cloud and region. Moving data out costs money. From AWS US East it lists at $20 per TB to another AWS region and $90 per TB to another cloud or the internet.
 
-**Cloud services** is the layer that handles logins, query compilation and metadata. It is billed at 4.4 credits per hour of use, but only the part above 10% of that day's warehouse credits. Most accounts never see a charge. Accounts that run huge numbers of tiny queries, or poll metadata constantly from BI tools, do.
+Government regions charge more. If your ERP sits on Azure and Snowflake on AWS, every extract that leaves Snowflake back to Azure carries that cross-cloud rate. My guide to [getting ERP data into Snowflake](/erp-data-into-snowflake/) covers where to place the account.
+
+**Cloud services** is the layer that handles logins, query compilation and metadata. It is billed at 4.4 credits per hour of use, but only the part above 10% of that day's warehouse credits.
+
+Most accounts never see a charge. Accounts that run huge numbers of tiny queries, or poll metadata constantly from BI tools, do.
 
 **Serverless features** run on Snowflake-managed compute at one credit per compute-hour times a feature multiplier. Nothing shows in your warehouse list, which is why they surprise people. From Table 5 of the consumption table:
 
@@ -105,17 +115,25 @@ Clustering and search optimisation on a fast-changing table can quietly cost mor
 
 ## Cortex AI and Snowpark Container Services
 
-**Cortex AI** bills in AI credits, a separate unit. On demand an AI credit lists at $2.00 (global) or $2.20 (regional). Your platform credit discount does not apply to AI credits. Cortex functions charge per million tokens, with input and output often priced differently. In the consumption table, llama3.3-70b lists at 0.36 AI credits per million tokens each way, and mistral-large2 at 1.00 input and 3.00 output. Cortex Analyst bills 67 platform credits per 1,000 messages, and Cortex Search 6.3 AI credits per GB per month of indexed data.
+**Cortex AI** bills in AI credits, a separate unit. On demand an AI credit lists at $2.00 (global) or $2.20 (regional). Your platform credit discount does not apply to AI credits.
 
-If you run Cortex in a regional-only mode for data residency, expect the higher rate. The [cross-region inference documentation](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cross-region-inference) explains the routing options. For defence, regional processing is usually the only acceptable setting. My piece on [Snowflake Cortex AI and Snowflake Intelligence](/snowflake-cortex-ai-snowflake-intelligence/) covers what these features do.
+Cortex functions charge per million tokens, with input and output often priced differently. In the consumption table, llama3.3-70b lists at 0.36 AI credits per million tokens each way, and mistral-large2 at 1.00 input and 3.00 output. Cortex Analyst bills 67 platform credits per 1,000 messages, and Cortex Search 6.3 AI credits per GB per month of indexed data.
 
-**Snowpark Container Services** runs your own containers on compute pools. Each node type has a credit rate. The smallest general-purpose nodes list well under 0.1 credits an hour, and GPU nodes run from about 0.5 to over 20. Nodes bill a five-minute minimum each time they start. A GPU pool left running over a weekend is the most expensive mistake I can think of on this platform.
+If you run Cortex in a regional-only mode for data residency, expect the higher rate. The [cross-region inference documentation](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cross-region-inference) explains the routing options.
+
+For defence, regional processing is usually the only acceptable setting. My piece on [Snowflake Cortex AI and Snowflake Intelligence](/snowflake-cortex-ai-snowflake-intelligence/) covers what these features do.
+
+**Snowpark Container Services** runs your own containers on compute pools. Each node type has a credit rate. The smallest general-purpose nodes list well under 0.1 credits an hour, and GPU nodes run from about 0.5 to over 20.
+
+Nodes bill a five-minute minimum each time they start. A GPU pool left running over a weekend is the most expensive mistake I can think of on this platform.
 
 ## Illustrative arithmetic: one warehouse, two habits
 
 This example is illustrative only. It uses list rates from the October 2026 consumption table: Enterprise edition, AWS US East, $3.00 per credit, storage at $23 per TB.
 
-A Medium warehouse burns 4 credits an hour. Used for ten hours a day on 22 working days, that is 880 credits, or $2,640 a month. The same warehouse with auto-suspend switched off runs 720 hours a month. That is 2,880 credits, or $8,640. Same queries, same users, more than three times the bill.
+A Medium warehouse burns 4 credits an hour. Used for ten hours a day on 22 working days, that is 880 credits, or $2,640 a month. The same warehouse with auto-suspend switched off runs 720 hours a month.
+
+That is 2,880 credits, or $8,640. Same queries, same users, more than three times the bill.
 
 Now add 20 TB of compressed storage: $460 a month. Storage is real money, but in the platforms I've worked on it has rarely been the line that worries a CFO. Idle compute and unwatched serverless features are.
 
@@ -123,9 +141,13 @@ Enterprise discounts and capacity commitments will change these numbers. The sha
 
 ## On-demand vs capacity contracts
 
-Snowflake sells two ways. **On demand** means you pay list price monthly in arrears, with no commitment. **Capacity** means you commit to an annual spend and get a discount on platform credits, set in your order form. Capacity can be used across all your accounts. Storage gets cheaper as your annual contract value grows. AI credits have their own tiers.
+Snowflake sells two ways. **On demand** means you pay list price monthly in arrears, with no commitment. **Capacity** means you commit to an annual spend and get a discount on platform credits, set in your order form.
 
-My rule: run on demand, or a small commitment, for about three months. Then size the contract from `ACCOUNT_USAGE` data, not from the vendor's sizing workbook. Those three months also show you how the consumption model behaves on your own workloads. An oversized commitment is money spent whether you use it or not. Read the rollover terms closely. The same discipline applies to any enterprise software deal, which I cover in my [ERP contract negotiation case study](/erp-implementation-contract-negotiation-cost-review-cfo/).
+Capacity can be used across all your accounts. Storage gets cheaper as your annual contract value grows. AI credits have their own tiers.
+
+My rule: run on demand, or a small commitment, for about three months. Then size the contract from `ACCOUNT_USAGE` data, not from the vendor's sizing workbook. Those three months also show you how the consumption model behaves on your own workloads.
+
+An oversized commitment is money spent whether you use it or not. Read the rollover terms closely. The same discipline applies to any enterprise software deal, which I cover in my [ERP contract negotiation case study](/erp-implementation-contract-negotiation-cost-review-cfo/).
 
 ## The controls I set before go-live
 
@@ -140,7 +162,9 @@ Snowflake gives you good tools. The [cost control documentation](https://docs.sn
 7. **Tagging.** Object tags on warehouses and users, query tags for shared applications. Without them, nobody can say which plant, programme or function spent what.
 8. **Weekly review of `ACCOUNT_USAGE`.** `WAREHOUSE_METERING_HISTORY` for warehouse credits, `QUERY_ATTRIBUTION_HISTORY` for per-query cost, `TAG_REFERENCES` to join it to owners. Remember per-query cost excludes idle time, storage, serverless and AI.
 
-The trial is a good way to learn this before you commit. Snowflake currently offers a 30-day trial with $400 in free credits. AI features are disabled until you add a card. Choose the cloud, region and edition you would actually buy, because they cannot be changed later.
+The trial is a good way to learn this before you commit. Snowflake currently offers a 30-day trial with $400 in free credits.
+
+AI features are disabled until you add a card. Choose the cloud, region and edition you would actually buy, because they cannot be changed later.
 
 ## What to do next
 
