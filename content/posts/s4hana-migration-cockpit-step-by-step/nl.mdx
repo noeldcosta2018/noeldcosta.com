@@ -1,0 +1,203 @@
+---
+title: "SAP S/4HANA Migration Cockpit stap voor stap"
+h1: "SAP S/4HANA Migration Cockpit stap voor stap"
+slug: "s4hana-migration-cockpit-step-by-step"
+date: "2026-10-13"
+updated: "2026-10-13"
+hero: "/images/migration/s4hana-migration-cockpit-step-by-step.webp"
+heroAlt: "Twee monitoren met datatabellen en een mappingflow op een licht bureau met migratiesjablonen"
+category: "erp-strategy"
+tags: ["sap-migration-cockpit", "sap-data-migration", "ecc-to-s4hana", "s4hana-implementation"]
+author: "Noel D'Costa"
+metaTitle: "SAP S/4HANA Migration Cockpit: stap-voor-stapgids (2026)"
+metaDescription: "SAP S/4HANA Migration Cockpit stap voor stap: staging tables vs direct transfer, migratieobjecten, mapping, simulatie en de Migration Object Modeler."
+primaryKeyword: "sap s/4hana migration cockpit"
+excerpt: "De SAP S/4HANA Migration Cockpit laadt stamgegevens en openstaande posten in een nieuw S/4HANA-systeem. Dit is het proces stap voor stap, de keuze tussen staging tables en direct transfer, en hoe u het draait als programma in plaats van als tool."
+experienceSource: "Noel's first-person experience leading and rescuing SAP programmes (confirmed by Noel, 12 and 13 October 2026). No client names. Product facts checked against official SAP documentation, October 2026."
+keyTakeaways:
+  - "De Migration Cockpit draait als de Fiori-app Migrate Your Data; transactie LTMC is verouderd en toont alleen oude projecten"
+  - "Hij is gebouwd voor de initiële load van een nieuwe implementatie, niet voor conversies, synchronisatie of terugkerende interfaces"
+  - "Twee aanpakken: staging tables gevuld vanuit bestanden of eigen tools, of direct transfer vanuit een SAP-bronsysteem via RFC"
+  - "De teams die ik leid, geven de voorkeur aan staging tables, omdat de data kan worden gecontroleerd en opgeschoond voordat er iets in S/4HANA komt"
+  - "Het proces per object is selecteren of uploaden, mappen, simuleren, migreren, corrigeren, en voorgangers gaan altijd eerst"
+  - "Datamigratie is 30 tot 40 procent van de inspanning, dus het plan voor de cockpit hoort in het programmaplan, niet in de bouwbacklog"
+pullQuote: "De cockpit laadt wat u hem geeft. Of die data klopt, blijft uw beslissing."
+mentions:
+  - "SAP S/4HANA Migration Cockpit"
+  - "Migrate Your Data app"
+  - "SAP S/4HANA migration object modeler"
+  - "LTMC"
+  - "LTMOM"
+  - "SAP Data Services"
+  - "SAP S/4HANA Cloud Public Edition"
+  - "SAP Cloud ERP Private"
+  - "SAP ECC"
+  - "DMIS"
+originalUrl: "https://noeldcosta.com/s4hana-migration-cockpit-step-by-step/"
+canonicalUrl: "https://noeldcosta.com/nl/s4hana-migration-cockpit-step-by-step/"
+locale: "nl"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+De SAP S/4HANA Migration Cockpit is de tool van SAP om stamgegevens en openstaande posten in een nieuw S/4HANA-systeem te laden, via de Fiori-app Migrate Your Data. U kiest staging tables of direct transfer, selecteert de migratieobjecten, mapt de waarden, simuleert en laadt daarna, object voor object, in de volgorde van de afhankelijkheden.
+
+Kort antwoord voor een programmaleider: gebruik hem voor een nieuwe implementatie, plan hem vanaf week één als workstream en beslis vroeg wie eigenaar is van de data. De tool is het makkelijke deel.
+
+Deze gids is een onderdeel van mijn [gids over de migratie van ECC naar S/4HANA](/nl/ecc-to-s4hana-migration/). Hij is geschreven voor programmaleiders en dataleads die de cockpit goed moeten draaien, niet alleen installeren.
+
+## Wat de Migration Cockpit is, en waar hij van toepassing is
+
+De cockpit verplaatst bedrijfsdata naar S/4HANA met vooraf gedefinieerde migratieobjecten. Elk object beschrijft de bron- en doelstructuren voor één bedrijfsobject, zoals een klant, een leverancier, een materiaal of een openstaande post, plus de mappingregels daartussen.
+
+SAP is duidelijk over de scope. De cockpit is [ontworpen voor de initiële load van een nieuwe implementatie](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/7a62b59726ce42e7a10770b06940f934.html), en niet om systemen synchroon te houden of een continue datastroom te draaien. Een brownfield-conversie gebruikt hem niet voor de kernverhuizing, omdat de Software Update Manager de data ter plekke converteert.
+
+Twee punten over namen voorkomen verwarring. De oude Web Dynpro-transactie LTMC is [verouderd en kan niet meer worden gebruikt om data te migreren](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/8f97f0b407024465a283809f0bbe000c.html); u kunt er alleen oude projecten in bekijken. De opvolger is de Fiori-app Migrate Your Data, en dat is wat mensen nu bedoelen met "de cockpit".
+
+Hij is van toepassing op alle edities, met verschillen in hoe u hem configureert en uitbreidt. Deze tabel vergelijkt ze per oktober 2026:
+
+| Gebied | SAP S/4HANA on-premise en SAP Cloud ERP Private (S/4HANA Cloud Private Edition) | SAP S/4HANA Cloud Public Edition |
+|---|---|---|
+| App | Migrate Your Data | Migrate Your Data (app F3473) |
+| Staging tables | Lokaal S/4HANA-schema of een extern SAP HANA-schema | Lokaal schema, of een extern SAP HANA Cloud-schema op SAP BTP; ingericht via scope item 2Q2 |
+| Direct transfer | Vanuit SAP ERP (ECC 6.0 en hoger), SAP AFS 6.0, SAP EWM 5.1 en hoger, en SAP APO SPP (SCM 7.14 en hoger) | Vanuit SAP ECC 6.0 en hoger; ingericht via scope item BH3 |
+| Objecten wijzigen | Transactie LTMOM, de migration object modeler | App Model Your Migration Objects voor staging; app Implementation Activities voor direct transfer; alleen vrijgegeven objecten kunnen worden uitgebreid |
+| Beperking bronsysteem | Een S/4HANA-systeem kan niet de bron zijn | S/4HANA-, Private Edition- en Public Edition-systemen kunnen niet de bron zijn |
+
+## Staging tables of direct transfer
+
+Elk migratieproject gebruikt een van twee aanpakken. De keuze bepaalt uw hele data-workstream, dus maak haar in Explore, niet in Realize.
+
+**Staging tables.** De cockpit genereert voor elk migratieobject in uw project een set databasetabellen. U vult ze vanuit de XML-sjablonen van SAP, vanuit CSV-bestanden of met uw eigen tools, zoals SAP Data Services of een andere ETL-tool. De bron kan alles zijn: een oud SAP-systeem, Oracle, Dynamics, een zelfgebouwd systeem of een spreadsheet.
+
+**Direct transfer.** De cockpit maakt via RFC verbinding met een SAP-bronsysteem en selecteert de data zelf, per bedrijfscode bij een ERP-bron. De [voorwaarden](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/94f7b5a36db64633a4d49623f66e04c7.html) omvatten de DMIS-add-on in het bronsysteem, die in de S/4HANA-licentie is inbegrepen. Bronsystemen mogen non-Unicode zijn.
+
+Zo verhouden de twee zich voor de beslissingen die een datalead moet nemen:
+
+| Vraag | Staging tables | Direct transfer |
+|---|---|---|
+| Welke bronnen? | Elk systeem, via bestanden of tools | Alleen ondersteunde SAP-bronnen |
+| Waar schoont u op? | In de staging tables of eerder in de keten, vóór de load | Vooral in het bronsysteem, vóór de selectie |
+| Wie kan de data vóór de load beoordelen? | Iedereen met toegang tot de tabellen of de bestanden | Vooral het cockpitteam, via de schermen van de cockpit |
+| Inspanning om te starten | Hoger: u bouwt de extractie en vult de tabellen | Lager: de cockpit selecteert voor u |
+| Past het best bij | Meerdere bronnen, vervuilde data, zware transformatie | Een schone SAP ERP-bron die naar een nieuw S/4HANA-ontwerp gaat |
+
+Direct transfer kan de geselecteerde data ook tijdelijk in staging tables parkeren, wat u een beoordelingsmoment tussendoor geeft. Controleer of uw release dat ondersteunt voordat u er uw ontwerp omheen bouwt.
+
+### Waarom de teams die ik leid staging tables gebruiken
+
+De teams die ik leid, gebruiken de cockpit; ik bedien hem niet zelf. Hun standaard, en mijn voorkeur, is staging tables boven direct transfer.
+
+De reden is controle. Met staging tables staat de data die geladen gaat worden in tabellen die u kunt bevragen, tegen bedrijfsregels kunt controleren en kunt herstellen voordat er iets S/4HANA raakt. Data stewards kunnen aftekenen wat ze werkelijk zien, niet een selectie die ze moeten vertrouwen.
+
+Het scheidt ook opschonen van laden. Dubbele leveranciers, ontbrekende bankgegevens en verkeerde maateenheden worden op één plek hersteld, met een audittrail, en de load zelf wordt herhaalbaar. Direct transfer start sneller, maar neemt de gewoonten van het bronsysteem vaak rechtstreeks mee naar het nieuwe.
+
+Direct transfer heeft nog steeds zijn plek. Is de bron één goed onderhouden SAP ERP-systeem en ligt het doelontwerp daar dicht bij, dan bespaart het echt extractiewerk.
+
+## De Migration Cockpit stap voor stap
+
+SAP beschrijft [het migratieproces](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/c67e14ff693e423aae2b96d9f3b0fc91.html) als een vaste volgorde. Dit zijn de stappen zoals uw team ze met staging tables zal uitvoeren.
+
+<stepper title="Het proces van de Migration Cockpit" steps="Project aanmaken|Staging tables vullen|Waarden mappen|Simuleren|Migreren en corrigeren" bodies="Open Migrate Your Data, maak een project aan en selecteer de migratieobjecten in scope.|Download de sjablonen en upload ze, of vul de tabellen met uw eigen tools.|Werk de openstaande mappingtaken af: waardemappings en vaste waarden.|Simuleer de load en herstel elke fout voordat u iets boekt.|Laad in de volgorde van de afhankelijkheden, herstel daarna mislukte records en sluit aan."></stepper>
+
+1. **Maak het migratieproject aan.** Maak in de app Migrate Your Data een project aan, kies waar de staging tables staan (lokaal of extern schema) en selecteer de objecten in scope. SAP raadt aan projecten eerst aan te maken in een testsysteem dat een kopie van productie is, en een nieuw project voor elke testoverdracht dat de correcties van de vorige meeneemt.
+2. **Controleer de afhankelijkheden.** Een migratieobject kan voorgangers hebben die eerst verwerkt moeten worden, en opvolgers die daarna komen. De app Explore Migration Objects (F8638) toont verplichte en optionele voorgangers als grafiek. Business partners vóór openstaande posten, materialen vóór voorraad: de cockpit laat u de volgorde niet overslaan.
+3. **Vul de staging tables.** XML-sjablonen zijn de standaard en aanbevolen optie van SAP, omdat elk bestand alle structuren voor het object plus instructies bevat. CSV is een optie voor experts, één bestand per structuur. Een [enkel XML-bestand mag tot 100 MB groot zijn](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/5cc41962b2624ac5b9a136e69369f5e0.html), en een zip met meerdere XML-bestanden mag ook niet groter zijn dan 100 MB, dus grote objecten moeten worden opgesplitst of gevuld met een tool die direct in de tabellen schrijft.
+4. **Lees de validatiemeldingen.** Na de upload valideert het systeem het bestand en voegt het een tabblad Messages toe met elke fout en waarschuwing, gekoppeld aan de cel. Bij bestanden met waarschuwingen moet iemand beslissen of ze genegeerd kunnen worden voordat de data verder gaat.
+5. **Werk de mappingtaken af.** Waardemappingtaken vertalen bronwaarden naar doelwaarden, zoals oude vestigingscodes naar nieuwe. Taken voor vaste waarden zetten standaardwaarden. Download bij grote mappings de mappingsjablonen in plaats van waarden in de schermen te typen.
+6. **Simuleer.** De simulatie draait de load zonder te boeken en laat zien welke instanties zouden slagen en welke zouden mislukken. Ze kan nieuwe mappingtaken opleveren; werk die af en simuleer opnieuw. Een paar objecten kunnen niet worden gesimuleerd, dus plan daarvoor extra controles.
+7. **Migreer.** Draai de load object voor object, voorgangers eerst. Sommige objecten hebben meer dan één overdrachtsstap, en elke stap wordt op zijn beurt gesimuleerd en gemigreerd.
+8. **Corrigeer en sluit aan.** Herstel mislukte instanties, waar nodig met correctiebestanden, en sluit daarna aantallen en financiële totalen aan met de bron. Een job die zonder fouten eindigt, is geen bewijs dat de data klopt.
+
+Direct transfer volgt hetzelfde patroon, met één verschil aan het begin. In plaats van tabellen te vullen, draait u Select Data tegen het bronsysteem, en u kunt de selectie in de modeler verder beperken.
+
+## Als de standaardobjecten niet volstaan
+
+Vroeg of laat past een migratieobject niet helemaal. Een maatwerkveld in de bron, een splitsing die u onderweg nodig hebt, of een object dat SAP niet levert.
+
+On-premise en in de private edition is de tool transactie LTMOM, de SAP S/4HANA migration object modeler. Daarmee kan het team standaardobjecten uitbreiden, velden toevoegen, eigen objecten definiëren en transporten van migratie-inhoud tussen systemen beheren. Hij vraagt een eigen ontwikkelaarsrol, dus plan wie die heeft.
+
+In de public edition zijn de opties beperkter. Voor staging tables kan de app Model Your Migration Objects [alleen bepaalde door SAP vrijgegeven migratieobjecten uitbreiden](https://help.sap.com/docs/SAP_S4HANA_CLOUD/d5699934e7004d048c4801b552f3b013/947d9c3d00fc4e66851a8f5592871ad3.html), met per object een SAP Note die vermeldt wat kan worden uitgebreid. Dat past bij het clean core-model van de public edition, en het is een goede toets of uw data er echt uit moet zien zoals vroeger.
+
+Mijn advies is elke wijziging in de modeler te behandelen als maatwerkcode. Leg haar vast, geef haar een eigenaar en vraag of de business haar echt nodig heeft.
+
+## De cockpit draaien als programma, niet als tool
+
+Datamigratie is 30 tot 40 procent van de inspanning in de S/4HANA-programma's die ik zie. De cockpit zit binnen die workstream, dus het meeste wat ermee misgaat, ligt niet aan de tool.
+
+Vijf dingen bepalen of het werk met de cockpit slaagt:
+
+1. **Baken de objecten af in Explore.** Maak een lijst van elk migratieobject, met bron, volume en eigenaar. De [gratis schatter voor datamigratie](/nl/free-data-migration-estimator-sap-oracle-microsoft/) geeft u een verdedigbare bandbreedte voor de inspanning zodra u echte aantallen hebt.
+2. **Wijs per object data-eigenaren aan.** Finance is eigenaar van de financiële data van klanten en leveranciers, inkoop van materialen. IT kan niet beslissen welke van twee dubbele leveranciers de juiste is.
+3. **Plan laadcycli met exitcriteria.** Elke cyclus is een nieuw project in een testsysteem, en elke cyclus eindigt met een aansluiting die de business aftekent. Mijn gids over [waarom SAP-datamigratie mislukt](/nl/why-sap-data-migration-fails-and-how-to-fix-it/) bevat een plan voor proefloads dat u kunt overnemen.
+4. **Bepaal de omvang van het cutovervenster.** Draai één cyclus op het volledige productievolume. Bestandslimieten en laadtijden worden pas op echte schaal zichtbaar.
+5. **Bevries de objecten en mappings vóór de cutover.** De productieload hoort de laatste generale te herhalen, met dezelfde projecten, sjablonen en mappings.
+
+De grootste fout die ik in S/4HANA-programma's zie, is dat er aan het begin niet goed wordt gepland. Bij de cockpit uit zich dat in late objectlijsten, ontbrekende eigenaren en een eerste laadcyclus in Realize die problemen vindt die Explore had moeten vinden.
+
+Die cycli bepalen ook het totale plan. Mijn [gids over de doorlooptijd van een S/4HANA-migratie](/nl/s4hana-migration-timeline-project-plan/) laat zien waar de laadcycli per route vallen, en de [gids over de kosten van een S/4HANA-migratie](/nl/s4hana-migration-cost/) behandelt wat het databudget bepaalt.
+
+### Wat u uw partner vraagt over de cockpit
+
+Vraag de partner vóór ondertekening om zijn data-aanpak schriftelijk te laten zien, niet in een pitch:
+
+1. Welke aanpak hij per object voorstelt, staging tables of direct transfer, en waarom.
+2. Hoeveel laadcycli hij plant, en wat het exitcriterium voor elke cyclus is.
+3. Welke objecten hij verwacht te wijzigen in de modeler, en wie die wijzigingen onderhoudt.
+4. Wie aan uw kant elk object aftekent, en wanneer.
+
+Algemene antwoorden zijn hier een waarschuwingssignaal. Een partner die dit eerder heeft gedaan, kan de lastige objecten voor uw branche noemen.
+
+## Wat ik als volgende zou doen
+
+Maak deze maand een volledige extractie van uw klant-, leveranciers- en materiaalstamgegevens, tel de records en profileer de kwaliteit. Beslis daarna per object over staging tables of direct transfer, met benoemde eigenaren.
+
+Hebt u het bronsysteem nog niet beoordeeld, begin dan met de [SAP Readiness Check en migratiebeoordeling](/nl/sap-readiness-check-migration-assessment/). Wilt u een onafhankelijke blik op uw plan voor datamigratie, [neem dan contact op](/nl/contact-noel-erp-support/).
+
+## Veelgestelde vragen
+
+<details>
+<summary>Wat is de SAP S/4HANA Migration Cockpit?</summary>
+
+Het is de tool van SAP voor de initiële load van bedrijfsdata in een nieuw S/4HANA-systeem, gedraaid via de Fiori-app Migrate Your Data. Hij gebruikt vooraf gedefinieerde migratieobjecten voor stamgegevens en openstaande posten, en ondersteunt twee aanpakken: staging tables en direct transfer vanuit een SAP-bronsysteem.
+
+</details>
+
+<details>
+<summary>Is LTMC nog beschikbaar in S/4HANA?</summary>
+
+Nee, niet om data te migreren. SAP heeft transactie LTMC verouderd verklaard, en die kan niet meer worden gebruikt om data naar S/4HANA te migreren. U kunt er nog wel oude projecten in bekijken.
+
+Nieuwe migraties draaien in de app Migrate Your Data.
+
+</details>
+
+<details>
+<summary>Wat is het verschil tussen staging tables en direct transfer?</summary>
+
+Met staging tables genereert de cockpit tabellen per migratieobject, en u vult ze vanuit XML- of CSV-sjablonen of met uw eigen tools, vanuit elke bron. Met direct transfer leest de cockpit de data rechtstreeks uit een ondersteund SAP-bronsysteem, zoals SAP ERP 6.0, via een RFC-verbinding. Staging tables geven u meer ruimte om vóór de load te controleren en op te schonen.
+
+</details>
+
+<details>
+<summary>Kan de Migration Cockpit worden gebruikt voor een brownfield-conversie?</summary>
+
+Niet voor de kernverhuizing. SAP ontwerpt de cockpit voor de initiële load in een scenario met een nieuwe implementatie. Een brownfield-systeemconversie converteert de data ter plekke met de Software Update Manager.
+
+</details>
+
+<details>
+<summary>Wat is LTMOM in SAP?</summary>
+
+LTMOM is de transactie voor de SAP S/4HANA migration object modeler, gebruikt on-premise en in de private edition. Daarmee kunt u standaardmigratieobjecten uitbreiden, maatwerkvelden toevoegen, eigen objecten aanmaken en migratie-inhoud transporteren. In de public edition doet de app Model Your Migration Objects een beperktere versie van hetzelfde werk.
+
+</details>
+
+<details>
+<summary>Wat is de limiet voor bestandsgrootte in de S/4HANA Migration Cockpit?</summary>
+
+Een enkel XML-sjabloonbestand mag tot 100 MB groot zijn, en een zip met meerdere XML-bestanden mag niet groter zijn dan 100 MB. Bestanden in de zip kunnen na compressie groter zijn, met een limiet per bestand die afhangt van editie en release.
+
+CSV-mappen zijn ook beperkt tot 100 MB. Vul bij zeer grote objecten de staging tables met een tool in plaats van met bestanden.
+
+</details>

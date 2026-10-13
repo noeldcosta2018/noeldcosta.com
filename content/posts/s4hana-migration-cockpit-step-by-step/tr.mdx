@@ -1,0 +1,203 @@
+---
+title: "Adım adım SAP S/4HANA Migration Cockpit"
+h1: "Adım adım SAP S/4HANA Migration Cockpit"
+slug: "s4hana-migration-cockpit-step-by-step"
+date: "2026-10-13"
+updated: "2026-10-13"
+hero: "/images/migration/s4hana-migration-cockpit-step-by-step.webp"
+heroAlt: "Geçiş şablonlarının bulunduğu aydınlık bir masada veri tabloları ve bir eşleme akışı gösteren iki monitör"
+category: "erp-strategy"
+tags: ["sap-migration-cockpit", "sap-data-migration", "ecc-to-s4hana", "s4hana-implementation"]
+author: "Noel D'Costa"
+metaTitle: "SAP S/4HANA Migration Cockpit: Adım Adım Rehber (2026)"
+metaDescription: "Adım adım SAP S/4HANA Migration Cockpit: staging tabloları ve doğrudan aktarım, migration object'ler, eşleme, simülasyon ve Migration Object Modeler."
+primaryKeyword: "sap s/4hana migration cockpit nedir"
+excerpt: "SAP S/4HANA Migration Cockpit, ana verileri ve açık kalemleri yeni bir S/4HANA sistemine yükler. Adım adım süreç, staging tabloları ile doğrudan aktarım arasındaki seçim ve onu bir araç olarak değil, bir program olarak yürütmenin yolu."
+experienceSource: "Noel's first-person experience leading and rescuing SAP programmes (confirmed by Noel, 12 and 13 October 2026). No client names. Product facts checked against official SAP documentation, October 2026."
+keyTakeaways:
+  - "Migration Cockpit, Fiori uygulaması Migrate Your Data olarak çalışır; LTMC işlem kodu kullanımdan kaldırılmıştır ve yalnızca eski projeleri gösterir"
+  - "Dönüşümler, senkronizasyon veya yinelenen arayüzler için değil, yeni bir uygulamanın ilk yüklemesi için tasarlanmıştır"
+  - "İki yaklaşım vardır: dosyalardan veya kendi araçlarınızdan doldurulan staging tabloları ya da RFC üzerinden bir SAP kaynak sisteminden doğrudan aktarım"
+  - "Yönettiğim ekipler staging tablolarını tercih eder, çünkü veri S/4HANA'ya ulaşmadan önce kontrol edilip temizlenebilir"
+  - "Her nesne için süreç seç veya yükle, eşle, simüle et, taşı, düzelt şeklindedir ve öncül nesneler her zaman önce gelir"
+  - "Veri taşıma eforun yüzde 30 ila 40'ıdır; bu yüzden cockpit planı geliştirme listesine değil, program planına aittir"
+pullQuote: "Cockpit ona verdiğinizi yükler. O verinin doğru olup olmadığı hâlâ sizin kararınızdır."
+mentions:
+  - "SAP S/4HANA Migration Cockpit"
+  - "Migrate Your Data app"
+  - "SAP S/4HANA migration object modeler"
+  - "LTMC"
+  - "LTMOM"
+  - "SAP Data Services"
+  - "SAP S/4HANA Cloud Public Edition"
+  - "SAP Cloud ERP Private"
+  - "SAP ECC"
+  - "DMIS"
+originalUrl: "https://noeldcosta.com/s4hana-migration-cockpit-step-by-step/"
+canonicalUrl: "https://noeldcosta.com/tr/s4hana-migration-cockpit-step-by-step/"
+locale: "tr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP S/4HANA Migration Cockpit, SAP'nin ana verileri ve açık kalemleri Fiori uygulaması Migrate Your Data üzerinden yeni bir S/4HANA sistemine yüklemek için sunduğu araçtır. Staging tablolarını veya doğrudan aktarımı seçer, migration object'leri belirler, değerleri eşler, simüle eder ve ardından bağımlılık sırasına göre nesne nesne yüklersiniz.
+
+Bir program yöneticisi için kısa cevap: onu yeni bir uygulama için kullanın, ilk haftadan itibaren bir iş akışı olarak planlayın ve verinin sahibinin kim olduğuna erken karar verin. Araç işin kolay kısmıdır.
+
+Bu rehber [ECC'den S/4HANA'ya geçiş rehberimin](/tr/ecc-to-s4hana-migration/) bir parçasıdır. Cockpit'i yalnızca kurmak değil, iyi yürütmek zorunda olan program yöneticileri ve veri sorumluları için yazıldı.
+
+## Migration Cockpit nedir ve nerede kullanılır
+
+Cockpit, önceden tanımlanmış migration object'ler kullanarak iş verilerini S/4HANA'ya taşır. Her nesne; müşteri, tedarikçi, malzeme veya açık kalem gibi tek bir iş nesnesinin kaynak ve hedef yapılarını ve bunlar arasındaki eşleme kurallarını tanımlar.
+
+SAP kapsam konusunda açıktır. Cockpit, sistemleri senkron tutmak veya sürekli bir veri akışı yürütmek için değil, [yeni bir uygulamanın ilk yüklemesi için tasarlanmıştır](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/7a62b59726ce42e7a10770b06940f934.html). Bir brownfield dönüşümü çekirdek taşıma için onu kullanmaz, çünkü Software Update Manager veriyi yerinde dönüştürür.
+
+İki adlandırma noktası karışıklığı önler. Eski Web Dynpro işlem kodu LTMC [kullanımdan kaldırılmıştır ve artık veri taşımak için kullanılamaz](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/8f97f0b407024465a283809f0bbe000c.html); içinde yalnızca eski projeleri görüntüleyebilirsiniz. Ardılı Fiori uygulaması Migrate Your Data'dır ve insanlar artık "cockpit" dediğinde bunu kastediyor.
+
+Tüm sürümlerde kullanılır; farklar onu nasıl yapılandırıp genişlettiğinizdedir. Bu tablo, Ekim 2026 itibarıyla sürümleri karşılaştırıyor:
+
+| Alan | SAP S/4HANA on-premise ve SAP Cloud ERP Private (S/4HANA Cloud Private Edition) | SAP S/4HANA Cloud Public Edition |
+|---|---|---|
+| Uygulama | Migrate Your Data | Migrate Your Data (uygulama F3473) |
+| Staging tabloları | Yerel S/4HANA şeması veya uzak bir SAP HANA şeması | Yerel şema veya SAP BTP üzerinde uzak bir SAP HANA Cloud şeması; 2Q2 scope item'ı üzerinden kurulur |
+| Doğrudan aktarım | SAP ERP (ECC 6.0 ve üzeri), SAP AFS 6.0, SAP EWM 5.1 ve üzeri ve SAP APO SPP'den (SCM 7.14 ve üzeri) | SAP ECC 6.0 ve üzerinden; BH3 scope item'ı üzerinden kurulur |
+| Nesneleri değiştirme | Migration object modeler olan LTMOM işlem kodu | Staging için Model Your Migration Objects uygulaması; doğrudan aktarım için Implementation Activities uygulaması; yalnızca yayımlanmış nesneler genişletilebilir |
+| Kaynak sistem kısıtı | Bir S/4HANA sistemi kaynak olamaz | S/4HANA, Private Edition ve Public Edition sistemleri kaynak olamaz |
+
+## Staging tabloları mı doğrudan aktarım mı
+
+Her geçiş projesi iki yaklaşımdan birini kullanır. Seçim tüm veri iş akışınızı şekillendirir; bu yüzden onu Realize'da değil, Explore'da yapın.
+
+**Staging tabloları.** Cockpit, projenizdeki her migration object için bir dizi veritabanı tablosu üretir. Bunları SAP'nin XML şablon dosyalarından, CSV dosyalarından veya SAP Data Services ya da başka bir ETL aracı gibi kendi araçlarınızla doldurursunuz. Kaynak herhangi bir şey olabilir: eski bir SAP sistemi, Oracle, Dynamics, şirket içinde geliştirilmiş bir sistem veya bir elektronik tablo.
+
+**Doğrudan aktarım.** Cockpit RFC üzerinden bir SAP kaynak sistemine bağlanır ve veriyi kendisi seçer; bir ERP kaynağında şirket koduna göre. [Ön koşullar](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/94f7b5a36db64633a4d49623f66e04c7.html) arasında kaynak sistemde, S/4HANA lisansına dahil olan DMIS eklentisi bulunur. Kaynak sistemler Unicode olmayabilir.
+
+Bir veri sorumlusunun vermesi gereken kararlar açısından ikisi şöyle karşılaştırılır:
+
+| Soru | Staging tabloları | Doğrudan aktarım |
+|---|---|---|
+| Hangi kaynaklar? | Dosyalar veya araçlar üzerinden her sistem | Yalnızca desteklenen SAP kaynakları |
+| Temizliği nerede yaparsınız? | Yüklemeden önce staging tablolarında veya kaynak tarafta | Çoğunlukla seçimden önce kaynak sistemde |
+| Veriyi yüklemeden önce kim gözden geçirebilir? | Tablolara veya dosyalara erişimi olan herkes | Esas olarak cockpit ekranları üzerinden cockpit ekibi |
+| Başlama eforu | Daha yüksek: çıkarmayı siz kurar ve tabloları siz doldurursunuz | Daha düşük: cockpit sizin için seçer |
+| En iyi uyum | Birkaç kaynak, kirli veri, yoğun dönüştürme | Yeni bir S/4HANA tasarımına geçen temiz bir SAP ERP kaynağı |
+
+Doğrudan aktarım, seçilen veriyi ara depolama olarak staging tablolarına da bırakabilir; bu da size arada bir gözden geçirme noktası verir. Tasarımınızı buna dayandırmadan önce sürümünüzün bunu destekleyip desteklemediğini kontrol edin.
+
+### Yönettiğim ekipler neden staging tablolarını kullanıyor
+
+Yönettiğim ekipler cockpit'i kullanır; ben onu bizzat çalıştırmam. Onların varsayılanı ve benim tercihim, doğrudan aktarım yerine staging tablolarıdır.
+
+Nedeni kontroldür. Staging tablolarıyla, yüklenecek veri sorgulayabileceğiniz, iş kurallarına göre kontrol edebileceğiniz ve S/4HANA'ya herhangi bir şey dokunmadan önce düzeltebileceğiniz tablolarda durur. Veri sorumluları güvenmek zorunda oldukları bir seçimi değil, gerçekten gördüklerini onaylayabilir.
+
+Ayrıca temizliği yüklemeden ayırır. Mükerrer tedarikçiler, eksik banka bilgileri ve yanlış ölçü birimleri tek bir yerde, bir denetim izi ile düzeltilir ve yüklemenin kendisi tekrarlanabilir hale gelir. Doğrudan aktarıma başlamak daha hızlıdır, ama kaynak sistemin alışkanlıklarını doğrudan yenisine taşıma eğilimindedir.
+
+Doğrudan aktarımın yine de bir yeri var. Kaynak tek ve iyi bakılmış bir SAP ERP sistemiyse ve hedef tasarım ona yakınsa, gerçek bir veri çıkarma işinden tasarruf sağlar.
+
+## Adım adım Migration Cockpit
+
+SAP, [geçiş sürecini](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/c67e14ff693e423aae2b96d9f3b0fc91.html) sabit bir sıra olarak tanımlar. Ekibinizin staging tablolarıyla yürüteceği adımlar şunlardır.
+
+<stepper title="Migration Cockpit süreci" steps="Proje oluştur|Staging tablolarını doldur|Değerleri eşle|Simüle et|Taşı ve düzelt" bodies="Migrate Your Data'yı açın, bir proje oluşturun ve kapsamdaki migration object'leri seçin.|Şablonları indirip yükleyin veya tabloları kendi araçlarınızla doldurun.|Açık eşleme görevlerini işleyin: değer eşlemeleri ve sabit değerler.|Yüklemeyi simüle edin ve herhangi bir kayıt atmadan önce her hatayı düzeltin.|Bağımlılık sırasına göre yükleyin, ardından başarısız kayıtları düzeltin ve mutabakat yapın."></stepper>
+
+1. **Geçiş projesini oluşturun.** Migrate Your Data uygulamasında bir proje oluşturun, staging tablolarının nerede duracağını (yerel veya uzak şema) seçin ve kapsamdaki nesneleri belirleyin. SAP, projelerin önce üretimin bir kopyası olan bir test sisteminde oluşturulmasını ve her test aktarımı için bir öncekinin düzeltmelerini taşıyan yeni bir proje açılmasını önerir.
+2. **Bağımlılıkları kontrol edin.** Bir migration object'in önce işlenmesi gereken öncül nesneleri ve ondan sonra gelen ardıl nesneleri olabilir. Explore Migration Objects uygulaması (F8638) zorunlu ve isteğe bağlı öncülleri bir grafik olarak gösterir. Açık kalemlerden önce business partner'lar, stoktan önce malzemeler: cockpit sırayı atlamanıza izin vermez.
+3. **Staging tablolarını doldurun.** XML şablonları SAP'nin varsayılan ve önerilen seçeneğidir, çünkü her dosya nesnenin tüm yapılarını ve talimatları içerir. CSV, yapı başına bir dosya olan uzman seçeneğidir. [Tek bir XML dosyası en fazla 100 MB olabilir](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/5cc41962b2624ac5b9a136e69369f5e0.html) ve birkaç XML dosyasından oluşan bir zip de 100 MB'ı aşamaz; bu yüzden büyük nesnelerin bölünmesi ya da tablolara doğrudan yazan bir araç gerekir.
+4. **Doğrulama mesajlarını okuyun.** Yüklemeden sonra sistem dosyayı doğrular ve her hata ve uyarıyı ilgili hücreye bağlayan bir Messages sayfası ekler. Uyarı içeren dosyalarda, veri ilerlemeden önce birinin bunların göz ardı edilip edilemeyeceğine karar vermesi gerekir.
+5. **Eşleme görevlerini işleyin.** Değer eşleme görevleri, eski tesis kodlarını yenilerine çevirmek gibi kaynak değerleri hedef değerlere dönüştürür. Sabit değer görevleri varsayılanları belirler. Büyük eşlemelerde değerleri ekranlara yazmak yerine eşleme şablonlarını indirin.
+6. **Simüle edin.** Simülasyon, kayıt atmadan yüklemeyi çalıştırır ve hangi örneklerin başarılı, hangilerinin başarısız olacağını gösterir. Yeni eşleme görevleri doğurabilir; bunları işleyin ve yeniden simüle edin. Birkaç nesne simüle edilemez, bu yüzden onlar için ek kontroller planlayın.
+7. **Taşıyın.** Yüklemeyi nesne nesne, önce öncülleri yaparak çalıştırın. Bazı nesnelerin birden fazla aktarım adımı vardır ve her adım sırayla simüle edilip taşınır.
+8. **Düzeltin ve mutabakat yapın.** Gereken yerde düzeltme dosyaları kullanarak başarısız örnekleri düzeltin, ardından sayıları ve finansal toplamları kaynakla karşılaştırarak mutabakat yapın. Hatasız biten bir iş, verinin doğru olduğunun kanıtı değildir.
+
+Doğrudan aktarım aynı kalıbı izler, tek bir farkla başlar. Tabloları doldurmak yerine kaynak sisteme karşı Select Data çalıştırırsınız ve seçimi modeler'da daha da kısıtlayabilirsiniz.
+
+## Standart nesneler yetmediğinde
+
+Er ya da geç bir migration object tam olarak uymayacaktır. Kaynakta özel bir alan, giriş sırasında ihtiyaç duyduğunuz bir bölme ya da SAP'nin sunmadığı bir nesne.
+
+On-premise ve private edition'da araç, SAP S/4HANA migration object modeler olan LTMOM işlem kodudur. Ekibin standart nesneleri genişletmesine, alan eklemesine, özel nesneler tanımlamasına ve geçiş içeriğinin sistemler arasındaki transportlarını yönetmesine olanak tanır. Kendi geliştirici rolünü gerektirir, bu yüzden onu kimin taşıyacağını planlayın.
+
+Public edition'da seçenekler daha dardır. Staging tabloları için Model Your Migration Objects uygulaması [yalnızca SAP'nin yayımladığı belirli migration object'leri genişletebilir](https://help.sap.com/docs/SAP_S4HANA_CLOUD/d5699934e7004d048c4801b552f3b013/947d9c3d00fc4e66851a8f5592871ad3.html); her nesne için neyin genişletilebileceğini listeleyen bir SAP Note vardır. Bu, public edition'ın clean core modeliyle tutarlıdır ve verinizin gerçekten eskisi gibi görünmesi gerekip gerekmediğine dair iyi bir testtir.
+
+Tavsiyem, her modeler değişikliğine özel kod gibi davranmaktır. Kayda geçirin, bir sahip atayın ve iş tarafının ona gerçekten ihtiyacı olup olmadığını sorun.
+
+## Cockpit'i bir araç olarak değil, bir program olarak yürütmek
+
+Gördüğüm S/4HANA programlarında veri taşıma eforun yüzde 30 ila 40'ını oluşturur. Cockpit bu iş akışının içinde durur; bu yüzden onunla ilgili ters gidenlerin çoğu araçtan kaynaklanmaz.
+
+Cockpit çalışmasının başarılı olup olmayacağını beş şey belirler:
+
+1. **Nesneleri Explore'da kapsamlayın.** Her migration object'i kaynağı, hacmi ve sahibiyle listeleyin. Gerçek sayılara sahip olduğunuzda [ücretsiz veri taşıma tahmin aracı](/tr/free-data-migration-estimator-sap-oracle-microsoft/) size savunulabilir bir efor aralığı verir.
+2. **Her nesne için veri sahiplerini belirleyin.** Müşteri ve tedarikçi finansal verilerinin sahibi finans, malzemelerin sahibi satın almadır. İki mükerrer tedarikçiden hangisinin doğru olduğuna BT karar veremez.
+3. **Yükleme döngülerini çıkış kriterleriyle planlayın.** Her döngü bir test sisteminde yeni bir projedir ve her biri iş tarafının onayladığı bir mutabakatla biter. [SAP veri taşımanın neden başarısız olduğunu](/tr/why-sap-data-migration-fails-and-how-to-fix-it/) anlatan rehberimde kopyalayabileceğiniz bir deneme yükleme planı var.
+4. **Cutover penceresini boyutlandırın.** Bir döngüyü tam üretim hacminde çalıştırın. Dosya sınırları ve yükleme süreleri ancak gerçek boyutta görünür hale gelir.
+5. **Cutover'dan önce nesneleri ve eşlemeleri dondurun.** Üretim yüklemesi, aynı projeler, şablonlar ve eşlemelerle son provayı tekrarlamalıdır.
+
+S/4HANA programlarında gördüğüm en büyük hata, başta doğru planlama yapmamaktır. Cockpit'te bu; geç gelen nesne listeleri, eksik sahipler ve Explore'un bulması gereken sorunları bulan, Realize'daki ilk yükleme döngüsü olarak ortaya çıkar.
+
+Bu döngüler genel planı da şekillendirir. [S/4HANA geçiş süresi rehberim](/tr/s4hana-migration-timeline-project-plan/) yükleme döngülerinin yola göre nerede durduğunu gösteriyor; [S/4HANA geçiş maliyeti rehberim](/tr/s4hana-migration-cost/) ise veri bütçesini neyin belirlediğini anlatıyor.
+
+### İş ortağınıza cockpit hakkında ne sorulmalı
+
+İmzalamadan önce iş ortağından veri yaklaşımını bir sunumda değil, yazılı olarak göstermesini isteyin:
+
+1. Her nesne için hangi yaklaşımı, staging tablolarını mı doğrudan aktarımı mı önerdikleri ve nedeni.
+2. Kaç yükleme döngüsü planladıkları ve her birinin çıkış kriterinin ne olduğu.
+3. Modeler'da hangi nesneleri değiştirmeyi bekledikleri ve bu değişikliklerin bakımını kimin yapacağı.
+4. Sizin tarafınızda her nesneyi kimin ve ne zaman onaylayacağı.
+
+Burada genel geçer yanıtlar bir uyarı işaretidir. Bunu daha önce yapmış bir iş ortağı, sektörünüz için zorlu nesnelerin adını sayabilir.
+
+## Sırada ne yapardım
+
+Bu ay müşteri, tedarikçi ve malzeme ana verilerinizin tam bir çıktısını alın, kayıtları sayın ve kalitenin profilini çıkarın. Ardından her nesne için, sahipleri belirlenmiş olarak, staging tablolarına mı doğrudan aktarıma mı gideceğinize karar verin.
+
+Kaynak sistemi henüz değerlendirmediyseniz [SAP Readiness Check ve geçiş değerlendirmesi](/tr/sap-readiness-check-migration-assessment/) ile başlayın. Veri taşıma planınız hakkında bağımsız bir görüş istiyorsanız [benimle iletişime geçin](/tr/contact-noel-erp-support/).
+
+## Sıkça sorulan sorular
+
+<details>
+<summary>SAP S/4HANA Migration Cockpit nedir?</summary>
+
+SAP'nin iş verilerinin yeni bir S/4HANA sistemine ilk yüklemesi için sunduğu, Fiori uygulaması Migrate Your Data üzerinden çalışan araçtır. Ana veriler ve açık kalemler için önceden tanımlanmış migration object'ler kullanır ve iki yaklaşımı destekler: staging tabloları ve bir SAP kaynak sisteminden doğrudan aktarım.
+
+</details>
+
+<details>
+<summary>LTMC, S/4HANA'da hâlâ kullanılabilir mi?</summary>
+
+Veri taşımak için hayır. SAP, LTMC işlem kodunu kullanımdan kaldırdı ve artık S/4HANA'ya veri taşımak için kullanılamıyor. İçindeki eski projeleri hâlâ görüntüleyebilirsiniz.
+
+Yeni geçişler Migrate Your Data uygulamasında çalışır.
+
+</details>
+
+<details>
+<summary>Staging tabloları ile doğrudan aktarım arasındaki fark nedir?</summary>
+
+Staging tablolarında cockpit her migration object için tablolar üretir ve siz bunları herhangi bir kaynaktan, XML veya CSV şablonlarından ya da kendi araçlarınızla doldurursunuz. Doğrudan aktarımda cockpit veriyi, SAP ERP 6.0 gibi desteklenen bir SAP kaynak sisteminden RFC bağlantısı üzerinden doğrudan okur. Staging tabloları, yüklemeden önce kontrol ve temizlik için size daha fazla alan tanır.
+
+</details>
+
+<details>
+<summary>Migration Cockpit bir brownfield dönüşümü için kullanılabilir mi?</summary>
+
+Çekirdek taşıma için hayır. SAP cockpit'i yeni bir uygulama senaryosundaki ilk yükleme için tasarlar. Bir brownfield sistem dönüşümü, veriyi Software Update Manager ile yerinde dönüştürür.
+
+</details>
+
+<details>
+<summary>SAP'de LTMOM nedir?</summary>
+
+LTMOM, on-premise ve private edition'da kullanılan SAP S/4HANA migration object modeler'ın işlem kodudur. Standart migration object'leri genişletmenize, özel alanlar eklemenize, kendi nesnelerinizi oluşturmanıza ve geçiş içeriğini transport etmenize olanak tanır. Public edition'da Model Your Migration Objects uygulaması aynı işin daha dar bir sürümünü yapar.
+
+</details>
+
+<details>
+<summary>S/4HANA Migration Cockpit'te dosya boyutu sınırı nedir?</summary>
+
+Tek bir XML şablon dosyası en fazla 100 MB olabilir ve birkaç XML dosyasından oluşan bir zip 100 MB'ı aşamaz. Zip içindeki dosyalar sıkıştırıldıktan sonra daha büyük olabilir; dosya başına sınır sürüme ve release'e göre değişir.
+
+CSV klasörleri de 100 MB ile sınırlıdır. Çok büyük nesnelerde staging tablolarını dosyalar yerine bir araçla doldurun.
+
+</details>

@@ -1,0 +1,203 @@
+---
+title: "SAP S/4HANA Migration Cockpit korak po korak"
+h1: "SAP S/4HANA Migration Cockpit korak po korak"
+slug: "s4hana-migration-cockpit-step-by-step"
+date: "2026-10-13"
+updated: "2026-10-13"
+hero: "/images/migration/s4hana-migration-cockpit-step-by-step.webp"
+heroAlt: "Dva monitora s tablicama podataka i tijekom mapiranja na svijetlom stolu s predlošcima za migraciju"
+category: "erp-strategy"
+tags: ["sap-migration-cockpit", "sap-data-migration", "ecc-to-s4hana", "s4hana-implementation"]
+author: "Noel D'Costa"
+metaTitle: "SAP S/4HANA Migration Cockpit: vodič korak po korak (2026.)"
+metaDescription: "SAP S/4HANA Migration Cockpit korak po korak: staging tablice ili izravni prijenos, migracijski objekti, mapiranje, simulacija i Migration Object Modeler."
+primaryKeyword: "SAP S/4HANA Migration Cockpit"
+excerpt: "SAP S/4HANA Migration Cockpit učitava matične podatke i otvorene stavke u novi S/4HANA sustav. Ovo je postupak korak po korak, izbor između staging tablica i izravnog prijenosa te kako ga voditi kao program, a ne kao alat."
+experienceSource: "Noel's first-person experience leading and rescuing SAP programmes (confirmed by Noel, 12 and 13 October 2026). No client names. Product facts checked against official SAP documentation, October 2026."
+keyTakeaways:
+  - "Migration Cockpit radi kao Fiori aplikacija Migrate Your Data; transakcija LTMC je zastarjela i prikazuje samo stare projekte"
+  - "Izgrađen je za početno učitavanje kod nove implementacije, a ne za konverzije, sinkronizaciju ili ponavljajuća sučelja"
+  - "Dva pristupa: staging tablice koje se pune iz datoteka ili Vašim vlastitim alatima ili izravni prijenos iz SAP izvornog sustava putem RFC-a"
+  - "Timovi koje vodim radije koriste staging tablice, jer se podaci mogu provjeriti i očistiti prije nego što išta stigne u S/4HANA"
+  - "Postupak po objektu glasi: odabir ili učitavanje, mapiranje, simulacija, migracija, ispravak, a prethodnici uvijek idu prvi"
+  - "Migracija podataka odnosi 30 do 40 posto napora, pa plan za cockpit pripada u plan programa, a ne u backlog izrade"
+pullQuote: "Cockpit učitava ono što mu date. Jesu li ti podaci ispravni i dalje je Vaša odluka."
+mentions:
+  - "SAP S/4HANA Migration Cockpit"
+  - "Migrate Your Data app"
+  - "SAP S/4HANA migration object modeler"
+  - "LTMC"
+  - "LTMOM"
+  - "SAP Data Services"
+  - "SAP S/4HANA Cloud Public Edition"
+  - "SAP Cloud ERP Private"
+  - "SAP ECC"
+  - "DMIS"
+originalUrl: "https://noeldcosta.com/s4hana-migration-cockpit-step-by-step/"
+canonicalUrl: "https://noeldcosta.com/hr/s4hana-migration-cockpit-step-by-step/"
+locale: "hr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP S/4HANA Migration Cockpit SAP-ov je alat za učitavanje matičnih podataka i otvorenih stavki u novi S/4HANA sustav, putem Fiori aplikacije Migrate Your Data. Birate staging tablice ili izravni prijenos, odabirete migracijske objekte, mapirate vrijednosti, simulirate i zatim učitavate, objekt po objekt, redoslijedom ovisnosti.
+
+Kratki odgovor za voditelja programa: koristite ga za novu implementaciju, planirajte ga kao radni tok od prvog tjedna i rano odlučite tko je vlasnik podataka. Alat je lakši dio.
+
+Ovaj je vodič krak mog [vodiča za migraciju s ECC-a na S/4HANA](/hr/ecc-to-s4hana-migration/). Napisan je za voditelje programa i voditelje podataka koji cockpit trebaju dobro voditi, a ne samo instalirati.
+
+## Što je Migration Cockpit i gdje se primjenjuje
+
+Cockpit prenosi poslovne podatke u S/4HANA pomoću unaprijed definiranih migracijskih objekata. Svaki objekt opisuje izvorne i ciljne strukture za jedan poslovni objekt, poput kupca, dobavljača, materijala ili otvorene stavke, uz pravila mapiranja između njih.
+
+SAP je jasan u pogledu opsega. Cockpit je [namijenjen početnom učitavanju kod nove implementacije](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/7a62b59726ce42e7a10770b06940f934.html), a ne sinkronizaciji sustava ili kontinuiranom protoku podataka. Brownfield konverzija ne koristi ga za jezgreni prijelaz, jer Software Update Manager konvertira podatke na mjestu.
+
+Dvije napomene o nazivima štede zbrku. Stara Web Dynpro transakcija LTMC [zastarjela je i više se ne može koristiti za migraciju podataka](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/8f97f0b407024465a283809f0bbe000c.html); u njoj možete samo pregledavati stare projekte. Njezin je nasljednik Fiori aplikacija Migrate Your Data i nju ljudi danas misle kada kažu „cockpit".
+
+Primjenjuje se u svim izdanjima, s razlikama u načinu konfiguriranja i proširivanja. Ova ih tablica uspoređuje, stanje u listopadu 2026.:
+
+| Područje | SAP S/4HANA on-premise i SAP Cloud ERP Private (S/4HANA Cloud Private Edition) | SAP S/4HANA Cloud Public Edition |
+|---|---|---|
+| Aplikacija | Migrate Your Data | Migrate Your Data (aplikacija F3473) |
+| Staging tablice | Lokalna S/4HANA shema ili udaljena SAP HANA shema | Lokalna shema ili udaljena SAP HANA Cloud shema na SAP BTP-u; postavlja se putem scope itema 2Q2 |
+| Izravni prijenos | Iz SAP ERP-a (ECC 6.0 i noviji), SAP AFS 6.0, SAP EWM 5.1 i novijeg te SAP APO SPP (SCM 7.14 i noviji) | Iz SAP ECC 6.0 i novijeg; postavlja se putem scope itema BH3 |
+| Mijenjanje objekata | Transakcija LTMOM, migration object modeler | Aplikacija Model Your Migration Objects za staging; aplikacija Implementation Activities za izravni prijenos; mogu se proširiti samo objavljeni objekti |
+| Ograničenje izvornog sustava | S/4HANA sustav ne može biti izvor | S/4HANA, Private Edition i Public Edition sustavi ne mogu biti izvor |
+
+## Staging tablice ili izravni prijenos
+
+Svaki migracijski projekt koristi jedan od dva pristupa. Izbor oblikuje cijeli Vaš radni tok podataka, stoga ga donesite u fazi Explore, a ne u fazi Realize.
+
+**Staging tablice.** Cockpit generira skup tablica baze podataka za svaki migracijski objekt u Vašem projektu. Punite ih iz SAP-ovih XML predložaka, iz CSV datoteka ili vlastitim alatima, poput SAP Data Services ili drugog ETL alata. Izvor može biti bilo što: stari SAP sustav, Oracle, Dynamics, interno razvijen sustav ili proračunska tablica.
+
+**Izravni prijenos.** Cockpit se putem RFC-a spaja na SAP izvorni sustav i sam odabire podatke, po kodu tvrtke za ERP izvor. [Preduvjeti](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/94f7b5a36db64633a4d49623f66e04c7.html) uključuju add-on DMIS u izvornom sustavu, koji je uključen u S/4HANA licencu. Izvorni sustavi mogu biti ne-Unicode.
+
+Ovako se dva pristupa uspoređuju za odluke koje voditelj podataka mora donijeti:
+
+| Pitanje | Staging tablice | Izravni prijenos |
+|---|---|---|
+| Koji izvori? | Bilo koji sustav, putem datoteka ili alata | Samo podržani SAP izvori |
+| Gdje čistite? | U staging tablicama ili ranije u lancu, prije učitavanja | Uglavnom u izvornom sustavu, prije odabira |
+| Tko može pregledati podatke prije učitavanja? | Svatko s pristupom tablicama ili datotekama | Uglavnom tim za cockpit, putem zaslona cockpita |
+| Napor za početak | Veći: Vi izrađujete ekstrakciju i punite tablice | Manji: cockpit odabire umjesto Vas |
+| Najbolje odgovara | Više izvora, nečisti podaci, opsežna transformacija | Čist SAP ERP izvor koji prelazi na novi S/4HANA dizajn |
+
+Izravni prijenos može odabrane podatke i privremeno odložiti u staging tablice kao međuspremnik, što Vam daje točku pregleda između. Provjerite podržava li to Vaše izdanje prije nego što oko toga gradite dizajn.
+
+### Zašto timovi koje vodim koriste staging tablice
+
+Timovi koje vodim koriste cockpit; ja ga ne vodim osobno. Njihov zadani izbor, a i moja sklonost, jesu staging tablice umjesto izravnog prijenosa.
+
+Razlog je kontrola. Sa staging tablicama podaci koji će biti učitani nalaze se u tablicama koje možete pretraživati, provjeravati prema poslovnim pravilima i ispravljati prije nego što išta dotakne S/4HANA. Upravitelji podataka mogu potpisati ono što zaista vide, a ne odabir kojem moraju vjerovati.
+
+To također odvaja čišćenje od učitavanja. Dvostruki dobavljači, nedostajući bankovni podaci i pogrešne mjerne jedinice ispravljaju se na jednom mjestu, s revizijskim tragom, a samo učitavanje postaje ponovljivo. Izravni prijenos brže se pokreće, ali sklon je prenijeti navike izvornog sustava ravno u novi.
+
+Izravni prijenos i dalje ima svoje mjesto. Ako je izvor jedan, dobro održavan SAP ERP sustav, a ciljni dizajn mu je blizak, štedi stvaran posao ekstrakcije.
+
+## Migration Cockpit korak po korak
+
+SAP opisuje [postupak migracije](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/c67e14ff693e423aae2b96d9f3b0fc91.html) kao fiksni slijed. Ovo su koraci kako će ih Vaš tim provoditi sa staging tablicama.
+
+<stepper title="Postupak u Migration Cockpitu" steps="Izrada projekta|Punjenje staging tablica|Mapiranje vrijednosti|Simulacija|Migracija i ispravak" bodies="Otvorite Migrate Your Data, izradite projekt i odaberite migracijske objekte u opsegu.|Preuzmite predloške i učitajte ih ili tablice napunite vlastitim alatima.|Obradite otvorene zadatke mapiranja: mapiranja vrijednosti i fiksne vrijednosti.|Simulirajte učitavanje i ispravite svaku pogrešku prije bilo kakvog knjiženja.|Učitavajte redoslijedom ovisnosti, zatim ispravite neuspjele zapise i uskladite."></stepper>
+
+1. **Izradite migracijski projekt.** U aplikaciji Migrate Your Data izradite projekt, odaberite gdje se nalaze staging tablice (lokalna ili udaljena shema) i odaberite objekte u opsegu. SAP preporučuje da se projekti najprije izrade u testnom sustavu koji je kopija produkcije te novi projekt za svaki probni prijenos koji nosi ispravke iz prethodnog.
+2. **Provjerite ovisnosti.** Migracijski objekt može imati objekte prethodnike koji se moraju obraditi prvi i objekte sljedbenike koji dolaze nakon. Aplikacija Explore Migration Objects (F8638) prikazuje obavezne i neobavezne prethodnike kao graf. Poslovni partneri prije otvorenih stavki, materijali prije zaliha: cockpit Vam neće dopustiti da preskočite redoslijed.
+3. **Napunite staging tablice.** XML predlošci SAP-ova su zadana i preporučena opcija, jer svaka datoteka sadrži sve strukture za objekt uz upute. CSV je opcija za stručnjake, jedna datoteka po strukturi. [Jedna XML datoteka može imati do 100 MB](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/5cc41962b2624ac5b9a136e69369f5e0.html), a ni zip arhiva s više XML datoteka ne može premašiti 100 MB, pa velike objekte treba podijeliti ili koristiti alat koji piše izravno u tablice.
+4. **Pročitajte poruke validacije.** Nakon učitavanja sustav provjerava datoteku i dodaje list Messages sa svakom pogreškom i upozorenjem, povezanima s ćelijom. Za datoteke s upozorenjima netko mora odlučiti mogu li se zanemariti prije nego što podaci krenu dalje.
+5. **Obradite zadatke mapiranja.** Zadaci mapiranja vrijednosti prevode izvorne vrijednosti u ciljne, primjerice stare šifre pogona u nove. Zadaci fiksnih vrijednosti postavljaju zadane vrijednosti. Za velika mapiranja preuzmite predloške za mapiranje umjesto da vrijednosti upisujete na zaslonima.
+6. **Simulirajte.** Simulacija provodi učitavanje bez knjiženja i pokazuje koje bi instance uspjele, a koje ne. Može otvoriti nove zadatke mapiranja; obradite ih i ponovno simulirajte. Nekoliko objekata ne može se simulirati, pa za njih planirajte dodatne provjere.
+7. **Migrirajte.** Provedite učitavanje objekt po objekt, prethodnici prvi. Neki objekti imaju više od jednog koraka prijenosa, a svaki se korak redom simulira i migrira.
+8. **Ispravite i uskladite.** Ispravite neuspjele instance, po potrebi pomoću datoteka za ispravke, a zatim uskladite brojeve zapisa i financijske ukupne iznose s izvorom. Posao koji završi bez pogrešaka nije dokaz da su podaci ispravni.
+
+Izravni prijenos slijedi isti obrazac, s jednom razlikom na početku. Umjesto punjenja tablica pokrećete Select Data nad izvornim sustavom, a odabir možete dodatno ograničiti u modeleru.
+
+## Kada standardni objekti nisu dovoljni
+
+Prije ili kasnije neki migracijski objekt neće sasvim odgovarati. Prilagođeno polje u izvoru, podjela koja Vam treba pri ulazu ili objekt koji SAP ne isporučuje.
+
+On-premise i u privatnom izdanju alat je transakcija LTMOM, SAP S/4HANA migration object modeler. Omogućuje timu da proširi standardne objekte, doda polja, definira prilagođene objekte i upravlja transportima migracijskog sadržaja između sustava. Zahtijeva vlastitu ulogu programera, pa planirajte tko je ima.
+
+U javnom izdanju mogućnosti su uže. Za staging tablice aplikacija Model Your Migration Objects može [proširiti samo određene migracijske objekte koje je SAP objavio](https://help.sap.com/docs/SAP_S4HANA_CLOUD/d5699934e7004d048c4801b552f3b013/947d9c3d00fc4e66851a8f5592871ad3.html), uz SAP Note po objektu koja navodi što se može proširiti. To je u skladu s Clean Core modelom javnog izdanja i dobar je test toga trebaju li Vaši podaci zaista izgledati kao prije.
+
+Moj je savjet da svaku promjenu u modeleru tretirate kao prilagođeni kod. Zabilježite je, dodijelite joj vlasnika i pitajte treba li je poslovanje zaista.
+
+## Vođenje cockpita kao programa, a ne alata
+
+Migracija podataka odnosi 30 do 40 posto napora na S/4HANA programima koje vidim. Cockpit se nalazi unutar tog radnog toka, pa većina onoga što s njim pođe po zlu nije alat.
+
+Pet stvari odlučuje hoće li posao s cockpitom uspjeti:
+
+1. **Odredite opseg objekata u fazi Explore.** Navedite svaki migracijski objekt, njegov izvor, količinu i vlasnika. [Besplatni procjenitelj migracije podataka](/hr/free-data-migration-estimator-sap-oracle-microsoft/) daje Vam obranjiv raspon napora čim imate stvarne brojeve.
+2. **Imenujte vlasnike podataka po objektu.** Financije su vlasnik financijskih podataka kupaca i dobavljača, nabava je vlasnik materijala. IT ne može odlučiti koji je od dva dvostruka dobavljača ispravan.
+3. **Planirajte cikluse učitavanja s izlaznim kriterijima.** Svaki ciklus je novi projekt u testnom sustavu i svaki završava usklađivanjem koje poslovni korisnici potpisuju. Moj vodič o tome [zašto migracija podataka u SAP-u ne uspijeva](/hr/why-sap-data-migration-fails-and-how-to-fix-it/) ima plan probnih učitavanja koji možete preuzeti.
+4. **Procijenite prozor za cutover.** Provedite jedan ciklus s punom produkcijskom količinom. Ograničenja datoteka i vremena učitavanja postaju vidljivi tek u stvarnoj veličini.
+5. **Zamrznite objekte i mapiranja prije cutovera.** Produkcijsko učitavanje trebalo bi ponoviti završnu probu, s istim projektima, predlošcima i mapiranjima.
+
+Najveća pogreška koju vidim na S/4HANA programima jest to što se na početku ne planira kako treba. Kod cockpita to se očituje kao kasni popisi objekata, vlasnici koji nedostaju i prvi ciklus učitavanja u fazi Realize koji otkriva probleme koje je trebala otkriti faza Explore.
+
+Ti ciklusi oblikuju i ukupni plan. Moj [vodič za trajanje migracije na S/4HANA](/hr/s4hana-migration-timeline-project-plan/) pokazuje gdje se ciklusi učitavanja nalaze po putovima, a [vodič za troškove migracije na S/4HANA](/hr/s4hana-migration-cost/) pokriva što određuje proračun za podatke.
+
+### Što pitati partnera o cockpitu
+
+Prije potpisivanja zatražite od partnera da Vam svoj pristup podacima pokaže u pisanom obliku, a ne u prezentaciji:
+
+1. Koji pristup predlaže po objektu, staging tablice ili izravni prijenos, i zašto.
+2. Koliko ciklusa učitavanja planira i koji je izlazni kriterij za svaki.
+3. Koje objekte očekuje mijenjati u modeleru i tko održava te promjene.
+4. Tko na Vašoj strani potpisuje svaki objekt i kada.
+
+Generički odgovori ovdje su znak upozorenja. Partner koji je to već radio može imenovati nezgodne objekte za Vašu industriju.
+
+## Što bih učinio sljedeće
+
+Ovog mjeseca napravite puni izvoz matičnih podataka kupaca, dobavljača i materijala, prebrojite zapise i profilirajte kvalitetu. Zatim po objektu odlučite između staging tablica i izravnog prijenosa, s imenovanim vlasnicima.
+
+Ako još niste procijenili izvorni sustav, počnite sa [SAP Readiness Checkom i procjenom migracije](/hr/sap-readiness-check-migration-assessment/). Ako želite neovisno mišljenje o svom planu migracije podataka, [javite mi se](/hr/contact-noel-erp-support/).
+
+## Često postavljana pitanja
+
+<details>
+<summary>Što je SAP S/4HANA Migration Cockpit?</summary>
+
+To je SAP-ov alat za početno učitavanje poslovnih podataka u novi S/4HANA sustav, koji se pokreće putem Fiori aplikacije Migrate Your Data. Koristi unaprijed definirane migracijske objekte za matične podatke i otvorene stavke te podržava dva pristupa: staging tablice i izravni prijenos iz SAP izvornog sustava.
+
+</details>
+
+<details>
+<summary>Je li LTMC još dostupan u S/4HANA?</summary>
+
+Ne za migraciju podataka. SAP je transakciju LTMC proglasio zastarjelom i ona se više ne može koristiti za migraciju podataka u S/4HANA. U njoj i dalje možete pregledavati stare projekte.
+
+Nove migracije provode se u aplikaciji Migrate Your Data.
+
+</details>
+
+<details>
+<summary>Koja je razlika između staging tablica i izravnog prijenosa?</summary>
+
+Kod staging tablica cockpit generira tablice po migracijskom objektu, a Vi ih punite iz XML ili CSV predložaka ili vlastitim alatima, iz bilo kojeg izvora. Kod izravnog prijenosa cockpit čita podatke izravno iz podržanog SAP izvornog sustava, poput SAP ERP 6.0, putem RFC veze. Staging tablice daju Vam više prostora za provjeru i čišćenje prije učitavanja.
+
+</details>
+
+<details>
+<summary>Može li se Migration Cockpit koristiti za brownfield konverziju?</summary>
+
+Ne za jezgreni prijelaz. SAP je cockpit namijenio početnom učitavanju u scenariju nove implementacije. Brownfield konverzija sustava konvertira podatke na mjestu pomoću Software Update Managera.
+
+</details>
+
+<details>
+<summary>Što je LTMOM u SAP-u?</summary>
+
+LTMOM je transakcija za SAP S/4HANA migration object modeler, koja se koristi on-premise i u privatnom izdanju. Omogućuje proširenje standardnih migracijskih objekata, dodavanje prilagođenih polja, izradu vlastitih objekata i transport migracijskog sadržaja. U javnom izdanju aplikacija Model Your Migration Objects obavlja uži oblik istog posla.
+
+</details>
+
+<details>
+<summary>Koje je ograničenje veličine datoteke u S/4HANA Migration Cockpitu?</summary>
+
+Jedna XML datoteka predloška može imati do 100 MB, a zip arhiva s više XML datoteka ne može premašiti 100 MB. Datoteke unutar zip arhive mogu biti veće kada su komprimirane, a ograničenje po datoteci ovisi o izdanju i verziji.
+
+CSV mape također su ograničene na 100 MB. Za vrlo velike objekte staging tablice punite alatom umjesto datotekama.
+
+</details>

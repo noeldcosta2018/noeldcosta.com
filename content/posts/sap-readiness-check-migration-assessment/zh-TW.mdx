@@ -1,0 +1,201 @@
+---
+title: "SAP Readiness Check 與 S/4HANA 移轉評估"
+h1: "SAP Readiness Check 與 S/4HANA 移轉評估"
+slug: "sap-readiness-check-migration-assessment"
+date: "2026-10-13"
+updated: "2026-10-13"
+hero: "/images/migration/sap-readiness-check-migration-assessment.webp"
+heroAlt: "筆電上的評估儀表板、一張打了勾的檢查清單，以及放在系統架構圖上的放大鏡"
+category: "erp-strategy"
+tags: ["ecc-to-s4hana", "sap-planning-and-selection", "s4hana-implementation"]
+author: "Noel D'Costa"
+metaTitle: "SAP Readiness Check：S/4HANA 移轉評估指南"
+metaDescription: "SAP Readiness Check 涵蓋什麼、如何執行、會遺漏什麼，以及在您選擇路徑或合作夥伴之前，一份完整的 S/4HANA 移轉評估還會補上哪些決策。"
+primaryKeyword: "S/4HANA 移轉評估"
+excerpt: "SAP Readiness Check 告訴您 ECC 系統中有哪些地方與 S/4HANA 衝突。移轉評估告訴您該怎麼處理。以下說明兩者各涵蓋什麼、如何執行檢查，以及它的不足之處。"
+experienceSource: "Noel's first-person experience leading and rescuing SAP programmes (confirmed by Noel, 12 and 13 October 2026). No client names. Product facts checked against official SAP documentation, October 2026."
+keyTakeaways:
+  - "SAP Readiness Check 是針對 S/4HANA 對您的 ECC 系統所做的技術分析，提供給擁有有效 SAP 維護合約的客戶"
+  - "它涵蓋簡化項目、附加元件、業務功能、客製程式碼、規模估算、介面、業務夥伴、財務資料品質與 Fiori 應用程式"
+  - "請在正式環境中執行，並同時上傳客製程式碼結果，否則客製程式碼區段會是空的"
+  - "它遺漏、而日後會造成傷害的是客製物件：它標出會出錯的程式碼，而不是您應該淘汰的程式碼"
+  - "完整的移轉評估在檢查之上，再加入流程、資料、整合、組織與成本的決策"
+pullQuote: "Readiness Check 告訴您什麼會出錯。它不會告訴您該保留什麼。"
+mentions:
+  - "SAP Readiness Check for SAP S/4HANA"
+  - "SAP S/4HANA"
+  - "SAP ECC"
+  - "ABAP Test Cockpit"
+  - "Custom Code Migration app"
+  - "SAP for Me"
+  - "SAP Cloud ALM"
+  - "SAP Signavio Process Insights"
+  - "smartShift"
+  - "Software Update Manager"
+originalUrl: "https://noeldcosta.com/sap-readiness-check-migration-assessment/"
+canonicalUrl: "https://noeldcosta.com/zh-TW/sap-readiness-check-migration-assessment/"
+locale: "zh-TW"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+S/4HANA 移轉評估告訴您，移轉您的 ECC 系統要花多少錢、需要多久，以及哪一條路徑適合。SAP Readiness Check 是這份評估的技術部分：它把您的系統與 S/4HANA 做比較，列出會出錯的地方，但不會替您做決定。
+
+簡短的答案：先執行 Readiness Check，在正式環境中執行，並上傳客製程式碼結果。然後把真正的心力花在它看不到的地方，也就是您的流程、資料、客製物件與介面到底該不該移過去。
+
+完整的移轉順序，請從我的 [ECC 移轉至 S/4HANA 指南](/zh-TW/ecc-to-s4hana-migration/)開始。
+
+## SAP Readiness Check 是什麼
+
+SAP Readiness Check for SAP S/4HANA 是 SAP 提供的雲端應用程式。您在 ECC 系統中執行資料收集程式、上傳結果，就會得到一個互動式儀表板，顯示 S/4HANA 對該系統的影響。
+
+根據 SAP 的 [Readiness Check 主要功能概覽](https://help.sap.com/doc/bb0e7ba5158c424ab7ce010228bf1de1/latest/en-US/Key%20Feature%20Overview%20SAP%20Readiness%20Check.pdf)（2026 年 9 月），所有擁有有效 SAP 維護合約的客戶都可以在 SAP for Me 上使用它。擁有 SAP Cloud ALM 租用戶的客戶也可以在那裡執行，並把發現的問題以專案任務的形式推送到 Cloud ALM。
+
+它不需要另外購買。真正的成本是您 Basis 團隊的時間，以及閱讀結果的人的時間。
+
+SAP 為升級、BW/4HANA 與其他產品提供不同的情境。對 ECC 移轉來說，您需要的是 SAP Readiness Check for SAP S/4HANA。目標可以是 S/4HANA 地端版或 SAP S/4HANA Cloud Private Edition，也就是 RISE with SAP 的目標，如 SAP [關於轉換準備的學習內容](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-private-edition/performing-system-preparation-activities-for-system-conversions_c131e647-d7d1-4887-a2ff-c01b25966a52)所說明。
+
+## Readiness Check 涵蓋什麼
+
+SAP 目前針對 S/4HANA 情境的清單有 17 項檢查。下表整理了對移轉決策最重要的幾項，以及每一項告訴您什麼、我會在哪裡特別小心。
+
+| 檢查項目 | 它告訴您什麼 | 需要小心的地方 |
+|---|---|---|
+| 簡化項目 | 哪些 S/4HANA 變更適用於您的系統，附上工作量排序與相關活動 | 主要依據表格內容與使用過的交易，所以它顯示的是相關性，不是您的修正方法 |
+| 附加元件相容性 | 每個 SAP 與第三方附加元件，對您的目標版本是相容、不相容或未知 | 不相容的附加元件會在 SUM 中阻擋轉換；「未知」代表要打電話問廠商 |
+| 已啟用的業務功能 | 不相容、會阻擋轉換的業務功能 | 這裡出現阻擋項目，需要及早向 SAP 提出支援事件 |
+| 客製程式碼分析 | ATC 或 Custom Code Migration 應用程式的結果，依影響分組，附上快速修正數量，以及已使用或未使用的範圍 | 只有在您另外上傳客製程式碼結果時才會出現 |
+| SAP S/4HANA 規模估算 | 初始 HANA 記憶體與磁碟大小、最大的表格，以及歸檔潛力 | 是規模估算的起點，不是最終的硬體或 RISE 規模估算 |
+| 整合 | IDoc、RFC 與 BAPI、Web 服務、OData、BW 擷取器、平面檔與 SLT 的清單，以及可能的影響 | 只顯示這套系統中的技術介面，看不到另一端的系統 |
+| 客戶供應商整合 | 有多少客戶與供應商已經是業務夥伴，以及資料品質問題 | 被業務夥伴轉換卡住的團隊，比任何其他前提條件都多 |
+| 財務資料品質 | 總帳、資產會計與物料分類帳中的不一致，依年度與公司代碼列出 | D 類發現需要針對系統個別修正，這很花時間 |
+| 計畫停機時間計算器 | 在單一資料中心進行標準 SUM 轉換的預期業務停機時間 | 僅供參考；真正的停機時段由您的切換計畫決定 |
+| 應用程式可用性與建議的 Fiori 應用程式 | 已淘汰或被取代的交易，以及適合您使用情況的 Fiori 應用程式 | 是建議，不是使用者體驗設計 |
+| Business Process Discovery | 流程自動化率、逾期待辦與非標準的訂單類型 | 是流程洞察的預覽，下文有更完整的說明 |
+
+## 如何執行
+
+核心指引是 [SAP Note 2913617](https://me.sap.com/notes/2913617)，SAP Readiness Check for SAP S/4HANA。開始之前請先讀最新版本，因為 SAP 會定期更新前提條件的 Note。
+
+<stepper title="執行 Readiness Check" steps="準備|收集|客製程式碼|上傳|檢視" bodies="在您要分析的系統（通常是正式環境）中，實作 SAP Note 2913617 所列的 Note。|以背景作業執行資料收集報表 RC_COLLECT_ANALYSIS_DATA，選擇目標版本，然後下載 ZIP 檔。|在 ATC 或 Custom Code Migration 應用程式中執行 S/4HANA 客製程式碼檢查，並匯出結果。|在 SAP for Me 的 SAP Readiness Check 頁面建立新的分析，並上傳兩個檔案。|與 Basis、財務、流程負責人及客製程式碼負責人逐項檢視每一項檢查。"></stepper>
+
+以下幾點是步驟清單沒有呈現的。
+
+1. **使用正式環境。**SAP 的指引是分析正式環境，因為您會依據這些結果進行規劃。有幾項檢查依賴真實的使用歷程，而沙箱沒有這些歷程。
+2. **上傳客製程式碼結果。**主要的資料收集本身並不會分析您的客製程式碼。如果沒有人把 ATC 或 Custom Code Migration 應用程式的結果上傳到同一個分析中，客製程式碼區段就會是空的，報告看起來會比您的系統實際情況更乾淨。
+3. **確認目標版本。**選擇您實際會落地的 S/4HANA 或 Private Edition 版本。簡化項目與附加元件狀態會隨版本而改變。
+4. **預期會有一些來回。**資料收集程式會失敗、Note 會缺漏，大型系統上的作業會跑很久。請為此規劃經過的時間，而不只是工作量。
+
+入口頁面在 [me.sap.com/readinesscheck](https://me.sap.com/readinesscheck)。
+
+## Readiness Check 遺漏了什麼
+
+這項檢查擅長回答一個問題：這套系統中有什麼與 S/4HANA 衝突。它不是為了回答那個東西是否應該存在而設計的。
+
+### 客製物件
+
+依我的經驗，Readiness Check 遺漏、而日後會造成傷害的，是客製物件。它告訴您哪些客製程式碼會與簡化項目衝突而出錯。它不會告訴您哪些 Z 程式、表格、強化、表單與報表仍有業務用途，哪些與 S/4HANA 的標準功能重複，或者哪些已經好幾年沒人執行。
+
+這個缺口很重要，因為在我看到的計畫中，客製程式碼是最常超時的階段。它也是預算中最常被遺忘的隱藏成本。
+
+發現的數量和客製物件的數量是兩個不同的數字。在一個計畫中，透過 smartShift 的分析，我們把客製物件從 18,000 個減少到 3,200 個。單靠 Readiness Check 做不到這樣的刪減，因為它衡量的是影響，不是價值。
+
+所以我把客製程式碼區段當成清點的起點，而不是終點。Custom Code Migration 應用程式補上已使用與未使用的範圍，smartShift 補上自動化分析與修正，而業務端仍然需要有人同意要淘汰什麼。
+
+### 被分析系統以外的一切
+
+這項檢查只看一套 ECC 系統。它看不到：
+
+1. **流程設計。**您的訂單到收款或記錄到報告流程是否應該重新設計，而這正是決定 Greenfield、Brownfield 或選擇性轉換的關鍵。
+2. **介面的另一端。**它列出 ECC 中的介面。中介軟體、第三方系統及其負責人都在它的範圍之外。
+3. **您還沒載入的資料。**來自非 SAP 系統的資料，以及財務與業務夥伴以外的資料品質。
+4. **組織與變革。**誰負責決策、使用者準備得如何，以及業務在計畫期間能承受多少。
+5. **商業條件。**授權轉換、RISE 範圍與合作夥伴成本，都不在任何 SAP 儀表板上。
+
+Business Process Discovery 能讓您初步了解流程績效。更深入的 SAP 分析是 SAP Signavio Process Insights 探索版，SAP 的 [value of support 頁面](https://support.sap.com/en/release-upgrade-maintenance/value-support.html)把它描述為針對六個業務線提供流程改善建議。它是有用的輸入，但仍然不是設計。
+
+## 完整的 S/4HANA 移轉評估多了什麼
+
+移轉評估把 Readiness Check 當成其中一項輸入，並把它轉化為您可以編列資金的決策。以下是兩者的比較。
+
+| 問題 | SAP Readiness Check | 完整的移轉評估 |
+|---|---|---|
+| ECC 中有什麼與 S/4HANA 衝突？ | 有，而且很詳細 | 使用檢查結果 |
+| 哪些客製物件應該保留、淘汰或重建？ | 部分：影響，若使用 Custom Code Migration 應用程式則加上使用情況 | 有：物件清單、使用情況、業務負責人、決策 |
+| Greenfield、Brownfield 或選擇性轉換？ | 沒有 | 有，依據流程與資料的發現 |
+| 哪些介面與外部系統會改變？ | 只有 ECC 這一端 | 兩端都有，附上負責人與修正方式 |
+| 財務以外的資料有多乾淨？ | 部分 | 有，附上清理計畫與負責人 |
+| 需要多久、要花多少錢？ | 只有停機時間與規模估算 | 時程、成本區間與預備金 |
+| 哪一種部署與商業模式？ | 沒有 | 地端、Private Edition 或 Public Edition，以及要談判什麼 |
+
+我使用的工具是 SAP Readiness Check、用於客製程式碼的 Custom Code Migration 應用程式與 smartShift，以及在考慮選擇性資料轉換時使用的 SNP 或 Natuvion。這些都取代不了與流程負責人一起進行的設計審查。
+
+接下來由我的路徑原則完成其餘部分。從其他系統移轉過來或需要定義新流程時選 Greenfield，流程已定義且運作良好時選 Brownfield，部分領域的流程需要重新定義時選選擇性轉換。如果您想在花錢之前先有個初步判斷，我免費的 [S/4HANA 移轉評估工具](/zh-TW/sap-s4hana-migration-strategy-greenfield-vs-brownfield/)會帶您走過同樣的取捨。
+
+評估的產出應該直接用於[移轉時程與專案計畫](/zh-TW/s4hana-migration-timeline-project-plan/)以及[移轉成本估算](/zh-TW/s4hana-migration-cost/)。它也是您交給合作夥伴的東西：如果他們無法針對您的評估提出具體的高階設計，這就說明了一些事情。我的[如何選擇 S/4HANA 移轉合作夥伴](/zh-TW/choose-s4hana-migration-partner/)指南涵蓋這一步。
+
+## 一份像樣的評估需要多久
+
+要看情況。我不會給一個單一的數字，因為不同公司之間的影響因素差異太大。
+
+以下是影響它的因素：
+
+1. **系統與用戶端的數量。**一套 ECC 正式系統，和五套再加上各自獨立的 BW、CRM 與 SRM，是完全不同的工作。
+2. **客製程式碼數量。**數千個客製物件需要使用分析與業務決策，這耗費的是人的時間，不是工具的時間。
+3. **介面。**每一個外部系統都需要一位能說明他們那一端會有什麼改變的負責人。
+4. **實體與國家。**公司代碼越多，在地化、稅務與報表的問題就越多。
+5. **資料品質。**大量的財務不一致或混亂的業務夥伴資料，需要先調查，任何人才能估算。
+6. **業務的可投入時間。**能為評估投入實際工時的流程負責人，比任何工具都更能縮短評估時間。
+7. **存取權限。**等待 Note 核准與正式環境作業排程，會增加經過的時間，卻沒有完成任何分析。
+
+我不會為了早點開始建置而縮短評估。在我主導或救回的 21 個 SAP 計畫中，我看到最大的錯誤是一開始沒有好好規劃。評估就是規劃開始的地方。
+
+## 我接下來會怎麼做
+
+這個月就請您的 Basis 團隊在正式環境中實作 SAP Note 2913617，並執行包含客製程式碼結果的 Readiness Check。然後安排半天，與財務負責人、一位流程負責人及客製程式碼負責人一起閱讀，並列出它沒有回答的問題。
+
+這份清單就是您移轉評估的範圍。如果您想在找合作夥伴之前先取得獨立的觀點，[歡迎與我聯絡](/zh-TW/contact-noel-erp-support/)。
+
+## 常見問題
+
+<details>
+<summary>什麼是 SAP Readiness Check for S/4HANA？</summary>
+
+它是 SAP 提供的雲端應用程式，針對 SAP S/4HANA 分析您的 SAP ERP 系統。您在系統中執行資料收集程式，把結果上傳到 SAP for Me，就會得到一個儀表板，涵蓋簡化項目、附加元件、業務功能、客製程式碼、規模估算、介面、業務夥伴、財務資料品質與建議的 Fiori 應用程式。
+
+</details>
+
+<details>
+<summary>SAP Readiness Check 對 SAP 客戶是免費的嗎？</summary>
+
+SAP 在 SAP for Me 上提供給所有擁有有效 SAP 維護合約的客戶，在 SAP Cloud ALM 中則提供給擁有 Cloud ALM 租用戶的客戶。真正的成本是準備系統與解讀結果所需的內部與合作夥伴時間。
+
+</details>
+
+<details>
+<summary>如何執行 SAP Readiness Check？</summary>
+
+實作 SAP Note 2913617 中的 Note，通常在正式環境中進行。執行資料收集報表 RC_COLLECT_ANALYSIS_DATA，下載 ZIP 檔，並在 ATC 或 Custom Code Migration 應用程式中另外執行客製程式碼分析。把兩者上傳到 SAP for Me 中 SAP Readiness Check 頁面的同一個分析裡。
+
+</details>
+
+<details>
+<summary>SAP Readiness Check 沒有涵蓋什麼？</summary>
+
+它不會判斷您的客製物件是否仍然需要、您的流程是否應該重新設計、您介面的另一端會發生什麼，或者計畫要花多少錢。它分析的是一套系統的技術相容性。其他問題屬於完整的移轉評估。
+
+</details>
+
+<details>
+<summary>S/4HANA 移轉評估需要多久？</summary>
+
+這取決於系統數量、客製程式碼數量、介面與實體的數量、資料的狀態，以及流程負責人能投入多少時間。
+
+</details>
+
+<details>
+<summary>應該在選擇 Greenfield 或 Brownfield 之前執行 Readiness Check 嗎？</summary>
+
+是的。它顯示您的系統有多少部分與 S/4HANA 衝突，這是路徑決策的其中一項輸入。決策本身取決於您的流程是否已定義且運作良好，而這是檢查無法衡量的。
+
+</details>

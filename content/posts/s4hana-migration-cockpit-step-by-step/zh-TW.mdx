@@ -1,0 +1,203 @@
+---
+title: "SAP S/4HANA Migration Cockpit 逐步說明"
+h1: "SAP S/4HANA Migration Cockpit 逐步說明"
+slug: "s4hana-migration-cockpit-step-by-step"
+date: "2026-10-13"
+updated: "2026-10-13"
+hero: "/images/migration/s4hana-migration-cockpit-step-by-step.webp"
+heroAlt: "明亮的桌面上有兩台螢幕，顯示資料表與對應流程，旁邊放著移轉範本"
+category: "erp-strategy"
+tags: ["sap-migration-cockpit", "sap-data-migration", "ecc-to-s4hana", "s4hana-implementation"]
+author: "Noel D'Costa"
+metaTitle: "SAP S/4HANA Migration Cockpit：逐步操作指南（2026）"
+metaDescription: "SAP S/4HANA Migration Cockpit 逐步說明：暫存表與直接傳輸的比較、移轉物件、值對應、模擬執行，以及 Migration Object Modeler 的用途。"
+primaryKeyword: "SAP S/4HANA Migration Cockpit"
+excerpt: "SAP S/4HANA Migration Cockpit 把主檔資料與未結項目載入新的 S/4HANA 系統。本文逐步說明整個流程、暫存表與直接傳輸之間的選擇，以及如何把它當成一個計畫來執行，而不只是一個工具。"
+experienceSource: "Noel's first-person experience leading and rescuing SAP programmes (confirmed by Noel, 12 and 13 October 2026). No client names. Product facts checked against official SAP documentation, October 2026."
+keyTakeaways:
+  - "Migration Cockpit 以 Fiori 應用程式 Migrate Your Data 執行；交易代碼 LTMC 已淘汰，只能查看舊專案"
+  - "它是為全新導入的初始載入而設計，不適用於系統轉換、同步或經常性介面"
+  - "兩種方法：用檔案或您自己的工具填入暫存表，或透過 RFC 從 SAP 來源系統直接傳輸"
+  - "我帶領的團隊偏好暫存表，因為資料可以在進入 S/4HANA 之前先檢查與清理"
+  - "每個物件的流程是選取或上傳、對應、模擬、移轉、修正，而且前置物件永遠先處理"
+  - "資料移轉占工作量的 30% 至 40%，所以 Cockpit 的計畫屬於整體計畫，而不是建置待辦清單"
+pullQuote: "Cockpit 載入您給它的東西。這些資料是否正確，仍然由您決定。"
+mentions:
+  - "SAP S/4HANA Migration Cockpit"
+  - "Migrate Your Data app"
+  - "SAP S/4HANA migration object modeler"
+  - "LTMC"
+  - "LTMOM"
+  - "SAP Data Services"
+  - "SAP S/4HANA Cloud Public Edition"
+  - "SAP Cloud ERP Private"
+  - "SAP ECC"
+  - "DMIS"
+originalUrl: "https://noeldcosta.com/s4hana-migration-cockpit-step-by-step/"
+canonicalUrl: "https://noeldcosta.com/zh-TW/s4hana-migration-cockpit-step-by-step/"
+locale: "zh-TW"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP S/4HANA Migration Cockpit 是 SAP 用來把主檔資料與未結項目載入新 S/4HANA 系統的工具，透過 Fiori 應用程式 Migrate Your Data 操作。您選擇暫存表或直接傳輸、挑選移轉物件、對應值、模擬，然後依相依順序逐一物件載入。
+
+給計畫負責人的簡短答案：把它用在全新導入，從第一週就把它當成一條工作流來規劃，並及早決定誰負責資料。工具是簡單的部分。
+
+本指南是我的 [ECC 移轉至 S/4HANA 指南](/zh-TW/ecc-to-s4hana-migration/)的其中一篇延伸文章。它是寫給需要把 Cockpit 運作好、而不只是安裝起來的計畫負責人與資料負責人。
+
+## Migration Cockpit 是什麼，適用於哪裡
+
+Cockpit 使用預先定義的移轉物件，把業務資料移入 S/4HANA。每個物件描述一個業務物件的來源與目標結構，例如客戶、供應商、物料或未結項目，以及兩者之間的對應規則。
+
+SAP 對它的範圍說得很清楚。Cockpit 是[為全新導入的初始載入而設計](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/7a62b59726ce42e7a10770b06940f934.html)，不是用來保持系統同步或持續傳送資料。Brownfield 轉換的核心移轉不使用它，因為 Software Update Manager 會就地轉換資料。
+
+有兩個名稱上的重點可以避免混淆。舊的 Web Dynpro 交易代碼 LTMC [已淘汰，不能再用來移轉資料](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/8f97f0b407024465a283809f0bbe000c.html)；您只能用它查看舊專案。它的後繼者是 Fiori 應用程式 Migrate Your Data，現在大家說的「Cockpit」指的就是它。
+
+它適用於各個版本，只是設定與擴充的方式不同。下表比較截至 2026 年 10 月的情況：
+
+| 領域 | SAP S/4HANA 地端版與 SAP Cloud ERP Private（S/4HANA Cloud Private Edition） | SAP S/4HANA Cloud Public Edition |
+|---|---|---|
+| 應用程式 | Migrate Your Data | Migrate Your Data（應用程式 F3473） |
+| 暫存表 | 本機 S/4HANA 綱要或遠端 SAP HANA 綱要 | 本機綱要，或 SAP BTP 上的遠端 SAP HANA Cloud 綱要；透過範圍項目 2Q2 設定 |
+| 直接傳輸 | 來源可為 SAP ERP（ECC 6.0 以上）、SAP AFS 6.0、SAP EWM 5.1 以上，以及 SAP APO SPP（SCM 7.14 以上） | 來源可為 SAP ECC 6.0 以上；透過範圍項目 BH3 設定 |
+| 變更物件 | 交易代碼 LTMOM，即 migration object modeler | 暫存表使用 Model Your Migration Objects 應用程式；直接傳輸使用 Implementation Activities 應用程式；只有已發布的物件可以強化 |
+| 來源系統限制 | S/4HANA 系統不能作為來源 | S/4HANA、Private Edition 與 Public Edition 系統都不能作為來源 |
+
+## 暫存表或直接傳輸
+
+每個移轉專案都會使用兩種方法之一。這個選擇會影響您整條資料工作流，所以要在 Explore 階段決定，而不是在 Realize。
+
+**暫存表。**Cockpit 會為專案中的每個移轉物件產生一組資料庫表格。您可以用 SAP 的 XML 範本檔、CSV 檔，或您自己的工具（例如 SAP Data Services 或其他 ETL 工具）填入資料。來源可以是任何東西：舊的 SAP 系統、Oracle、Dynamics、自行開發的系統或試算表。
+
+**直接傳輸。**Cockpit 透過 RFC 連線到 SAP 來源系統，自行選取資料，如果來源是 ERP，則依公司代碼選取。[前提條件](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/94f7b5a36db64633a4d49623f66e04c7.html)包括來源系統中的 DMIS 附加元件，它已包含在 S/4HANA 授權中。來源系統可以是非 Unicode。
+
+以下是兩者在資料負責人必須做的決策上的比較：
+
+| 問題 | 暫存表 | 直接傳輸 |
+|---|---|---|
+| 支援哪些來源？ | 任何系統，透過檔案或工具 | 僅限支援的 SAP 來源 |
+| 在哪裡清理資料？ | 在暫存表中或上游，於載入之前 | 主要在來源系統中，於選取之前 |
+| 誰能在載入前檢查資料？ | 任何能存取這些表格或檔案的人 | 主要是 Cockpit 團隊，透過 Cockpit 畫面 |
+| 啟動所需工作量 | 較高：您要建立擷取程序並填入表格 | 較低：Cockpit 替您選取 |
+| 最適合的情況 | 多個來源、髒資料、大量轉換 | 乾淨的 SAP ERP 來源，移轉到新的 S/4HANA 設計 |
+
+直接傳輸也可以把選取的資料暫存在暫存表中作為中繼儲存，讓您在中間多一個檢查點。在圍繞它進行設計之前，請先確認您的版本是否支援。
+
+### 為什麼我帶領的團隊使用暫存表
+
+使用 Cockpit 的是我帶領的團隊；我自己不親手操作。他們的預設做法，也是我的偏好，是暫存表而不是直接傳輸。
+
+理由是掌控。使用暫存表時，要載入的資料放在您可以查詢、依業務規則檢查並修正的表格裡，然後才會碰到 S/4HANA。資料管理員可以簽核他們實際看到的資料，而不是一個只能信任的選取結果。
+
+它也把清理和載入分開。重複的供應商、缺少的銀行資料與錯誤的計量單位，都在同一個地方修正，並留下稽核軌跡，而載入本身就變得可以重複執行。直接傳輸啟動得比較快，但往往會把來源系統的習慣直接帶進新系統。
+
+直接傳輸仍有它的用處。如果來源是單一、維護良好的 SAP ERP 系統，而目標設計與它相近，它能省下實實在在的擷取工作。
+
+## Migration Cockpit 逐步說明
+
+SAP 把[移轉流程](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/c67e14ff693e423aae2b96d9f3b0fc91.html)描述為固定的順序。以下是您的團隊使用暫存表時會執行的步驟。
+
+<stepper title="Migration Cockpit 流程" steps="建立專案|填入暫存表|對應值|模擬|移轉與修正" bodies="開啟 Migrate Your Data，建立專案並選取範圍內的移轉物件。|下載範本後上傳，或用您自己的工具填入表格。|處理未完成的對應任務：值對應與固定值。|模擬載入，在過帳任何資料之前修正每一個錯誤。|依相依順序載入，然後修正失敗的記錄並進行調節。"></stepper>
+
+1. **建立移轉專案。**在 Migrate Your Data 應用程式中建立專案，選擇暫存表的位置（本機或遠端綱要），並選取範圍內的物件。SAP 建議先在正式環境複本的測試系統中建立專案，並為每次測試傳輸建立一個新專案，帶入上一次的修正。
+2. **檢查相依關係。**一個移轉物件可能有必須先處理的前置物件，以及之後才處理的後續物件。Explore Migration Objects 應用程式（F8638）以圖形顯示必要與選用的前置物件。業務夥伴在未結項目之前，物料在庫存之前：Cockpit 不會讓您跳過順序。
+3. **填入暫存表。**XML 範本是 SAP 預設且建議的選項，因為每個檔案都包含該物件的所有結構與說明。CSV 是專家選項，每個結構一個檔案。[單一 XML 檔案最大可達 100 MB](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/5cc41962b2624ac5b9a136e69369f5e0.html)，多個 XML 檔案打包成的 zip 也不能超過 100 MB，所以大型物件需要分割，或使用能直接寫入表格的工具。
+4. **閱讀驗證訊息。**上傳後，系統會驗證檔案，並加入一張 Messages 工作表，列出每一個錯誤與警告，並連結到對應的儲存格。有警告的檔案，需要有人決定是否可以忽略，資料才能繼續往下走。
+5. **處理對應任務。**值對應任務把來源值轉換為目標值，例如把舊的工廠代碼轉成新的。固定值任務設定預設值。對應量大時，請下載對應範本，而不是在畫面上逐一輸入值。
+6. **模擬。**模擬會執行載入但不過帳，並顯示哪些實例會成功、哪些會失敗。它可能產生新的對應任務；處理完後再模擬一次。少數物件無法模擬，所以要為這些物件規劃額外的檢查。
+7. **移轉。**逐一物件執行載入，前置物件優先。有些物件有不只一個傳輸步驟，每個步驟都要依序模擬與移轉。
+8. **修正與調節。**修正失敗的實例，必要時使用修正檔，然後將筆數與財務總額和來源進行調節。一個沒有錯誤就結束的作業，並不能證明資料是正確的。
+
+直接傳輸依循相同的模式，只有開頭不同。您不是填入表格，而是對來源系統執行 Select Data，並可以在 modeler 中進一步限制選取範圍。
+
+## 當標準物件不夠用時
+
+遲早會有某個移轉物件不太合用。來源中的一個客製欄位、一個在移入時需要做的拆分，或是 SAP 沒有提供的物件。
+
+在地端版與 Private Edition 中，使用的工具是交易代碼 LTMOM，也就是 SAP S/4HANA migration object modeler。它讓團隊可以強化標準物件、新增欄位、定義客製物件，並管理移轉內容在系統之間的傳輸。它需要專屬的開發人員角色，所以要規劃由誰擔任。
+
+在 Public Edition 中，選項比較少。在暫存表方面，Model Your Migration Objects 應用程式[只能強化部分由 SAP 發布的移轉物件](https://help.sap.com/docs/SAP_S4HANA_CLOUD/d5699934e7004d048c4801b552f3b013/947d9c3d00fc4e66851a8f5592871ad3.html)，每個物件都有一則 SAP Note 列出可以擴充的內容。這與 Public Edition 的 Clean Core 模式一致，也是檢驗您的資料是否真的需要維持原樣的好方法。
+
+我的建議是，把每一項 modeler 變更都當成客製程式碼看待。記錄下來，指定負責人，並問清楚業務是否真的需要它。
+
+## 把 Cockpit 當成計畫來執行，而不只是工具
+
+在我看到的 S/4HANA 計畫中，資料移轉占工作量的 30% 至 40%。Cockpit 位於這條工作流之中，所以它出的問題大多不是工具本身的問題。
+
+決定 Cockpit 工作能否成功的有五件事：
+
+1. **在 Explore 階段界定物件範圍。**列出每一個移轉物件、它的來源、數量與負責人。有了真實的數量後，[免費的資料移轉估算工具](/zh-TW/free-data-migration-estimator-sap-oracle-microsoft/)能給您一個站得住腳的工作量區間。
+2. **為每個物件指定資料負責人。**財務負責客戶與供應商的財務資料，採購負責物料。IT 無法決定兩筆重複的供應商資料中哪一筆是對的。
+3. **規劃有退出標準的載入循環。**每個循環都是測試系統中的一個新專案，而且都以一次由業務單位簽核的調節結束。我的[為什麼 SAP 資料移轉會失敗](/zh-TW/why-sap-data-migration-fails-and-how-to-fix-it/)指南附有一份您可以照抄的模擬載入計畫。
+4. **估算切換時段。**以完整的正式環境資料量執行一個循環。檔案限制與載入時間，只有在真實規模下才會顯現。
+5. **在切換前凍結物件與對應。**正式環境的載入應該重複最後一次演練，使用相同的專案、範本與對應。
+
+我在 S/4HANA 計畫中看到最大的錯誤，是一開始沒有好好規劃。在 Cockpit 上，這會表現為物件清單太晚出來、負責人缺席，以及 Realize 階段的第一次載入循環才發現本該在 Explore 發現的問題。
+
+這些循環也會影響整體計畫。我的 [S/4HANA 移轉時程指南](/zh-TW/s4hana-migration-timeline-project-plan/)說明各路徑的載入循環落在哪裡，而 [S/4HANA 移轉成本指南](/zh-TW/s4hana-migration-cost/)涵蓋資料預算由什麼決定。
+
+### 關於 Cockpit，該問合作夥伴什麼
+
+在簽約之前，請合作夥伴以書面而不是簡報說明他們的資料方法：
+
+1. 他們針對每個物件建議使用哪一種方法，暫存表或直接傳輸，以及原因。
+2. 他們規劃幾次載入循環，每一次的退出標準是什麼。
+3. 他們預期要在 modeler 中變更哪些物件，以及由誰維護這些變更。
+4. 您這一方由誰簽核每個物件，以及何時簽核。
+
+在這裡得到籠統的答案是一個警訊。做過這件事的合作夥伴，能說出您的產業中有哪些棘手的物件。
+
+## 我接下來會怎麼做
+
+這個月就把客戶、供應商與物料主檔完整擷取出來，清點筆數並剖析品質。然後針對每個物件決定使用暫存表或直接傳輸，並指定負責人。
+
+如果您還沒有評估來源系統，請從 [SAP Readiness Check 與移轉評估](/zh-TW/sap-readiness-check-migration-assessment/)開始。如果您想對資料移轉計畫取得獨立的觀點，[歡迎與我聯絡](/zh-TW/contact-noel-erp-support/)。
+
+## 常見問題
+
+<details>
+<summary>什麼是 SAP S/4HANA Migration Cockpit？</summary>
+
+它是 SAP 用來把業務資料初始載入新 S/4HANA 系統的工具，透過 Fiori 應用程式 Migrate Your Data 執行。它使用針對主檔資料與未結項目預先定義的移轉物件，並支援兩種方法：暫存表，以及從 SAP 來源系統直接傳輸。
+
+</details>
+
+<details>
+<summary>S/4HANA 還能使用 LTMC 嗎？</summary>
+
+不能用來移轉資料。SAP 已淘汰交易代碼 LTMC，它不能再用來把資料移轉到 S/4HANA。您仍然可以用它查看舊專案。
+
+新的移轉在 Migrate Your Data 應用程式中執行。
+
+</details>
+
+<details>
+<summary>暫存表與直接傳輸有什麼差別？</summary>
+
+使用暫存表時，Cockpit 為每個移轉物件產生表格，您可以從任何來源，用 XML 或 CSV 範本或您自己的工具填入資料。使用直接傳輸時，Cockpit 透過 RFC 連線，直接從支援的 SAP 來源系統（例如 SAP ERP 6.0）讀取資料。暫存表讓您在載入前有更多空間檢查與清理資料。
+
+</details>
+
+<details>
+<summary>Migration Cockpit 可以用於 Brownfield 轉換嗎？</summary>
+
+核心移轉不行。SAP 把 Cockpit 設計用於全新導入情境中的初始載入。Brownfield 系統轉換是用 Software Update Manager 就地轉換資料。
+
+</details>
+
+<details>
+<summary>SAP 中的 LTMOM 是什麼？</summary>
+
+LTMOM 是 SAP S/4HANA migration object modeler 的交易代碼，用於地端版與 Private Edition。它讓您可以強化標準移轉物件、新增客製欄位、建立自己的物件，以及傳輸移轉內容。在 Public Edition 中，Model Your Migration Objects 應用程式執行的是範圍較窄的同類工作。
+
+</details>
+
+<details>
+<summary>S/4HANA Migration Cockpit 的檔案大小限制是多少？</summary>
+
+單一 XML 範本檔最大可達 100 MB，多個 XML 檔案打包成的 zip 也不能超過 100 MB。zip 中的檔案在壓縮後可以更大，每個檔案的上限取決於版本與發行版。
+
+CSV 資料夾同樣限制在 100 MB。對於非常大的物件，請用工具而不是檔案來填入暫存表。
+
+</details>

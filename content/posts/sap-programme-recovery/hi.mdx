@@ -1,0 +1,208 @@
+---
+title: "SAP project recovery: पटरी से उतरे प्रोग्राम को बचाना"
+h1: "SAP project recovery: पटरी से उतरे प्रोग्राम को बचाना"
+slug: "sap-programme-recovery"
+date: "2026-10-13"
+updated: "2026-10-13"
+hero: "/images/migration/sap-programme-recovery.webp"
+heroAlt: "रोशनी से भरे program room में बोलते हुए Noel D'Costa, whiteboard पर status charts और recovery प्लान के साथ"
+category: "erp-strategy"
+tags: ["project-recovery", "sap-crisis-management", "ecc-to-s4hana", "sap-governance"]
+author: "Noel D'Costa"
+metaTitle: "SAP Project Recovery: पटरी से उतरे प्रोग्राम को कैसे बचाएँ"
+metaDescription: "SAP project recovery पहले हफ़्ते की तीन जाँचों से शुरू होती है: status, डिज़ाइन और असल में deployed क्या है। Rescue और push में फ़र्क कैसे करें, और आगे क्या करें।"
+primaryKeyword: "SAP project recovery"
+excerpt: "SAP project recovery एक ईमानदार diagnosis से शुरू होती है, नए प्लान से नहीं। पहले हफ़्ते में मैं जो तीन जाँचें करता हूँ, rescue की ज़रूरत वाले प्रोग्राम को push की ज़रूरत वाले प्रोग्राम से कैसे अलग करें, और उसके बाद क्या करें।"
+experienceSource: "Noel's first-person experience leading and rescuing SAP programmes (confirmed by Noel, 12 and 13 October 2026). No client names. Product facts checked against official SAP documentation, October 2026."
+keyTakeaways:
+  - "SAP project recovery diagnosis से शुरू होती है: प्रोग्राम का status, डिज़ाइन और असल में deployed क्या है"
+  - "अगर ये तीन जाँचें आपस में और प्लान से मेल खाती हैं, तो आपको push चाहिए; अगर नहीं, तो आपको rescue चाहिए"
+  - "ज़्यादातर rescues के पीछे सबसे बड़ी गलती implementation की शुरुआत में ठीक से योजना न बनाना है"
+  - "Scope पर vendor का नियंत्रण होने देना एक जड़ है; दोबारा योजना बनाने से पहले scope की ownership वापस लीजिए"
+  - "Custom code वह चरण है जो सबसे ज़्यादा बार overrun होता है, इसलिए पहले उसका दोबारा अनुमान लगाइए"
+  - "एक बार, सबूत के आधार पर re-baseline कीजिए, और बाकी हर चरण के अंत में quality gates लगाइए"
+pullQuote: "Rescue तब शुरू होता है जब status report, डिज़ाइन और सिस्टम एक ही कहानी कहना बंद कर देते हैं।"
+mentions:
+  - "SAP S/4HANA"
+  - "SAP ECC"
+  - "SAP Activate"
+  - "SAP Cloud ALM"
+  - "SAP Readiness Check"
+  - "RISE with SAP"
+  - "WRICEF"
+originalUrl: "https://noeldcosta.com/sap-programme-recovery/"
+canonicalUrl: "https://noeldcosta.com/hi/sap-programme-recovery/"
+locale: "hi"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP project recovery का मतलब है पटरी से उतरे किसी माइग्रेशन या implementation को रोकना, यह पता लगाना कि उसके बारे में असल में क्या सच है, और उसी सच से दोबारा योजना बनाना। पहला हफ़्ता तय करता है कि यह काम करेगा या नहीं: प्रोग्राम के status का आकलन कीजिए, डिज़ाइन की समीक्षा कीजिए और आकलन कीजिए कि सिस्टम में असल में क्या deployed है।
+
+छोटा जवाब: अगर ये तीन जाँचें आपस में और प्लान से मेल खाती हैं, तो प्रोग्राम को rescue नहीं, push चाहिए। अगर वे मेल नहीं खातीं, तो मौजूदा प्लान पर कितना भी अतिरिक्त प्रयास इसे ठीक नहीं करेगा, और आपको नए baseline के साथ औपचारिक recovery चाहिए।
+
+यह लेख उसी diagnosis और उसके बाद आने वाली चीज़ों के बारे में है। यह मेरी [ECC से S/4HANA माइग्रेशन गाइड](/hi/ecc-to-s4hana-migration/) की एक कड़ी है, जो रास्तों, समय-सीमाओं और डेडलाइन को कवर करती है। यहाँ सवाल ज़्यादा सीमित है: आपका प्रोग्राम मुश्किल में है, तो अब क्या?
+
+## Push या rescue: फ़र्क कैसे पहचानें
+
+देर से चल रहे ज़्यादातर प्रोग्राम्स को बचाने की ज़रूरत नहीं होती। उन्हें तेज़ फ़ैसले, किसी key user को खाली करना या किसी vendor को तारीख पर टिकाए रखना चाहिए। यह push है।
+
+Rescue अलग है। इसके संकेत उन्हीं तीन जाँचों से आते हैं जो मैं पहले हफ़्ते में करता हूँ, और संकेत सीधा है: status, डिज़ाइन और जो deployed है, वे न आपस में मेल खाते हैं न प्लान से।
+
+कुछ pattern जिन्हें मैं rescue के संकेत मानूँगा:
+
+1. **Status हरा है, सिस्टम नहीं.** Reports कहती हैं कि build का ज़्यादातर हिस्सा हो चुका है, लेकिन test system एक बुनियादी order to cash भी नहीं चला सकता।
+2. **डिज़ाइन पर sign हो चुका है, build उसे अनदेखा करता है.** Configuration, मंज़ूर डिज़ाइन से नहीं, workshop notes से किया गया।
+3. **प्लान में go-live की तारीख है, पर कोई उस तक पहुँचने का रास्ता नहीं समझा सकता.** Testing, data loads और cutover rehearsals के लिए कोई यथार्थवादी समय नहीं है।
+4. **Scope बस बढ़ता जाता है.** WRICEF list (reports, interfaces, conversions, enhancements, forms और workflows) Explore चरण के काफ़ी बाद भी बढ़ रही है।
+
+इनमें से कोई भी एक push से ठीक हो सकता है। दो या ज़्यादा एक साथ हों, तो आमतौर पर नहीं।
+
+## SAP program recovery का पहला हफ़्ता
+
+पहला हफ़्ता यह पता लगाने के लिए है कि सच क्या है। ठीक करने के लिए नहीं, दोष देने के लिए नहीं और नया प्लान लिखने के लिए नहीं। मैं तीन चीज़ों का आकलन करता हूँ, इसी क्रम में: status, डिज़ाइन और असल में deployed क्या है।
+
+हर जाँच यह कवर करती है, और असहमति यह बताती है:
+
+| जाँच | मैं क्या देखता हूँ | यह किस सवाल का जवाब देती है | अगर यह बाकी से मेल नहीं खाती |
+|---|---|---|---|
+| प्रोग्राम का status | प्लान, status reports, RAID log, खुले change requests, बजट के मुकाबले खर्च | प्रोग्राम अपने बारे में क्या मानता है? | Reporting आशावादी है या delivery से कटी हुई है |
+| डिज़ाइन | Business process design, fit-to-standard outputs, WRICEF list, खुले डिज़ाइन फ़ैसले | Business से क्या वादा किया गया था? | Build तय की गई चीज़ से भटक गया है, या डिज़ाइन कभी पूरा ही नहीं हुआ |
+| जो deployed है | Development और test systems, configuration, transports, custom code, अब तक के data loads | आज असल में क्या मौजूद है? | ऐसे काम पर प्रगति report की गई है जो सिस्टम में नहीं है |
+
+तीसरी जाँच वह है जिसे ज़्यादातर समीक्षाएँ छोड़ देती हैं। इसका मतलब है सिस्टम के सामने बैठकर प्रक्रियाएँ चलाना, सिस्टम के बारे में documents पढ़ना नहीं।
+
+Status reports और design documents दावे हैं। सिस्टम सबूत है।
+
+### जाँचें किसे करनी चाहिए
+
+जिन लोगों ने status reports लिखीं, उन्हें ही उनकी पुष्टि नहीं करनी चाहिए। यह कोई आरोप नहीं है। यह वही वजह है जिससे auditors अपने ही काम का audit नहीं करते।
+
+मैं पहले हफ़्ते की ज़िम्मेदारी implementation partner से स्वतंत्र किसी व्यक्ति को दूँगा, सिस्टम तक पूरी पहुँच और प्रोग्राम में किसी से भी बात करने के अधिकार के साथ। अगर यह संभव नहीं है, तो कम से कम partner से deployed सिस्टम slides में नहीं, live दिखवाइए।
+
+## 2018 में एक aviation प्रोग्राम पर जाँचों ने क्या उजागर किया
+
+2018 में मैंने एक aviation प्रोग्राम की recovery पर काम किया। Modules deploy हो चुके थे, लेकिन business requirements के आधार पर कुछ भी configure नहीं किया गया था।
+
+पहले हफ़्ते की तीन जाँचें इसी स्थिति को उजागर करने के लिए हैं। Deployed modules और काम करता डिज़ाइन एक चीज़ नहीं हैं, और सिर्फ सिस्टम के अंदर देखने से ही यह फ़र्क दिखता है।
+
+Airlines में maintenance, procurement और finance आपस में करीब से जुड़े होते हैं, इसलिए एक क्षेत्र की कमी आगे तक जाती है। SAP उस industry में कैसे बैठता है, यह मैं [SAP for aviation](/hi/sap-implementation/sap-for-aviation/) पर अपने page में कवर करता हूँ।
+
+## SAP प्रोग्राम्स को आखिर rescue की ज़रूरत क्यों पड़ती है
+
+जिन 21 SAP प्रोग्राम्स का मैंने नेतृत्व किया है या जिन्हें संकट से निकाला है, उनमें सबसे बड़ी गलती जो मैं देखता हूँ वह है implementation की शुरुआत में ठीक से योजना न बनाना। Rescue अक्सर वही छूटी हुई योजना होती है, जो देर से और दबाव में की जाती है।
+
+दो और वजहें बार-बार सामने आती हैं:
+
+1. **Scope पर vendor का नियंत्रण.** जब system integrator scope लिखता है, तो वह वही बताता है जो integrator deliver करने की योजना बना रहा है। कमियाँ बाद में change requests के रूप में आती हैं, जिनकी कीमत वही vendor तय करता है।
+2. **Custom code का overrun.** मेरे अनुभव में custom code माइग्रेशन का वह चरण है जो सबसे ज़्यादा बार overrun होता है, और यही वह छिपी लागत भी है जिसे सबसे ज़्यादा भुला दिया जाता है।
+
+इसका बजट वाला पक्ष, जिसमें यह भी शामिल है कि Explore चरण में लागत क्यों उछलती है, [SAP प्रोजेक्ट्स बजट से बाहर क्यों जाते हैं](/hi/sap-implementation-cost-breakdown-why-budgets-explode-50/) पर मेरे लेख में कवर है। मैं उसे यहाँ नहीं दोहराऊँगा।
+
+कमज़ोर नियंत्रण दूसरा आम धागा है। अगर प्रोग्राम में कभी tracking, escalation और change control की साप्ताहिक लय नहीं थी, तो rescue को वह लगानी होगी। [SAP project planning और control](/hi/project-planning-and-control-get-sap-projects-back-on-track/) पर मेरी गाइड owners के साथ वह लय तय करती है।
+
+## पहले हफ़्ते के बाद recovery प्लान
+
+एक बार आपको पता चल जाए कि सच क्या है, तो recovery का एक स्पष्ट क्रम होता है। कोई कदम छोड़ने का मतलब आमतौर पर rescue को दो बार करना होता है।
+
+<stepper title="SAP program recovery का क्रम" steps="Diagnose|Scope वापस लीजिए|Re-baseline|चरणों पर gate|Rehearse और cutover" bodies="Status, डिज़ाइन और जो deployed है, आपस में मिलाकर जाँचे गए।|Client के स्वामित्व वाला scope, freeze किया हुआ, हर बदलाव की कीमत के साथ।|सबूत पर बना एक नया प्लान, आपकी तरफ़ contingency के साथ।|बाकी हर चरण के अंत में एक quality gate।|Go-live की तारीख पक्की करने से पहले पूरे rehearsals।"></stepper>
+
+### 1. Scope की ownership वापस लीजिए
+
+किसी के दोबारा योजना बनाने से पहले तय कीजिए कि scope का owner कौन है। अगर जवाब अब भी vendor है, तो नया प्लान भी उसी तरह विफल होगा जैसे पुराना हुआ।
+
+Scope client की तरफ़ से लिखिए, उसकी तुलना deployed चीज़ों से कीजिए और उसे freeze कीजिए। उसके बाद हर बदलाव एक owner के साथ कीमत लगा फ़ैसला है।
+
+### 2. एक बार, सबूत के आधार पर re-baseline कीजिए
+
+Recovery को एक नया baseline मिलता है, छोटी-छोटी देरियों की श्रृंखला नहीं। इसे उससे बनाइए जो सिस्टम दिखाता है, उससे नहीं जिसकी पुराने प्लान ने उम्मीद की थी।
+
+पहले custom code का दोबारा अनुमान लगाइए, क्योंकि overruns सबसे ज़्यादा वहीं से आते हैं। फिर डेटा का, क्योंकि data migration में 30 से 40 प्रतिशत प्रयास लगता है और मुश्किल में फँसे प्रोग्राम में यह आमतौर पर पीछे होता है।
+
+10 से 20 प्रतिशत contingency अपनी तरफ़ रखिए, जो सिर्फ नामित जोखिमों के लिए जारी हो। [S/4HANA माइग्रेशन cost](/hi/s4hana-migration-cost/) पर मेरा साथी लेख बताता है कि संख्याओं को क्या तय करता है।
+
+### 3. हर चरण के अंत में quality gate लगाइए
+
+मुश्किल में फँसे प्रोग्राम आमतौर पर सबूत के बजाय तारीखों के आधार पर एक चरण से दूसरे में गए होते हैं। इसे ठीक कीजिए।
+
+SAP Activate में [Explore चरण](https://learning.sap.com/courses/discovering-sap-activate-agile-project-delivery/explore-phase-overview_f9f503a3-54e9-4868-855c-5b88f879c6ad) fit-to-standard workshops चलाता है, और मंज़ूर delta requirements, Realize के लिए product backlog में जाती हैं। अगर प्रोग्राम ने पूरा डिज़ाइन बनाए बिना Explore छोड़ दिया, तो वापस जाइए और उसे पूरा कीजिए। SAP Cloud ALM [checklists वाले checkpoints के रूप में quality gates](https://learning.sap.com/courses/implementing-with-sap-cloud-alm/managing-projects-with-distributed-teams_d2001f05-a7eb-4c82-8f62-0b980c437955) को सपोर्ट करता है, जो project overview पर दिखते हैं, इसलिए gate को किसी spreadsheet में रहने की ज़रूरत नहीं है।
+
+### 4. तारीख पर हामी भरने से पहले rehearse कीजिए
+
+Brownfield conversion पर मैं cutover से पहले तीन mock conversions की योजना बनाता हूँ। मुश्किल में फँसे प्रोग्राम अक्सर समय बचाने के लिए rehearsals काट देते हैं, जिससे जोखिम go-live weekend पर चला जाता है।
+
+मैंने cutover downtime एक weekend से लेकर एक हफ़्ते तक देखा है। बचाए गए प्रोग्राम को अपनी संख्या किसी अनुमान से नहीं, एक rehearsal से पता होनी चाहिए।
+
+### 5. जाँचिए कि आप असल में किस डेडलाइन पर काम कर रहे हैं
+
+Enhancement package 6 से 8 पर चल रहे SAP ERP 6.0 के लिए mainstream maintenance 31 दिसंबर 2027 को खत्म होता है, और वैकल्पिक extended maintenance 2030 के अंत तक दो प्रतिशत अंकों के प्रीमियम पर चलता है ([SAP News](https://news.sap.com/2020/02/sap-s4hana-maintenance-2040-clarity-choice-sap-business-suite-7/))। जो recovery किसी ECC माइग्रेशन को 2027 के आगे धकेलती है, उसे extended maintenance का बजट खुलकर रखना चाहिए।
+
+2027 की तारीख को ऐसा go-live थोपने मत दीजिए जिसका rehearsals समर्थन नहीं करते। देर से हुए go-live की कीमत maintenance fees है। विफल go-live की कीमत कहीं ज़्यादा है।
+
+## Recovery के दौरान अपने partner और SAP से क्या पूछें
+
+Rescue अक्सर यह सवाल उठाता है कि मौजूदा system integrator को रखा जाए या नहीं। कभी-कभी partner बदलना सही होता है। अक्सर बड़ी समस्या यह होती है कि प्रोग्राम कैसे खड़ा किया गया था, और नया partner उसे विरासत में पाता है।
+
+फ़ैसला करने से पहले मैं ये सवाल पूछूँगा:
+
+1. **क्या आप हमें deployed सिस्टम, live, sign किए गए डिज़ाइन के मुकाबले दिखा सकते हैं?** कोई demo environment नहीं और slides नहीं।
+2. **कौन से WRICEF objects बन चुके हैं, test हो चुके हैं और transport हो चुके हैं, और कौन से सिर्फ पूरे होने के रूप में report किए गए हैं?**
+3. **पूरा करने के लिए आपका high-level डिज़ाइन क्या है, और हम ऐसे कौन से references call कर सकते हैं जहाँ आपने हमारे जैसे प्रोग्राम को recover किया?** References और high-level डिज़ाइन, ये दो चीज़ें हैं जो मैं sign करने से पहले किसी भी partner से माँगता हूँ।
+4. **आपको हमसे क्या चाहिए जो आपको नहीं मिल रहा?** छूटे हुए फ़ैसले और part-time key users अक्सर आधी कहानी होते हैं।
+5. **RISE with SAP ग्राहकों के लिए: कौन से मसले partner के बजाय SAP के पास हैं, और उन्हें escalate कौन करता है?**
+
+खतरे का संकेत वही है जिस पर मैं चुनाव के समय किसी partner से पीछे हट जाता हूँ: generic जवाब। अगर recovery प्लान किसी भी कंपनी पर लागू हो सकता है, तो वह आपकी कंपनी के लिए नहीं लिखा गया था। [S/4HANA माइग्रेशन partner चुनने](/hi/choose-s4hana-migration-partner/) पर मेरी गाइड चुनाव वाले पक्ष को कवर करती है।
+
+अगर प्रोग्राम में source system का कभी ठीक से assessment नहीं हुआ, तो अभी कीजिए। [SAP Readiness Check](https://learning.sap.com/courses/validating-business-transformations-leveraging-integrated-transformation-tools-solutions/running-your-sap-s-4hana-transformation-project-with-readiness-check) आपके मौजूदा सिस्टम का विश्लेषण करता है, और असली usage की सटीक तस्वीर के लिए SAP इसे production में चलाने की सलाह देता है। [SAP Readiness Check और माइग्रेशन assessment](/hi/sap-readiness-check-migration-assessment/) पर मेरा लेख बताता है कि यह क्या छोड़ देता है, custom objects से शुरू करके।
+
+## इस हफ़्ते आपका पहला कदम
+
+अपने program director और SAP lead के साथ आधा दिन रखिए, और उनसे तीन चीज़ें अगल-बगल दिखाने को कहिए: सबसे ताज़ा status report, sign किया गया डिज़ाइन और एक पूरी business प्रक्रिया चलाता test system। अगर ये तीनों एक ही कहानी कहते हैं, तो push कीजिए। अगर नहीं, तो अगली steering committee से पहले औपचारिक recovery शुरू कीजिए।
+
+अगर आप पटरी से उतरे किसी प्रोग्राम पर एक स्वतंत्र राय चाहते हैं, तो मैं संगठनों की ठीक इसी तरह के diagnosis में मदद करता हूँ। आप [मेरे साथ एक call book कर सकते हैं](/hi/contact-noel-erp-support/)।
+
+## अक्सर पूछे जाने वाले सवाल
+
+<details>
+<summary>SAP project recovery क्या है?</summary>
+
+SAP project recovery, पटरी से उतरे किसी SAP implementation या माइग्रेशन को वापस नियंत्रण में लाने का काम है। यह प्रोग्राम के status, डिज़ाइन और असल में deployed चीज़ों के diagnosis से शुरू होती है, फिर scope की ownership वापस लेती है, एक नया baseline तय करती है और बाकी चरणों में quality gates जोड़ती है।
+
+</details>
+
+<details>
+<summary>मुझे कैसे पता चले कि मेरे SAP प्रोजेक्ट को rescue की ज़रूरत है?</summary>
+
+तीन चीज़ों की तुलना कीजिए: status reports क्या कहती हैं, sign किया गया डिज़ाइन क्या कहता है और सिस्टम में असल में क्या deployed है। अगर वे आपस में और प्लान से मेल खाती हैं, तो प्रोग्राम को push चाहिए। अगर नहीं, तो मौजूदा प्लान पर ज़्यादा प्रयास इसे ठीक नहीं करेगा और आपको औपचारिक recovery चाहिए।
+
+</details>
+
+<details>
+<summary>SAP implementation recovery के पहले हफ़्ते में क्या होना चाहिए?</summary>
+
+सिर्फ diagnosis। प्रोग्राम के status का आकलन कीजिए, डिज़ाइन की समीक्षा कीजिए और आकलन कीजिए कि असल में क्या deployed है, आदर्श रूप से implementation partner से स्वतंत्र किसी व्यक्ति के नेतृत्व में। जब तक ये तीन जाँचें पूरी न हों, नया प्लान मत लिखिए।
+
+</details>
+
+<details>
+<summary>क्या recovery के दौरान हमें अपना SAP implementation partner बदल देना चाहिए?</summary>
+
+अपने आप नहीं। Partner से कहिए कि वह deployed सिस्टम को sign किए गए डिज़ाइन के मुकाबले दिखाए, और मिलती-जुलती recoveries के references के साथ पूरा करने का high-level डिज़ाइन दे।
+
+अगर जवाब generic हैं, तो यह बदलने का एक मज़बूत संकेत है। अगर असली समस्या scope की ownership या आपकी तरफ़ से छूटे फ़ैसले हैं, तो नया partner उसे विरासत में पाएगा।
+
+</details>
+
+<details>
+<summary>SAP S/4HANA माइग्रेशन पटरी से क्यों उतरते हैं?</summary>
+
+जो सबसे आम जड़ मैं देखता हूँ, वह है implementation की शुरुआत में ठीक से योजना न बनाना। Scope पर vendor का नियंत्रण होने देना दूसरी है, और custom code वह चरण है जो सबसे ज़्यादा बार overrun होता है। Data migration, जिसमें 30 से 40 प्रतिशत प्रयास लगता है, आमतौर पर पीछे भी होता है।
+
+</details>
+
+<details>
+<summary>क्या recovery हमारे ECC माइग्रेशन को 2027 की डेडलाइन के आगे धकेल देगी?</summary>
+
+ऐसा हो सकता है। Enhancement package 6 से 8 पर चल रहे SAP ERP 6.0 के लिए mainstream maintenance 31 दिसंबर 2027 को खत्म होता है, और वैकल्पिक extended maintenance 2030 के अंत तक दो अंकों के प्रीमियम पर चलता है। ऐसा go-live थोपने के बजाय जिसका आपके rehearsals समर्थन नहीं करते, extended maintenance का बजट रखिए।
+
+</details>

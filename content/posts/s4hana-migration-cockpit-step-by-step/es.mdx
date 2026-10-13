@@ -1,0 +1,203 @@
+---
+title: "SAP S/4HANA Migration Cockpit paso a paso"
+h1: "SAP S/4HANA Migration Cockpit paso a paso"
+slug: "s4hana-migration-cockpit-step-by-step"
+date: "2026-10-13"
+updated: "2026-10-13"
+hero: "/images/migration/s4hana-migration-cockpit-step-by-step.webp"
+heroAlt: "Dos monitores con tablas de datos y un flujo de mapeo sobre un escritorio luminoso con plantillas de migración"
+category: "erp-strategy"
+tags: ["sap-migration-cockpit", "sap-data-migration", "ecc-to-s4hana", "s4hana-implementation"]
+author: "Noel D'Costa"
+metaTitle: "SAP S/4HANA Migration Cockpit: guía paso a paso (2026)"
+metaDescription: "SAP S/4HANA Migration Cockpit paso a paso: staging tables o transferencia directa, objetos de migración, mapeo, simulación y el Migration Object Modeler."
+primaryKeyword: "SAP S/4HANA Migration Cockpit"
+excerpt: "El SAP S/4HANA Migration Cockpit carga datos maestros y partidas abiertas en un sistema S/4HANA nuevo. Este es el proceso paso a paso, la elección entre staging tables y transferencia directa, y cómo gestionarlo como un programa y no como una herramienta."
+experienceSource: "Noel's first-person experience leading and rescuing SAP programmes (confirmed by Noel, 12 and 13 October 2026). No client names. Product facts checked against official SAP documentation, October 2026."
+keyTakeaways:
+  - "El Migration Cockpit funciona como la app Fiori Migrate Your Data; la transacción LTMC está obsoleta y solo muestra proyectos antiguos"
+  - "Está pensado para la carga inicial de una nueva implementación, no para conversiones, sincronización ni interfaces recurrentes"
+  - "Dos enfoques: staging tables llenadas desde archivos o con sus propias herramientas, o transferencia directa desde un sistema SAP de origen por RFC"
+  - "Los equipos que dirijo prefieren las staging tables, porque los datos se pueden revisar y depurar antes de que nada llegue a S/4HANA"
+  - "El proceso por objeto es seleccionar o cargar, mapear, simular, migrar y corregir, y los predecesores siempre van primero"
+  - "La migración de datos supone entre el 30 y el 40 % del esfuerzo, así que el plan del cockpit pertenece al plan del programa, no al backlog de construcción"
+pullQuote: "El cockpit carga lo que usted le da. Si esos datos son correctos sigue siendo decisión suya."
+mentions:
+  - "SAP S/4HANA Migration Cockpit"
+  - "Migrate Your Data app"
+  - "SAP S/4HANA migration object modeler"
+  - "LTMC"
+  - "LTMOM"
+  - "SAP Data Services"
+  - "SAP S/4HANA Cloud Public Edition"
+  - "SAP Cloud ERP Private"
+  - "SAP ECC"
+  - "DMIS"
+originalUrl: "https://noeldcosta.com/s4hana-migration-cockpit-step-by-step/"
+canonicalUrl: "https://noeldcosta.com/es/s4hana-migration-cockpit-step-by-step/"
+locale: "es"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+El SAP S/4HANA Migration Cockpit es la herramienta de SAP para cargar datos maestros y partidas abiertas en un sistema S/4HANA nuevo, a través de la app Fiori Migrate Your Data. Usted elige staging tables o transferencia directa, selecciona los objetos de migración, mapea los valores, simula y después carga, objeto por objeto, en el orden de dependencias.
+
+Respuesta corta para quien dirige un programa: úselo para una nueva implementación, planifíquelo como un frente de trabajo desde la primera semana y decida pronto quién es responsable de los datos. La herramienta es la parte fácil.
+
+Esta guía es una pieza de mi [guía de migración de ECC a S/4HANA](/es/ecc-to-s4hana-migration/). Está escrita para directores de programa y responsables de datos que necesitan gestionar bien el cockpit, no solo instalarlo.
+
+## Qué es el Migration Cockpit y dónde se aplica
+
+El cockpit traslada datos de negocio a S/4HANA mediante objetos de migración predefinidos. Cada objeto describe las estructuras de origen y de destino de un objeto de negocio, como un cliente, un proveedor, un material o una partida abierta, más las reglas de mapeo entre ellas.
+
+SAP es claro sobre su alcance. El cockpit está [pensado para la carga inicial de una nueva implementación](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/7a62b59726ce42e7a10770b06940f934.html), y no para mantener sistemas sincronizados ni para un flujo continuo de datos. Una conversión brownfield no lo usa para el traslado principal, porque el Software Update Manager convierte los datos en el propio sistema.
+
+Dos aclaraciones de nombres evitan confusiones. La antigua transacción Web Dynpro LTMC está [obsoleta y ya no se puede usar para migrar datos](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/8f97f0b407024465a283809f0bbe000c.html); en ella solo puede consultar proyectos antiguos. Su sucesora es la app Fiori Migrate Your Data, y eso es lo que hoy se entiende por «el cockpit».
+
+Se aplica en todas las ediciones, con diferencias en cómo se configura y se amplía. Esta tabla las compara a octubre de 2026:
+
+| Área | SAP S/4HANA on-premise y SAP Cloud ERP Private (S/4HANA Cloud Private Edition) | SAP S/4HANA Cloud Public Edition |
+|---|---|---|
+| App | Migrate Your Data | Migrate Your Data (app F3473) |
+| Staging tables | Esquema local de S/4HANA o un esquema remoto de SAP HANA | Esquema local, o un esquema remoto de SAP HANA Cloud en SAP BTP; se configura con el scope item 2Q2 |
+| Transferencia directa | Desde SAP ERP (ECC 6.0 y superior), SAP AFS 6.0, SAP EWM 5.1 y superior, y SAP APO SPP (SCM 7.14 y superior) | Desde SAP ECC 6.0 y superior; se configura con el scope item BH3 |
+| Modificar objetos | Transacción LTMOM, el migration object modeler | App Model Your Migration Objects para staging; app Implementation Activities para transferencia directa; solo se pueden ampliar los objetos liberados |
+| Restricción del sistema de origen | Un sistema S/4HANA no puede ser el origen | Los sistemas S/4HANA, Private Edition y Public Edition no pueden ser el origen |
+
+## Staging tables o transferencia directa
+
+Todo proyecto de migración usa uno de dos enfoques. La elección condiciona todo su frente de datos, así que tómela en Explore, no en Realize.
+
+**Staging tables.** El cockpit genera un conjunto de tablas de base de datos para cada objeto de migración de su proyecto. Usted las llena a partir de las plantillas XML de SAP, de archivos CSV o con sus propias herramientas, como SAP Data Services u otra herramienta ETL. El origen puede ser cualquiera: un sistema SAP antiguo, Oracle, Dynamics, un sistema desarrollado internamente o una hoja de cálculo.
+
+**Transferencia directa.** El cockpit se conecta por RFC a un sistema SAP de origen y selecciona él mismo los datos, por sociedad en el caso de un origen ERP. Los [requisitos previos](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/94f7b5a36db64633a4d49623f66e04c7.html) incluyen el add-on DMIS en el sistema de origen, que está incluido en la licencia de S/4HANA. Los sistemas de origen pueden ser no Unicode.
+
+Así se comparan los dos para las decisiones que tiene que tomar un responsable de datos:
+
+| Pregunta | Staging tables | Transferencia directa |
+|---|---|---|
+| ¿Qué orígenes? | Cualquier sistema, mediante archivos o herramientas | Solo orígenes SAP compatibles |
+| ¿Dónde se depura? | En las staging tables o antes, aguas arriba, antes de la carga | Sobre todo en el sistema de origen, antes de la selección |
+| ¿Quién puede revisar los datos antes de la carga? | Cualquiera con acceso a las tablas o a los archivos | Sobre todo el equipo del cockpit, a través de sus pantallas |
+| Esfuerzo para empezar | Mayor: usted construye la extracción y llena las tablas | Menor: el cockpit selecciona por usted |
+| Mejor encaje | Varios orígenes, datos sucios, transformación intensa | Un origen SAP ERP limpio que pasa a un diseño S/4HANA nuevo |
+
+La transferencia directa también puede dejar los datos seleccionados en staging tables como almacenamiento intermedio, lo que le da un punto de revisión entre medias. Compruebe si su versión lo admite antes de diseñar en torno a ello.
+
+### Por qué los equipos que dirijo usan staging tables
+
+Los equipos que dirijo usan el cockpit; yo no lo manejo directamente. Su opción por defecto, y mi preferencia, son las staging tables antes que la transferencia directa.
+
+La razón es el control. Con staging tables, los datos que se van a cargar están en tablas que puede consultar, contrastar con las reglas de negocio y corregir antes de que nada toque S/4HANA. Los data stewards pueden aprobar lo que realmente ven, no una selección en la que tienen que confiar.
+
+También separa la depuración de la carga. Los proveedores duplicados, los datos bancarios que faltan y las unidades de medida erróneas se corrigen en un solo sitio, con trazabilidad, y la carga en sí se vuelve repetible. La transferencia directa es más rápida para empezar, pero tiende a llevar los hábitos del sistema de origen directamente al nuevo.
+
+La transferencia directa sigue teniendo su sitio. Si el origen es un único sistema SAP ERP bien mantenido y el diseño de destino se le parece, ahorra un trabajo de extracción real.
+
+## El Migration Cockpit paso a paso
+
+SAP describe [el proceso de migración](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/c67e14ff693e423aae2b96d9f3b0fc91.html) como una secuencia fija. Estos son los pasos tal como los ejecutará su equipo con staging tables.
+
+<stepper title="El proceso del Migration Cockpit" steps="Crear el proyecto|Llenar las staging tables|Mapear valores|Simular|Migrar y corregir" bodies="Abra Migrate Your Data, cree un proyecto y seleccione los objetos de migración del alcance.|Descargue las plantillas y cárguelas, o llene las tablas con sus propias herramientas.|Procese las tareas de mapeo abiertas: mapeos de valores y valores fijos.|Simule la carga y corrija cada error antes de contabilizar nada.|Cargue en orden de dependencias, después corrija los registros fallidos y concilie."></stepper>
+
+1. **Cree el proyecto de migración.** En la app Migrate Your Data, cree un proyecto, elija dónde residen las staging tables (esquema local o remoto) y seleccione los objetos del alcance. SAP recomienda crear los proyectos primero en un sistema de pruebas que sea copia de producción, y un proyecto nuevo para cada transferencia de prueba que incorpore las correcciones de la anterior.
+2. **Compruebe las dependencias.** Un objeto de migración puede tener objetos predecesores que deben procesarse antes, y objetos sucesores que van después. La app Explore Migration Objects (F8638) muestra los predecesores obligatorios y opcionales en un gráfico. Los business partners antes que las partidas abiertas, los materiales antes que el stock: el cockpit no le dejará saltarse el orden.
+3. **Llene las staging tables.** Las plantillas XML son la opción por defecto y recomendada por SAP, porque cada archivo contiene todas las estructuras del objeto más instrucciones. CSV es una opción para expertos, con un archivo por estructura. Un [único archivo XML puede ocupar hasta 100 MB](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/29193bf0ebdd4583930b2176cb993268/5cc41962b2624ac5b9a136e69369f5e0.html), y un zip de varios archivos XML tampoco puede superar los 100 MB, así que los objetos grandes hay que dividirlos o usar una herramienta que escriba directamente en las tablas.
+4. **Lea los mensajes de validación.** Tras la carga, el sistema valida el archivo y añade una hoja Messages con cada error y advertencia, vinculados a la celda. Los archivos con advertencias necesitan que alguien decida si se pueden ignorar antes de que los datos sigan adelante.
+5. **Procese las tareas de mapeo.** Las tareas de mapeo de valores traducen valores de origen en valores de destino, como códigos de centro antiguos en nuevos. Las tareas de valores fijos establecen valores por defecto. Para mapeos grandes, descargue las plantillas de mapeo en lugar de teclear los valores en las pantallas.
+6. **Simule.** La simulación ejecuta la carga sin contabilizar y muestra qué instancias tendrían éxito y cuáles fallarían. Puede generar nuevas tareas de mapeo; procéselas y vuelva a simular. Unos pocos objetos no se pueden simular, así que planifique comprobaciones adicionales para ellos.
+7. **Migre.** Ejecute la carga objeto por objeto, los predecesores primero. Algunos objetos tienen más de un paso de transferencia, y cada paso se simula y se migra por turno.
+8. **Corrija y concilie.** Corrija las instancias fallidas, con archivos de corrección cuando haga falta, y después concilie los recuentos y los totales financieros con el origen. Un job que termina sin errores no prueba que los datos sean correctos.
+
+La transferencia directa sigue el mismo patrón, con una diferencia al principio. En lugar de llenar tablas, ejecuta Select Data contra el sistema de origen, y puede restringir aún más la selección en el modeler.
+
+## Cuando los objetos estándar no bastan
+
+Tarde o temprano, un objeto de migración no encajará del todo. Un campo a medida en el origen, una división que necesita al entrar o un objeto que SAP no entrega.
+
+En on-premise y en la edición privada, la herramienta es la transacción LTMOM, el SAP S/4HANA migration object modeler. Permite al equipo ampliar objetos estándar, añadir campos, definir objetos a medida y gestionar el transporte del contenido de migración entre sistemas. Necesita su propio rol de desarrollador, así que planifique quién lo tendrá.
+
+En la edición pública las opciones son más limitadas. Para staging tables, la app Model Your Migration Objects solo puede [ampliar determinados objetos de migración liberados por SAP](https://help.sap.com/docs/SAP_S4HANA_CLOUD/d5699934e7004d048c4801b552f3b013/947d9c3d00fc4e66851a8f5592871ad3.html), con una SAP Note por objeto que indica qué se puede ampliar. Es coherente con el modelo de Clean Core de la edición pública, y es una buena prueba de si sus datos realmente necesitan tener el aspecto que tenían.
+
+Mi consejo es tratar cada cambio en el modeler como código a medida. Regístrelo, asígnele un responsable y pregunte si el negocio lo necesita de verdad.
+
+## Gestionar el cockpit como un programa, no como una herramienta
+
+La migración de datos supone entre el 30 y el 40 % del esfuerzo en los programas S/4HANA que veo. El cockpit está dentro de ese frente de trabajo, así que la mayor parte de lo que sale mal con él no es la herramienta.
+
+Cinco cosas deciden si el trabajo con el cockpit llega a buen puerto:
+
+1. **Defina el alcance de los objetos en Explore.** Enumere cada objeto de migración, su origen, su volumen y su responsable. El [estimador gratuito de migración de datos](/es/free-data-migration-estimator-sap-oracle-microsoft/) le da un rango de esfuerzo defendible cuando tenga recuentos reales.
+2. **Nombre responsables de datos por objeto.** Finanzas es responsable de los datos financieros de clientes y proveedores, compras de los materiales. IT no puede decidir cuál de dos proveedores duplicados es el correcto.
+3. **Planifique ciclos de carga con criterios de salida.** Cada ciclo es un proyecto nuevo en un sistema de pruebas, y cada uno termina con una conciliación que firma el negocio. Mi guía sobre [por qué fracasa la migración de datos en SAP](/es/why-sap-data-migration-fails-and-how-to-fix-it/) incluye un plan de cargas de prueba que puede copiar.
+4. **Dimensione la ventana de cutover.** Ejecute un ciclo con el volumen completo de producción. Los límites de archivo y los tiempos de carga solo se hacen visibles a tamaño real.
+5. **Congele los objetos y los mapeos antes del cutover.** La carga de producción debería repetir el último ensayo, con los mismos proyectos, plantillas y mapeos.
+
+El mayor error que veo en los programas S/4HANA es no planificar bien al principio. Con el cockpit, eso se nota en listas de objetos tardías, responsables que faltan y un primer ciclo de carga en Realize que descubre problemas que Explore debería haber encontrado.
+
+Esos ciclos también dan forma al plan global. Mi [guía de plazos de migración a S/4HANA](/es/s4hana-migration-timeline-project-plan/) muestra dónde se sitúan los ciclos de carga en cada ruta, y la [guía de costos de migración a S/4HANA](/es/s4hana-migration-cost/) cubre qué mueve el presupuesto de datos.
+
+### Qué preguntar a su socio sobre el cockpit
+
+Antes de firmar, pida al socio que le muestre por escrito su enfoque de datos, no en una presentación:
+
+1. Qué enfoque propone por objeto, staging tables o transferencia directa, y por qué.
+2. Cuántos ciclos de carga planifica, y cuál es el criterio de salida de cada uno.
+3. Qué objetos espera modificar en el modeler, y quién mantiene esos cambios.
+4. Quién de su lado aprueba cada objeto, y cuándo.
+
+Aquí las respuestas genéricas son una señal de advertencia. Un socio que ya ha hecho esto puede nombrar los objetos complicados de su industria.
+
+## Lo que yo haría a continuación
+
+Haga este mes una extracción completa de sus maestros de clientes, proveedores y materiales, cuente los registros y analice su calidad. Después decida staging tables o transferencia directa por objeto, con responsables con nombre.
+
+Si todavía no ha evaluado el sistema de origen, empiece por el [SAP Readiness Check y la evaluación de migración](/es/sap-readiness-check-migration-assessment/). Si quiere una opinión independiente sobre su plan de migración de datos, [póngase en contacto](/es/contact-noel-erp-support/).
+
+## Preguntas frecuentes
+
+<details>
+<summary>¿Qué es el SAP S/4HANA Migration Cockpit?</summary>
+
+Es la herramienta de SAP para la carga inicial de datos de negocio en un sistema S/4HANA nuevo, que se ejecuta a través de la app Fiori Migrate Your Data. Usa objetos de migración predefinidos para datos maestros y partidas abiertas, y admite dos enfoques: staging tables y transferencia directa desde un sistema SAP de origen.
+
+</details>
+
+<details>
+<summary>¿Sigue disponible LTMC en S/4HANA?</summary>
+
+No para migrar datos. SAP ha declarado obsoleta la transacción LTMC, y ya no se puede usar para migrar datos a S/4HANA. Todavía puede consultar en ella proyectos antiguos.
+
+Las migraciones nuevas se ejecutan en la app Migrate Your Data.
+
+</details>
+
+<details>
+<summary>¿Cuál es la diferencia entre staging tables y transferencia directa?</summary>
+
+Con staging tables, el cockpit genera tablas por objeto de migración, y usted las llena a partir de plantillas XML o CSV o con sus propias herramientas, desde cualquier origen. Con la transferencia directa, el cockpit lee los datos directamente de un sistema SAP de origen compatible, como SAP ERP 6.0, mediante una conexión RFC. Las staging tables le dan más margen para revisar y depurar antes de la carga.
+
+</details>
+
+<details>
+<summary>¿Se puede usar el Migration Cockpit en una conversión brownfield?</summary>
+
+No para el traslado principal. SAP diseña el cockpit para la carga inicial en un escenario de nueva implementación. Una conversión brownfield del sistema convierte los datos en el propio sistema con el Software Update Manager.
+
+</details>
+
+<details>
+<summary>¿Qué es LTMOM en SAP?</summary>
+
+LTMOM es la transacción del SAP S/4HANA migration object modeler, que se usa en on-premise y en la edición privada. Permite ampliar objetos de migración estándar, añadir campos a medida, crear objetos propios y transportar contenido de migración. En la edición pública, la app Model Your Migration Objects hace una versión más limitada del mismo trabajo.
+
+</details>
+
+<details>
+<summary>¿Cuál es el límite de tamaño de archivo en el S/4HANA Migration Cockpit?</summary>
+
+Un único archivo de plantilla XML puede ocupar hasta 100 MB, y un zip de varios archivos XML no puede superar los 100 MB. Los archivos dentro del zip pueden ser mayores una vez comprimidos, con un límite por archivo que depende de la edición y de la versión.
+
+Las carpetas CSV también están limitadas a 100 MB. Para objetos muy grandes, llene las staging tables con una herramienta en lugar de con archivos.
+
+</details>

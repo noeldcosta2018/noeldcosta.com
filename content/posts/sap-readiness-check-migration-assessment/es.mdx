@@ -1,0 +1,201 @@
+---
+title: "SAP Readiness Check y evaluación de migración a S/4HANA"
+h1: "SAP Readiness Check y evaluación de migración a S/4HANA"
+slug: "sap-readiness-check-migration-assessment"
+date: "2026-10-13"
+updated: "2026-10-13"
+hero: "/images/migration/sap-readiness-check-migration-assessment.webp"
+heroAlt: "Un panel de evaluación en un portátil, una lista de verificación marcada y una lupa sobre un diagrama de sistemas"
+category: "erp-strategy"
+tags: ["ecc-to-s4hana", "sap-planning-and-selection", "s4hana-implementation"]
+author: "Noel D'Costa"
+metaTitle: "SAP Readiness Check: guía de evaluación de migración a S/4HANA"
+metaDescription: "Qué cubre el SAP Readiness Check, cómo ejecutarlo y qué no detecta, y qué añade una evaluación completa de migración a S/4HANA antes de elegir ruta o socio."
+primaryKeyword: "evaluación de migración a S/4HANA"
+excerpt: "El SAP Readiness Check le dice qué de su sistema ECC choca con S/4HANA. Una evaluación de migración le dice qué hacer al respecto. Esto es lo que cubre cada uno, cómo ejecutar el check y dónde se queda corto."
+experienceSource: "Noel's first-person experience leading and rescuing SAP programmes (confirmed by Noel, 12 and 13 October 2026). No client names. Product facts checked against official SAP documentation, October 2026."
+keyTakeaways:
+  - "El SAP Readiness Check es un análisis técnico de su sistema ECC frente a S/4HANA, disponible para los clientes con un contrato de mantenimiento de SAP activo"
+  - "Cubre simplification items, add-ons, business functions, código a medida, sizing, interfaces, business partner, calidad de los datos financieros y apps Fiori"
+  - "Ejecútelo en producción y cargue también los resultados del código a medida, o la sección de código a medida quedará vacía"
+  - "Lo que no detecta y duele después son los objetos a medida: señala el código que se rompe, no el código que debería retirar"
+  - "Una evaluación de migración completa añade decisiones sobre procesos, datos, integración, organización y costos por encima del check"
+pullQuote: "El Readiness Check le dice qué se rompe. No le dice qué conservar."
+mentions:
+  - "SAP Readiness Check for SAP S/4HANA"
+  - "SAP S/4HANA"
+  - "SAP ECC"
+  - "ABAP Test Cockpit"
+  - "Custom Code Migration app"
+  - "SAP for Me"
+  - "SAP Cloud ALM"
+  - "SAP Signavio Process Insights"
+  - "smartShift"
+  - "Software Update Manager"
+originalUrl: "https://noeldcosta.com/sap-readiness-check-migration-assessment/"
+canonicalUrl: "https://noeldcosta.com/es/sap-readiness-check-migration-assessment/"
+locale: "es"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Una evaluación de migración a S/4HANA le dice cuánto costará y cuánto tardará trasladar su sistema ECC, y qué ruta encaja. El SAP Readiness Check es la mitad técnica de esa evaluación: compara su sistema con S/4HANA y enumera lo que se romperá, pero no toma las decisiones por usted.
+
+Respuesta corta: ejecute primero el Readiness Check, en producción, con los resultados del código a medida cargados. Después dedique el esfuerzo real a lo que no puede ver, que es si sus procesos, datos, objetos a medida e interfaces deberían trasladarse siquiera.
+
+Para la secuencia completa de la migración, empiece por mi [guía de migración de ECC a S/4HANA](/es/ecc-to-s4hana-migration/).
+
+## Qué es el SAP Readiness Check
+
+SAP Readiness Check for SAP S/4HANA es una aplicación en la nube de SAP. Usted ejecuta recolectores de datos en su sistema ECC, carga los resultados y obtiene un panel interactivo de cómo afecta S/4HANA a ese sistema.
+
+Según el [resumen de funciones clave del Readiness Check](https://help.sap.com/doc/bb0e7ba5158c424ab7ce010228bf1de1/latest/en-US/Key%20Feature%20Overview%20SAP%20Readiness%20Check.pdf) de SAP (septiembre de 2026), está disponible en SAP for Me para todos los clientes con un contrato de mantenimiento de SAP activo. Los clientes con un tenant de SAP Cloud ALM también pueden ejecutarlo allí, y enviar los hallazgos a Cloud ALM como tareas de proyecto.
+
+No se compra por separado. El costo real es el tiempo de su equipo de Basis y de las personas que leen los resultados.
+
+SAP tiene escenarios distintos para upgrades, BW/4HANA y otros productos. Para una migración desde ECC necesita SAP Readiness Check for SAP S/4HANA. El destino puede ser S/4HANA on-premise o SAP S/4HANA Cloud Private Edition, el destino de RISE with SAP, como explica el [contenido formativo de SAP sobre la preparación de la conversión](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-private-edition/performing-system-preparation-activities-for-system-conversions_c131e647-d7d1-4887-a2ff-c01b25966a52).
+
+## Qué cubre el Readiness Check
+
+La lista actual de SAP para el escenario S/4HANA tiene 17 comprobaciones. La tabla siguiente agrupa las que más importan para una decisión de migración, con lo que dice cada una y dónde yo tendría cuidado.
+
+| Comprobación | Qué le dice | Dónde tener cuidado |
+|---|---|---|
+| Simplification items | Qué cambios de S/4HANA se aplican a su sistema, con una clasificación del esfuerzo y las actividades relacionadas | Se basa sobre todo en el contenido de las tablas y en las transacciones usadas, así que muestra relevancia, no su solución |
+| Compatibilidad de add-ons | Si cada add-on de SAP y de terceros es compatible, incompatible o desconocido para su versión de destino | Los add-ons incompatibles bloquean la conversión en SUM; «desconocido» significa llamar al proveedor |
+| Business functions activas | Business functions incompatibles que bloquearían la conversión | Un bloqueo aquí necesita pronto una incidencia de soporte a SAP |
+| Análisis del código a medida | Hallazgos de ATC o de la Custom Code Migration app, agrupados por impacto, con recuentos de quick fixes y alcance usado o no usado | Solo aparece si carga por separado los resultados del código a medida |
+| Sizing de SAP S/4HANA | Tamaño inicial de memoria y disco de HANA, tablas principales y potencial de archivado | Un punto de partida para el sizing, no un sizing definitivo de hardware ni de RISE |
+| Integración | Inventario de IDocs, RFC y BAPI, servicios web, OData, extractores de BW, archivos planos y SLT, con su impacto probable | Muestra solo las interfaces técnicas de este sistema, no los sistemas del otro extremo |
+| Customer vendor integration | Cuántos clientes y proveedores ya son business partners, y los problemas de calidad de datos | La conversión a business partner sorprende a más equipos que cualquier otro requisito previo |
+| Calidad de los datos financieros | Incoherencias en el libro mayor, la contabilidad de activos fijos y el material ledger, por año y por sociedad | Los hallazgos de categoría D necesitan una corrección específica del sistema, y eso lleva tiempo |
+| Calculadora de downtime planificado | Downtime de negocio esperado para una conversión SUM estándar en un solo centro de datos | Solo orientativo; su plan de cutover fija la ventana real |
+| Disponibilidad de apps y apps Fiori recomendadas | Transacciones obsoletas o sustituidas, y apps Fiori adecuadas a su uso | Recomendaciones, no un diseño de UX |
+| Business Process Discovery | Tasas de automatización de procesos, backlog vencido y clases de pedido no estándar | Un anticipo del análisis de procesos, que se trata con más detalle más abajo |
+
+## Cómo ejecutarlo
+
+La guía central es la [SAP Note 2913617](https://me.sap.com/notes/2913617), SAP Readiness Check for SAP S/4HANA. Lea la versión vigente antes de empezar, porque SAP actualiza con regularidad las notas de requisitos previos.
+
+<stepper title="Ejecutar el Readiness Check" steps="Preparar|Recolectar|Código a medida|Cargar|Revisar" bodies="Implemente las notas que indica la SAP Note 2913617 en el sistema que va a analizar, normalmente producción.|Ejecute el informe de recolección de datos RC_COLLECT_ANALYSIS_DATA como job en segundo plano, elija la versión de destino y descargue el ZIP.|Ejecute las comprobaciones de código a medida para S/4HANA en ATC o en la Custom Code Migration app y exporte los resultados.|Cree un análisis nuevo en la página de SAP Readiness Check en SAP for Me y cargue ambos archivos.|Recorra cada comprobación con Basis, finanzas, los responsables de procesos y su responsable de código a medida."></stepper>
+
+Algunos puntos que la lista de pasos no muestra.
+
+1. **Use producción.** La orientación de SAP es analizar producción, porque esos son los resultados con los que va a planificar. Varias comprobaciones dependen del historial de uso real, que un sandbox no tiene.
+2. **Cargue los resultados del código a medida.** La recolección de datos principal no analiza por sí sola su código a medida. Si nadie carga los resultados de ATC o de la Custom Code Migration app en el mismo análisis, la sección de código a medida queda vacía y el informe parece más limpio que su sistema.
+3. **Compruebe la versión de destino.** Elija la versión de S/4HANA o de Private Edition a la que realmente va a llegar. Los simplification items y el estado de los add-ons cambian entre versiones.
+4. **Cuente con algunas idas y venidas.** Los recolectores de datos fallan, faltan notas y los jobs tardan mucho en sistemas grandes. Planifique el tiempo transcurrido, no solo el esfuerzo.
+
+La página de entrada está en [me.sap.com/readinesscheck](https://me.sap.com/readinesscheck).
+
+## Qué no detecta el Readiness Check
+
+El check es bueno respondiendo a una pregunta: qué de este sistema choca con S/4HANA. No está hecho para responder si eso debería existir.
+
+### Objetos a medida
+
+En mi experiencia, lo que el Readiness Check no detecta y duele después son los objetos a medida. Le dice qué código a medida se rompe frente a los simplification items. No le dice qué programas Z, tablas, ampliaciones, formularios e informes siguen cumpliendo un propósito de negocio, cuáles duplican una función estándar de S/4HANA, ni cuáles nadie ha ejecutado en años.
+
+Ese hueco importa porque el código a medida es la fase que más a menudo se desborda en los programas que veo. También es el costo oculto que más se olvida en el presupuesto.
+
+El número de hallazgos y el número de objetos a medida son cifras distintas. En un programa, el análisis con smartShift nos llevó de 18.000 objetos a medida a 3.200. El Readiness Check por sí solo no habría hecho ese recorte, porque mide el impacto, no el valor.
+
+Por eso trato la sección de código a medida como el principio del inventario, no el final. La Custom Code Migration app añade el alcance usado y no usado, smartShift añade análisis y remediación automatizados, y alguien del negocio todavía tiene que acordar qué se retira.
+
+### Todo lo que queda fuera del sistema analizado
+
+El check examina un sistema ECC. No ve:
+
+1. **El diseño de procesos.** Si su order-to-cash o su record-to-report deberían rediseñarse, que es lo que decide entre greenfield, brownfield o selectiva.
+2. **El otro extremo de las interfaces.** Enumera las interfaces de ECC. El middleware, los sistemas de terceros y sus responsables quedan fuera.
+3. **Los datos que todavía no ha cargado.** Los datos de sistemas que no son SAP, y la calidad de los datos fuera de finanzas y de business partner.
+4. **La organización y el cambio.** Quién es responsable de las decisiones, lo preparados que están los usuarios y cuánto puede absorber el negocio durante el programa.
+5. **Lo comercial.** La conversión de licencias, el alcance de RISE y el costo del socio no están en ningún panel de SAP.
+
+Business Process Discovery ofrece una primera mirada al rendimiento de los procesos. Un análisis más profundo de SAP es SAP Signavio Process Insights, discovery edition, que la [página sobre el valor del soporte de SAP](https://support.sap.com/en/release-upgrade-maintenance/value-support.html) describe como recomendaciones de mejora de procesos en seis líneas de negocio. Un insumo útil, pero todavía no un diseño.
+
+## Qué añade una evaluación completa de migración a S/4HANA
+
+Una evaluación de migración toma el Readiness Check como un insumo y lo convierte en decisiones que se pueden financiar. Así se comparan los dos.
+
+| Pregunta | SAP Readiness Check | Evaluación de migración completa |
+|---|---|---|
+| ¿Qué de ECC entra en conflicto con S/4HANA? | Sí, con detalle | Usa los resultados del check |
+| ¿Qué objetos a medida debemos conservar, retirar o reconstruir? | En parte: impacto, más el uso si utiliza la Custom Code Migration app | Sí: inventario de objetos, uso, responsable de negocio, decisión |
+| ¿Greenfield, brownfield o selectiva? | No | Sí, a partir de los hallazgos sobre procesos y datos |
+| ¿Qué interfaces y sistemas externos cambian? | Solo el lado de ECC | Ambos extremos, con responsables y remediación |
+| ¿Qué tan limpios están nuestros datos más allá de finanzas? | En parte | Sí, con un plan de depuración y un responsable |
+| ¿Cuánto tardará y cuánto costará? | Solo estimaciones de downtime y de sizing | Plazo, rango de costo y contingencia |
+| ¿Qué modelo de despliegue y comercial? | No | On-premise, Private Edition o Public Edition, y qué negociar |
+
+Las herramientas que uso son el SAP Readiness Check, la Custom Code Migration app y smartShift para el código a medida, y SNP o Natuvion cuando la selective data transition está sobre la mesa. Ninguna sustituye una revisión del diseño con sus responsables de procesos.
+
+Mi regla de ruta hace el resto. Greenfield cuando viene de otros sistemas o hay que definir procesos nuevos, brownfield cuando los procesos están definidos y funcionan, selectiva cuando hay que redefinir los procesos de algunas áreas. Mi [herramienta gratuita de evaluación de migración a S/4HANA](/es/sap-s4hana-migration-strategy-greenfield-vs-brownfield/) recorre los mismos compromisos si quiere una primera lectura antes de gastar dinero.
+
+El resultado debería alimentar directamente un [plan de proyecto y de plazos de migración](/es/s4hana-migration-timeline-project-plan/) y una [estimación del costo de migración](/es/s4hana-migration-cost/). También es lo que entrega a los socios: si no pueden responder a su evaluación con un diseño de alto nivel específico, eso le dice algo. Mi guía sobre cómo [elegir un socio de migración a S/4HANA](/es/choose-s4hana-migration-partner/) cubre ese paso.
+
+## Cuánto dura una evaluación bien hecha
+
+Depende. No daré una cifra única, porque los factores varían demasiado de una empresa a otra.
+
+Estos son los que la mueven:
+
+1. **Número de sistemas y mandantes.** Un único sistema productivo ECC es un trabajo distinto de cinco, con BW, CRM y SRM separados.
+2. **Volumen de código a medida.** Miles de objetos a medida necesitan análisis de uso y decisiones de negocio, y eso es tiempo de personas, no de herramientas.
+3. **Interfaces.** Cada sistema externo necesita un responsable que pueda decir qué cambia de su lado.
+4. **Entidades y países.** Más sociedades significa más preguntas de localización, impuestos y reporting.
+5. **Calidad de los datos.** Grandes incoherencias financieras o datos de business partner desordenados necesitan investigación antes de que nadie pueda estimar.
+6. **Disponibilidad del negocio.** Los responsables de procesos que pueden dedicar horas reales a la evaluación la acortan más que cualquier herramienta.
+7. **Acceso.** Esperar a que se aprueben las notas y se programen los jobs en producción añade tiempo transcurrido sin ningún análisis hecho.
+
+Lo que yo no haría es recortar la evaluación para empezar antes la construcción. En los 21 programas SAP que he dirigido o rescatado, el mayor error que veo es no planificar bien al principio. La evaluación es donde empieza esa planificación.
+
+## Lo que yo haría a continuación
+
+Pida a su equipo de Basis que implemente este mes la SAP Note 2913617 en producción y ejecute el Readiness Check con los resultados del código a medida incluidos. Después reserve medio día con su responsable de finanzas, un responsable de procesos y su responsable de código a medida para leerlo juntos y enumerar las preguntas que no responde.
+
+Esa lista es el alcance de su evaluación de migración. Si quiere una opinión independiente sobre ella antes de ir a los socios, [póngase en contacto](/es/contact-noel-erp-support/).
+
+## Preguntas frecuentes
+
+<details>
+<summary>¿Qué es el SAP Readiness Check para S/4HANA?</summary>
+
+Es una aplicación en la nube de SAP que analiza su sistema SAP ERP frente a SAP S/4HANA. Usted ejecuta recolectores de datos en el sistema, carga los resultados en SAP for Me y obtiene un panel que cubre simplification items, add-ons, business functions, código a medida, sizing, interfaces, business partner, calidad de los datos financieros y apps Fiori recomendadas.
+
+</details>
+
+<details>
+<summary>¿Es gratuito el SAP Readiness Check para los clientes de SAP?</summary>
+
+SAP lo pone a disposición en SAP for Me de todos los clientes con un contrato de mantenimiento de SAP activo, y en SAP Cloud ALM para los clientes con un tenant de Cloud ALM. El costo real es el tiempo interno y del socio para preparar el sistema e interpretar los resultados.
+
+</details>
+
+<details>
+<summary>¿Cómo se ejecuta el SAP Readiness Check?</summary>
+
+Implemente las notas de la SAP Note 2913617, normalmente en producción. Ejecute el informe de recolección de datos RC_COLLECT_ANALYSIS_DATA, descargue el ZIP y ejecute por separado el análisis del código a medida en ATC o en la Custom Code Migration app. Cargue ambos en un mismo análisis en la página de SAP Readiness Check en SAP for Me.
+
+</details>
+
+<details>
+<summary>¿Qué no cubre el SAP Readiness Check?</summary>
+
+No decide si sus objetos a medida siguen siendo necesarios, si sus procesos deberían rediseñarse, qué ocurre en el otro extremo de sus interfaces ni cuánto costará el programa. Analiza un sistema en cuanto a compatibilidad técnica. Esas otras preguntas corresponden a una evaluación de migración completa.
+
+</details>
+
+<details>
+<summary>¿Cuánto dura una evaluación de migración a S/4HANA?</summary>
+
+Depende del número de sistemas, del volumen de código a medida, del número de interfaces y entidades, del estado de sus datos y de cuánto tiempo pueden dedicarle los responsables de procesos.
+
+</details>
+
+<details>
+<summary>¿Debo ejecutar el Readiness Check antes de elegir entre greenfield y brownfield?</summary>
+
+Sí. Muestra cuánto de su sistema choca con S/4HANA, que es uno de los insumos de la decisión de ruta. La decisión en sí depende de si sus procesos están definidos y funcionan, algo que el check no mide.
+
+</details>

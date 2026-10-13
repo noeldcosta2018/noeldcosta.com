@@ -1,0 +1,201 @@
+---
+title: "SAP Readiness Check 与 S/4HANA 迁移评估"
+h1: "SAP Readiness Check 与 S/4HANA 迁移评估"
+slug: "sap-readiness-check-migration-assessment"
+date: "2026-10-13"
+updated: "2026-10-13"
+hero: "/images/migration/sap-readiness-check-migration-assessment.webp"
+heroAlt: "笔记本电脑上的评估仪表板、一份已打勾的检查清单，以及放在系统架构图上的放大镜"
+category: "erp-strategy"
+tags: ["ecc-to-s4hana", "sap-planning-and-selection", "s4hana-implementation"]
+author: "Noel D'Costa"
+metaTitle: "SAP Readiness Check：S/4HANA 迁移评估指南"
+metaDescription: "SAP Readiness Check 涵盖什么、如何运行、遗漏了什么，以及在您选择迁移路径或合作伙伴之前，一次完整的 S/4HANA 迁移评估还会补充哪些内容。"
+primaryKeyword: "S/4HANA 迁移评估"
+excerpt: "SAP Readiness Check 告诉您 ECC 系统中哪些内容与 S/4HANA 冲突。迁移评估告诉您该怎么处理。下面是两者各自涵盖什么、如何运行检查，以及它的不足之处。"
+experienceSource: "Noel's first-person experience leading and rescuing SAP programmes (confirmed by Noel, 12 and 13 October 2026). No client names. Product facts checked against official SAP documentation, October 2026."
+keyTakeaways:
+  - "SAP Readiness Check 是对照 S/4HANA 对您的 ECC 系统进行的技术分析，拥有有效 SAP 维护协议的客户都可以使用"
+  - "它涵盖简化项、附加组件、业务功能、自定义代码、规模测算、接口、业务伙伴、财务数据质量和 Fiori 应用"
+  - "要在生产系统中运行，并同时上传自定义代码结果，否则自定义代码部分会是空的"
+  - "它遗漏的、后来造成麻烦的是自定义对象：它标出会出错的代码，而不是您应该淘汰的代码"
+  - "完整的迁移评估在检查之上，还补充流程、数据、集成、组织和成本方面的决策"
+pullQuote: "Readiness Check 告诉您什么会出错。它不会告诉您该保留什么。"
+mentions:
+  - "SAP Readiness Check for SAP S/4HANA"
+  - "SAP S/4HANA"
+  - "SAP ECC"
+  - "ABAP Test Cockpit"
+  - "Custom Code Migration app"
+  - "SAP for Me"
+  - "SAP Cloud ALM"
+  - "SAP Signavio Process Insights"
+  - "smartShift"
+  - "Software Update Manager"
+originalUrl: "https://noeldcosta.com/sap-readiness-check-migration-assessment/"
+canonicalUrl: "https://noeldcosta.com/zh-CN/sap-readiness-check-migration-assessment/"
+locale: "zh"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+S/4HANA 迁移评估告诉您，迁移 ECC 系统要花多少钱、需要多长时间，以及哪条路径适合您。SAP Readiness Check 是这项评估的技术部分：它把您的系统与 S/4HANA 进行对比，列出会出错的地方，但不会替您做决定。
+
+简短的回答：先在生产系统中运行 Readiness Check，并上传自定义代码结果。然后把真正的精力花在它看不到的地方，也就是您的流程、数据、自定义对象和接口究竟是否应该迁移。
+
+完整的迁移步骤，请从我的 [ECC 到 S/4HANA 迁移指南](/zh-CN/ecc-to-s4hana-migration/)开始。
+
+## SAP Readiness Check 是什么
+
+SAP Readiness Check for SAP S/4HANA 是 SAP 提供的一款云应用。您在 ECC 系统中运行数据收集器，上传结果，然后得到一个交互式仪表板，显示 S/4HANA 会如何影响该系统。
+
+根据 SAP 的 [Readiness Check 主要功能概览](https://help.sap.com/doc/bb0e7ba5158c424ab7ce010228bf1de1/latest/en-US/Key%20Feature%20Overview%20SAP%20Readiness%20Check.pdf)（2026 年 9 月），所有拥有有效 SAP 维护协议的客户都可以在 SAP for Me 上使用它。拥有 SAP Cloud ALM 租户的客户也可以在那里运行它，并把发现的问题作为项目任务推送到 Cloud ALM 中。
+
+您不需要单独购买它。真正的成本是您的 Basis 团队以及解读结果的人员所花的时间。
+
+SAP 针对升级、BW/4HANA 和其他产品提供了单独的场景。对于 ECC 迁移，您需要的是 SAP Readiness Check for SAP S/4HANA。正如 SAP [关于转换准备的学习内容](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-private-edition/performing-system-preparation-activities-for-system-conversions_c131e647-d7d1-4887-a2ff-c01b25966a52)所说明的，目标可以是 S/4HANA 本地部署版，也可以是 RISE with SAP 的目标 SAP S/4HANA Cloud Private Edition。
+
+## Readiness Check 涵盖什么
+
+SAP 目前针对 S/4HANA 场景的清单有 17 项检查。下表归纳了对迁移决策最重要的几项，以及每一项告诉您什么、我会在哪里多加小心。
+
+| 检查项 | 它告诉您什么 | 需要小心的地方 |
+|---|---|---|
+| 简化项 | 哪些 S/4HANA 变更适用于您的系统，附有工作量排序和相关活动 | 主要基于表内容和使用过的事务，所以它显示的是相关性，而不是您的解决办法 |
+| 附加组件兼容性 | 每个 SAP 和第三方附加组件对于您的目标版本是兼容、不兼容还是未知 | 不兼容的附加组件会在 SUM 中阻止转换；“未知”意味着要打电话问供应商 |
+| 已激活的业务功能 | 不兼容、会阻止转换的业务功能 | 这里出现阻断项，就需要尽早向 SAP 提交支持事件 |
+| 自定义代码分析 | ATC 或 Custom Code Migration app 的发现，按影响分组，附有快速修复数量以及已使用或未使用的范围 | 只有当您单独上传自定义代码结果时才会出现 |
+| SAP S/4HANA 规模测算 | 初始 HANA 内存和磁盘大小、最大的表以及归档潜力 | 是规模测算的起点，而不是最终的硬件或 RISE 规模测算 |
+| 集成 | IDoc、RFC 和 BAPI、Web 服务、OData、BW 抽取器、平面文件和 SLT 的清单，以及可能的影响 | 只显示本系统中的技术接口，不显示另一端的系统 |
+| 客户供应商集成 | 有多少客户和供应商已经是业务伙伴，以及数据质量问题 | 业务伙伴转换难倒的团队，比任何其他前提条件都多 |
+| 财务数据质量 | 总账、资产会计和物料分类账中的不一致，按年度和公司代码列出 | D 类发现需要针对具体系统进行更正，这需要时间 |
+| 计划停机时间计算器 | 在单一数据中心进行标准 SUM 转换时的预计业务停机时间 | 仅供参考；真正的窗口由您的切换计划决定 |
+| 应用可用性和推荐的 Fiori 应用 | 已弃用或被替代的事务，以及适合您使用情况的 Fiori 应用 | 是建议，而不是用户体验设计 |
+| Business Process Discovery | 流程自动化率、逾期积压和非标准订单类型 | 是流程洞察的预览，下文有更完整的介绍 |
+
+## 如何运行
+
+核心指导文件是 [SAP Note 2913617](https://me.sap.com/notes/2913617)，即 SAP Readiness Check for SAP S/4HANA。开始之前请阅读最新版本，因为 SAP 会定期更新前提条件中的 Note。
+
+<stepper title="运行 Readiness Check" steps="准备|收集|自定义代码|上传|审阅" bodies="在要分析的系统（通常是生产系统）中实施 SAP Note 2913617 列出的 Note。|以后台作业方式运行数据收集报表 RC_COLLECT_ANALYSIS_DATA，选择目标版本，然后下载 ZIP 文件。|在 ATC 或 Custom Code Migration app 中运行 S/4HANA 自定义代码检查，并导出结果。|在 SAP for Me 的 SAP Readiness Check 页面上创建新的分析，并上传两个文件。|与 Basis、财务、流程负责人和自定义代码负责人一起逐项过一遍每个检查。"></stepper>
+
+有几点是步骤清单没有显示的。
+
+1. **使用生产系统。** SAP 的指导是分析生产系统，因为您要依据这些结果来做计划。有几项检查依赖真实的使用历史，而沙箱系统没有这些历史。
+2. **上传自定义代码结果。** 主数据收集本身并不分析您的自定义代码。如果没有人把 ATC 或 Custom Code Migration app 的结果上传到同一个分析中，自定义代码部分就会是空的，报告看起来会比您的系统实际情况更干净。
+3. **核对目标版本。** 选择您实际要落地的 S/4HANA 或 Private Edition 版本。简化项和附加组件的状态在不同版本之间会有变化。
+4. **预期会有反复。** 数据收集器会失败，Note 会缺失，大型系统上的作业会运行很久。要为此规划日历时间，而不只是工作量。
+
+入口页面在 [me.sap.com/readinesscheck](https://me.sap.com/readinesscheck)。
+
+## Readiness Check 遗漏了什么
+
+这项检查擅长回答一个问题：这个系统中的哪些内容与 S/4HANA 冲突。它并不是为了回答那样东西是否应该存在而设计的。
+
+### 自定义对象
+
+根据我的经验，Readiness Check 遗漏的、后来造成麻烦的是自定义对象。它告诉您哪些自定义代码会与简化项冲突。它不会告诉您哪些 Z 程序、表、增强、表单和报表仍然有业务用途，哪些与 S/4HANA 的标准功能重复，或者哪些多年来没有人运行过。
+
+这个缺口很重要，因为在我见过的项目中，自定义代码是最常超期的阶段。它也是预算中最常被遗忘的隐性成本。
+
+发现的数量和自定义对象的数量是两个不同的数字。在一个项目中，借助 smartShift 的分析，我们把自定义对象从 18,000 个减少到 3,200 个。仅靠 Readiness Check 是做不到这种削减的，因为它衡量的是影响，而不是价值。
+
+所以，我把自定义代码部分当作清单的起点，而不是终点。Custom Code Migration app 补充已使用和未使用的范围，smartShift 补充自动化分析和修复，而业务方面仍然需要有人来认定哪些要淘汰。
+
+### 被分析系统之外的一切
+
+这项检查只看一套 ECC 系统。它看不到：
+
+1. **流程设计。** 您的订单到收款或记录到报告流程是否应该重新设计，而这正是决定选绿地、棕地还是选择性迁移的因素。
+2. **接口的另一端。** 它列出 ECC 中的接口。中间件、第三方系统及其负责人都在它的范围之外。
+3. **您尚未加载的数据。** 来自非 SAP 系统的数据，以及财务和业务伙伴之外的数据质量。
+4. **组织与变革。** 谁负责做决定，用户的准备程度如何，以及业务在项目期间能消化多少。
+5. **商务条款。** 许可转换、RISE 范围和合作伙伴成本不在任何 SAP 仪表板里。
+
+Business Process Discovery 让您初步了解流程绩效。更深入的 SAP 分析是 SAP Signavio Process Insights 的 discovery edition，SAP 的[支持价值页面](https://support.sap.com/en/release-upgrade-maintenance/value-support.html)将其描述为覆盖六个业务领域的流程改进建议。有用的输入，但仍然不是设计。
+
+## 完整的 S/4HANA 迁移评估补充了什么
+
+迁移评估把 Readiness Check 作为输入之一，并把它转化为您可以为之拨款的决策。两者的对比如下。
+
+| 问题 | SAP Readiness Check | 完整的迁移评估 |
+|---|---|---|
+| ECC 中哪些内容与 S/4HANA 冲突？ | 是，而且很详细 | 使用检查结果 |
+| 哪些自定义对象应该保留、淘汰或重建？ | 部分：影响，如果使用 Custom Code Migration app，还有使用情况 | 是：对象清单、使用情况、业务负责人、决策 |
+| 绿地、棕地还是选择性迁移？ | 否 | 是，基于流程和数据方面的发现 |
+| 哪些接口和外部系统会变化？ | 仅限 ECC 一端 | 两端都有，附负责人和修复方案 |
+| 财务之外的数据有多干净？ | 部分 | 是，附清洗计划和负责人 |
+| 需要多长时间，要花多少钱？ | 仅有停机时间和规模估算 | 时间线、成本区间和应急储备 |
+| 采用哪种部署和商务模式？ | 否 | 本地部署版、Private Edition 还是 Public Edition，以及要谈判什么 |
+
+我使用的工具是 SAP Readiness Check、Custom Code Migration app 和用于自定义代码的 smartShift，在考虑选择性数据迁移时还会用 SNP 或 Natuvion。它们都无法取代与您的流程负责人一起进行的设计评审。
+
+剩下的交给我的路径原则。从其他系统迁移过来或必须定义新流程时选绿地，流程已定义且运行良好时选棕地，部分领域的流程需要重新定义时选选择性迁移。如果您想在花钱之前先有一个初步判断，我免费的 [S/4HANA 迁移评估工具](/zh-CN/sap-s4hana-migration-strategy-greenfield-vs-brownfield/)会带您过一遍同样的取舍。
+
+评估的输出应该直接输入到[迁移时间线与项目计划](/zh-CN/s4hana-migration-timeline-project-plan/)和[迁移成本估算](/zh-CN/s4hana-migration-cost/)中。它也是您交给合作伙伴的材料：如果他们无法针对您的评估给出具体的概要设计，这本身就说明了问题。我关于如何[选择 S/4HANA 迁移合作伙伴](/zh-CN/choose-s4hana-migration-partner/)的指南讲解了这一步。
+
+## 一次像样的评估需要多长时间
+
+要看情况。我不会给出单一的数字，因为不同公司之间的驱动因素差异太大。
+
+以下因素会影响它：
+
+1. **系统和客户端的数量。** 一套 ECC 生产系统，与五套系统外加单独的 BW、CRM 和 SRM，是完全不同的工作。
+2. **自定义代码量。** 数千个自定义对象需要使用情况分析和业务决策，这花的是人的时间，而不是工具的时间。
+3. **接口。** 每个外部系统都需要一位负责人，能够说清他们那一端会有什么变化。
+4. **实体和国家。** 公司代码越多，本地化、税务和报告方面的问题就越多。
+5. **数据质量。** 大量的财务不一致或混乱的业务伙伴数据，需要先调查清楚，才能有人做出估算。
+6. **业务人员的可用性。** 能为评估投入真正时间的流程负责人，比任何工具都更能缩短评估时间。
+7. **访问权限。** 等待 Note 获批和生产作业排期，会拉长日历时间，却没有完成任何分析。
+
+我不会做的，是为了更早开始构建而缩短评估。在我主导或挽救过的 21 个 SAP 项目中，我见过的最大错误是开始时没有好好做计划。评估正是计划开始的地方。
+
+## 我接下来会怎么做
+
+本月就请您的 Basis 团队在生产系统中实施 SAP Note 2913617，并运行包含自定义代码结果的 Readiness Check。然后约上您的财务负责人、一位流程负责人和自定义代码负责人，用半天时间一起解读结果，并列出它没有回答的问题。
+
+这份清单就是您迁移评估的范围。如果您希望在找合作伙伴之前，对它有一个独立的视角，欢迎[与我联系](/zh-CN/contact-noel-erp-support/)。
+
+## 常见问题
+
+<details>
+<summary>什么是 SAP Readiness Check for S/4HANA？</summary>
+
+它是 SAP 提供的一款云应用，对照 SAP S/4HANA 分析您的 SAP ERP 系统。您在系统中运行数据收集器，把结果上传到 SAP for Me，然后得到一个仪表板，涵盖简化项、附加组件、业务功能、自定义代码、规模测算、接口、业务伙伴、财务数据质量和推荐的 Fiori 应用。
+
+</details>
+
+<details>
+<summary>SAP Readiness Check 对 SAP 客户免费吗？</summary>
+
+所有拥有有效 SAP 维护协议的客户都可以在 SAP for Me 上使用它，拥有 Cloud ALM 租户的客户也可以在 SAP Cloud ALM 中使用。真正的成本是内部人员和合作伙伴准备系统、解读结果所花的时间。
+
+</details>
+
+<details>
+<summary>如何运行 SAP Readiness Check？</summary>
+
+实施 SAP Note 2913617 中列出的 Note，通常在生产系统中进行。运行数据收集报表 RC_COLLECT_ANALYSIS_DATA，下载 ZIP 文件，并在 ATC 或 Custom Code Migration app 中单独运行自定义代码分析。在 SAP for Me 的 SAP Readiness Check 页面上，把两者上传到同一个分析中。
+
+</details>
+
+<details>
+<summary>SAP Readiness Check 不涵盖哪些内容？</summary>
+
+它不会判断您的自定义对象是否仍然需要、您的流程是否应该重新设计、接口另一端会发生什么，也不会判断项目要花多少钱。它只分析一套系统的技术兼容性。其他这些问题属于完整的迁移评估。
+
+</details>
+
+<details>
+<summary>S/4HANA 迁移评估需要多长时间？</summary>
+
+取决于系统的数量、自定义代码量、接口和实体的数量、您的数据状况，以及流程负责人能为它投入多少时间。
+
+</details>
+
+<details>
+<summary>在选择绿地还是棕地之前，应该先运行 Readiness Check 吗？</summary>
+
+应该。它显示您的系统中有多少内容与 S/4HANA 冲突，这是路径决策的输入之一。决策本身取决于您的流程是否已定义且运行良好，而这一点是检查无法衡量的。
+
+</details>
