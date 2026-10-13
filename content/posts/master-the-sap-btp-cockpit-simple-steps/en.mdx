@@ -1,106 +1,135 @@
 ---
-title: "Master the SAP BTP Cockpit: simple steps anyone can follow"
+title: "SAP BTP Cockpit: login, subaccounts and entitlements guide"
 slug: "master-the-sap-btp-cockpit-simple-steps"
 date: "2025-03-27"
-updated: "2026-10-07"
+updated: "2026-10-13"
 hero: "/images/wp/2025/03/SAP-BTP-Cockpit-3.webp"
 heroAlt: "SAP BTP cockpit login screen beside a white humanoid robot on a neon background"
 category: "sap-modules"
 tags: ["sap-technical-decisions", "sap-btp", "sap-cap", "cloud-foundry"]
 author: "Noel D'Costa"
-metaTitle: "SAP BTP Cockpit: Simple Steps for Admins and Developers"
-metaDescription: "How to use the SAP BTP Cockpit: log in, set up subaccounts and entitlements, connect your identity provider, deploy apps, and keep costs under control."
-excerpt: "The SAP BTP Cockpit is where you run every SAP cloud service you own. Here is how to log in, set it up in the right order and avoid the mistakes that cost teams weeks."
-experienceSource: "Noel's published WordPress article (published 2025-03-27) and its first-person examples (50+ subaccounts, entitlement savings, morning dashboard check, deployment script, 80% setup time). Cockpit URLs, trust setup, usage and alerting features checked against SAP Learning and SAP Developers pages on 2026-10-07."
+metaTitle: "SAP BTP Cockpit: Login URL, Subaccounts and Setup Guide"
+metaDescription: "How to use the SAP BTP Cockpit: login URL, trial, global account vs subaccount, entitlements, Cloud Foundry or Kyma, role collections, monitoring and cost."
+excerpt: "The SAP BTP Cockpit is the web console for your SAP cloud accounts. Here is the login URL, how global accounts and subaccounts fit together, and the setup order that avoids rework."
+experienceSource: "Noel's published WordPress article (published 2025-03-27) and its first-person lines as recorded in docs/claude/eeat/register-b.md: days working it out the first time, the client with 50+ randomly named subaccounts, entitlements saving clients thousands, projects delayed by months on an unfamiliar runtime, the morning dashboard check, email plus Slack webhook alerting, the 12-developer script, 80 percent setup time, hours to minutes, and executives noticing custom domains. '21 SAP programmes I have led or rescued', clean core with BTP side-by-side extensions and the design authority of business and IT confirmed by Noel on 12 and 13 October 2026. Product facts (cockpit URLs, trial lifecycle, free tier, account model, environments, entitlements, trust, usage and cost pages, SAP Business AI Platform naming) checked on 2026-10-13 against SAP Help documentation (SAP-docs/btp-cloud-platform, updated 12 October 2026), SAP Developers tutorials, SAP Learning and SAP News; see docs/claude/batch-phase2-btp.md."
 lastReviewed: "2026-05-21"
 keyTakeaways:
-  - "Log in through your regional gateway, for example emea.cockpit.btp.cloud.sap; trial accounts use cockpit.hanatrial.ondemand.com and last up to 90 days"
-  - "Plan the subaccount structure and naming before you create anything; one client had 50+ randomly named subaccounts and nobody could find anything"
-  - "Connect your corporate identity provider through SAP Cloud Identity Services instead of managing BTP users by hand"
-  - "Start with minimal entitlements and add as needed, then check Usage Analytics or Costs and Usage before every renewal"
-  - "Match the runtime (Cloud Foundry, Kyma or ABAP environment) to your team's skills, not only to the architecture diagram"
-  - "Write down your account structure and the reasons behind it; the Cockpit stores the what, not the why"
+  - "Log in at cockpit.btp.cloud.sap, which redirects to your nearest regional cockpit; trial accounts use cockpit.hanatrial.ondemand.com/trial/"
+  - "The global account is your contract with SAP; subaccounts are where you deploy apps, use services and manage users"
+  - "Plan directories and subaccount names before you create anything; one client had 50+ randomly named subaccounts and nobody could find anything"
+  - "Entitlements decide which service plans a subaccount can use; start minimal and add as teams prove the need"
+  - "Choose Cloud Foundry, Kyma or the ABAP environment by your team's skills, not only by the architecture diagram"
+  - "Connect your corporate identity provider through SAP Cloud Identity Services and assign role collections by job function"
 pullQuote: "The Cockpit stores the what. It never stores the why. Write that part down yourself."
 mentions:
   - "SAP BTP"
+  - "SAP Business AI Platform"
   - "SAP S/4HANA"
   - "SAP Integration Suite"
   - "SAP SuccessFactors"
-  - "SAP HANA Cloud"
-  - "SAP Build"
-  - "SAP Datasphere"
   - "SAP Cloud Identity Services"
   - "SAP Alert Notification service"
+  - "SAP Discovery Center"
+  - "Kyma"
+  - "Cloud Foundry"
 ---
 
-The SAP Business Technology Platform (BTP) Cockpit is the web console where you run your SAP cloud environment: accounts, services, users, security, deployed applications and cost. If you administer BTP, deploy to it or approve its bill, this is the screen you will live in.
+The SAP BTP Cockpit is the web console where you administer SAP Business Technology Platform: global accounts, subaccounts, entitlements, services, users, runtimes and cost. You log in at `https://cockpit.btp.cloud.sap` with your SAP user, and it redirects you to the nearest regional cockpit.
 
-To get in, open the regional gateway for your region: `https://emea.cockpit.btp.cloud.sap`, `https://amer.cockpit.btp.cloud.sap` or `https://apac.cockpit.btp.cloud.sap` ([SAP Learning](https://learning.sap.com/courses/operating-sap-business-technology-platform/utilizing-sap-btp-cockpit)). You need an SAP user ID; your administrator can set one up. Trial accounts use `https://cockpit.hanatrial.ondemand.com/trial/` and last up to 90 days, with an extension needed after 30 ([SAP Developers](https://developers.sap.com/tutorials/cp-trial-quick-onboarding.html)).
+Short answer: open `cockpit.btp.cloud.sap`, pick your global account, then work in this order. Plan directories and subaccounts, assign entitlements, enable a runtime, create service instances, connect your identity provider and assign role collections, then switch on alerts and cost tracking. Trial accounts use `https://cockpit.hanatrial.ondemand.com/trial/` and run for up to 90 days.
 
-Then set things up in the order below. I spent days working this out the first time. Most of the pain came from doing step four before step one.
+I spent days working this out the first time. Most of the pain came from doing the later steps before the early ones. The order below is the one I now use on every new global account.
 
-## How the Cockpit is organised
+A note on names. At Sapphire in May 2026, SAP announced the SAP Business AI Platform, which brings together BTP, SAP Business Data Cloud and AI Foundation ([SAP News](https://news.sap.com/2026/05/sap-sapphire-keynote-business-ai-platform-power-autonomous-enterprise/)). As of October 2026 the administration console is still documented as the SAP BTP cockpit, so that is the name used here.
 
-Everything sits in a hierarchy. The **global account** is your contract with SAP and holds the pool of services you bought. **Directories** group subaccounts, for example by business unit. **Subaccounts** are where the work happens: each one has a region, an environment such as Cloud Foundry or Kyma, its own users and its own service instances.
+## How to log in to the SAP BTP cockpit
+
+SAP's documentation gives one entry point: `https://cockpit.btp.cloud.sap`. It redirects you to the closest regional cockpit ([SAP Help, Access the Cockpit](https://help.sap.com/docs/btp/sap-business-technology-platform/4e750660b72e4fd6b2485ffb0b3cbdca)). You can also open a regional gateway directly:
+
+1. `https://emea.cockpit.btp.cloud.sap` for Europe, the Middle East and Africa.
+2. `https://amer.cockpit.btp.cloud.sap` for the Americas.
+3. `https://apac.cockpit.btp.cloud.sap` for Asia-Pacific.
+4. `https://eu-access.cockpit.btp.cloud.sap` for EU Access accounts.
+
+The gateway only decides how you reach the cockpit. It does not limit you to subaccounts in that region. Users in China have a dedicated entry point, `https://cockpit.cn40.platform.sapcloud.cn`.
+
+If your company logs platform users in through its own identity provider, add the `idp` parameter, for example `https://cockpit.btp.cloud.sap?idp=mytenant.accounts.ondemand.com`. Without it you land on the default SAP ID service and may see no accounts at all. Accounts on the older feature set A or the Neo environment use a different URL, listed in SAP's documentation.
+
+## Global account vs subaccount: how the cockpit is organised
+
+Everything sits in a hierarchy. The **global account** is the realisation of your contract with SAP. It holds the entitlements and quotas you bought, and it is region- and environment-independent.
+
+**Subaccounts** are where the work happens. Each one belongs to one region, and inside it you deploy applications, use services and manage members and authorisations. Subaccounts are independent of each other, which matters for security and data separation.
+
+**Directories** are optional folders between the two. They group subaccounts, for example by business unit, and can hold their own entitlements and authorisations. SAP allows up to five levels of directories between the global account and the lowest subaccount ([SAP Help, Account Model](https://help.sap.com/docs/btp/sap-business-technology-platform/8ed4a705efa0431b910056c0acdbf377)).
 
 <explainer-org title="How a BTP global account is organised" caption="Every subaccount draws on one finite pool. Agree the names and the split before you create the first one." chain="Global account => Your contract with SAP and the services you bought|Directory => Groups subaccounts, for example by business unit" side="Entitlements => The finite pool each subaccount draws from" roles="Finance-Dev => Development, on free or small plans|Finance-Test => Test, with its own users and role collections|Finance-Prod => Production, with alerts set up before go-live" highlight="side"></explainer-org>
 
-BTP itself covers four areas: application development and automation, integration, data and analytics, and AI. You will meet all four in the Cockpit, but most programmes start with integration and extensions to S/4HANA.
+Below the subaccount, each runtime has its own level. Enabling Cloud Foundry creates one org per subaccount, and you create spaces inside it. Enabling Kyma provisions one or more Kubernetes clusters, which you divide into namespaces.
 
-## First-week setup sequence
+## How to set up the SAP BTP cockpit, step by step
 
-This is the order I follow on a new global account. Each step has a natural owner.
+### Step 1. Log in and open the right global account
 
-1. **Agree the subaccount structure and naming** (platform owner). Development, test and production per area, for example `Finance-Dev`, `Finance-Test`, `Finance-Prod`.
-2. **Connect your identity provider** (security lead). Do this before you add a single user.
-3. **Define role collections by job function** (security lead), including one break-glass admin collection.
-4. **Distribute entitlements, minimal first** (platform owner). Add more when a team can show it needs them.
-5. **Install and configure the Cloud Connector** (infrastructure team) if BTP has to reach on-premise systems.
-6. **Switch on alerting and usage review** (platform owner). Decide who looks at what, and how often.
-7. **Write it all down outside the Cockpit** (architect). Structure, naming rules, entitlement split and the reasons for each.
+Log in as above and choose your global account. The cockpit shows one global account at a time. If you are not a member of any, the cockpit tells you so; see the errors section below.
 
-### Subaccounts and entitlements
+Joule is available from the diamond icon in the cockpit toolbar. It can answer BTP questions and carry out administrative tasks, but only those your own authorisations allow.
 
-This is where most teams create a mess that follows them for years.
+### Step 2. Plan directories and subaccount names on paper
 
-I once worked with a client who had 50+ randomly named subaccounts, and nobody could find anything. Untangling that mid-project is painful. Take a day to map the structure on paper first. If you run in several regions, mirror the structure across them and use labels to group related subaccounts.
+This is where most teams create a mess that follows them for years. I once worked with a client who had 50+ randomly named subaccounts, and nobody could find anything. Untangling that mid-project is painful.
 
-**Entitlements** decide which services each subaccount can use, and how much. Your global account has a finite pool. I start minimal and scale up as needed, and that approach has saved my clients thousands in unused services. Many services have a free plan, which is enough for testing.
+Separate development, test and production per area, for example `Finance-Dev`, `Finance-Test`, `Finance-Prod`. Larger organisations add a directory per business unit. Use labels such as `Landscape: Dev` or a cost centre, because the Account Explorer can filter on them.
 
-### Users, trust and role collections
+### Step 3. Create a subaccount
 
-If your company already has an identity provider such as Microsoft Entra ID or Okta, do not manage BTP users by hand. SAP's recommended route is a SAP Cloud Identity Services tenant, connected to the subaccount under **Security > Trust Configuration**. That tenant then acts as a proxy to your corporate identity provider. The trust can be set up automatically with OpenID Connect. Two-factor authentication and access policies then sit in one place.
+You need to be a global account administrator, or a directory administrator for directories that manage their own entitlements. Then, per [SAP Help, Create a Subaccount](https://help.sap.com/docs/btp/sap-business-technology-platform/05280a123d3044ae97457a25b3013918):
 
-Role collections are bundles of roles you assign to users or groups. My approach:
+1. Open **Account Explorer** in the global account.
+2. Choose **Create > Subaccount**.
+3. Enter a display name and, optionally, a description.
+4. Enter a **Subdomain**. It becomes part of the URL for subscribed applications and must be unique in the region.
+5. Choose the region and the parent (the global account or a directory).
+6. Tick **Used for production** if it is, and add labels under **Advanced**.
+7. Leave **Enable beta features** off for anything productive. Once switched on, it cannot be switched off.
+8. Save, then enable environments and add users.
+
+### Step 4. Assign entitlements
+
+**Entitlements** decide which services and plans a subaccount can use, and how much quota it gets. The global account has a finite pool, and you distribute it to directories and subaccounts.
+
+In the subaccount, open **Entitlements**, choose **Configure Entitlements > Add Service Plans**, pick the service, plan and quota, then **Save**. I start minimal and scale up as needed, and that approach has saved my clients thousands in unused services.
+
+### Step 5. Enable a runtime: Cloud Foundry, Kyma or ABAP environment
+
+You enable an environment from the subaccount overview with **Enable**, from the Service Marketplace, or with the btp CLI. A subaccount can run more than one environment. The table compares the three, based on SAP's environment documentation.
+
+| Environment | What it is | Good fit | Watch out for |
+|---|---|---|---|
+| Cloud Foundry | SAP BTP, Cloud Foundry runtime, based on open-source Cloud Foundry; buildpacks build and run your app | Java, Node.js and Python apps, including SAP Cloud Application Programming Model (CAP) | The mature default for most SAP teams |
+| Kyma | SAP BTP, Kyma runtime: a fully managed Kubernetes runtime based on the open-source Kyma project | Containerised microservices, serverless functions and event-driven extensions | Needs Kubernetes skills; the Kyma free plan is available once per global account for up to 30 days |
+| ABAP environment | Now named SAP Business AI Platform, ABAP environment; ABAP Cloud on released objects | ABAP developers building extensions next to S/4HANA | Its own system with a dedicated SAP HANA Cloud database, sized and billed separately |
+
+I have seen projects delayed by months because developers had to learn a new environment that matched the architecture plan but not their experience. The technically better runtime that your team cannot build in is the worse choice.
+
+### Step 6. Create service instances, bindings and keys
+
+In the subaccount, open **Services > Service Marketplace**, choose the service tile and select **Create**. Pick the plan carefully, because SAP's own tutorial warns that the wrong plan creates extra cost ([SAP Developers](https://developers.sap.com/tutorials/btp-cockpit-instances.html)). Everything you create appears under **Services > Instances and Subscriptions**.
+
+Bind an instance to your application and BTP injects the credentials. For tools that are not BTP applications, create a **service key**. Name keys for who uses them, such as `jenkins-deployment`, not `key1`.
+
+### Step 7. Connect your identity provider and assign role collections
+
+If your company already has an identity provider such as Microsoft Entra ID or Okta, do not manage BTP users by hand. Use a SAP Cloud Identity Services tenant as the proxy to it. In the subaccount, go to **Security > Trust Configuration** and choose **Establish Trust**, which creates an OpenID Connect trust automatically.
+
+Users are then assigned under **Security > Users > Assign Role Collection**, or through groups. My approach to role collections:
 
 1. Build them around job functions, not individuals.
 2. Keep them specific enough to mean something, but not so granular that you maintain hundreds.
 3. Keep one break-glass admin collection for emergencies.
 4. Review assignments every quarter. People change jobs and keep their old access.
 
-### Services, instances and keys
-
-To create a service instance, open **Services > Service Marketplace** in the subaccount, pick the service and choose a plan. The plan controls both capability and cost. Save the settings you chose somewhere outside the Cockpit; you will need them when something breaks.
-
-Bind the instance to your application and BTP injects the credentials. For external tools that are not BTP applications, create a **service key**. Name keys for who uses them, such as `jenkins-deployment`, not `key1`.
-
-## Building on BTP
-
-### Choosing a runtime
-
-The Cockpit offers three main environments. Choose with your team's skills in front of you.
-
-| Runtime | Best for | Watch out for |
-|---|---|---|
-| Cloud Foundry | Java, Node.js and Python apps, including SAP Cloud Application Programming Model (CAP) | The mature default; least surprise for most teams |
-| Kyma | Kubernetes-native microservices and event-driven extensions | Needs Kubernetes skills many SAP teams do not have |
-| ABAP environment | ABAP Cloud extensions next to S/4HANA | Natural fit for ABAP developers; uses released APIs only |
-
-I have seen projects delayed by months because developers had to learn a new environment that matched the architecture plan but not their experience. The technically better runtime that your team cannot build in is the worse choice.
-
-To deploy to Cloud Foundry, describe the app in a `manifest.yml` (memory, instances, buildpack, environment variables), then push it with the CF CLI or a pipeline. Cloud Foundry detects the buildpack, binds the services and sets up routes.
-
-### Connecting BTP to S/4HANA and other systems
+### Step 8. Connect BTP to S/4HANA and other systems
 
 Most BTP work is integration. These are the patterns I set up most often.
 
@@ -111,87 +140,117 @@ Most BTP work is integration. These are the patterns I set up most often.
 | Non-SAP systems such as Salesforce or Workday | Integration Suite adapters, or custom integration flows |
 | Exposing your own APIs | API Management in Integration Suite: design, publish, monitor |
 
-The Cloud Connector opens an outbound tunnel to BTP, so you do not need inbound firewall rules. Expose only the systems and URL paths BTP actually needs. If integration is your main use, my [SAP CPI article](/sap-cpi/) covers the design choices in more depth.
+The Cloud Connector opens an outbound tunnel to BTP, so you do not need inbound firewall rules. Expose only the systems and URL paths BTP actually needs. My [SAP CPI article](/sap-cpi/) covers integration design in more depth.
 
-## Running BTP day to day
-
-### Monitoring and cost control
+### Step 9. Set up monitoring and alerts
 
 Set up monitoring before you need it. I check my dashboards every morning with coffee. It has become a ritual, and it has saved me from more than a few "why is the system down?" moments.
 
-What to set up:
+The SAP Alert Notification service sends platform and application events to email, Slack and other channels. My usual setup is email for critical apps and a Slack webhook for anything that cannot go down. Watch response times and error rates per application in the Cloud Foundry or Kyma views.
 
-1. **Alerts.** The SAP Alert Notification service sends platform and application events to email, Slack or your own alert tool. My usual setup is email for critical apps and a Slack webhook for anything that cannot go down.
-2. **Application health.** Response times and error rates per application, from the Cloud Foundry or Kyma views.
-3. **Usage and cost.** Usage Analytics in each subaccount, and Costs and Usage at global account level. Usage values refresh every 24 hours.
+### Step 10. Track usage and cost
 
-Delete unused service instances every month. Scale development spaces down outside working hours. Check entitlement consumption before you renew, because unused allocations are a common source of overspend.
+Two pages matter. **Usage Analytics** in each subaccount shows actual (not billed) usage, refreshed every 24 hours. **Costs and Usage** in the global account shows monthly costs by service, directory and subaccount, in the terms used on your balance statement.
 
-### Automation and custom domains
+On consumption-based contracts you can also set **budgets** with email alerts at thresholds. A budget does not stop usage when it is exceeded; that is still your job. Delete unused instances every month and check entitlement consumption before every renewal.
 
-Clicking through the Cockpit does not scale. The BTP command-line interface (btp CLI) and the platform APIs can script almost everything the UI does: creating subaccounts, assigning entitlements, provisioning developers.
+## Automation and custom domains
 
-On one engagement I needed environments for 12 new developers. Instead of clicking through the Cockpit all day, I ran my script and went for coffee. When I got back, everything was ready. Automating deployments cut setup time by 80 percent on one engagement, and wiring service keys and the CF CLI into a pipeline took deployment from hours to minutes.
+Clicking through the cockpit does not scale. The BTP command-line interface (btp CLI) and the SAP Cloud Management service APIs can script account work: creating subaccounts, assigning entitlements, enabling environments.
 
-Custom domains are worth the effort for user-facing apps. They are configured through the SAP Custom Domain service rather than a Cockpit menu. On one client project, executives noticed the more professional feel straight away.
+On one engagement I needed environments for 12 new developers. Instead of clicking through the cockpit all day, I ran my script and went for coffee. When I got back, everything was ready.
 
-## Mistakes I see most often
+Automating deployments cut setup time by 80 percent on one engagement. Wiring service keys and the CF CLI into a pipeline took deployment from hours to minutes. Custom domains are set up through the SAP Custom Domain service, and on one client project executives noticed the more professional feel straight away.
 
-1. Creating subaccounts before agreeing a naming convention.
-2. Assigning roles to individuals instead of role collections and groups.
-3. Running development services on production-sized plans.
-4. Leaving alerting until after the first outage.
-5. Not documenting the account structure and the reasons behind it. The Cockpit stores the what, never the why.
+## SAP BTP cockpit trial vs free tier
 
-Stuck on a specific error? My [BTP Cockpit issues guide](/sap-btp-cockpit-issues/) covers the common ones. The [clean core guide](/sap-clean-core-strategy-what-it-means-for-your-business/) explains where BTP extensions fit in an S/4HANA programme.
+SAP offers two free ways in, and they are easy to confuse. The trial is for learning; free tier plans sit inside a real enterprise account. The table summarises [SAP Help, Trial Accounts and Free Tier](https://help.sap.com/docs/btp/sap-business-technology-platform/046f127f2a614438b616ccfc575fdb16).
+
+| | Trial account | Free tier service plans |
+|---|---|---|
+| Cockpit URL | `cockpit.hanatrial.ondemand.com/trial/` | `cockpit.btp.cloud.sap` |
+| Account type | Separate trial global account | Pay-As-You-Go or CPEA enterprise account |
+| Duration | Up to 90 days, then deleted | No time limit on free plans; Kyma free plan up to 30 days |
+| Production use | Not allowed, nor team development | Allowed; most services can be upgraded to paid plans |
+| What you get | A Cloud Foundry subaccount with a `dev` space; Kyma and ABAP also available | Services tagged Free Tier in the SAP Discovery Center |
+
+The trial runs in intervals of up to 30 days that extend automatically while you keep signing in. If you do not sign in for 30 days, the account is suspended and later deleted. Trial applications also stop every night and need a manual restart.
+
+## Common BTP cockpit errors and fixes
+
+Each of these has a documented cause and a simple fix.
+
+1. **"Your user does not belong to any global account."** A global account administrator has to add you as a member with a role collection such as Global Account Viewer. If no administrator is available, SAP Note 2669325 describes a workaround through SAP for Me.
+2. **The global account is missing after a corporate login.** BTP treats the same email in two identity providers as two users. Log in with the `?idp=` parameter for the provider your administrator used.
+3. **A service is missing from the Service Marketplace.** The subaccount has no entitlement for it. Add the plan under Entitlements first.
+4. **"Subdomain already exists."** Subdomains are unique per region. Add the business unit or stage to the name.
+5. **An unexpected charge.** An instance was created on a paid plan. Check the plan in Instances and Subscriptions and in Costs and Usage.
+6. **The trial app stopped overnight.** That is expected. Restart it, and keep signing in so the trial is not suspended.
+
+For runtime and deployment errors, my [BTP Cockpit issues guide](/sap-btp-cockpit-issues/) goes deeper.
+
+## Where the cockpit fits in an S/4HANA programme
+
+I have led or rescued 21 SAP programmes. In a clean core programme, BTP is where side-by-side extensions run, so S/4HANA stays close to SAP standard. My [clean core guide](/sap-clean-core-strategy-what-it-means-for-your-business/) explains where those extensions sit.
+
+The cockpit stores the what, never the why. Write down the account structure, naming rules, entitlement split and the reasons for each. Have a design authority of business and IT approve any change to them.
+
+If your BTP account has grown without a plan, [talk to me](/contact-noel-erp-support/) before you add more to it.
 
 ## Frequently asked questions
 
 <details>
-<summary>What is the SAP BTP Cockpit used for?</summary>
+<summary>What is the SAP BTP cockpit login URL?</summary>
 
-It is the web-based administration console for SAP Business Technology Platform. You use it to create subaccounts, distribute entitlements, manage users and trust, create service instances, deploy and monitor applications, and track usage and cost.
-
-</details>
-
-<details>
-<summary>What is the SAP BTP Cockpit login URL?</summary>
-
-Use your regional gateway: `https://emea.cockpit.btp.cloud.sap` for Europe, the Middle East and Africa, `https://amer.cockpit.btp.cloud.sap` for the Americas, or `https://apac.cockpit.btp.cloud.sap` for Asia-Pacific. Trial accounts use `https://cockpit.hanatrial.ondemand.com/trial/`. You need an SAP user ID to log in.
+Use `https://cockpit.btp.cloud.sap`, which redirects you to the nearest regional cockpit. You can also use a regional gateway such as `https://emea.cockpit.btp.cloud.sap`, `https://amer.cockpit.btp.cloud.sap` or `https://apac.cockpit.btp.cloud.sap`. Trial accounts use `https://cockpit.hanatrial.ondemand.com/trial/`.
 
 </details>
 
 <details>
-<summary>How should I structure subaccounts in SAP BTP?</summary>
+<summary>What is the difference between a global account and a subaccount in SAP BTP?</summary>
 
-Separate development, test and production into their own subaccounts from the start, and name them so the area and stage are obvious, such as `Finance-Dev` and `Finance-Prod`. Larger organisations add directories per business unit. Plan it on paper first; the structure is hard to change once services are running.
-
-</details>
-
-<details>
-<summary>What are the four pillars of SAP BTP?</summary>
-
-SAP groups BTP into application development and automation, integration, data and analytics, and artificial intelligence. Most programmes start with integration and S/4HANA extensions, then add data and AI use cases once the platform is stable.
+The global account is your contract with SAP. It holds the entitlements you bought and is not tied to a region. Subaccounts sit inside it, each in one region, and are where you deploy apps, use services and manage users.
 
 </details>
 
 <details>
-<summary>How do I connect my identity provider to SAP BTP?</summary>
+<summary>How do I create a subaccount in SAP BTP?</summary>
 
-Set up a SAP Cloud Identity Services tenant and establish trust with your subaccount under Security > Trust Configuration; OpenID Connect can do this automatically. Then connect your corporate identity provider, such as Microsoft Entra ID or Okta, to that tenant. Users and two-factor authentication are then managed in one place.
-
-</details>
-
-<details>
-<summary>Which BTP runtime should I choose: Cloud Foundry, Kyma or ABAP environment?</summary>
-
-Match it to your team. Cloud Foundry suits Java, Node.js and Python apps and is the safest default. Kyma suits Kubernetes-native microservices but needs Kubernetes skills. The ABAP environment suits ABAP developers building clean core extensions next to S/4HANA.
+As a global account administrator, open Account Explorer and choose Create > Subaccount. Enter a display name, a subdomain that is unique in the region, the region and the parent. Save, then assign entitlements and enable an environment such as Cloud Foundry.
 
 </details>
 
 <details>
-<summary>How do I connect SAP BTP to an on-premise SAP system?</summary>
+<summary>What are entitlements in SAP BTP?</summary>
 
-Install the Cloud Connector inside your network. It opens a secure outbound tunnel to BTP, so no inbound firewall changes are needed. Expose only the systems and paths BTP needs, check the connection under Connectivity in the subaccount, then create destinations that your apps and integration flows call. Test the whole path before production.
+Entitlements are your right to use a service plan, and quota is how much of it you can use. The global account receives them under your contract, and you distribute them to directories and subaccounts. In a subaccount, choose Entitlements > Configure Entitlements > Add Service Plans.
+
+</details>
+
+<details>
+<summary>Is the SAP BTP trial free and how long does it last?</summary>
+
+Yes, for up to 90 days. The intervals extend automatically while you keep signing in, and the account is suspended after 30 days without a sign-in. It is for personal learning, not production or team development; for longer use, create an enterprise account with free tier service plans.
+
+</details>
+
+<details>
+<summary>Cloud Foundry vs Kyma: which BTP runtime should I choose?</summary>
+
+Choose Cloud Foundry for Java, Node.js or Python apps, including CAP; buildpacks handle the containers for you. Choose Kyma, a managed Kubernetes runtime, for containerised microservices and event-driven extensions, but only if your team has Kubernetes skills. ABAP developers building S/4HANA extensions usually belong in the ABAP environment.
+
+</details>
+
+<details>
+<summary>Is SAP BTP now called SAP Business AI Platform?</summary>
+
+In May 2026 SAP announced the SAP Business AI Platform, which brings together BTP, SAP Business Data Cloud and AI Foundation. SAP's documentation now uses the new name for some parts, such as the ABAP environment. As of October 2026 the administration console is still documented as the SAP BTP cockpit, at the same URL.
+
+</details>
+
+<details>
+<summary>How do I connect my identity provider to the SAP BTP cockpit?</summary>
+
+Set up a SAP Cloud Identity Services tenant and connect your corporate identity provider, such as Microsoft Entra ID or Okta, to it. In the subaccount, go to Security > Trust Configuration and choose Establish Trust to create an OpenID Connect trust. Then assign role collections to users or groups.
 
 </details>
