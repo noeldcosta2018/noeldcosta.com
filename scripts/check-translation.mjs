@@ -217,6 +217,9 @@ for (const slug of slugs) {
   }
 
   if (/—/.test(tr.content) || /—/.test(JSON.stringify(tf))) errors.push("em dash present");
+  // Control characters make the route drop the page (isTextMdxBody); a quote
+  // fix-up script once replaced quoted text with \u0001.
+  if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/.test(tr.content)) errors.push("control character in body");
 
   const en_n = numbers(en.content);
   const tr_n = numbers(tr.content);
