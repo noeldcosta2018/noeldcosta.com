@@ -1,0 +1,220 @@
+---
+title: "SAP-testautomatisering: waar u begint en wanneer het loont"
+h1: "SAP-testautomatisering: waar u begint en wanneer het loont"
+slug: "sap-test-automation-guide"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-test-automation-guide.webp"
+heroAlt: "Noel D'Costa naast een monitor met geautomatiseerde SAP-testruns en een processchema"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "sap-cloud-alm", "sap-technical-decisions", "s4hana-implementation"]
+author: "Noel D'Costa"
+metaTitle: "SAP-testautomatisering: waar beginnen en wanneer het loont"
+metaDescription: "SAP-testautomatisering uitgelegd: wanneer het loont, waar u begint, welke frameworks passen en wat SAP Cloud ALM, Solution Manager en Tricentis u bieden."
+primaryKeyword: "SAP testautomatisering"
+excerpt: "Wanneer SAP-testautomatisering zich terugverdient, waar u begint, hoe de frameworks verschillen en wat SAP Cloud ALM, Solution Manager en SAP Test Automation by Tricentis u al bieden."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "Automatiseer als een groot aantal testgevallen uitgebreid en herhaald getest moet worden. Daaronder is handmatig testen prima"
+  - "Testen kost ongeveer 35 procent van de programma-inspanning, dus automatisering is de vraag welk deel een tool moet dragen"
+  - "Begin met een klein regressiepakket voor de processen die de business niet mag laten breken, zodra het ontwerp stabiel is"
+  - "Draai gescheiden landschappen voor het project en de lopende bedrijfsvoering, zodat live supportwijzigingen en projectwijzigingen apart worden getest"
+  - "SAP Cloud ALM beheert tests maar heeft geen eigen automatiseringsengine. Controleer uw Tricentis-recht voordat u koopt"
+  - "De mainstream maintenance van Solution Manager eindigt in 2027. Bouw er geen nieuwe automatisering omheen"
+pullQuote: "Een geautomatiseerde test kost meer om te bouwen dan om één keer met de hand uit te voeren. Dat verdient u alleen terug door herhaling."
+mentions:
+  - "SAP Cloud ALM"
+  - "SAP Solution Manager"
+  - "SAP Test Automation by Tricentis"
+  - "Tricentis Tosca"
+  - "Worksoft"
+  - "Panaya"
+  - "UiPath"
+  - "OpenText LoadRunner"
+  - "SAP S/4HANA Cloud Public Edition"
+originalUrl: "https://noeldcosta.com/sap-test-automation-guide/"
+canonicalUrl: "https://noeldcosta.com/nl/sap-test-automation-guide/"
+locale: "nl"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP-testautomatisering betekent dat u de SAP-tests die u steeds opnieuw uitvoert, meestal regressietests, omzet in tests die een tool uitvoert in plaats van mensen. Het loont als een groot aantal testgevallen uitgebreid en herhaald getest moet worden; daaronder is handmatig testen prima.
+
+Dat is de regel die ik bij S/4HANA-programma's gebruik. In mijn ervaring kost testen ongeveer 35 procent van de programma-inspanning, dus de vraag is nooit óf u test. De vraag is welk deel van die inspanning een tool moet dragen.
+
+Hoe automatisering past naast unit-, integratie-, acceptatie- en performancetesten, leest u in mijn overzicht [SAP-testen uitgelegd](/nl/sap-testing-explained/). Dit artikel behandelt waar u begint, wanneer automatisering loont, de frameworks en wat SAP Cloud ALM, Solution Manager en Tricentis u bieden.
+
+## Wanneer SAP-testautomatisering loont
+
+Mijn regel is eenvoudig. Als er een groot aantal testgevallen is dat uitgebreid en herhaald getest moet worden, automatiseer dan. Daaronder is handmatig testen prima.
+
+De reden is de kostenstructuur. Een geautomatiseerde test kost meer om te bouwen dan om één keer met de hand uit te voeren, en hij heeft onderhoud nodig telkens als het proces, het scherm of de data verandert. Dat verdient u alleen terug door herhaling.
+
+Bij een SAP-programma komt herhaling uit voorspelbare hoeken:
+
+1. **Transporten.** Elke wijziging die naar het kwaliteitssysteem gaat, kan iets breken dat gisteren nog werkte.
+2. **SAP-releases en supportpackages.** Upgrades on-premise en in private cloud, en de geplande upgrades op SAP S/4HANA Cloud Public Edition.
+3. **Herhaalde testrondes.** De systeemintegratietest (SIT) draait dezelfde ketenprocessen in meer dan één ronde.
+4. **Uitrolgolven.** Een globale template wordt voor elk land of elke company code opnieuw getest.
+5. **Datazware controles.** Veel combinaties van prijsbepaling, belasting of rekeningbepaling, waarbij alleen de data verandert.
+
+Is geen van deze van toepassing, dan kost een tool u meer dan hij oplevert.
+
+De tabel laat zien hoe ik het werk per testsoort zou verdelen.
+
+| Testsoort | Automatiseren? | Waarom |
+|---|---|---|
+| Regressie van kernprocessen zoals order to cash, procure to pay en record to report | Ja, als eerste | Draait na elk transport en elke release |
+| SIT-rondes | Deels | Automatiseer stabiele processen; houd nieuwe en veranderende scenario's handmatig |
+| Gebruikersacceptatietest (UAT) | Zelden | Gebruikers uit de business beoordelen of het proces voor hen werkt, en dat kan een script niet |
+| Verkennende en negatieve tests | Nee | De waarde komt van een mens die zoekt naar wat niemand heeft gescript |
+| Performance en belasting | Ja, met een loadtesttool | Veel gelijktijdige gebruikers krijgt u niet met de hand voor elkaar |
+| Eenmalige controles op datamigratie | Meestal niet | Aansluitrapporten doen dit beter, tenzij dezelfde load over meerdere proefruns terugkomt |
+
+<decision-tree question="Moet u deze SAP-test automatiseren?" options="Veel testgevallen, herhaald na elke wijziging of release => Automatiseer de test|Weinig testgevallen, of één of twee keer uitgevoerd => Test handmatig|Procesontwerp verandert nog => Wacht tot het stabiel is en beslis dan"></decision-tree>
+
+## Waar u begint
+
+Automatisering die tegenvalt, begon meestal te breed: alles tegelijk, tijdens het ontwerp, zonder dat iemand eigenaar was van het resultaat. Dit is de volgorde die ik zou aanhouden:
+
+1. **Kies de processen die de business niet mag laten breken.** Maandafsluiting, facturering, betalingen en alles wat over veel vestigingen wordt uitgerold, gaan vóór rapporten die leuk zijn om te hebben.
+2. **Voer de tests eerst handmatig uit.** Een tool automatiseert een test die met de hand al werkt. Hij ontwerpt er geen voor u.
+3. **Wacht op een stabiel ontwerp.** Automatiseren tijdens Explore of vroeg in Realize betekent dat u de tests opnieuw bouwt bij elke ontwerpbeslissing die verandert.
+4. **Bouw een klein regressiepakket.** Dek de kritieke processen van begin tot eind af en draai het pakket bij elk transport naar het kwaliteitssysteem.
+5. **Wijs een eigenaar aan voor het onderhoud.** Iemand moet tests repareren als schermen, rollen of data veranderen, anders vervalt het pakket binnen een paar releases.
+6. **Breid de dekking alleen uit waar herhaling dat rechtvaardigt.** Voeg een test toe als die vaak zal draaien, niet omdat een dekkingsdoel dat voorschrijft.
+
+### Scheid het project van de lopende bedrijfsvoering
+
+Tijdens een programma draai ik twee gescheiden landschappen: één voor het project en één voor de lopende bedrijfsvoering (BAU). Live supportwijzigingen en projectwijzigingen worden dan apart getest.
+
+Dat doet ertoe voor automatisering. Faalt een regressietest, dan wilt u één bron van wijzigingen onderzoeken, niet twee die door elkaar lopen. Mijn gids over [SAP-regressietesten](/nl/sap-regression-testing/) gaat dieper in op de aanpak met twee landschappen en op impactanalyse.
+
+## Wat SAP u biedt en wat u toevoegt
+
+In mijn programma's heb ik Tricentis Tosca, Worksoft, Panaya, SAP Cloud ALM, SAP Solution Manager, UiPath en LoadRunner gebruikt of door mijn teams laten gebruiken. Dit artikel rangschikt ze niet. De juiste keuze hangt af van uw landschap, uw supportcontract en wie de tests gaat onderhouden.
+
+Begin bij wat SAP al levert, want een deel daarvan is misschien al betaald.
+
+### SAP Cloud ALM
+
+SAP Cloud ALM is de laag voor testmanagement. Het plant, voert uit en traceert handmatige en geautomatiseerde tests tegen uw processen en eisen. Klanten met SAP Enterprise Support, Product Support for Large Enterprises of een daarvoor in aanmerking komend cloudabonnement kunnen één tenant inrichten ([SAP usage rights](https://support.sap.com/en/alm/usage-rights.html)).
+
+Het voert zelf geen geautomatiseerde tests uit. SAP stelt dat Cloud ALM geen eigen automatiseringsengine heeft en dat de ALM-platforms open blijven voor testautomatisering van derden ([SAP Support, test automation](https://support.sap.com/en/alm/partners/test-automation.html)).
+
+De installatiegids van SAP beschrijft ingebouwde integraties plus een openbare Test Automation API voor andere aanbieders ([SAP Help Portal](https://help.sap.com/docs/cloud-alm/setup-administration/other-test-automation-providers)). Panaya en UiPath documenteren Cloud ALM-integraties voor geautomatiseerde testgevallen. Worksoft noemt Cloud ALM en Solution Manager bij zijn integraties, en OpenText biedt een Cloud ALM-integratie voor zijn cloudproduct voor performancetesten.
+
+### Tricentis Test Automation for SAP en SAP Test Automation by Tricentis
+
+Controleer uw recht voordat u iets koopt. SAP verleent een tijdelijke licentie voor Tricentis Test Automation for SAP, geïntegreerd met Cloud ALM, bij SAP Enterprise Support, Enterprise Support cloud editions en Product Support for Large Enterprises. Die loopt momenteel tot 31 december 2028 ([SAP usage rights](https://support.sap.com/en/alm/usage-rights.html)).
+
+De grenzen zijn krap: 5 named users, 500 testruns per kalendermaand, 5 door de klant beheerde execution agents en 12 maanden bewaring van resultaten. De licentie mag niet worden gebruikt om productieve bedrijfsprocessen te automatiseren. Zie het als een manier om te beginnen, niet als een tool op programmaschaal.
+
+SAP Test Automation by Tricentis is de betaalde stap omhoog. Het is een software-as-a-serviceproduct dat SAP verkoopt en ondersteunt als solution extension, voor SAP- en externe applicaties. Het breidt de Tricentis-functionaliteit uit die bij Cloud ALM is inbegrepen, zodra het recht te krap wordt.
+
+### SAP Solution Manager
+
+De mainstream maintenance van Solution Manager 7.2 loopt tot eind 2027. Klanten die kiezen voor extended maintenance voor SAP Business Suite 7, krijgen extended maintenance voor Solution Manager tot eind 2030. Die dekt een beperkt aantal gebieden, waaronder de testsuite ([SAP Support](https://support.sap.com/en/alm/solution-manager.html)).
+
+De eigen automatisering, Component-Based Test Automation (CBTA), wordt niet uitgebreid naar de cloudproducten van SAP. De Tricentis-licentie voor de Solution Manager-integratie loopt momenteel tot 31 december 2027. Draait u Solution Manager al, houd het dan tot uw landschap verhuist, maar bouw er geen nieuwe automatisering omheen.
+
+### SAP S/4HANA Cloud Public Edition
+
+Public Edition heeft een eigen Test Automation Tool. De richtlijn van SAP is dat partners test-automates maken of bijwerken terwijl ze elk proces configureren, zodat die tijdens upgrades in het testsysteem kunnen draaien ([SAP Learning](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-public-edition/explaining-the-test-strategy_d4b6f563-e5bb-41b5-b7e2-ec899edb756f)).
+
+Met uw toestemming voert SAP na de upgrade tests uit op standaardprocessen die niet zijn aangepast. Na de go-live bent u zelf verantwoordelijk voor regressietesten van alles wat u hebt aangepast, met uw eigen automates.
+
+De tabel vat de hierboven genoemde tools samen naar taak, niet naar voorkeur.
+
+| Tool | Hoofdtaak | Waar het past |
+|---|---|---|
+| SAP Cloud ALM | Testmanagement en orkestratie | Nieuwe programma's; verbindt handmatige en geautomatiseerde tests met processen |
+| SAP Solution Manager | Testmanagement, on-premise | Landschappen waar het al draait; mainstream maintenance eindigt in 2027 |
+| Tricentis Tosca en SAP Test Automation by Tricentis | Modelgebaseerde automatisering | SAP- en niet-SAP-applicaties; doorverkocht en ondersteund door SAP |
+| Worksoft | Procesautomatisering zonder code | Integreert met Cloud ALM en Solution Manager |
+| Panaya | Testmanagement en automatisering zonder code | Cloud ALM-integratie voor geautomatiseerde tests |
+| UiPath | Automatiseringsplatform met Test Manager | Cloud ALM-integratie voor geautomatiseerde testgevallen |
+| OpenText LoadRunner | Performance- en loadtesten | Concurrency- en volumetests vóór de go-live |
+
+Voor een diepere vergelijking, inclusief Xray for Jira, leest u mijn gids over [SAP-testtools](/nl/sap-testing-validation-tools-comparison/). Voor loadtesten leest u [SAP-performancetesten voor IT-leiders](/nl/sap-performance-testing-it-leaders/).
+
+## Frameworks: hoe de tests worden gebouwd
+
+De tool doet er minder toe dan hoe de tests worden gebouwd en wie ze onderhoudt. De meeste SAP-automatisering valt onder een van deze benaderingen:
+
+1. **Modelgebaseerd.** Schermen en API's worden ingescand als herbruikbare modules en daarna samengevoegd tot testgevallen. Functionele consultants kunnen ze bouwen en lezen zonder code.
+2. **Procesopname zonder code.** Stappen in het bedrijfsproces worden opgenomen en omgezet in herbruikbare tests. Dit past bij teams waar key users helpen het regressiepakket te bouwen.
+3. **Codegebaseerd.** Testengineers schrijven tests in een programmeerframework. Het past bij Fiori-apps en API's die een ontwikkelteam beheert, en vraagt ontwikkelaars voor het onderhoud.
+4. **Platforms voor robotic process automation met testmodules.** Eén platform voor bedrijfsautomatisering en testautomatisering, handig als u het al gebruikt.
+5. **Door SAP geleverde automates.** Op Public Edition: test-automates die met de Test Automation Tool worden geleverd, aangepast aan uw data en wijzigingen.
+
+Welke benadering u ook kiest, drie ontwerpkeuzes bepalen of de tests overleven:
+
+1. **Test waar mogelijk op API-niveau.** API-tests breken minder vaak dan tests die door schermen klikken.
+2. **Houd testdata herstelbaar.** Een test die afhangt van data die de vorige run heeft opgebruikt, faalt om de verkeerde reden.
+3. **Bouw met gedeelde modules.** Verandert een scherm, dan repareert u één module, niet elke test die dat scherm raakt.
+
+## Automatisering in leven houden na de go-live
+
+Een geautomatiseerd regressiepakket is een product, geen projectoplevering. Het heeft een eigenaar nodig, een begrotingspost en een plek in het wijzigingsproces.
+
+Koppel het aan het wijzigingsbeheer. Geen transport gaat naar productie voordat het regressiepakket heeft gedraaid en de resultaten zijn vastgelegd in de testmanagementtool. Mijn artikel over [SAP-quality gates](/nl/sap-quality-gates-implementation/) laat zien hoe u testresultaten onderdeel maakt van een go/no-go-besluit.
+
+Plan ook rond het releaseritme van SAP. Upgrades van Public Edition komen volgens het schema van SAP, niet het uwe, en private-cloud- en on-premisesystemen hebben nog steeds supportpackages en upgrades nodig. Elk daarvan is een regressierun, en precies daar verdient automatisering haar kosten terug.
+
+Repareer instabiele tests, schrap tests die niemand draait, en houd het pakket klein genoeg dat mensen de resultaten vertrouwen.
+
+Automatisering moet ook binnen een testplan vallen. Cycli, instap- en exitcriteria en rollen komen eerst; mijn [S/4HANA-teststrategie](/nl/s4hana-testing-strategy/) zet ze op een rij.
+
+## Uw volgende stap
+
+Maak een lijst van de bedrijfsprocessen die u na elk transport en elke SAP-release opnieuw zou testen. Tel de testgevallen erachter en hoe vaak elk daarvan in een jaar zou draaien.
+
+Is het aantal groot en herhalen de runs zich, dan hebt u een businesscase voor automatisering. Controleer daarna wat uw SAP-supportcontract al omvat, voordat iemand u een demo laat zien.
+
+Wilt u een onafhankelijke blik op een plan voor testautomatisering of een voorstel van een leverancier, dan help ik organisaties daarbij. U kunt [hier contact met mij opnemen](/nl/contact-noel-erp-support/).
+
+## Veelgestelde vragen
+
+<details>
+<summary>Wat is SAP-testautomatisering?</summary>
+
+Het is het gebruik van een tool om SAP-tests uit te voeren die anders met de hand zouden worden gedaan, meestal regressietests na wijzigingen en upgrades. Een testmanagementtool zoals SAP Cloud ALM plant en registreert de tests, en een automatiseringstool voert ze uit.
+
+</details>
+
+<details>
+<summary>Wanneer moet u SAP-testen automatiseren?</summary>
+
+Als een groot aantal testgevallen uitgebreid en herhaald getest moet worden, zoals regressie na elk transport, elke release of elke uitrolgolf. Daaronder is handmatig testen prima. Wacht tot het procesontwerp stabiel is, anders bouwt u de tests opnieuw bij elke ontwerpwijziging.
+
+</details>
+
+<details>
+<summary>Doet SAP Cloud ALM aan testautomatisering?</summary>
+
+Het beheert en start geautomatiseerde tests, maar heeft geen eigen automatiseringsengine. Het integreert met Tricentis Test Automation for SAP, met de Test Automation Tool in S/4HANA Cloud Public Edition, en met andere aanbieders via een openbare Test Automation API.
+
+</details>
+
+<details>
+<summary>Wat is SAP Test Automation by Tricentis?</summary>
+
+Het is een software-as-a-serviceproduct voor testautomatisering dat SAP verkoopt en ondersteunt als solution extension, voor SAP- en externe applicaties. Het breidt de instaplicentie voor Tricentis Test Automation for SAP uit die bij SAP Enterprise Support is inbegrepen. Die licentie is beperkt tot 5 named users en 500 testruns per maand.
+
+</details>
+
+<details>
+<summary>Kunt u een SAP-gebruikersacceptatietest automatiseren?</summary>
+
+Zelden, en het hoort niet het doel te zijn. UAT bestaat zodat gebruikers uit de business kunnen beoordelen of het systeem voor hen werkt, en dat kan een script niet. Automatiseer de herhaalde regressie eromheen en laat het acceptatiebesluit bij mensen.
+
+</details>
+
+<details>
+<summary>Moet ik SAP Solution Manager nog gebruiken voor testautomatisering?</summary>
+
+Alleen als het uw landschap al ondersteunt. De mainstream maintenance voor Solution Manager 7.2 eindigt in 2027, en de CBTA-automatisering wordt niet uitgebreid naar de cloudproducten van SAP. Plan nieuwe automatisering rond Cloud ALM.
+
+</details>

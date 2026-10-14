@@ -1,0 +1,204 @@
+---
+title: "SAP 迴歸測試：升級、版本更新與測試範圍"
+h1: "SAP 迴歸測試：升級、版本更新與測試範圍"
+slug: "sap-regression-testing"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-regression-testing.webp"
+heroAlt: "兩座並排的相同伺服器機櫃，一座用於專案，一座用於日常維運"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "sap-cloud-alm", "s4hana-implementation", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "SAP 迴歸測試：升級、雲端版本更新與測試範圍"
+metaDescription: "SAP 迴歸測試全解析：哪些變更會觸發迴歸測試、雲端版本的更新週期、影響分析工具、何時該自動化，以及為什麼專案期間要把專案環境與日常維運（BAU）環境分開。"
+primaryKeyword: "SAP 迴歸測試"
+excerpt: "SAP 迴歸測試證明變更、升級或新版本沒有弄壞原本正常的流程。本文說明如何用影響分析界定範圍、跟上雲端版本更新，並避免專案變更與維運變更互相干擾。"
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "迴歸測試證明變更沒有弄壞原本正常的流程"
+  - "SAP Cloud ERP public edition 每年升級兩次，您的迴歸測試時間窗落在測試系統與正式系統升級之間"
+  - "Private edition 採兩年一次的版本週期，每六個月推出 feature pack stack；技術升級由 SAP 執行，測試則由您負責"
+  - "用影響分析界定執行範圍，然後優先測試風險最高的業務流程"
+  - "當大量測試案例需要大量重複測試時就自動化；低於這個程度，手動測試就夠了"
+  - "專案期間，使用獨立的專案環境與 BAU 環境，讓每一組變更各自進行迴歸測試"
+pullQuote: "讓專案變更與正式環境維運變更保持分離，並在各自所屬的地方測試。"
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Cloud ERP"
+  - "SAP Cloud ALM"
+  - "SAP Solution Manager"
+  - "Business Process Change Analyzer"
+  - "Scope and Effort Analyzer"
+  - "Tricentis LiveCompare"
+  - "Tricentis Tosca"
+  - "Panaya"
+  - "Worksoft"
+originalUrl: "https://noeldcosta.com/sap-regression-testing/"
+canonicalUrl: "https://noeldcosta.com/zh-TW/sap-regression-testing/"
+locale: "zh-TW"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP 迴歸測試證明一項變更、一個支援套件或一個新版本，沒有弄壞原本正常運作的業務流程。您用影響分析界定範圍，先執行風險最高的流程，而且每次系統變更都要重做，而不是只在上線前做一次。
+
+觸發因素是傳輸、升級與雲端版本更新。在 SAP Cloud ERP public edition 上，升級日期由 SAP 決定，所以您的迴歸測試套件必須在版本到來之前準備好。
+
+迴歸測試是我的 [SAP 測試指南](/zh-TW/sap-testing-explained/) 中的測試類型之一。本文說明什麼會觸發它、如何界定範圍、何時該自動化，以及如何避免專案與正式環境維運互相破壞彼此的工作。
+
+## SAP 迴歸測試涵蓋什麼
+
+SAP 是一套整合式系統。修改一個定價條件可能弄壞開票，銷售訂單上新增一個欄位可能讓介面停擺。一個支援套件可能改變您所依賴的標準程式。
+
+迴歸測試是針對原本不該改變的流程重新執行測試。功能測試問的是新東西能不能用，迴歸測試問的則是其他所有東西是否依然正常。
+
+它適用於系統的整個生命週期，而不只是專案期間：
+
+1. **傳輸。** 每一筆從開發移到品質系統的變更，對它所觸及的流程都是迴歸風險。
+2. **支援套件與 feature pack。** SAP 的修正與新功能會改變您設定底下的標準程式碼。
+3. **版本升級。** 移到新版本，或是一次並非由您排定的雲端版本更新，一次改變的東西多得多。
+4. **轉換。** ECC 轉換到 S/4HANA 會保留您的設定與客製程式碼，所以保留下來的一切都必須重新測試。我的 [ECC 到 S/4HANA 移轉指南](/zh-TW/ecc-to-s4hana-migration/) 說明了它在計畫中的位置。
+5. **整合與擴充。** 連接系統的變更或並行擴充（side-by-side extension），可能在沒有任何 SAP 傳輸的情況下弄壞 SAP 這一端。
+
+把迴歸測試套件和為新功能撰寫的測試分開。這個套件是一個穩定的測試庫，收錄業務承受不起失去的流程，例如訂單到收款、採購到付款與月結。
+
+## 雲端版本更新如何改變迴歸測試
+
+在地端，升級時間由您選擇。在雲端版本中，SAP 決定了更多時程，迴歸測試也就成為反覆出現的固定行事曆承諾。
+
+### Public edition：每年兩次升級
+
+SAP Cloud ERP public edition（前身為 S/4HANA Cloud Public Edition）每年有兩次主要升級，分別在 2 月與 8 月。兩次之間會有較小規模的功能交付。
+
+SAP 會先升級測試系統，幾週後再升級正式系統。這段空檔就是您的迴歸測試時間窗，正式系統一旦升級，就沒有第二次機會。
+
+SAP 的 [Cloud ALM 升級後測試與迴歸測試課程](https://learning.sap.com/courses/implementing-with-sap-cloud-alm/conducting-post-upgrade-and-regression-testing-for-sap-s-4hana-cloud-public-edition_b6d0c843-9235-4b3a-a6b9-f0a5a62f9360) 建議在 Cloud ALM 中建立迴歸測試計畫，並在每次版本更新時重複使用。Public edition 也內含免費的測試自動化工具與預先交付的測試腳本，讓標準流程有一個起點。
+
+### Private edition：兩年一次的版本週期
+
+SAP Cloud ERP Private 是透過 RISE with SAP 銷售的 private edition，沿用地端的版本週期。根據 [SAP Learning](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-private-edition/navigating-release-upgrades_ae2d796c-bafd-4e04-8b41-562ebda9eb49)，新的基礎版本每兩年推出一次，feature pack stack 每六個月推出一次，每個版本享有七年主流維護。
+
+您至少每七年必須安裝一次升級，才能維持在主流維護內，而 RISE 讓您每年可以申請一次升級。技術升級由 SAP 執行，但規劃、準備與測試仍是客戶或夥伴的工作。
+
+這種分工對預算很重要。升級本身可能包含在訂閱中，但周邊的迴歸測試並不包含。
+
+下表並列各種迴歸測試的觸發因素：
+
+| 變更 | 頻率 | 日期由誰決定 | 迴歸測試必須涵蓋什麼 |
+|---|---|---|---|
+| 傳輸到品質系統 | 每天或每週 | 您的團隊 | 被變更物件所觸及的流程 |
+| Public edition 升級 | 每年兩次，2 月與 8 月 | SAP | 範圍內的每一個流程，客製邏輯優先，在正式系統升級前的時間窗內完成 |
+| Private edition feature pack stack | 每六個月，如果您採用 | 您，在 SAP 的時程之內 | 您使用到且有變更的標準功能，以及客製程式碼 |
+| Private edition 版本升級 | 至少每七年一次，RISE 下可申請每年最多一次 | 您，與 SAP 共同決定 | 完整套件、客製程式碼與整合 |
+| ECC 轉換到 S/4HANA | 一次 | 您 | 您保留下來的一切 |
+
+## 用影響分析界定範圍
+
+每次變更後都跑完整套件，既慢又昂貴。跑得太少則會讓缺陷溜過去，缺口最後會出現在正式環境。
+
+影響分析介於兩者之間。它比較變更了什麼與您實際使用什麼，列出風險最高的流程與物件，讓迴歸測試從它們開始。
+
+以下是您會遇到的工具：
+
+1. **SAP Solution Manager。** Test Suite 中的 Business Process Change Analyzer，會顯示一項變更影響哪些業務流程。[Scope and Effort Analyzer](https://support.sap.com/en/alm/solution-manager/processes-72/scope-effort-analyzer.html) 能在您安裝支援套件或增強套件之前估算其影響，SAP 稱它為規劃工具。
+2. **SAP Cloud ALM。** Cloud ALM 管理迴歸測試計畫、執行與缺陷，並與自動化工具連接。對於 public edition 升級，SAP 的 Release Assessment and Scope Dependency 工具會顯示版本中哪些變更影響您的範圍。
+3. **Tricentis LiveCompare。** 根據 [LiveCompare 文件](https://docs.tricentis.com/livecompare-2026.1/content/welcome_to_livecompare.htm)，它會找出一組最小的高風險物件供測試，再對照您的測試儲存庫回報測試命中與測試缺口。SAP 以 SAP Change Impact Analysis by Tricentis 之名轉售它，並與 Tricentis Tosca 整合。
+4. **Panaya。** Panaya 的 [SAP 升級產品](https://www.panaya.com/sap/sap-upgrades/) 結合變更影響分析、程式碼修正、測試管理與自動化，涵蓋 S/4HANA 各版本、feature pack stack 與 support package stack。
+
+在以 Solution Manager 為基礎建置之前，先確認它的現況。[SAP Support](https://support.sap.com/en/alm/solution-manager.html) 表示 Solution Manager 7.2 的主流維護將於 2027 年底結束。採用 Business Suite 7 延長維護的客戶可使用到 2030 年底，而 SAP 建議在 2027 年底之前移轉到 Cloud ALM。
+
+影響分析能縮小範圍，但不能單獨決定範圍。因此請保留一組每次都要執行的業務關鍵流程，不論工具怎麼說。
+
+我對 [SAP 測試與驗證工具](/zh-TW/sap-testing-validation-tools-comparison/) 的比較，說明了這些產品如何搭配，以及您的 SAP 支援合約已經包含了什麼。
+
+## 在數量與重複程度值得時才自動化
+
+迴歸測試是測試自動化最能發揮價值的地方，因為同一批測試會一再執行。但這並不代表每一套迴歸測試都該自動化。
+
+我的原則很簡單。當測試案例數量很多，而且需要大量重複測試時，就自動化。低於這個程度，手動測試就夠了。
+
+一位 public edition 客戶每年跑兩次完整套件，中間還有傳輸，很快就會達到這個門檻。一套每年只變更幾次的小型 private edition 系統則未必。
+
+購買之前，先問這些問題：
+
+1. **您有多少迴歸測試案例，** 其中多少每一輪都要執行？
+2. **您多久執行一次，** 把傳輸、feature pack 與升級都算進去，而不只是版本升級？
+3. **手動執行一輪要多久，** 能否在迴歸測試時間窗內完成？
+4. **畫面與流程改變時，** 誰來維護腳本？
+
+腳本維護是大家最容易低估的成本。一套沒人更新的自動化套件，會因為與系統無關的原因失敗，團隊也就不再信任它。
+
+在我主導的專案中，我的團隊用過 Tricentis Tosca、Worksoft、Panaya、SAP Cloud ALM、SAP Solution Manager 與 UiPath。請依照與您的系統和團隊的契合度來挑選，而不是依照展示效果。我的 [SAP 測試自動化指南](/zh-TW/sap-test-automation-guide/) 說明從哪裡開始，以及如何判斷回報。
+
+## 專案期間讓專案變更與 BAU 變更保持分離
+
+SAP 專案中最困難的迴歸測試問題不是工具，而是兩股變更同時流經相同的系統。
+
+專案在建置新功能的同時，正式環境維運也持續在修正正式系統。如果兩股變更共用同一條開發與品質路徑，一個維運修正可能弄壞專案測試，一個專案變更也可能混進維運版本。接著就沒有人能分辨是哪一項變更造成了失敗。
+
+我的答案是維持兩套獨立的環境。一套給專案，一套給日常維運（BAU），讓正式環境維運變更與專案變更分開測試。
+
+<explainer-compare title="SAP 專案期間的兩套環境" caption="每一股變更都有自己通往正式環境的路徑，因此迴歸測試失敗時能指向單一組變更。" options="專案環境|BAU 環境" criteria="流經的內容 => 專案的新功能、設定與客製程式碼 ; 對正式系統的修正與小型變更|迴歸測試重點 => 專案所變更的流程，加上核心套件 ; 每個修正所觸及的流程，加上核心套件|移入正式環境 => 在上線或推展波次時 ; 以維運版本形式，依照平常的時程"></explainer-compare>
+
+兩套環境解決了分離問題，卻也帶來一項新工作。每一個 BAU 修正也必須進入專案環境，否則專案上線時就會少了它。
+
+從一開始就為此做好規劃：
+
+1. **將每一項 BAU 變更回補（retrofit）到專案環境，** 依固定節奏進行，並逐項追蹤。
+2. **每次回補後重新執行受影響的專案測試，** 而不是只在最後才做。
+3. **接近切換時凍結 BAU 變更，** 只有必須同時經過兩套環境的緊急修正例外。
+4. **上線前在專案環境中執行完整迴歸測試套件，** 使用達到正式環境等級的遮罩資料。
+
+第二套環境需要花錢，但一次沒人說得出是哪項變更弄壞開票的上線也一樣要付出代價。我的 [S/4HANA 測試策略](/zh-TW/s4hana-testing-strategy/) 說明迴歸測試週期如何與整合測試和使用者驗收測試並列。
+
+## 從哪裡開始
+
+在需要之前就建好迴歸測試套件。列出業務承受不起失去的流程，為每一個撰寫測試，先用手動執行一次，看看完整一輪需要多久。
+
+這個數字會告訴您下一次升級時間窗是否可行，以及自動化是否划算。如果您正處於專案中途，請檢查專案變更與 BAU 變更是否共用同一條通往正式環境的路徑。
+
+如果您想對迴歸測試做法或升級計畫取得獨立的看法，我可以協助您的組織。您可以 [在這裡與我聯絡](/zh-TW/contact-noel-erp-support/)。
+
+## 常見問題
+
+<details>
+<summary>什麼是 SAP 迴歸測試？</summary>
+
+它是針對原本不該改變的 SAP 業務流程重新執行測試，證明傳輸、支援套件、升級或新版本沒有弄壞它們。它涵蓋訂單到收款與月結等整合流程，而不只是被變更的物件。
+
+</details>
+
+<details>
+<summary>SAP Cloud ERP public edition 多久需要做一次迴歸測試？</summary>
+
+每年至少兩次，因為 SAP 會在 2 月與 8 月升級 public edition。SAP 先升級測試系統，幾週後才升級正式系統，所以迴歸測試必須在這段空檔內完成。版本之間的傳輸則需要各自較小規模的測試。
+
+</details>
+
+<details>
+<summary>RISE with SAP private edition 升級時由誰做迴歸測試？</summary>
+
+技術升級由 SAP 執行。規劃、準備與測試仍由客戶或導入夥伴負責，因此迴歸測試的工作量要與訂閱費用分開編列預算。
+
+</details>
+
+<details>
+<summary>哪些工具有助於界定 SAP 迴歸測試的範圍？</summary>
+
+影響分析工具會比較變更了什麼與您使用什麼。常見的選擇是 SAP Solution Manager 中的 Business Process Change Analyzer 與 Scope and Effort Analyzer，以及 public edition 的 Release Assessment and Scope Dependency 工具。Tricentis LiveCompare 與 Panaya 做的是同樣的工作，而 SAP Cloud ALM 負責管理迴歸測試計畫與執行。
+
+</details>
+
+<details>
+<summary>SAP 迴歸測試應該自動化嗎？</summary>
+
+當測試案例數量很多、需要大量重複測試時就自動化。低於這個程度，手動測試就夠了。購買工具之前，先計算您的測試案例數量與執行頻率，並為腳本維護編列預算。
+
+</details>
+
+<details>
+<summary>SAP 專案期間，如何在支援正式系統的同時做迴歸測試？</summary>
+
+維持兩套獨立的環境，一套給專案，一套給日常維運。這樣正式環境維運變更與專案變更就能分開測試。將每一個 BAU 修正回補到專案環境，並重新執行受影響的測試。
+
+</details>

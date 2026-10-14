@@ -1,0 +1,220 @@
+---
+title: "SAP 測試自動化：從哪裡開始，何時能回本"
+h1: "SAP 測試自動化：從哪裡開始，何時能回本"
+slug: "sap-test-automation-guide"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-test-automation-guide.webp"
+heroAlt: "Noel D'Costa 站在螢幕旁，螢幕上顯示 SAP 自動化測試執行結果與流程圖"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "sap-cloud-alm", "sap-technical-decisions", "s4hana-implementation"]
+author: "Noel D'Costa"
+metaTitle: "SAP 測試自動化：從哪裡開始，何時能回本"
+metaDescription: "SAP 測試自動化全解析：何時能回本、從哪裡開始、適合哪些框架，以及 SAP Cloud ALM、Solution Manager 與 Tricentis 已經為您提供了什麼。"
+primaryKeyword: "SAP 測試自動化"
+excerpt: "SAP 測試自動化何時能回收成本、從哪裡開始、各種框架有何不同，以及 SAP Cloud ALM、Solution Manager 與 SAP Test Automation by Tricentis 已經提供了什麼。"
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "當大量測試案例需要大量重複測試時就自動化。低於這個程度，手動測試就夠了"
+  - "測試約占專案工作量的 35%，所以自動化要回答的是：這些工作中哪一部分該由工具承擔"
+  - "設計穩定後，先為業務絕對不能出錯的流程建立一套小型迴歸測試包"
+  - "專案與日常維運使用不同的環境，讓正式環境維運變更與專案變更分開測試"
+  - "SAP Cloud ALM 能管理測試，但本身沒有自動化引擎。購買之前先確認您的 Tricentis 授權權益"
+  - "Solution Manager 的主流維護將於 2027 年結束。不要再圍繞它建立新的自動化"
+pullQuote: "一個自動化測試的建置成本，高於用手動執行一次。只有靠重複執行，才能把成本賺回來。"
+mentions:
+  - "SAP Cloud ALM"
+  - "SAP Solution Manager"
+  - "SAP Test Automation by Tricentis"
+  - "Tricentis Tosca"
+  - "Worksoft"
+  - "Panaya"
+  - "UiPath"
+  - "OpenText LoadRunner"
+  - "SAP S/4HANA Cloud Public Edition"
+originalUrl: "https://noeldcosta.com/sap-test-automation-guide/"
+canonicalUrl: "https://noeldcosta.com/zh-TW/sap-test-automation-guide/"
+locale: "zh-TW"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP 測試自動化，是把您一再重複執行的 SAP 測試（大多是迴歸測試），從由人執行改為由工具執行。當大量測試案例需要大量重複測試時，它就值得；低於這個程度，手動測試就夠了。
+
+這是我在 S/4HANA 專案中使用的原則。依我的經驗，測試約占專案工作量的 35%，所以問題從來不是要不要測試，而是這些工作中哪一部分該交給工具。
+
+若想了解自動化如何與單元測試、整合測試、驗收測試和效能測試搭配，請先閱讀我的總覽 [SAP 測試全解析](/zh-TW/sap-testing-explained/)。本文說明從哪裡開始、自動化何時能回本、各種框架，以及 SAP Cloud ALM、Solution Manager 與 Tricentis 為您提供了什麼。
+
+## SAP 測試自動化何時能回本
+
+我的原則很簡單。當測試案例數量很多，而且需要大量重複測試時，就自動化。低於這個程度，手動測試就夠了。
+
+原因在於成本結構。一個自動化測試的建置成本高於手動執行一次，而且每當流程、畫面或資料改變時都需要維護。只有靠重複執行，才能把成本賺回來。
+
+在 SAP 專案中，重複執行來自幾個可預期的地方：
+
+1. **傳輸。** 每一筆移入品質系統的變更，都可能弄壞昨天還正常的功能。
+2. **SAP 版本與支援套件。** 地端與私有雲的升級，以及 SAP S/4HANA Cloud Public Edition 的排定升級。
+3. **重複的測試輪次。** 系統整合測試（SIT）會在不只一輪中執行相同的端對端流程。
+4. **推展波次。** 全球範本會針對每個國家或公司代碼再測一次。
+5. **大量資料的檢查。** 定價、稅務或科目決定的大量組合，只有資料不同。
+
+如果以上都不適用，工具的成本會高於它省下的錢。
+
+下表是我會如何依測試類型分配工作。
+
+| 測試類型 | 要自動化嗎？ | 原因 |
+|---|---|---|
+| 核心流程的迴歸測試，例如訂單到收款、採購到付款、記錄到報告 | 要，最優先 | 每次傳輸與每次版本更新後都要執行 |
+| SIT 各輪 | 部分 | 穩定的流程自動化；新的與仍在變動的情境維持手動 |
+| 使用者驗收測試（UAT） | 很少 | 由業務使用者判斷流程是否適合他們，腳本做不到 |
+| 探索性測試與負面測試 | 不要 | 價值來自人去找出沒有人寫進腳本的問題 |
+| 效能與負載 | 要，使用負載工具 | 大量並行使用者無法靠人工產生 |
+| 一次性的資料移轉檢查 | 通常不要 | 對帳報表做得更好，除非同樣的載入會在多次模擬中重複 |
+
+<decision-tree question="這項 SAP 測試應該自動化嗎？" options="測試案例很多，每次變更或版本更新後都要重複執行 => 自動化|測試案例很少，或只執行一兩次 => 手動測試|流程設計仍在變動 => 等設計穩定後再決定"></decision-tree>
+
+## 從哪裡開始
+
+令人失望的自動化，通常是一開始範圍就太廣：什麼都要做、在設計階段就開始、而且沒有人對結果負責。以下是我會遵循的順序：
+
+1. **挑出業務絕對不能出錯的流程。** 月結、開票、付款，以及推展到許多據點的流程，優先於可有可無的報表。
+2. **先用手動執行測試。** 工具只能把已經能手動跑通的測試自動化，不會替您設計測試。
+3. **等待設計穩定。** 在 Explore 或 Realize 早期就自動化，代表每次設計決策改變都要重建測試。
+4. **建立一套小型迴歸測試包。** 以端對端方式涵蓋關鍵流程，然後在每一筆傳輸進入品質系統時執行。
+5. **指定維護負責人。** 畫面、角色或資料改變時，必須有人修正測試，否則測試包在幾次版本更新內就會失效。
+6. **只在重複執行值得的地方擴大涵蓋範圍。** 新增測試是因為它會經常執行，而不是因為涵蓋率目標這樣要求。
+
+### 把專案與日常維運分開
+
+在專案期間，我會維持兩套獨立的環境：一套給專案，一套給日常維運（BAU）。這樣正式環境的維運變更與專案變更就能分開測試。
+
+這對自動化很重要。迴歸測試失敗時，您希望只需調查一個變更來源，而不是兩個混在一起。我的 [SAP 迴歸測試](/zh-TW/sap-regression-testing/) 指南更深入說明雙環境做法與影響分析。
+
+## SAP 提供什麼，您要補什麼
+
+在我的專案中，我自己用過或讓團隊用過 Tricentis Tosca、Worksoft、Panaya、SAP Cloud ALM、SAP Solution Manager、UiPath 與 LoadRunner。本文不替它們排名。正確的選擇取決於您的系統環境、您的支援合約，以及由誰來維護測試。
+
+先從 SAP 已經提供的東西開始，因為其中一部分可能早已付過費。
+
+### SAP Cloud ALM
+
+SAP Cloud ALM 是測試管理層。它依照您的流程與需求，規劃、執行並追溯手動與自動化測試。擁有 SAP Enterprise Support、Product Support for Large Enterprises 或符合資格之雲端訂閱的客戶，可以開通一個租用戶（[SAP usage rights](https://support.sap.com/en/alm/usage-rights.html)）。
+
+它本身不執行自動化測試。SAP 表示 Cloud ALM 沒有自行開發的自動化引擎，其 ALM 平台對第三方測試自動化保持開放（[SAP Support, test automation](https://support.sap.com/en/alm/partners/test-automation.html)）。
+
+SAP 的設定指南說明了內建整合，以及供其他供應商使用的公開 Test Automation API（[SAP Help Portal](https://help.sap.com/docs/cloud-alm/setup-administration/other-test-automation-providers)）。Panaya 與 UiPath 都有自動化測試案例的 Cloud ALM 整合文件。Worksoft 將 Cloud ALM 與 Solution Manager 列入其整合項目，OpenText 則為其雲端效能測試產品提供 Cloud ALM 整合。
+
+### Tricentis Test Automation for SAP 與 SAP Test Automation by Tricentis
+
+購買任何東西之前，先確認您的授權權益。SAP 會隨 SAP Enterprise Support、Enterprise Support cloud editions 與 Product Support for Large Enterprises，提供與 Cloud ALM 整合的 Tricentis Test Automation for SAP 定期授權。目前效期至 2028 年 12 月 31 日（[SAP usage rights](https://support.sap.com/en/alm/usage-rights.html)）。
+
+限制相當嚴格：5 位具名使用者、每個日曆月 500 次測試執行、5 個客戶自行管理的執行代理程式，以及 12 個月的結果保存期。它不得用於自動化正式營運的業務流程。請把它當成起步的方式，而不是專案規模的工具。
+
+SAP Test Automation by Tricentis 是付費的升級版。它是 SAP 以解決方案擴充形式銷售並支援的軟體即服務產品，涵蓋 SAP 與第三方應用程式。當授權權益的額度不夠用時，它可以擴充 Cloud ALM 所含的 Tricentis 功能。
+
+### SAP Solution Manager
+
+Solution Manager 7.2 的主流維護到 2027 年底為止。選擇 SAP Business Suite 7 延長維護的客戶，可取得 Solution Manager 延長維護至 2030 年底。它只涵蓋有限的範圍，其中包括測試套件（[SAP Support](https://support.sap.com/en/alm/solution-manager.html)）。
+
+它自己的自動化功能 Component-Based Test Automation（CBTA）不會延伸到 SAP 雲端產品。Solution Manager 整合用的 Tricentis 授權目前效期至 2027 年 12 月 31 日。如果您已經在使用 Solution Manager，請沿用到您的系統環境移轉為止，但不要再圍繞它建立新的自動化。
+
+### SAP S/4HANA Cloud Public Edition
+
+Public Edition 內附自己的 Test Automation Tool。SAP 的建議是，夥伴在設定每個流程時就建立或更新測試自動化腳本，讓它們能在升級期間於測試系統中執行（[SAP Learning](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-public-edition/explaining-the-test-strategy_d4b6f563-e5bb-41b5-b7e2-ec899edb756f)）。
+
+在您同意的情況下，SAP 會針對未修改的標準流程執行升級後測試。上線之後，凡是您客製化過的部分，迴歸測試都由您自己負責，並使用您自己的自動化腳本。
+
+下表依用途整理上述工具，而非依偏好排序。
+
+| 工具 | 主要用途 | 適用情境 |
+|---|---|---|
+| SAP Cloud ALM | 測試管理與協調 | 新專案；把手動與自動化測試連結到流程 |
+| SAP Solution Manager | 測試管理，地端 | 已在使用它的系統環境；主流維護於 2027 年結束 |
+| Tricentis Tosca 與 SAP Test Automation by Tricentis | 模型式自動化 | SAP 與非 SAP 應用程式；由 SAP 轉售並支援 |
+| Worksoft | 無程式碼流程自動化 | 與 Cloud ALM 和 Solution Manager 整合 |
+| Panaya | 測試管理與無程式碼自動化 | 自動化測試的 Cloud ALM 整合 |
+| UiPath | 附 Test Manager 的自動化平台 | 自動化測試案例的 Cloud ALM 整合 |
+| OpenText LoadRunner | 效能與負載測試 | 上線前的並行與資料量測試 |
+
+更深入的比較（包括 Xray for Jira），請參閱我的 [SAP 測試工具](/zh-TW/sap-testing-validation-tools-comparison/) 指南。負載測試請參閱 [寫給 IT 主管的 SAP 效能測試](/zh-TW/sap-performance-testing-it-leaders/)。
+
+## 框架：測試是如何建出來的
+
+工具的重要性，不如測試的建置方式與維護者。大多數 SAP 自動化屬於以下其中一種做法：
+
+1. **模型式。** 將畫面與 API 掃描成可重複使用的模組，再組合成測試案例。功能顧問不需寫程式就能建置與閱讀。
+2. **無程式碼流程擷取。** 錄製業務流程步驟，轉成可重複使用的測試。適合由關鍵使用者協助建立迴歸測試包的團隊。
+3. **程式碼式。** 由測試工程師在程式框架中撰寫測試。適合由開發團隊負責的 Fiori 應用程式與 API，需要開發人員維護。
+4. **附測試模組的機器人流程自動化平台。** 一個平台同時處理業務自動化與測試自動化，如果您已經在使用它就很實用。
+5. **SAP 提供的自動化腳本。** 在 Public Edition 上，Test Automation Tool 隨附的測試自動化腳本，再依您的資料與變更調整。
+
+無論選擇哪一種做法，有三項設計選擇決定測試能否存活下來：
+
+1. **能在 API 層測試就在 API 層測試。** API 測試比點擊畫面的測試更不容易壞。
+2. **讓測試資料可以重設。** 依賴上一次執行已用掉之資料的測試，會因為錯誤的原因失敗。
+3. **以共用模組建置。** 畫面改變時，您只需修正一個模組，而不是每個用到它的測試。
+
+## 上線後讓自動化持續運作
+
+自動化迴歸測試包是一個產品，而不是專案交付物。它需要負責人、一條預算科目，以及在變更流程中的位置。
+
+把它和變更管控綁在一起。在迴歸測試包執行完畢、結果記錄到測試管理工具之前，任何傳輸都不得移入正式環境。我關於 [SAP 品質關卡](/zh-TW/sap-quality-gates-implementation/) 的文章說明如何讓測試結果成為 go/no-go 決策的一部分。
+
+也要配合 SAP 的版本節奏做規劃。Public Edition 的升級依 SAP 的時程到來，而不是您的時程，私有雲與地端系統也仍需要支援套件與升級。每一次都是一輪迴歸測試，而這正是自動化把成本賺回來的地方。
+
+修正不穩定的測試，淘汰沒人執行的測試，讓測試包保持精簡，讓大家信任它的結果。
+
+自動化也必須放在測試計畫之內。測試週期、進入與退出準則以及角色要先確定；我的 [S/4HANA 測試策略](/zh-TW/s4hana-testing-strategy/) 列出了這些內容。
+
+## 您的下一步
+
+列出每次傳輸與每次 SAP 版本更新後，您會重新測試的業務流程。計算背後的測試案例數量，以及每一個一年會執行幾次。
+
+如果數量很大而且會重複執行，您就有自動化的理由。接著，在任何人向您展示產品之前，先確認您的 SAP 支援合約已經包含了什麼。
+
+如果您想對測試自動化計畫或供應商提案取得獨立的看法，我可以協助您的組織。您可以 [在這裡與我聯絡](/zh-TW/contact-noel-erp-support/)。
+
+## 常見問題
+
+<details>
+<summary>什麼是 SAP 測試自動化？</summary>
+
+它是使用工具來執行原本要由人工執行的 SAP 測試，主要是變更與升級後的迴歸測試。由 SAP Cloud ALM 這類測試管理工具規劃與記錄測試，再由自動化工具執行。
+
+</details>
+
+<details>
+<summary>什麼時候應該將 SAP 測試自動化？</summary>
+
+當大量測試案例需要大量重複測試時，例如每次傳輸、版本更新或推展波次後的迴歸測試。低於這個程度，手動測試就夠了。請等流程設計穩定再開始，否則每次設計改變您都得重建測試。
+
+</details>
+
+<details>
+<summary>SAP Cloud ALM 能做測試自動化嗎？</summary>
+
+它能管理與觸發自動化測試，但本身沒有自動化引擎。它與 Tricentis Test Automation for SAP、S/4HANA Cloud Public Edition 中的 Test Automation Tool 整合，也能透過公開的 Test Automation API 與其他供應商整合。
+
+</details>
+
+<details>
+<summary>什麼是 SAP Test Automation by Tricentis？</summary>
+
+它是 SAP 以解決方案擴充形式銷售並支援的軟體即服務測試自動化產品，涵蓋 SAP 與第三方應用程式。它擴充了 SAP Enterprise Support 所含的入門版 Tricentis Test Automation for SAP 授權。該授權的上限是 5 位具名使用者與每月 500 次測試執行。
+
+</details>
+
+<details>
+<summary>SAP 使用者驗收測試可以自動化嗎？</summary>
+
+很少，而且這不應該是目標。UAT 存在的目的，是讓業務使用者判斷系統是否適合他們，這是腳本做不到的。把它周邊重複的迴歸測試自動化，驗收的決定則留給人。
+
+</details>
+
+<details>
+<summary>我還應該用 SAP Solution Manager 做測試自動化嗎？</summary>
+
+只有在它已經支撐您的系統環境時才用。Solution Manager 7.2 的主流維護將於 2027 年結束，其 CBTA 自動化也不會延伸到 SAP 雲端產品。新的自動化請以 Cloud ALM 為核心規劃。
+
+</details>

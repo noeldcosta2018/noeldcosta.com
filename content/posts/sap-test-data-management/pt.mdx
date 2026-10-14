@@ -1,0 +1,208 @@
+---
+title: "Gestão de dados de teste SAP: dados mascarados na escala de produção"
+h1: "Gestão de dados de teste SAP: dados mascarados na escala de produção"
+slug: "sap-test-data-management"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-test-data-management.webp"
+heroAlt: "Um notebook mostrando uma tabela de dados mascarados ao lado de um mapa de bancos de dados conectados"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "sap-data-migration", "s4hana-implementation", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "Gestão de dados de teste SAP: cópias, mascaramento, ferramentas"
+metaDescription: "Gestão de dados de teste SAP na prática: dados mascarados na escala de produção, cópias de sistema e de mandante, ferramentas de cópia seletiva e o que a GDPR exige."
+primaryKeyword: "dados de teste SAP"
+excerpt: "Os dados de teste SAP precisam se parecer com os de produção e não podem ser os de produção. Como levar dados mascarados na escala de produção para os seus sistemas de teste, quais métodos de cópia e ferramentas servem e onde a legislação de privacidade traça o limite."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "A minha regra para dados de teste SAP: mascarados, mas em nível de produção em volume e realismo"
+  - "Dados de teste pequenos e feitos à mão escondem os defeitos que importam, especialmente nos testes de desempenho e de concorrência"
+  - "Pela GDPR, dados pseudonimizados continuam sendo dados pessoais, então uma cópia mascarada ainda precisa de controle de acesso"
+  - "Escolha entre cópias completas, cópias de mandante e ferramentas de cópia seletiva conforme a fase de teste, não por hábito"
+  - "Mascare antes que os dados cheguem a quem não deveria vê-los, e mantenha o mascaramento consistente entre os sistemas conectados"
+  - "Dê ao ambiente do projeto e ao ambiente da operação do dia a dia um plano de atualização próprio para cada um"
+pullQuote: "Os dados de teste precisam se comportar como os de produção sem ser os de produção."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Test Data Migration Server"
+  - "SAP Landscape Transformation"
+  - "EPI-USE Labs Data Sync Manager"
+  - "SNP Kyano Test Data Organizer"
+  - "Natuvion DCS Protect"
+  - "Qlik Gold Client"
+  - "GDPR"
+originalUrl: "https://noeldcosta.com/sap-test-data-management/"
+canonicalUrl: "https://noeldcosta.com/pt/sap-test-data-management/"
+locale: "pt"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+A gestão de dados de teste SAP é a forma de dar a cada sistema de teste dados que se comportam como os de produção sem expor os dados de pessoas reais. A minha regra é simples: dados mascarados, mas em nível de produção, em volume e em realismo.
+
+Dados escassos e feitos à mão escondem os defeitos que importam. Dados de produção sem mascaramento colocam registros de clientes, fornecedores e funcionários em sistemas com controles mais fracos do que os da produção.
+
+Os dados de teste são uma parte de um plano de testes mais amplo. O meu guia [testes SAP explicados](/pt/sap-testing-explained/) cobre os tipos de teste, quem é o responsável por eles e onde ficam no SAP Activate.
+
+## Por que os dados de teste decidem o que os seus testes conseguem encontrar
+
+Um teste só encontra um problema que os seus dados conseguem provocar. Um cliente com cinco partidas em aberto se comporta de forma diferente de um com cinquenta mil, e uma condição de preço que ninguém criou no mandante de teste nunca vai falhar no mandante de teste.
+
+A falha de testes mais comum que já vi é testar pouco no teste de integração de sistemas (SIT) e no teste de aceitação do usuário (UAT). Dados de teste fracos são uma das maneiras pelas quais isso acontece em silêncio. Os casos de teste rodam, os resultados ficam verdes, e os casos que teriam quebrado simplesmente não tinham dados para quebrar.
+
+É por isso que eu insisto em dados em nível de produção. Isso significa quatro coisas:
+
+1. **Volume.** Tamanhos de tabela próximos aos da produção, para que relatórios, jobs e pesquisas rodem sobre quantidades realistas de linhas.
+2. **Variedade.** Os registros estranhos que a produção realmente tem: fornecedores bloqueados, entregas parciais, notas de crédito, moedas estrangeiras, partidas antigas em aberto.
+3. **Histórico.** Períodos fechados suficientes para que o aging, a depreciação e as execuções de fim de ano signifiquem alguma coisa.
+4. **Integridade.** Documentos que continuam vinculados corretamente entre os módulos depois da cópia e depois do mascaramento.
+
+O volume importa mais para o desempenho. O teste de desempenho precisa acontecer antes do go-live e, na minha experiência, os testes de concorrência, com muitos usuários trabalhando ao mesmo tempo, são os importantes.
+
+Um teste de concorrência em um banco de dados quase vazio prova muito pouco. O meu guia de [testes de desempenho SAP](/pt/sap-performance-testing-it-leaders/) cobre como montar esses testes.
+
+## O que a legislação de privacidade significa para os sistemas de teste SAP
+
+Dados de produção em um sistema de teste continuam sendo dados pessoais. Os sistemas de teste e de qualidade costumam ter acesso mais amplo do que a produção, e esse é o risco que o mascaramento existe para fechar.
+
+O Regulamento Geral sobre a Proteção de Dados da UE (GDPR) é a referência com que a maioria das organizações trabalha, e muitas leis nacionais seguem linhas parecidas. O considerando 26 do [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) faz uma distinção que toda equipe SAP deveria conhecer.
+
+1. **Dados pseudonimizados continuam sendo dados pessoais.** Se os dados podem ser vinculados de volta a uma pessoa com informações adicionais, como uma tabela de correspondência, o regulamento continua se aplicando.
+2. **Dados anônimos ficam fora do seu escopo.** Dados que já não conseguem identificar ninguém não são abrangidos.
+
+A consequência prática: a maior parte do mascaramento produz dados pseudonimizados, e não dados anônimos. Um sistema de teste mascarado ainda precisa de controle de acesso, de uma finalidade e de uma regra de retenção. Peça ao seu encarregado de proteção de dados que aprove as regras de mascaramento antes da primeira cópia, e não depois que um auditor perguntar.
+
+## As formas de levar dados para um sistema de teste SAP
+
+Há cinco caminhos comuns. A maioria dos programas usa mais de um, porque cada fase de teste precisa de algo diferente.
+
+A tabela os compara nos pontos que decidem a adequação.
+
+| Método | O que você obtém | Volume | Tratamento da privacidade | Melhor uso |
+|---|---|---|---|---|
+| Cópia completa do sistema | Uma cópia exata da produção, com todos os mandantes e tabelas | Completo | O mascaramento precisa rodar depois da cópia, antes de os usuários terem acesso | Testes de desempenho, conversões simuladas, ensaios de cutover |
+| Cópia de mandante | Um mandante copiado dentro de um sistema ou entre sistemas; o perfil de cópia decide se os dados mestre e transacionais vêm junto | Completo ou só customizing | Igual à cópia de sistema quando os dados de aplicação são copiados | Mandantes novos de teste ou de treinamento, reinício de um mandante para um estado conhecido |
+| SAP Test Data Migration Server (TDMS) | Uma cópia reduzida, selecionada por período ou unidade organizacional, com embaralhamento | Reduzido | Regras de embaralhamento dentro da ferramenta | Ambientes SAP Business Suite existentes que já têm licença para ele |
+| Ferramentas de cópia seletiva de parceiros | Objetos de negócio ou recortes escolhidos, copiados sob demanda e mascarados durante a transferência | Reduzido, direcionado | Regras de mascaramento dentro da ferramenta, aplicadas durante a cópia | Atualizações regulares, dados de regressão, reprodução de defeitos |
+| Dados construídos ou migrados | Dados criados por scripts, cargas de migração ou digitação manual | O que você construir | Nenhum dado pessoal real se construído do zero | Testes unitários iniciais, projetos greenfield antes do go-live |
+
+### Cópias completas de sistema e cópias de mandante
+
+Uma cópia completa do sistema dá os dados mais realistas com que você vai testar. Ela também copia todos os riscos de privacidade que a produção contém. Se você a usar, o sistema fica bloqueado até que o mascaramento tenha rodado e sido verificado.
+
+A cópia de mandante é a ferramenta do dia a dia para criar e reiniciar mandantes. O perfil de cópia é a decisão que importa, porque define se só a configuração é movida ou se os dados mestre e transacionais vão junto.
+
+### SAP Test Data Migration Server
+
+O SAP Test Data Migration Server (TDMS) cria sistemas não produtivos reduzidos a partir de dados de produção, com embaralhamento dos campos sensíveis. Ele nasceu no SAP Business Suite, e o conjunto de documentação atual no [SAP Help Portal](https://help.sap.com/docs/SAP_TEST_DATA_MIGRATION_SERVER) é do release 4.0 SP14.
+
+Não encontrei nenhuma declaração oficial da SAP sobre a cobertura do TDMS para os releases atuais do S/4HANA ou sobre um sucessor nomeado. Se você pretende depender dele, pergunte à SAP por escrito se ele suporta o seu release de destino e o seu modelo de implantação, incluindo o RISE with SAP.
+
+### SAP Landscape Transformation e cópias shell
+
+O SAP Landscape Transformation é um conjunto de ferramentas de análise e transformação que a SAP usa na transição seletiva de dados. O [SAP Learning](https://learning.sap.com/courses/discovering-sap-activate-implementation-tools-and-methodology/illustrating-selective-data-transition_dab03cad-3061-40ed-b690-a0d7a2dccc98) descreve uma conversão shell como uma cópia do sistema de produção feita sem dados mestre e transacionais e depois convertida para o S/4HANA.
+
+A mesma ideia ajuda com os dados de teste. Um shell dá a você o repositório e a configuração da produção sem dados de negócio, e você então o preenche só com os dados de que um teste precisa.
+
+## Ferramentas de dados de teste seletivos
+
+Vários produtos de parceiros copiam dados de negócio selecionados para os sistemas de teste SAP e os mascaram no caminho. Estes são os que tiveram as suas afirmações verificadas por mim no próprio site do fornecedor, sem ordem de preferência.
+
+1. **EPI-USE Labs Data Sync Manager.** Uma suíte para copiar e mascarar dados em ambientes SAP ABAP, incluindo mandantes enxutos, cópias no nível de objeto e mascaramento com regras predefinidas. A EPI-USE Labs afirma que o [Data Sync Manager](https://www.epiuselabs.com/data-sync-manager-dsm-software-suite) é certificado para integração com o SAP S/4HANA e o S/4HANA Cloud e funciona com o RISE with SAP.
+2. **SNP Kyano Test Data Organizer.** Extrai os dados de que um teste precisa em vez do sistema inteiro e mascara os dados sensíveis à medida que são provisionados. A SNP descreve o [Test Data Organizer](https://www.snpgroup.com/en/platform/kyano-manage/use-cases/test-management/) como compatível com o RISE with SAP Private Cloud Edition.
+3. **Qlik Gold Client.** Copia e sincroniza dados transacionais selecionados da produção para destinos não produtivos, com mascaramento estático para sistemas existentes e mascaramento dinâmico para dados em trânsito.
+4. **Natuvion DCS Protect.** Localiza dados pessoais e aplica anonimização ou pseudonimização em sistemas de teste, qualidade, desenvolvimento e treinamento. A [Natuvion](https://natuvion.com/tda) o posiciona para migrações de teste e para a operação contínua, e não menciona o S/4HANA nessa página, então confirme a cobertura diretamente.
+
+Antes de comprar, peça a cada fornecedor que responda a estas perguntas nos seus próprios sistemas:
+
+1. Quais releases e modelos de implantação do S/4HANA a ferramenta suporta hoje?
+2. Ela mascara antes de os dados saírem da produção, ou depois que chegam ao destino?
+3. O mascaramento se mantém consistente entre os sistemas conectados, para que um cliente mascarado no S/4HANA corresponda ao mesmo cliente no seu CRM ou data warehouse?
+4. Quanto tempo leva a atualização de uma empresa com volumes de produção?
+5. Quem mantém as regras de mascaramento quando você acrescenta tabelas ou campos customizados?
+
+## Como adequar os dados de teste à fase de teste
+
+Cada fase de teste precisa de dados por um motivo diferente. É por aqui que eu começo quando planejo os dados de teste em um programa S/4HANA.
+
+| Fase de teste | O que os dados precisam fazer | Origem habitual |
+|---|---|---|
+| Teste unitário | Permitir que um desenvolvedor prove que um objeto funciona | Dados construídos, ou um pequeno recorte mascarado |
+| Rodadas do teste de integração de sistemas | Executar cadeias de processo completas entre módulos e interfaces | Cópia mascarada em nível de produção ou cópia seletiva |
+| Rodadas do teste de aceitação do usuário | Parecer com os próprios dados dos usuários de negócio, para que reconheçam os seus casos | Dados mascarados em nível de produção, atualizados antes de cada rodada |
+| Teste de regressão | Permanecer estáveis para que os resultados sejam comparáveis entre execuções | Um conjunto de dados fixo e reiniciável, mais um plano de atualização |
+| Teste de desempenho | Corresponder ao volume de produção, para que os resultados de concorrência signifiquem algo | Cópia completa mascarada, ou volume na escala de produção |
+| Conversões simuladas e ensaios de cutover | Provar a migração com o formato real dos dados | Cópias completas da produção, mascaradas onde pessoas de fora da equipe central têm acesso |
+
+O UAT merece cuidado extra. O negócio deve ser o dono do teste de aceitação do usuário e, na minha visão, ele precisa de pelo menos 6 a 8 semanas.
+
+Dê aos usuários dados que eles reconheçam: os seus próprios clientes, materiais e listas de preços, mesmo com nomes mascarados. O meu guia de [teste de aceitação do usuário no SAP](/pt/sap-user-acceptance-testing/) cobre como conduzi-lo.
+
+As conversões simuladas seguem a mesma lógica. Em uma conversão brownfield, eu planejo três conversões simuladas, e cada uma deve rodar sobre uma cópia recente da produção.
+
+Na minha experiência, a migração de dados representa de 30 a 40 por cento do esforço do programa, então planeje o acesso aos dados para essas execuções junto com a equipe de migração. O meu artigo sobre [por que a migração de dados SAP falha](/pt/why-sap-data-migration-fails-and-how-to-fix-it/) explica como as cargas simuladas se encaixam.
+
+### Dois ambientes, dois planos de atualização
+
+Durante um programa, eu mantenho dois ambientes separados: um para o projeto e outro para a operação do dia a dia (BAU). As mudanças do suporte em produção e as do projeto são então testadas separadamente.
+
+Cada ambiente precisa do seu próprio plano de dados de teste. Os testes da BAU precisam de dados próximos à produção de hoje, porque as correções do suporte respondem aos problemas de hoje.
+
+Os testes do projeto precisam de dados que correspondam ao novo desenho, o que pode ser uma cópia convertida ou uma carga seletiva. Mantenha um calendário de atualização separado para cada um, para que uma atualização em um nunca apague dados de teste de que o outro ainda precisa.
+
+## Como eu montaria a gestão de dados de teste SAP
+
+Os testes consomem cerca de 35 por cento do esforço do programa. Planeje os dados de teste dentro desse esforço, e não na semana anterior ao SIT.
+
+Esta é a ordem que eu seguiria:
+
+1. **Acorde o princípio por escrito.** Dados mascarados em nível de produção, aprovados pelo patrocinador do programa, pelo encarregado de proteção de dados e pelos donos do negócio.
+2. **Encontre os dados pessoais e sensíveis.** Clientes, fornecedores, funcionários, dados bancários, contatos, campos de texto livre, anexos e quaisquer tabelas customizadas que os contenham.
+3. **Escreva as regras de mascaramento.** Decida campo a campo o que é substituído, mantido ou removido, e mantenha as substituições consistentes entre os sistemas conectados.
+4. **Mapeie os dados para cada fase de teste.** Use a tabela acima como ponto de partida e dimensione primeiro o volume para os testes de desempenho e de concorrência.
+5. **Escolha os métodos de cópia e as ferramentas.** Cópias completas onde o volume importa, cópias seletivas onde a velocidade e a frequência importam, e verifique o suporte da ferramenta ao seu release.
+6. **Defina o calendário de atualização.** Um plano por ambiente, com atualizações programadas antes de cada rodada de SIT e de UAT e de cada conversão simulada.
+7. **Bloqueie o acesso até que o mascaramento seja verificado.** Ninguém de fora da equipe técnica central entra em uma cópia nova até que uma verificação do mascaramento tenha passado.
+
+Depois, transforme isso em um gate. A estratégia, os critérios de entrada e os critérios de saída de cada ciclo estão no meu guia de [estratégia de testes do S/4HANA](/pt/s4hana-testing-strategy/), e a prontidão dos dados de teste pertence aos critérios de entrada de cada rodada.
+
+O próximo passo concreto: liste cada sistema não produtivo que hoje contém uma cópia de dados de produção e verifique quais foram mascarados.
+
+Se você quer uma visão independente sobre uma abordagem de dados de teste ou um plano de testes para um programa S/4HANA, você pode [entrar em contato comigo aqui](/pt/contact-noel-erp-support/).
+
+## Perguntas frequentes
+
+<details>
+<summary>O que é gestão de dados de teste SAP?</summary>
+
+É a forma de planejar, criar, copiar, mascarar e atualizar os dados nos sistemas de teste SAP. O objetivo são dados que se comportam como os de produção em volume e realismo, sem expor dados pessoais reais a quem não deveria vê-los.
+
+</details>
+
+<details>
+<summary>Posso usar dados de produção para testes SAP?</summary>
+
+Só depois de mascarados, e mesmo assim com controle de acesso. Pela GDPR, dados pseudonimizados continuam sendo dados pessoais, então uma cópia mascarada ainda precisa de uma finalidade, de regras de acesso e de uma regra de retenção. Acorde as regras de mascaramento com o seu encarregado de proteção de dados antes da primeira cópia.
+
+</details>
+
+<details>
+<summary>O SAP TDMS ainda está disponível para o S/4HANA?</summary>
+
+A documentação atual do TDMS no SAP Help Portal é do release 4.0 SP14, e o TDMS nasceu no SAP Business Suite. Não encontrei nenhuma declaração oficial da SAP sobre a sua cobertura dos releases atuais do S/4HANA. Pergunte à SAP por escrito antes de planejar em torno dele.
+
+</details>
+
+<details>
+<summary>Quais ferramentas criam dados de teste SAP seletivos?</summary>
+
+O SAP Test Data Migration Server, além de produtos de parceiros como EPI-USE Labs Data Sync Manager, SNP Kyano Test Data Organizer e Qlik Gold Client. O Natuvion DCS Protect se concentra em anonimizar e pseudonimizar dados em sistemas de teste. Verifique cada um com base no seu release e no seu modelo de implantação do S/4HANA.
+
+</details>
+
+<details>
+<summary>De quantos dados de teste preciso para o teste de desempenho SAP?</summary>
+
+Volume em nível de produção. Os problemas de desempenho aparecem com tamanhos reais de tabela e muitos usuários simultâneos, então um teste sobre um conjunto de dados escasso prova muito pouco. Uma cópia completa e mascarada da produção é a origem habitual para os testes de desempenho e de concorrência.
+
+</details>

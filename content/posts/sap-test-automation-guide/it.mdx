@@ -1,0 +1,220 @@
+---
+title: "Automazione dei test SAP: da dove partire e quando conviene"
+h1: "Automazione dei test SAP: da dove partire e quando conviene"
+slug: "sap-test-automation-guide"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-test-automation-guide.webp"
+heroAlt: "Noel D'Costa accanto a un monitor che mostra esecuzioni automatiche di test SAP e un flusso di processo"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "sap-cloud-alm", "sap-technical-decisions", "s4hana-implementation"]
+author: "Noel D'Costa"
+metaTitle: "Automazione dei test SAP: da dove partire e quando conviene"
+metaDescription: "L'automazione dei test SAP spiegata: quando conviene, da dove partire, quali framework scegliere e che cosa offrono SAP Cloud ALM, Solution Manager e Tricentis."
+primaryKeyword: "automazione test SAP"
+excerpt: "Quando l'automazione dei test SAP ripaga il suo costo, da dove partire, come si differenziano i framework e che cosa le offrono già SAP Cloud ALM, Solution Manager e SAP Test Automation by Tricentis."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "Automatizzi quando un gran numero di casi di test richiede test estesi e ripetuti. Al di sotto di quella soglia, il test manuale va bene"
+  - "I test assorbono circa il 35 percento dell'impegno del programma, quindi l'automazione è una questione di quale quota debba sostenere uno strumento"
+  - "Parta da un piccolo pacchetto di regressione per i processi che il business non può permettersi di rompere, una volta che il disegno è stabile"
+  - "Gestisca landscape separati per il progetto e per l'operatività corrente, così le modifiche del supporto in esercizio e quelle di progetto vengono testate separatamente"
+  - "SAP Cloud ALM gestisce i test ma non ha un proprio motore di automazione. Verifichi il suo diritto d'uso Tricentis prima di acquistare"
+  - "La manutenzione mainstream di Solution Manager termina nel 2027. Non costruisca nuova automazione attorno a esso"
+pullQuote: "Costruire un test automatizzato costa più che eseguirlo una volta a mano. Quel costo si recupera solo con la ripetizione."
+mentions:
+  - "SAP Cloud ALM"
+  - "SAP Solution Manager"
+  - "SAP Test Automation by Tricentis"
+  - "Tricentis Tosca"
+  - "Worksoft"
+  - "Panaya"
+  - "UiPath"
+  - "OpenText LoadRunner"
+  - "SAP S/4HANA Cloud Public Edition"
+originalUrl: "https://noeldcosta.com/sap-test-automation-guide/"
+canonicalUrl: "https://noeldcosta.com/it/sap-test-automation-guide/"
+locale: "it"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Automatizzare i test SAP significa trasformare i test SAP che si eseguono di continuo, soprattutto quelli di regressione, in test che esegue uno strumento invece delle persone. Conviene quando un gran numero di casi di test richiede test estesi e ripetuti; al di sotto di quella soglia, il test manuale va bene.
+
+È la regola che uso nei programmi S/4HANA. Nella mia esperienza i test assorbono circa il 35 percento dell'impegno del programma, quindi la domanda non è mai se testare. È quale parte di quell'impegno debba sostenere uno strumento.
+
+Per capire come l'automazione si affianca a unit test, test di integrazione, di accettazione e di performance, parta dalla mia panoramica sui [test SAP spiegati](/it/sap-testing-explained/). Questo articolo tratta da dove partire, quando l'automazione ripaga, i framework e che cosa le offrono SAP Cloud ALM, Solution Manager e Tricentis.
+
+## Quando l'automazione dei test SAP conviene
+
+La mia regola è semplice. Quando c'è un gran numero di casi di test che richiedono test estesi e ripetuti, automatizzi. Al di sotto di quella soglia, il test manuale va bene.
+
+Il motivo è la struttura dei costi. Costruire un test automatizzato costa più che eseguirlo una volta a mano, e il test richiede manutenzione ogni volta che cambiano il processo, la schermata o i dati. Quel costo si recupera solo con la ripetizione.
+
+In un programma SAP la ripetizione arriva da punti prevedibili:
+
+1. **Trasporti.** Ogni modifica portata nel sistema di qualità può rompere qualcosa che ieri funzionava.
+2. **Release SAP e support package.** Gli upgrade on-premise e in private cloud, e gli upgrade programmati su SAP S/4HANA Cloud Public Edition.
+3. **Cicli di test ripetuti.** Il test di integrazione di sistema (SIT) esegue gli stessi flussi end-to-end in più di un ciclo.
+4. **Ondate di rollout.** Un template globale viene testato di nuovo per ogni paese o società.
+5. **Verifiche ad alta intensità di dati.** Molte combinazioni di determinazione prezzi, imposte o conti, in cui cambiano solo i dati.
+
+Se nessuno di questi casi si applica, uno strumento le costerà più di quanto le faccia risparmiare.
+
+La tabella mostra come suddividerei il lavoro per tipo di test.
+
+| Tipo di test | Automatizzare? | Perché |
+|---|---|---|
+| Regressione dei processi core come order to cash, procure to pay e record to report | Sì, per primo | Gira dopo ogni trasporto e ogni release |
+| Cicli di SIT | In parte | Automatizzare i flussi stabili; lasciare manuali gli scenari nuovi e in evoluzione |
+| Test di accettazione utente (UAT) | Raramente | Gli utenti di business giudicano se il processo funziona per loro, cosa che uno script non può fare |
+| Test esplorativi e negativi | No | Il valore viene da una persona che cerca ciò che nessuno ha scriptato |
+| Performance e carico | Sì, con uno strumento di carico | Molti utenti concorrenti non si possono produrre a mano |
+| Verifiche una tantum sulla migrazione dei dati | Di solito no | I report di riconciliazione lo fanno meglio, a meno che lo stesso caricamento si ripeta nelle mock run |
+
+<decision-tree question="Conviene automatizzare questo test SAP?" options="Molti casi di test, ripetuti dopo ogni modifica o release => Lo automatizzi|Pochi casi di test, o eseguiti una o due volte => Lo testi manualmente|Disegno del processo ancora in evoluzione => Aspetti che sia stabile, poi decida"></decision-tree>
+
+## Da dove partire
+
+L'automazione che delude di solito è partita troppo larga: tutto, durante il disegno, senza nessuno responsabile del risultato. Questo è l'ordine che seguirei:
+
+1. **Scelga i processi che il business non può permettersi di rompere.** Chiusura mensile, fatturazione, pagamenti e tutto ciò che è distribuito su molte sedi vengono prima dei report accessori.
+2. **Esegua prima i test a mano.** Uno strumento automatizza un test che funziona già a mano. Non lo progetta al posto suo.
+3. **Aspetti un disegno stabile.** Automatizzare durante Explore o all'inizio di Realize significa ricostruire i test ogni volta che cambia una decisione di disegno.
+4. **Costruisca un piccolo pacchetto di regressione.** Copra i processi critici end-to-end, poi esegua il pacchetto a ogni trasporto nel sistema di qualità.
+5. **Nomini un responsabile della manutenzione.** Qualcuno deve correggere i test quando cambiano schermate, ruoli o dati, altrimenti il pacchetto si degrada nel giro di poche release.
+6. **Estenda la copertura solo dove la ripetizione la giustifica.** Aggiunga un test quando girerà spesso, non perché lo chiede un obiettivo di copertura.
+
+### Separare il progetto dall'operatività corrente
+
+Durante un programma gestisco due landscape separati: uno per il progetto e uno per l'operatività corrente (BAU). Le modifiche del supporto in esercizio e quelle di progetto vengono così testate separatamente.
+
+Per l'automazione questo conta. Quando un test di regressione fallisce, lei vuole una sola fonte di modifica da indagare, non due mescolate. La mia guida al [test di regressione SAP](/it/sap-regression-testing/) approfondisce l'approccio a due landscape e l'analisi d'impatto.
+
+## Che cosa le dà SAP e che cosa aggiunge lei
+
+Nei miei programmi ho usato, o ho fatto usare ai miei team, Tricentis Tosca, Worksoft, Panaya, SAP Cloud ALM, SAP Solution Manager, UiPath e LoadRunner. Questo articolo non li mette in classifica. La scelta giusta dipende dal suo landscape, dal suo contratto di supporto e da chi manterrà i test.
+
+Parta da ciò che SAP fornisce già, perché una parte potrebbe essere già pagata.
+
+### SAP Cloud ALM
+
+SAP Cloud ALM è il livello di gestione dei test. Pianifica, esegue e traccia test manuali e automatizzati rispetto ai suoi processi e requisiti. I clienti con SAP Enterprise Support, Product Support for Large Enterprises o una sottoscrizione cloud idonea possono attivare un tenant ([diritti d'uso SAP](https://support.sap.com/en/alm/usage-rights.html)).
+
+Non esegue da sé i test automatizzati. SAP dichiara che Cloud ALM non ha un motore di automazione proprio e che le sue piattaforme ALM restano aperte all'automazione dei test di terze parti ([SAP Support, automazione dei test](https://support.sap.com/en/alm/partners/test-automation.html)).
+
+La guida di configurazione di SAP descrive integrazioni native più una Test Automation API pubblica per gli altri fornitori ([SAP Help Portal](https://help.sap.com/docs/cloud-alm/setup-administration/other-test-automation-providers)). Panaya e UiPath documentano integrazioni con Cloud ALM per i casi di test automatizzati. Worksoft elenca Cloud ALM e Solution Manager tra le sue integrazioni, e OpenText offre un'integrazione con Cloud ALM per il suo prodotto cloud di test di performance.
+
+### Tricentis Test Automation for SAP e SAP Test Automation by Tricentis
+
+Verifichi il suo diritto d'uso prima di acquistare qualsiasi cosa. SAP concede una licenza a termine per Tricentis Test Automation for SAP, integrata con Cloud ALM, con SAP Enterprise Support, Enterprise Support cloud editions e Product Support for Large Enterprises. Attualmente è valida fino al 31 dicembre 2028 ([diritti d'uso SAP](https://support.sap.com/en/alm/usage-rights.html)).
+
+I limiti sono stretti: 5 utenti nominali, 500 esecuzioni di test per mese solare, 5 agenti di esecuzione gestiti dal cliente e 12 mesi di conservazione dei risultati. Non può essere usata per automatizzare processi aziendali produttivi. La consideri un modo per iniziare, non uno strumento su scala di programma.
+
+SAP Test Automation by Tricentis è il gradino successivo a pagamento. È un prodotto software-as-a-service che SAP vende e supporta come solution extension, e copre applicazioni SAP e di terze parti. Estende la capacità Tricentis inclusa in Cloud ALM quando il diritto d'uso non basta più.
+
+### SAP Solution Manager
+
+La manutenzione mainstream di Solution Manager 7.2 dura fino alla fine del 2027. I clienti che aderiscono alla manutenzione estesa per SAP Business Suite 7 ottengono la manutenzione estesa di Solution Manager fino alla fine del 2030. Copre un insieme limitato di aree, tra cui la test suite ([SAP Support](https://support.sap.com/en/alm/solution-manager.html)).
+
+La sua automazione nativa, Component-Based Test Automation (CBTA), non verrà estesa ai prodotti cloud SAP. La licenza Tricentis per l'integrazione con Solution Manager è attualmente valida fino al 31 dicembre 2027. Se usa già Solution Manager, lo tenga finché il suo landscape non cambia, ma non costruisca nuova automazione attorno a esso.
+
+### SAP S/4HANA Cloud Public Edition
+
+La Public Edition ha un proprio Test Automation Tool. L'indicazione di SAP è che i partner creino o aggiornino gli automi di test man mano che configurano ciascun processo, così da poterli eseguire nel sistema di test durante gli upgrade ([SAP Learning](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-public-edition/explaining-the-test-strategy_d4b6f563-e5bb-41b5-b7e2-ec899edb756f)).
+
+Con il suo consenso, SAP esegue test post-upgrade sui processi standard non modificati. Dopo il go-live la responsabilità del test di regressione per tutto ciò che ha personalizzato è sua, con i suoi automi di test.
+
+La tabella riassume gli strumenti citati sopra per funzione, non per preferenza.
+
+| Strumento | Funzione principale | Dove si colloca |
+|---|---|---|
+| SAP Cloud ALM | Gestione e orchestrazione dei test | Nuovi programmi; collega test manuali e automatizzati ai processi |
+| SAP Solution Manager | Gestione dei test, on-premise | Landscape che lo usano già; la manutenzione mainstream termina nel 2027 |
+| Tricentis Tosca e SAP Test Automation by Tricentis | Automazione basata su modelli | Applicazioni SAP e non SAP; rivenduto e supportato da SAP |
+| Worksoft | Automazione dei processi senza codice | Si integra con Cloud ALM e Solution Manager |
+| Panaya | Gestione dei test e automazione senza codice | Integrazione con Cloud ALM per i test automatizzati |
+| UiPath | Piattaforma di automazione con Test Manager | Integrazione con Cloud ALM per i casi di test automatizzati |
+| OpenText LoadRunner | Test di performance e di carico | Test di concorrenza e di volume prima del go-live |
+
+Per un confronto più approfondito, che include Xray for Jira, legga la mia guida agli [strumenti di test SAP](/it/sap-testing-validation-tools-comparison/). Per i test di carico, legga [il test di performance SAP per i leader IT](/it/sap-performance-testing-it-leaders/).
+
+## Framework: come si costruiscono i test
+
+Lo strumento conta meno di come si costruiscono i test e di chi li mantiene. La maggior parte dell'automazione SAP rientra in uno di questi approcci:
+
+1. **Basato su modelli.** Schermate e API vengono scansionate in moduli riutilizzabili, poi assemblati in casi di test. I consulenti funzionali possono costruirli e leggerli senza codice.
+2. **Acquisizione dei processi senza codice.** I passi del processo aziendale vengono registrati e trasformati in test riutilizzabili. È adatto ai team in cui i key user aiutano a costruire il pacchetto di regressione.
+3. **Basato su codice.** I test engineer scrivono i test in un framework di programmazione. È adatto alle app Fiori e alle API di proprietà di un team di sviluppo, e richiede sviluppatori per la manutenzione.
+4. **Piattaforme di robotic process automation con moduli di test.** Un'unica piattaforma per l'automazione di business e l'automazione dei test, utile se la usa già.
+5. **Automi di test forniti da SAP.** Sulla Public Edition, gli automi di test forniti con il Test Automation Tool, adattati ai suoi dati e alle sue modifiche.
+
+Qualunque approccio scelga, tre scelte di disegno decidono se i test sopravvivono:
+
+1. **Testare a livello di API dove possibile.** I test sulle API si rompono meno spesso dei test che cliccano attraverso le schermate.
+2. **Mantenere i dati di test ripristinabili.** Un test che dipende da dati consumati dall'esecuzione precedente fallisce per il motivo sbagliato.
+3. **Costruire da moduli condivisi.** Quando una schermata cambia, si corregge un modulo, non ogni test che la tocca.
+
+## Tenere in vita l'automazione dopo il go-live
+
+Un pacchetto di regressione automatizzato è un prodotto, non un deliverable di progetto. Ha bisogno di un responsabile, di una voce di budget e di un posto nel processo di gestione delle modifiche.
+
+Lo colleghi al change control. Nessun trasporto passa in produzione finché il pacchetto di regressione non è stato eseguito e i risultati non sono registrati nello strumento di gestione dei test. Il mio articolo sui [quality gate SAP](/it/sap-quality-gates-implementation/) mostra come rendere i risultati dei test parte di una decisione go/no-go.
+
+Pianifichi anche in base al ritmo delle release SAP. Gli upgrade della Public Edition arrivano secondo il calendario di SAP, non il suo, e i sistemi private cloud e on-premise richiedono comunque support package e upgrade. Ognuno è un'esecuzione di regressione, ed è esattamente lì che l'automazione recupera il suo costo.
+
+Corregga i test instabili, ritiri quelli che nessuno esegue e mantenga il pacchetto abbastanza piccolo da far sì che le persone si fidino dei risultati.
+
+L'automazione deve anche stare dentro un piano di test. Cicli, criteri di ingresso e di uscita e ruoli vengono prima; la mia [strategia di test S/4HANA](/it/s4hana-testing-strategy/) li definisce.
+
+## Il prossimo passo
+
+Elenchi i processi aziendali che ritesterebbe dopo ogni trasporto e ogni release SAP. Conti i casi di test che ci sono dietro e quante volte ciascuno girerebbe in un anno.
+
+Se il numero è alto e le esecuzioni si ripetono, ha un buon motivo per automatizzare. Poi verifichi che cosa include già il suo contratto di supporto SAP, prima che qualcuno le mostri una demo.
+
+Se desidera un parere indipendente su un piano di automazione dei test o su una proposta di un fornitore, aiuto le organizzazioni proprio su questo. Può [contattarmi qui](/it/contact-noel-erp-support/).
+
+## Domande frequenti
+
+<details>
+<summary>Che cos'è l'automazione dei test SAP?</summary>
+
+È l'uso di uno strumento per eseguire test SAP che altrimenti verrebbero eseguiti a mano, soprattutto test di regressione dopo modifiche e upgrade. Uno strumento di gestione dei test come SAP Cloud ALM pianifica e registra i test, e uno strumento di automazione li esegue.
+
+</details>
+
+<details>
+<summary>Quando conviene automatizzare i test SAP?</summary>
+
+Quando un gran numero di casi di test richiede test estesi e ripetuti, come la regressione dopo ogni trasporto, release od ondata di rollout. Al di sotto di quella soglia, il test manuale va bene. Aspetti che il disegno del processo sia stabile, altrimenti ricostruirà i test ogni volta che il disegno cambia.
+
+</details>
+
+<details>
+<summary>SAP Cloud ALM fa automazione dei test?</summary>
+
+Gestisce e avvia i test automatizzati ma non ha un proprio motore di automazione. Si integra con Tricentis Test Automation for SAP, con il Test Automation Tool di S/4HANA Cloud Public Edition e con altri fornitori tramite una Test Automation API pubblica.
+
+</details>
+
+<details>
+<summary>Che cos'è SAP Test Automation by Tricentis?</summary>
+
+È un prodotto software-as-a-service di automazione dei test che SAP vende e supporta come solution extension, e copre applicazioni SAP e di terze parti. Estende la licenza di base Tricentis Test Automation for SAP inclusa in SAP Enterprise Support. Quella licenza è limitata a 5 utenti nominali e 500 esecuzioni di test al mese.
+
+</details>
+
+<details>
+<summary>Si può automatizzare il test di accettazione utente SAP?</summary>
+
+Raramente, e non dovrebbe essere l'obiettivo. La UAT esiste perché gli utenti di business possano giudicare se il sistema funziona per loro, cosa che uno script non può fare. Automatizzi la regressione ripetuta che le sta attorno e lasci la decisione di accettazione alle persone.
+
+</details>
+
+<details>
+<summary>Devo usare ancora SAP Solution Manager per l'automazione dei test?</summary>
+
+Solo se gestisce già il suo landscape. La manutenzione mainstream di Solution Manager 7.2 termina nel 2027, e la sua automazione CBTA non verrà estesa ai prodotti cloud SAP. Pianifichi la nuova automazione attorno a Cloud ALM.
+
+</details>

@@ -1,0 +1,211 @@
+---
+title: "Tests d'acceptation utilisateur SAP : qui en est responsable et comment les mener"
+h1: "Tests d'acceptation utilisateur SAP : qui en est responsable et comment les mener"
+slug: "sap-user-acceptance-testing"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-user-acceptance-testing.webp"
+heroAlt: "Noel D'Costa dans une salle de formation préparée pour les tests d'acceptation utilisateur, avec scripts et fiches de validation"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "s4hana-implementation", "sap-activate", "sap-governance"]
+author: "Noel D'Costa"
+metaTitle: "Recette SAP (UAT) : rôles, scripts et validation"
+metaDescription: "Recette SAP (UAT) : pourquoi le métier en est responsable, quelle durée prévoir, comment préparer, écrire les scripts, trier les anomalies et obtenir la validation."
+primaryKeyword: "recette SAP"
+excerpt: "Les tests d'acceptation utilisateur SAP sont le moment où le métier prouve que le système exécute ses processus avant le go-live. Qui en est responsable, combien de temps ils durent, et comment gérer les scripts, le tri des anomalies et la validation."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "L'UAT SAP, c'est le métier qui prouve, avec ses propres mots, que le système exécute ses processus avant le go-live"
+  - "Le métier est responsable de l'UAT. La DSI et le partenaire d'intégration préparent, accompagnent et corrigent, mais ils n'acceptent pas"
+  - "Prévoyez au moins 6 à 8 semaines d'UAT sur un programme S/4HANA, une fois les tests d'intégration terminés"
+  - "Écrivez les scripts comme des scénarios métier à partir des conceptions de processus validées, pas comme des listes de transactions"
+  - "Triez chaque jour chaque constat d'UAT : anomalie, demande d'évolution, problème de données ou besoin de formation"
+  - "La validation est une décision signée par des responsables de processus nommés, et elle alimente une checklist de bascule détaillée validée à l'avance"
+pullQuote: "Si la DSI valide l'UAT, personne n'a rien accepté. Le métier doit en être responsable."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Activate"
+  - "SAP Cloud ALM"
+  - "SAP Solution Manager"
+  - "SAP Fiori"
+  - "SAP S/4HANA Cloud Private Edition"
+originalUrl: "https://noeldcosta.com/sap-user-acceptance-testing/"
+canonicalUrl: "https://noeldcosta.com/fr/sap-user-acceptance-testing/"
+locale: "fr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Les tests d'acceptation utilisateur SAP (UAT, ou recette) sont la phase où les utilisateurs métier exécutent leurs propres processus dans le système paramétré et l'acceptent formellement avant le go-live. Le métier en est responsable, la DSI et le partenaire d'intégration l'accompagnent, et sur un programme S/4HANA je prévois au moins 6 à 8 semaines.
+
+L'échec de test le plus fréquent que je constate est simple : pas assez de tests en UAT et en tests d'intégration système (SIT). Quand le calendrier glisse, ces deux phases sont comprimées, et les manques apparaissent après le go-live.
+
+Ci-dessous : qui fait quoi, la préparation, les scripts, le tri des anomalies et une validation qui a du sens. Pour la place de l'UAT parmi les autres types de tests, commencez par ma vue d'ensemble [les tests SAP expliqués](/fr/sap-testing-explained/).
+
+## Qui est responsable de l'UAT SAP : le métier, avec l'appui de la DSI et du partenaire
+
+Le métier est responsable des tests d'acceptation utilisateur. C'est ma position, et elle ne doit pas bouger quand le planning se resserre.
+
+La raison est dans le nom. L'acceptation est une décision métier sur la capacité du système à faire tourner l'activité, et seules les personnes qui font tourner l'activité peuvent la prendre. Si la DSI ou le partenaire valide l'UAT, personne n'a rien accepté.
+
+La méthodologie de SAP dit la même chose. Ses [recommandations de stratégie de test pour S/4HANA Cloud Private Edition](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-private-edition/explaining-the-test-strategy_f9e28dee-5e09-49c3-b06c-4c40cfc1f49a) placent l'UAT dans la phase Realize. Les experts paramétrage du partenaire préparent les cas de test manuels, et les experts métier du client les exécutent et documentent les résultats.
+
+Une répartition du travail qui fonctionne ressemble à ceci :
+
+| Rôle | Responsable dans l'UAT de | N'est pas responsable de |
+|---|---|---|
+| Responsables de processus métier | Périmètre des scénarios, critères d'acceptation, validation finale de leur processus | Corriger le paramétrage ou le code |
+| Utilisateurs clés et testeurs | Exécuter les scripts, enregistrer les résultats et les preuves, remonter les constats | Décider seuls qu'une anomalie « n'en est pas une » |
+| Responsable UAT (côté métier) | Plan quotidien, avancement, présidence du tri, rapports de préparation au sponsor | Corrections techniques |
+| Partenaire d'intégration | Rédaction des scripts, préparation du système de test, correction des anomalies, appui aux re-tests | Acceptation |
+| DSI interne | Environnements, accès, interfaces avec les autres systèmes, transports | Acceptation |
+| Équipe données | Chargement et rafraîchissement des données de test, appui aux rapprochements | Conception des scénarios métier |
+
+Le responsable UAT doit venir du métier, pas du partenaire. Une UAT menée par le partenaire dérive vers la preuve que le développement fonctionne, ce qui est une autre question que de savoir si le métier peut travailler avec.
+
+## Préparer l'UAT, et pourquoi elle demande 6 à 8 semaines
+
+L'UAT demande au moins 6 à 8 semaines. En dessous, le métier teste une seule fois le cas nominal, n'a pas le temps de re-tester les corrections et n'atteint jamais les exceptions, là où se trouvent les vrais problèmes.
+
+Ces semaines ne fonctionnent que si l'UAT démarre sur un système stable. La recommandation de SAP est de tester les processus métier une fois les intégrations en place et les données migrées pour le processus. Le SIT doit donc se terminer d'abord, selon des critères de sortie convenus, et mon guide sur la [stratégie de test S/4HANA](/fr/s4hana-testing-strategy/) explique comment ces cycles s'enchaînent.
+
+Avant que le premier testeur ne se connecte, ces éléments doivent être en place :
+
+1. **Des conceptions de processus validées.** Les scripts sont écrits à partir d'elles, et des conceptions non validées donnent des scripts instables.
+2. **Des critères d'entrée atteints et consignés.** SIT terminé, aucune anomalie critique ouverte, et le système de test gelé en dehors des corrections contrôlées.
+3. **Un système de test qui ressemble à la production.** Paramétrage, interfaces, rôles et autorisations tels qu'ils seront au go-live.
+4. **Des données de test réalistes.** Masquées, au niveau de la production, chargées et rapprochées avant le début des tests. Mon guide sur la [gestion des données de test SAP](/fr/sap-test-data-management/) explique comment.
+5. **Des testeurs libérés de leur travail habituel.** Nommez-les, convenez de leurs heures avec leurs managers, et mettez-le par écrit.
+6. **Des testeurs formés au nouveau système.** Une courte présentation des applications Fiori et des transactions qu'ils utiliseront, avant l'UAT et non pendant.
+7. **Un seul outil de gestion des tests.** Scripts, résultats, preuves et anomalies au même endroit, pas dans des tableurs parallèles.
+
+C'est au point 5 que l'UAT échoue généralement sans bruit. Des testeurs à qui l'on demande de caser l'UAT autour de la clôture mensuelle feront passer la clôture d'abord, et ils auront raison.
+
+## Écrire des scripts d'UAT que les utilisateurs métier peuvent exécuter
+
+Un script d'UAT est un scénario métier, pas une liste de transactions. « Créer une commande client » teste un écran. « Prendre la commande d'un nouveau client bloqué pour crédit, la débloquer, la livrer et la facturer » teste l'activité.
+
+Construisez les scripts à partir des conceptions de processus validées, et donnez à chacun un résultat attendu clair, en termes métier. Le testeur doit pouvoir dire réussi ou échoué sans demander à un consultant.
+
+Couvrez quatre types de scénarios :
+
+1. **Les flux principaux.** Les processus quotidiens qui font tourner l'activité, comme order to cash, procure to pay et record to report.
+2. **Les exceptions.** Retours, blocages de crédit, livraisons partielles, changements de prix, extournes et approbations refusées.
+3. **Les fins de période.** Les étapes de clôture mensuelle et annuelle que l'équipe finance exécute réellement, dans l'ordre où elle les exécute.
+4. **Les contrôles de rôles.** Chaque testeur travaille avec le rôle qu'il aura au go-live, pour que les manques d'autorisation apparaissent dès maintenant.
+
+Laissez le partenaire rédiger les scripts, puis demandez aux utilisateurs clés de les réécrire dans leurs propres mots. Si le métier ne peut pas suivre un script sans aide, c'est qu'il a été écrit pour l'équipe de développement.
+
+Dans [SAP Cloud ALM](https://learning.sap.com/courses/implementing-with-sap-cloud-alm/planning-and-executing-testing_ef46a49b-9885-4aaa-841d-5ac9c80a3681), les cas de test manuels partent d'un processus, et les plans de test les regroupent en cycles. Les testeurs indiquent pour chaque étape réussi ou échoué, enregistrent le résultat réel et créent une anomalie depuis l'exécution du test, ce qui conserve le lien entre script et anomalie.
+
+Sur les programmes qui utilisent encore SAP Solution Manager 7.2 pour la gestion des tests, notez que sa maintenance standard prend fin fin 2027 ([SAP Support](https://support.sap.com/en/alm/solution-manager.html)). Prévoyez les nouveaux programmes sur Cloud ALM.
+
+## Le tri des anomalies pendant l'UAT
+
+Tous les constats d'UAT ne sont pas des anomalies. Les traiter tous comme des anomalies submerge le partenaire, et les traiter tous comme des demandes d'évolution masque de vrais échecs.
+
+Organisez une réunion de tri chaque jour de l'UAT. Le responsable UAT côté métier la préside, avec les responsables fonctionnels du partenaire et un représentant de la DSI, et chaque nouveau constat sort de la salle avec un type, une gravité et un responsable.
+
+Une classification simple couvre la plupart des constats :
+
+| Type de constat | Ce que cela signifie | Qui agit | Effet sur la validation |
+|---|---|---|---|
+| Anomalie | Le système ne fait pas ce que dit la conception validée | Le partenaire corrige, le testeur re-teste | Les anomalies critiques et majeures bloquent la validation |
+| Demande d'évolution | La conception a été respectée, mais le métier veut désormais autre chose | L'autorité de conception décide, avec coût et délai | Ne bloque pas, sauf si le métier dit que le processus ne peut pas tourner sans |
+| Problème de données | Données de base ou transactionnelles erronées ou manquantes | L'équipe données corrige, le testeur re-teste | Bloque si les mêmes données partent en production |
+| Problème de formation ou d'utilisation | Le système fonctionne, mais le testeur ne savait pas comment l'utiliser | Le responsable formation met à jour les supports | Ne bloque pas, mais alimente le plan de formation |
+| Problème d'autorisation | Le rôle manque d'accès, ou en a trop | L'équipe sécurité ajuste le rôle | Bloque pour le rôle concerné |
+
+Convenez des définitions de gravité avant le début de l'UAT, en termes métier. Une anomalie critique arrête un processus sans contournement. Une anomalie majeure a un contournement que le métier ne peut pas tenir à volume réel.
+
+Surveillez la colonne des demandes d'évolution. Une longue liste de demandes d'évolution en UAT signifie généralement que le métier n'a pas été correctement impliqué dans la conception, et c'est un problème à régler avant la vague suivante.
+
+## Obtenir une validation d'UAT qui tient
+
+La formation SAP Activate indique que la phase Realize est terminée une fois les tests d'acceptation utilisateur achevés et validés. Faites de cette validation un document, pas un fil d'e-mails.
+
+Chaque responsable de processus métier signe pour son propre processus. La validation doit consigner :
+
+1. **Ce qui a été testé.** Les scénarios exécutés, réussis et échoués, avec les preuves conservées dans l'outil de test.
+2. **Ce qui reste ouvert.** Chaque anomalie ouverte, avec sa gravité, son responsable et sa date cible.
+3. **Ce qui a été accepté avec un contournement.** Chaque cas nommé, avec le contournement que le métier a accepté d'appliquer.
+4. **Qui a signé et quand.** Une personne nommée par processus, pas un comité.
+
+Rédigez les critères de sortie avant le début de l'UAT et ne les modifiez pas quand les résultats arrivent. Si le métier veut tout de même passer en production avec des manques, consignez-le comme une décision signée. Mon guide sur les [quality gates SAP](/fr/sap-quality-gates-implementation/) explique comment ce jalon s'insère dans les transitions de phase.
+
+La validation de l'UAT n'est pas la décision de go-live. Elle l'alimente.
+
+Le critère de go-live sur lequel j'insiste est une checklist de bascule détaillée, validée à l'avance. La validation de l'UAT en est une ligne, à côté du rapprochement des données, de la formation et de la répétition de bascule.
+
+Après la validation, protégez ce qui a été accepté. Chaque correction et chaque transport d'ici au go-live doit être re-testé, et mon guide sur les [tests de non-régression SAP](/fr/sap-regression-testing/) explique comment garder cela sous contrôle.
+
+## Un modèle d'UAT simple
+
+Vous n'avez pas besoin d'un long document. Il vous faut un plan qui répond à chaque fois aux mêmes questions, rédigé avant le début de l'UAT et signé par le métier.
+
+Un plan simple suffit :
+
+| Section | Ce qu'elle contient | Responsable |
+|---|---|---|
+| Périmètre | Processus, unités organisationnelles et rôles du périmètre, et ce qui est explicitement exclu | Responsables de processus métier |
+| Calendrier | Dates de début et de fin, cycles, fenêtres de re-test, exécutions de fin de période | Responsable UAT |
+| Équipe | Testeurs par processus, leur libération de leur travail habituel, contacts d'appui du partenaire et de la DSI | Responsable UAT et managers |
+| Critères d'entrée | Sortie du SIT atteinte, système de test gelé, données chargées et rapprochées, testeurs formés | Responsable UAT avec le directeur de programme |
+| Environnement et données | Système de test, interfaces du périmètre, données masquées au niveau de la production, plan de rafraîchissement | DSI et équipe données |
+| Scripts | Liste des scénarios par processus, résultats attendus, lien vers la conception du processus | Le partenaire rédige, les utilisateurs clés approuvent |
+| Processus des anomalies | Types de constats, définitions de gravité, tri quotidien, règles de re-test | Le responsable UAT préside le tri |
+| Reporting | Avancement quotidien, anomalies ouvertes par gravité, points bloquants remontés au sponsor | Responsable UAT |
+| Critères de sortie | Seuils d'anomalies ouvertes par gravité, scénarios réussis, contournements acceptés | Responsables de processus métier |
+| Validation | Bloc de signature par responsable de processus, liste des contournements acceptés | Responsables de processus métier et sponsor |
+
+Gardez le même modèle d'une vague à l'autre. Le deuxième déploiement doit réutiliser les scripts et les enseignements de la première vague, pas repartir de zéro.
+
+## Par où commencer
+
+Nommez dès ce mois-ci votre responsable UAT côté métier, et demandez à chaque responsable de processus de désigner des testeurs avec du temps libéré. Inscrivez ensuite 6 à 8 semaines d'UAT au plan après le SIT, et défendez-les quand le calendrier se resserre.
+
+Si votre UAT est menée par le partenaire, ou si elle est sans cesse comprimée, j'aide les programmes à la mettre en place correctement. Vous pouvez [me contacter ici](/fr/contact-noel-erp-support/).
+
+## Questions fréquentes
+
+<details>
+<summary>Qu'est-ce que la recette (tests d'acceptation utilisateur) dans SAP ?</summary>
+
+C'est la phase où les utilisateurs métier testent le système SAP paramétré sur leurs processus réels et l'acceptent formellement avant le go-live. Dans SAP Activate, elle a lieu dans la phase Realize, après les tests d'intégration. Les utilisateurs clés exécutent des scripts de scénarios, enregistrent les résultats et remontent les constats, et les responsables de processus valident.
+
+</details>
+
+<details>
+<summary>Qui est responsable de l'UAT dans un projet SAP ?</summary>
+
+Le métier : les responsables de processus décident du périmètre et valident, et les utilisateurs clés exécutent les tests. Le partenaire d'intégration rédige les scripts et corrige les anomalies, et la DSI interne fournit les environnements, les accès et les interfaces. Ni la DSI ni le partenaire ne doivent accepter le système à la place du métier.
+
+</details>
+
+<details>
+<summary>Combien de temps doit durer l'UAT SAP ?</summary>
+
+Prévoyez au moins 6 à 8 semaines sur un programme S/4HANA. Cela laisse le temps d'exécuter les flux principaux, les exceptions et les étapes de fin de période, puis de re-tester les corrections. Une UAT plus courte teste généralement le cas nominal une seule fois et découvre le reste après le go-live.
+
+</details>
+
+<details>
+<summary>Quelle est la différence entre SIT et UAT dans SAP ?</summary>
+
+Les tests d'intégration système (SIT) vérifient que les processus et les interfaces fonctionnent ensemble à travers les modules et les systèmes, et sont exécutés principalement par l'équipe projet. L'UAT vérifie que le métier peut exécuter ses processus sur le système, et elle est exécutée par les utilisateurs métier. Le SIT doit être terminé avant le début de l'UAT.
+
+</details>
+
+<details>
+<summary>Que doit contenir une validation d'UAT ?</summary>
+
+Les scénarios testés et leurs résultats, chaque anomalie ouverte avec son responsable et sa date, les contournements acceptés par le métier, et une signature nominative par responsable de processus. Convenez des critères de sortie avant le début de l'UAT. Une validation avec des manques doit être une décision métier consignée.
+
+</details>
+
+<details>
+<summary>Peut-on utiliser SAP Cloud ALM pour l'UAT ?</summary>
+
+Oui. SAP Cloud ALM prend en charge des cas de test manuels construits à partir des processus, des plans de test pour chaque cycle, l'enregistrement étape par étape du résultat réussi ou échoué et la création d'anomalies depuis l'exécution des tests. Selon les recommandations de SAP, les experts du partenaire préparent les cas de test, et les experts métier du client les exécutent et y documentent les résultats.
+
+</details>

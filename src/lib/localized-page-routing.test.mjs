@@ -84,8 +84,8 @@ describe("Phase 3B localized MDX page routing", () => {
     const params = getLocalizedContentParams();
     const keys = params.map(({ locale, slug }) => `${locale}/${slug.join("/")}`);
 
-    // 99 articles in 16 languages plus the routed pages above.
-    expect(params).toHaveLength(99 * 16 + 29 * PAGE_LOCALES.length);
+    // 105 articles in 16 languages plus the routed pages above.
+    expect(params).toHaveLength(105 * 16 + 29 * PAGE_LOCALES.length);
     expect(new Set(keys).size).toBe(params.length);
   });
 

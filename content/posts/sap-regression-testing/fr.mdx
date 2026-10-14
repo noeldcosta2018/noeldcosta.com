@@ -1,0 +1,204 @@
+---
+title: "Tests de non-régression SAP : mises à niveau, versions et périmètre"
+h1: "Tests de non-régression SAP : mises à niveau, versions et périmètre"
+slug: "sap-regression-testing"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-regression-testing.webp"
+heroAlt: "Deux baies de serveurs identiques côte à côte, l'une pour le projet et l'autre pour l'exploitation courante"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "sap-cloud-alm", "s4hana-implementation", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "Tests de non-régression SAP : mises à niveau et cloud"
+metaDescription: "Les tests de non-régression SAP : ce qui les déclenche, les cycles de versions cloud, l'analyse d'impact, quand automatiser et pourquoi séparer projet et run."
+primaryKeyword: "tests de non-régression SAP"
+excerpt: "Les tests de non-régression SAP prouvent qu'une modification, une mise à niveau ou une nouvelle version n'a pas cassé des processus qui fonctionnaient déjà. Comment en définir le périmètre par l'analyse d'impact, suivre le rythme des versions cloud et éviter que les évolutions du projet et les corrections du support se gênent."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "Les tests de non-régression prouvent qu'une modification n'a pas cassé des processus qui fonctionnaient déjà"
+  - "SAP Cloud ERP public edition est mis à niveau deux fois par an, et votre fenêtre de non-régression se situe entre la mise à niveau du système de test et celle de la production"
+  - "Private edition suit un cycle de versions de deux ans avec des feature pack stacks tous les six mois ; SAP réalise la mise à niveau technique, les tests vous reviennent"
+  - "Utilisez l'analyse d'impact pour définir le périmètre de l'exécution, puis testez d'abord les processus métier les plus à risque"
+  - "Automatisez quand de nombreux cas de test doivent être testés de façon approfondie et répétée ; en dessous, les tests manuels conviennent"
+  - "Pendant un programme, faites tourner des environnements séparés pour le projet et l'exploitation courante, afin que chaque flux de modifications soit testé en non-régression séparément"
+pullQuote: "Séparez les évolutions du projet et les corrections du support en production, et testez chacune là où elle doit l'être."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Cloud ERP"
+  - "SAP Cloud ALM"
+  - "SAP Solution Manager"
+  - "Business Process Change Analyzer"
+  - "Scope and Effort Analyzer"
+  - "Tricentis LiveCompare"
+  - "Tricentis Tosca"
+  - "Panaya"
+  - "Worksoft"
+originalUrl: "https://noeldcosta.com/sap-regression-testing/"
+canonicalUrl: "https://noeldcosta.com/fr/sap-regression-testing/"
+locale: "fr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Les tests de non-régression SAP prouvent qu'une modification, un support package ou une nouvelle version n'a pas cassé des processus métier qui fonctionnaient déjà. Vous en définissez le périmètre par l'analyse d'impact, vous exécutez d'abord les processus les plus à risque et vous les répétez à chaque évolution du système, pas une seule fois avant le go-live.
+
+Les déclencheurs sont les transports, les mises à niveau et les versions cloud. Sur SAP Cloud ERP public edition, c'est SAP qui fixe les dates de mise à niveau, et votre suite de non-régression doit donc être prête avant l'arrivée de la version.
+
+La non-régression est l'un des types de tests de mon [guide des tests SAP](/fr/sap-testing-explained/). Cet article couvre ce qui la déclenche, comment en définir le périmètre, quand l'automatiser et comment éviter qu'un programme et le support en production cassent le travail l'un de l'autre.
+
+## Ce que couvrent les tests de non-régression SAP
+
+SAP est un système intégré. Une modification d'une condition de prix peut casser la facturation, et un nouveau champ sur une commande client peut bloquer une interface. Un support package peut modifier un programme standard sur lequel vous comptez.
+
+Les tests de non-régression rejouent des tests sur des processus qui n'étaient pas censés changer. Les tests fonctionnels demandent si la nouveauté fonctionne, la non-régression demande si tout le reste fonctionne toujours.
+
+Ils s'appliquent sur toute la durée de vie du système, pas seulement pendant un programme :
+
+1. **Les transports.** Chaque modification transportée du développement vers la qualité est un risque de régression pour les processus qu'elle touche.
+2. **Les support packages et les feature packs.** Les corrections et les nouvelles fonctionnalités SAP modifient le code standard sous votre paramétrage.
+3. **Les mises à niveau de version.** Le passage à une nouvelle version, ou une version cloud que vous n'avez pas planifiée, change beaucoup plus de choses à la fois.
+4. **Les conversions.** Une conversion d'ECC vers S/4HANA conserve votre paramétrage et votre code spécifique, et tout ce que vous avez conservé doit donc être re-testé. Mon [guide de migration d'ECC vers S/4HANA](/fr/ecc-to-s4hana-migration/) explique où cela se place dans le plan.
+5. **Les intégrations et les extensions.** Une modification dans un système connecté ou dans une extension side-by-side peut casser le côté SAP sans aucun transport SAP.
+
+Gardez la suite de non-régression séparée des tests écrits pour les nouvelles fonctions. La suite est une bibliothèque stable des processus que le métier ne peut pas se permettre de perdre, comme order to cash, procure to pay et la clôture mensuelle.
+
+## Ce que les versions cloud changent à la non-régression
+
+On-premise, vous choisissez quand mettre à niveau. Dans les éditions cloud, SAP fixe une plus grande partie du calendrier, et la non-régression devient un engagement récurrent du calendrier.
+
+### Public edition : deux mises à niveau par an
+
+SAP Cloud ERP public edition, anciennement S/4HANA Cloud Public Edition, reçoit deux mises à niveau majeures par an, en février et en août. De plus petites livraisons de fonctionnalités arrivent entre les deux.
+
+SAP met d'abord à niveau le système de test, puis la production quelques semaines plus tard. Cet intervalle est votre fenêtre de non-régression, et il n'y a pas de seconde chance une fois la production mise à niveau.
+
+Le [cours Cloud ALM de SAP sur les tests après mise à niveau et la non-régression](https://learning.sap.com/courses/implementing-with-sap-cloud-alm/conducting-post-upgrade-and-regression-testing-for-sap-s-4hana-cloud-public-edition_b6d0c843-9235-4b3a-a6b9-f0a5a62f9360) recommande de créer un plan de test de non-régression dans Cloud ALM et de le réutiliser à chaque version. Public edition inclut aussi un outil d'automatisation des tests gratuit avec des scripts de test prélivrés, ce qui donne un point de départ pour les processus standard.
+
+### Private edition : un cycle de versions de deux ans
+
+SAP Cloud ERP Private, l'édition privée vendue via RISE with SAP, suit le cycle de versions on-premise. Selon [SAP Learning](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-private-edition/navigating-release-upgrades_ae2d796c-bafd-4e04-8b41-562ebda9eb49), une nouvelle version de base sort tous les deux ans, des feature pack stacks suivent tous les six mois et chaque version bénéficie de sept ans de maintenance standard.
+
+Vous devez installer au moins une mise à niveau tous les sept ans pour rester en maintenance standard, et RISE vous permet de demander une mise à niveau par an. SAP réalise la mise à niveau technique, mais la planification, la préparation et les tests restent à la charge du client ou du partenaire.
+
+Cette répartition compte pour les budgets. La mise à niveau elle-même peut être incluse dans l'abonnement, alors que les tests de non-régression qui l'entourent ne le sont pas.
+
+Ce tableau met les déclencheurs de non-régression côte à côte :
+
+| Modification | Fréquence | Qui fixe la date | Ce que l'exécution de non-régression doit couvrir |
+|---|---|---|---|
+| Transport vers la qualité | Quotidienne ou hebdomadaire | Votre équipe | Les processus que touchent les objets modifiés |
+| Mise à niveau public edition | Deux fois par an, février et août | SAP | Tous les processus du périmètre, la logique spécifique en premier, dans la fenêtre avant la production |
+| Feature pack stack private edition | Tous les six mois, si vous le prenez | Vous, dans le calendrier de SAP | Les fonctions standard modifiées que vous utilisez, plus le code spécifique |
+| Mise à niveau de version private edition | Au moins tous les sept ans, jusqu'à une par an sur demande avec RISE | Vous, avec SAP | La suite complète, le code spécifique et les intégrations |
+| Conversion d'ECC vers S/4HANA | Une fois | Vous | Tout ce que vous avez conservé |
+
+## Définir le périmètre par l'analyse d'impact
+
+Exécuter la suite complète après chaque modification est lent et coûteux. En exécuter trop peu laisse passer des anomalies, et le manque se voit en production.
+
+L'analyse d'impact se situe entre les deux. Elle compare ce qui a changé avec ce que vous utilisez réellement et liste les processus et objets les plus à risque, pour que l'exécution de non-régression commence par eux.
+
+Voici les outils que vous rencontrerez :
+
+1. **SAP Solution Manager.** Le Business Process Change Analyzer, qui fait partie de la Test Suite, montre quels processus métier une modification affecte. Le [Scope and Effort Analyzer](https://support.sap.com/en/alm/solution-manager/processes-72/scope-effort-analyzer.html) estime l'impact d'un support package ou d'un enhancement package avant son installation, et SAP le présente comme un outil de planification.
+2. **SAP Cloud ALM.** Cloud ALM gère les plans de test de non-régression, l'exécution et les anomalies, et se connecte aux outils d'automatisation. Pour les mises à niveau de public edition, l'outil Release Assessment and Scope Dependency de SAP montre quelles modifications d'une version affectent votre périmètre.
+3. **Tricentis LiveCompare.** Selon la [documentation de LiveCompare](https://docs.tricentis.com/livecompare-2026.1/content/welcome_to_livecompare.htm), il identifie un ensemble minimal d'objets les plus à risque à tester, puis indique les objets couverts et les manques de couverture par rapport à votre référentiel de tests. SAP le revend sous le nom SAP Change Impact Analysis by Tricentis, et il s'intègre à Tricentis Tosca.
+4. **Panaya.** Le [produit de Panaya pour les mises à niveau SAP](https://www.panaya.com/sap/sap-upgrades/) combine analyse d'impact des modifications, correction de code, gestion des tests et automatisation, et couvre les versions S/4HANA, les feature pack stacks et les support package stacks.
+
+Vérifiez où en est votre Solution Manager avant de construire dessus. [SAP Support](https://support.sap.com/en/alm/solution-manager.html) indique que la maintenance standard de Solution Manager 7.2 prend fin fin 2027. Les clients qui souscrivent la maintenance étendue de Business Suite 7 le conservent jusqu'à fin 2030, et SAP recommande de passer à Cloud ALM avant fin 2027.
+
+L'analyse d'impact réduit le périmètre. Elle ne le fixe pas à elle seule : gardez donc un socle de processus critiques pour le métier qui s'exécutent à chaque fois, quoi que dise l'outil.
+
+Ma comparaison des [outils de test et de validation SAP](/fr/sap-testing-validation-tools-comparison/) explique comment ces produits s'articulent et ce que votre contrat de support SAP inclut déjà.
+
+## Automatiser quand le volume et la répétition le justifient
+
+C'est sur la non-régression que l'automatisation des tests se rentabilise, car les mêmes tests sont rejoués encore et encore. Cela ne veut pas dire que toute suite de non-régression doit être automatisée.
+
+Ma règle est simple. Quand un grand nombre de cas de test doivent être testés de façon approfondie et répétée, automatisez. En dessous, les tests manuels conviennent.
+
+Un client public edition qui exécute une suite complète deux fois par an, plus les transports entre les deux, atteint vite ce seuil. Un petit système private edition qui change quelques fois par an peut ne pas l'atteindre.
+
+Posez-vous ces questions avant d'acheter :
+
+1. **Combien de cas de test de non-régression avez-vous,** et combien s'exécutent à chaque cycle ?
+2. **À quelle fréquence les exécutez-vous,** en comptant les transports, les feature packs et les mises à niveau, pas seulement les mises à niveau de version ?
+3. **Combien de temps dure une exécution manuelle,** et tient-elle dans la fenêtre de non-régression ?
+4. **Qui maintiendra les scripts** quand les écrans et les processus changent ?
+
+La maintenance des scripts est le coût que l'on sous-estime. Une suite automatisée que personne ne met à jour échoue pour des raisons qui n'ont rien à voir avec le système, et l'équipe cesse de lui faire confiance.
+
+Sur les programmes que j'ai dirigés, mes équipes ont utilisé Tricentis Tosca, Worksoft, Panaya, SAP Cloud ALM, SAP Solution Manager et UiPath. Choisissez selon l'adéquation à vos systèmes et à votre équipe, pas selon la démonstration. Mon [guide de l'automatisation des tests SAP](/fr/sap-test-automation-guide/) explique par où commencer et comment juger le retour sur investissement.
+
+## Séparer les évolutions du projet et du run pendant un programme
+
+Le problème de non-régression le plus difficile sur un programme SAP n'est pas l'outillage. Ce sont deux flux de modifications qui traversent les mêmes systèmes en même temps.
+
+Pendant que le programme construit de nouvelles fonctions, le support continue de corriger la production. Si les deux flux partagent un même chemin de développement et de qualité, une correction du support peut casser les tests du projet et une évolution du projet peut se glisser dans une livraison du support. Plus personne ne peut alors dire quelle modification a causé un échec.
+
+Ma réponse consiste à faire tourner deux environnements distincts. L'un pour le projet et l'autre pour l'exploitation courante (BAU), afin que les corrections du support et les évolutions du projet soient testées séparément.
+
+<explainer-compare title="Deux environnements pendant un programme SAP" caption="Chaque flux de modifications a son propre chemin vers la production, et un échec de non-régression pointe donc vers un seul ensemble de modifications." options="Environnement projet|Environnement BAU" criteria="Ce qui y transite => Nouvelles fonctions, paramétrage et code spécifique du programme ; Corrections et petites évolutions du système en production|Cible de la non-régression => Processus modifiés par le programme, plus la suite socle ; Processus touchés par chaque correction, plus la suite socle|Passage en production => Au go-live ou lors d'une vague de déploiement ; Par livraisons du support, au rythme habituel"></explainer-compare>
+
+Deux environnements règlent la séparation, puis créent une nouvelle tâche. Chaque correction BAU doit aussi atteindre l'environnement projet, sinon le projet passe en production sans elle.
+
+Prévoyez-le dès le départ :
+
+1. **Reportez chaque modification BAU dans l'environnement projet** à un rythme fixe, et suivez chacune.
+2. **Rejouez les tests projet concernés** après chaque report, pas seulement à la fin.
+3. **Gelez les modifications BAU** à l'approche de la bascule, sauf les corrections urgentes qui passent par les deux environnements.
+4. **Exécutez la suite de non-régression complète** dans l'environnement projet avant le go-live, avec des données masquées au niveau de la production.
+
+Le second environnement coûte de l'argent, mais un go-live où personne ne peut dire quelle modification a cassé la facturation aussi. Ma [stratégie de test S/4HANA](/fr/s4hana-testing-strategy/) montre où les cycles de non-régression se placent à côté des tests d'intégration et des tests d'acceptation utilisateur.
+
+## Par où commencer
+
+Construisez une suite de non-régression avant d'en avoir besoin. Listez les processus que le métier ne peut pas se permettre de perdre, écrivez un test pour chacun et exécutez-les une fois à la main pour voir combien de temps prend un cycle complet.
+
+Ce chiffre vous dit si la prochaine fenêtre de mise à niveau est réaliste et si l'automatisation sera rentable. Si vous êtes en cours de programme, vérifiez si les évolutions du projet et les modifications BAU partagent un même chemin vers la production.
+
+Si vous souhaitez un regard indépendant sur votre approche de non-régression ou votre plan de mise à niveau, j'accompagne les organisations sur ce sujet. Vous pouvez [me contacter ici](/fr/contact-noel-erp-support/).
+
+## Questions fréquentes
+
+<details>
+<summary>Que sont les tests de non-régression SAP ?</summary>
+
+Ils rejouent des tests sur des processus métier SAP qui n'étaient pas censés changer, pour prouver qu'un transport, un support package, une mise à niveau ou une nouvelle version ne les a pas cassés. Ils couvrent des flux intégrés comme order to cash et la clôture mensuelle, pas seulement les objets modifiés.
+
+</details>
+
+<details>
+<summary>À quelle fréquence SAP Cloud ERP public edition a-t-il besoin de tests de non-régression ?</summary>
+
+Au moins deux fois par an, car SAP met à niveau public edition en février et en août. SAP met d'abord à niveau le système de test, puis la production quelques semaines plus tard, et l'exécution de non-régression doit donc se terminer dans cet intervalle. Les transports entre les versions demandent leurs propres exécutions, plus petites.
+
+</details>
+
+<details>
+<summary>Qui réalise les tests de non-régression lors d'une mise à niveau RISE with SAP private edition ?</summary>
+
+SAP réalise la mise à niveau technique. La planification, la préparation et les tests restent à la charge du client ou du partenaire d'intégration : budgétez donc l'effort de non-régression séparément de l'abonnement.
+
+</details>
+
+<details>
+<summary>Quels outils aident à définir le périmètre des tests de non-régression SAP ?</summary>
+
+Les outils d'analyse d'impact comparent ce qui a changé avec ce que vous utilisez. Les options courantes sont le Business Process Change Analyzer et le Scope and Effort Analyzer dans SAP Solution Manager, et l'outil Release Assessment and Scope Dependency pour public edition. Tricentis LiveCompare et Panaya font le même travail, tandis que SAP Cloud ALM gère les plans de test de non-régression et leur exécution.
+
+</details>
+
+<details>
+<summary>Faut-il automatiser les tests de non-régression SAP ?</summary>
+
+Automatisez quand un grand nombre de cas de test doivent être testés de façon approfondie et répétée. En dessous, les tests manuels conviennent. Comptez vos cas de test et leur fréquence d'exécution avant d'acheter un outil, et budgétez la maintenance des scripts.
+
+</details>
+
+<details>
+<summary>Comment faire de la non-régression pendant un programme SAP tout en supportant le système en production ?</summary>
+
+Faites tourner deux environnements distincts, l'un pour le projet et l'autre pour l'exploitation courante. Les corrections du support et les évolutions du projet sont alors testées séparément. Reportez chaque correction BAU dans l'environnement projet et rejouez les tests concernés.
+
+</details>

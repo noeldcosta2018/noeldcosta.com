@@ -1,0 +1,204 @@
+---
+title: "SAP-regressietesten: upgrades, releases en scope"
+h1: "SAP-regressietesten: upgrades, releases en scope"
+slug: "sap-regression-testing"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-regression-testing.webp"
+heroAlt: "Twee identieke serverracks naast elkaar, een voor het project en een voor de lopende bedrijfsvoering"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "sap-cloud-alm", "s4hana-implementation", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "SAP-regressietesten: upgrades, cloudreleases en scope"
+metaDescription: "SAP-regressietesten uitgelegd: wat het in gang zet, cloudreleasecycli, tools voor impactanalyse, wanneer u automatiseert en waarom u project en BAU scheidt."
+primaryKeyword: "SAP regressietest"
+excerpt: "SAP-regressietesten bewijst dat een wijziging, een upgrade of een nieuwe release geen processen heeft gebroken die al werkten. Hoe u de scope bepaalt met impactanalyse, cloudreleases bijhoudt en voorkomt dat project- en supportwijzigingen elkaar in de weg zitten."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "Regressietesten bewijst dat een wijziging geen processen heeft gebroken die al werkten"
+  - "SAP Cloud ERP public edition krijgt twee upgrades per jaar, en uw regressievenster ligt tussen de upgrade van het testsysteem en die van productie"
+  - "Private edition volgt een releasecyclus van twee jaar met feature pack stacks om de zes maanden; SAP voert de technische upgrade uit, het testen is van u"
+  - "Bepaal de scope van de run met impactanalyse en test daarna eerst de riskantste bedrijfsprocessen"
+  - "Automatiseer als er veel testgevallen zijn die uitgebreid en herhaald getest moeten worden; daaronder is handmatig testen prima"
+  - "Draai tijdens een programma gescheiden project- en BAU-landschappen, zodat elke reeks wijzigingen apart op regressie wordt getest"
+pullQuote: "Houd projectwijzigingen en live supportwijzigingen uit elkaar, en test elk daar waar het hoort."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Cloud ERP"
+  - "SAP Cloud ALM"
+  - "SAP Solution Manager"
+  - "Business Process Change Analyzer"
+  - "Scope and Effort Analyzer"
+  - "Tricentis LiveCompare"
+  - "Tricentis Tosca"
+  - "Panaya"
+  - "Worksoft"
+originalUrl: "https://noeldcosta.com/sap-regression-testing/"
+canonicalUrl: "https://noeldcosta.com/nl/sap-regression-testing/"
+locale: "nl"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP-regressietesten bewijst dat een wijziging, een supportpackage of een nieuwe release geen bedrijfsprocessen heeft gebroken die al werkten. U bepaalt de scope met impactanalyse, test eerst de riskantste processen en herhaalt het elke keer dat het systeem verandert, niet één keer vóór de go-live.
+
+De aanleidingen zijn transporten, upgrades en cloudreleases. Op SAP Cloud ERP public edition bepaalt SAP de upgradedata, dus uw regressiesuite moet klaar zijn voordat de release er is.
+
+Regressie is een van de testsoorten in mijn [gids over SAP-testen](/nl/sap-testing-explained/). Dit artikel behandelt wat regressietesten in gang zet, hoe u de scope bepaalt, wanneer u automatiseert en hoe u voorkomt dat een programma en de live support elkaars werk breken.
+
+## Wat SAP-regressietesten dekt
+
+SAP is een geïntegreerd systeem. Een wijziging in een prijsconditie kan de facturering breken, en een nieuw veld op een verkooporder kan een interface stilleggen. Een supportpackage kan een standaardprogramma veranderen waar u op leunt.
+
+Regressietesten voert opnieuw tests uit op processen die niet hoorden te veranderen. Functioneel testen vraagt of het nieuwe werkt; regressie vraagt of al het andere nog steeds werkt.
+
+Het geldt voor de hele levensduur van het systeem, niet alleen tijdens een programma:
+
+1. **Transporten.** Elke wijziging die van ontwikkeling naar kwaliteit gaat, is een regressierisico voor de processen die ze raakt.
+2. **Supportpackages en feature packs.** Correcties en nieuwe functies van SAP veranderen standaardcode onder uw configuratie.
+3. **Release-upgrades.** Een overstap naar een nieuwe release, of een cloudrelease die u niet zelf hebt gepland, verandert veel meer in één keer.
+4. **Conversies.** Een conversie van ECC naar S/4HANA behoudt uw configuratie en maatwerkcode, dus alles wat u hebt behouden, moet opnieuw worden getest. Mijn [gids voor de migratie van ECC naar S/4HANA](/nl/ecc-to-s4hana-migration/) legt uit waar dat in het plan valt.
+5. **Integraties en extensies.** Een wijziging in een gekoppeld systeem of een side-by-side-extensie kan de SAP-kant breken zonder enig SAP-transport.
+
+Houd de regressiesuite gescheiden van de tests die voor nieuwe functies zijn geschreven. De suite is een stabiele bibliotheek van de processen die de business niet kan missen, zoals order to cash, procure to pay en de maandafsluiting.
+
+## Hoe cloudreleases regressietesten veranderen
+
+On-premise kiest u zelf wanneer u upgradet. In de cloudedities bepaalt SAP meer van de planning, en regressietesten wordt een terugkerende verplichting in de kalender.
+
+### Public edition: twee upgrades per jaar
+
+SAP Cloud ERP public edition, voorheen S/4HANA Cloud Public Edition, krijgt twee grote upgrades per jaar, in februari en augustus. Daartussen komen kleinere leveringen van nieuwe functies.
+
+SAP upgradet eerst het testsysteem en een paar weken later productie. Die tussenruimte is uw regressievenster, en als productie eenmaal is geüpgraded, is er geen tweede kans.
+
+De [Cloud ALM-cursus van SAP over post-upgrade- en regressietesten](https://learning.sap.com/courses/implementing-with-sap-cloud-alm/conducting-post-upgrade-and-regression-testing-for-sap-s-4hana-cloud-public-edition_b6d0c843-9235-4b3a-a6b9-f0a5a62f9360) raadt aan een regressietestplan in Cloud ALM te maken en dat voor elke release te hergebruiken. Public edition bevat ook een gratis tool voor testautomatisering met vooraf geleverde testscripts, zodat de standaardprocessen een vertrekpunt hebben.
+
+### Private edition: een releasecyclus van twee jaar
+
+SAP Cloud ERP Private, de private edition die via RISE with SAP wordt verkocht, volgt de releasecyclus van on-premise. Volgens [SAP Learning](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-private-edition/navigating-release-upgrades_ae2d796c-bafd-4e04-8b41-562ebda9eb49) verschijnt er elke twee jaar een nieuwe basisrelease, volgen feature pack stacks om de zes maanden en heeft elke release zeven jaar mainstream maintenance.
+
+U moet minstens eens in de zeven jaar een upgrade installeren om in mainstream maintenance te blijven, en onder RISE kunt u één upgrade per jaar aanvragen. SAP voert de technische upgrade uit, maar planning, voorbereiding en testen blijven de taak van de klant of de partner.
+
+Die verdeling doet ertoe voor de begroting. De upgrade zelf zit misschien in het abonnement, het regressietesten eromheen niet.
+
+Deze tabel zet de aanleidingen voor regressie naast elkaar:
+
+| Wijziging | Hoe vaak | Wie bepaalt de datum | Wat de regressierun moet dekken |
+|---|---|---|---|
+| Transport naar kwaliteit | Dagelijks of wekelijks | Uw team | Processen die de gewijzigde objecten raken |
+| Upgrade van public edition | Twee keer per jaar, februari en augustus | SAP | Elk proces in scope, eigen logica eerst, in het venster vóór productie |
+| Feature pack stack van private edition | Om de zes maanden, als u die afneemt | U, binnen het schema van SAP | Gewijzigde standaardfuncties die u gebruikt, plus maatwerkcode |
+| Release-upgrade van private edition | Minstens eens in de zeven jaar, op aanvraag tot één per jaar onder RISE | U, samen met SAP | Volledige suite, maatwerkcode en integraties |
+| Conversie van ECC naar S/4HANA | Eén keer | U | Alles wat u hebt behouden |
+
+## Bepaal de scope met impactanalyse
+
+De volledige suite na elke wijziging draaien is traag en duur. Te weinig draaien laat defecten door, en het gat wordt zichtbaar in productie.
+
+Impactanalyse zit daartussen. Ze vergelijkt wat er is veranderd met wat u werkelijk gebruikt en somt de processen en objecten op met het grootste risico, zodat de regressierun daarmee begint.
+
+Dit zijn de tools die u tegenkomt:
+
+1. **SAP Solution Manager.** De Business Process Change Analyzer, onderdeel van de Test Suite, laat zien welke bedrijfsprocessen een wijziging raakt. De [Scope and Effort Analyzer](https://support.sap.com/en/alm/solution-manager/processes-72/scope-effort-analyzer.html) schat de impact van een supportpackage of enhancement package in voordat u het installeert, en SAP noemt het een planningstool.
+2. **SAP Cloud ALM.** Cloud ALM beheert regressietestplannen, uitvoering en defecten, en koppelt met automatiseringstools. Voor upgrades van public edition laat de tool Release Assessment and Scope Dependency van SAP zien welke wijzigingen in een release uw scope raken.
+3. **Tricentis LiveCompare.** Volgens de [documentatie van LiveCompare](https://docs.tricentis.com/livecompare-2026.1/content/welcome_to_livecompare.htm) bepaalt het een minimale set van objecten met het hoogste risico om te testen en rapporteert het daarna test hits en test gaps tegen uw testrepository. SAP verkoopt het door als SAP Change Impact Analysis by Tricentis, en het integreert met Tricentis Tosca.
+4. **Panaya.** Het [SAP-upgradeproduct van Panaya](https://www.panaya.com/sap/sap-upgrades/) combineert impactanalyse van wijzigingen, codecorrectie, testmanagement en automatisering, en dekt S/4HANA-versies, feature pack stacks en support package stacks.
+
+Controleer hoe uw Solution Manager ervoor staat voordat u erop bouwt. Volgens [SAP Support](https://support.sap.com/en/alm/solution-manager.html) eindigt de mainstream maintenance voor Solution Manager 7.2 eind 2027. Klanten die extended maintenance voor Business Suite 7 afnemen, houden die tot eind 2030, en SAP raadt aan vóór eind 2027 over te stappen op Cloud ALM.
+
+Impactanalyse versmalt de scope. Ze bepaalt die niet in haar eentje, dus houd een kern van bedrijfskritische processen aan die elke keer draaien, wat de tool ook zegt.
+
+Mijn vergelijking van [SAP-tools voor testen en validatie](/nl/sap-testing-validation-tools-comparison/) behandelt hoe deze producten samenhangen en wat uw SAP-supportcontract al omvat.
+
+## Automatiseer als volume en herhaling het rechtvaardigen
+
+Bij regressie verdient testautomatisering zich terug, omdat dezelfde tests steeds opnieuw draaien. Dat betekent niet dat elke regressiesuite geautomatiseerd moet worden.
+
+Mijn regel is eenvoudig. Als er een groot aantal testgevallen is dat uitgebreid en herhaald getest moet worden, automatiseer dan. Daaronder is handmatig testen prima.
+
+Een klant op public edition die twee keer per jaar een volledige suite draait, plus transporten daartussen, haalt die lat snel. Een klein private-editionsysteem dat een paar keer per jaar verandert, misschien niet.
+
+Stel deze vragen voordat u koopt:
+
+1. **Hoeveel regressietestgevallen hebt u,** en hoeveel daarvan draaien in elke cyclus?
+2. **Hoe vaak draait u ze,** inclusief transporten, feature packs en upgrades, niet alleen release-upgrades?
+3. **Hoe lang duurt een handmatige run,** en past die binnen het regressievenster?
+4. **Wie onderhoudt de scripts** als schermen en processen veranderen?
+
+Onderhoud van scripts is de kostenpost die mensen onderschatten. Een geautomatiseerde suite die niemand bijwerkt, faalt om redenen die niets met het systeem te maken hebben, en het team verliest het vertrouwen erin.
+
+In programma's die ik heb geleid, gebruikten mijn teams Tricentis Tosca, Worksoft, Panaya, SAP Cloud ALM, SAP Solution Manager en UiPath. Kies op basis van hoe het past bij uw systemen en uw team, niet op basis van de demo. Mijn [gids voor SAP-testautomatisering](/nl/sap-test-automation-guide/) behandelt waar u begint en hoe u de terugverdientijd beoordeelt.
+
+## Houd project- en BAU-wijzigingen gescheiden tijdens een programma
+
+Het lastigste regressieprobleem in een SAP-programma is niet de tooling. Het zijn twee stromen van wijzigingen die tegelijk door dezelfde systemen lopen.
+
+Terwijl het programma nieuwe functies bouwt, blijft de live support productie repareren. Delen beide stromen één pad door ontwikkeling en kwaliteit, dan kan een supportfix het projecttesten breken en kan een projectwijziging in een supportrelease terechtkomen. Dan kan niemand meer zeggen welke wijziging een fout veroorzaakte.
+
+Mijn antwoord is twee gescheiden landschappen. Eén voor het project en één voor de lopende bedrijfsvoering (BAU), zodat live supportwijzigingen en projectwijzigingen apart worden getest.
+
+<explainer-compare title="Twee landschappen tijdens een SAP-programma" caption="Elke stroom van wijzigingen krijgt een eigen pad naar productie, zodat een regressiefout naar één reeks wijzigingen wijst." options="Projectlandschap|BAU-landschap" criteria="Wat erdoorheen gaat => Nieuwe functies, configuratie en maatwerkcode voor het programma ; Fixes en kleine wijzigingen aan het live systeem|Regressiefocus => Processen die het programma verandert, plus de kernsuite ; Processen die elke fix raakt, plus de kernsuite|Gaat naar productie => Bij de go-live of een releasegolf ; Als supportreleases, volgens het gewone schema"></explainer-compare>
+
+Twee landschappen lossen de scheiding op en creëren een nieuwe taak. Elke BAU-fix moet ook in het projectlandschap terechtkomen, anders gaat het project zonder die fix live.
+
+Plan daar vanaf het begin voor:
+
+1. **Retrofit elke BAU-wijziging in het projectlandschap** in een vast ritme, en volg elke wijziging.
+2. **Draai de geraakte projecttests opnieuw** na elke retrofit, niet alleen aan het eind.
+3. **Bevries BAU-wijzigingen** als de cutover nadert, behalve dringende fixes die door beide landschappen gaan.
+4. **Draai de volledige regressiesuite** in het projectlandschap vóór de go-live, met gemaskeerde data op productieniveau.
+
+Het tweede landschap kost geld, maar dat geldt ook voor een go-live waarbij niemand kan zeggen welke wijziging de facturering brak. Mijn [S/4HANA-teststrategie](/nl/s4hana-testing-strategy/) laat zien waar regressiecycli naast integratie- en gebruikersacceptatietesten vallen.
+
+## Waar u begint
+
+Bouw een regressiesuite voordat u die nodig hebt. Maak een lijst van de processen die de business niet kan missen, schrijf voor elk een test en voer ze één keer met de hand uit om te zien hoe lang een volledige cyclus duurt.
+
+Dat getal vertelt u of het volgende upgradevenster realistisch is en of automatisering zich terugbetaalt. Zit u midden in een programma, controleer dan of project- en BAU-wijzigingen één pad naar productie delen.
+
+Wilt u een onafhankelijke blik op uw regressieaanpak of upgradeplan, dan help ik organisaties daarbij. U kunt [hier contact met mij opnemen](/nl/contact-noel-erp-support/).
+
+## Veelgestelde vragen
+
+<details>
+<summary>Wat is SAP-regressietesten?</summary>
+
+Het voert opnieuw tests uit op SAP-bedrijfsprocessen die niet hoorden te veranderen, om te bewijzen dat een transport, supportpackage, upgrade of nieuwe release ze niet heeft gebroken. Het dekt geïntegreerde ketens zoals order to cash en de maandafsluiting, niet alleen de gewijzigde objecten.
+
+</details>
+
+<details>
+<summary>Hoe vaak heeft SAP Cloud ERP public edition regressietesten nodig?</summary>
+
+Minstens twee keer per jaar, omdat SAP public edition in februari en augustus upgradet. SAP upgradet eerst het testsysteem en een paar weken later productie, dus de regressierun moet in die tussenruimte klaar zijn. Transporten tussen releases hebben hun eigen, kleinere runs nodig.
+
+</details>
+
+<details>
+<summary>Wie doet het regressietesten bij een upgrade van RISE with SAP private edition?</summary>
+
+SAP voert de technische upgrade uit. Planning, voorbereiding en testen blijven bij de klant of de implementatiepartner, dus begroot de regressie-inspanning los van het abonnement.
+
+</details>
+
+<details>
+<summary>Welke tools helpen de scope van SAP-regressietesten te bepalen?</summary>
+
+Tools voor impactanalyse vergelijken wat er is veranderd met wat u gebruikt. Gangbare opties zijn de Business Process Change Analyzer en de Scope and Effort Analyzer in SAP Solution Manager, en de tool Release Assessment and Scope Dependency voor public edition. Tricentis LiveCompare en Panaya doen hetzelfde werk, terwijl SAP Cloud ALM de regressietestplannen en de uitvoering beheert.
+
+</details>
+
+<details>
+<summary>Moet SAP-regressietesten worden geautomatiseerd?</summary>
+
+Automatiseer als er een groot aantal testgevallen is dat uitgebreid en herhaald getest moet worden. Daaronder is handmatig testen prima. Tel uw testgevallen en hoe vaak ze draaien voordat u een tool koopt, en begroot het onderhoud van scripts.
+
+</details>
+
+<details>
+<summary>Hoe test u op regressie tijdens een SAP-programma terwijl u het live systeem ondersteunt?</summary>
+
+Draai twee gescheiden landschappen, één voor het project en één voor de lopende bedrijfsvoering. Live supportwijzigingen en projectwijzigingen worden dan apart getest. Retrofit elke BAU-fix in het projectlandschap en draai de geraakte tests opnieuw.
+
+</details>

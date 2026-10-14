@@ -1,0 +1,220 @@
+---
+title: "SAP测试自动化：从哪里入手，何时见到回报"
+h1: "SAP测试自动化：从哪里入手，何时见到回报"
+slug: "sap-test-automation-guide"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-test-automation-guide.webp"
+heroAlt: "Noel D'Costa站在显示器旁，屏幕上是SAP自动化测试的运行情况和一张流程图"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "sap-cloud-alm", "sap-technical-decisions", "s4hana-implementation"]
+author: "Noel D'Costa"
+metaTitle: "SAP自动化测试：从哪里入手，何时见到回报"
+metaDescription: "SAP自动化测试详解：什么时候值得做、从哪里入手、哪些框架合适，以及SAP Cloud ALM、Solution Manager和Tricentis已经为您提供了什么。"
+primaryKeyword: "SAP自动化测试"
+excerpt: "SAP测试自动化什么时候能收回成本，从哪里入手，各种框架有何不同，以及SAP Cloud ALM、Solution Manager和SAP Test Automation by Tricentis已经为您提供了什么。"
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "测试用例数量大、需要大量反复测试时就做自动化。达不到这个程度，手工测试就可以"
+  - "测试约占项目工作量的35%，所以自动化的问题是：哪一部分应该交给工具来承担"
+  - "设计稳定之后，先为业务部门承受不起出错的流程建一个小型回归测试包"
+  - "项目环境和日常运营环境分开运行，让线上支持变更和项目变更分开测试"
+  - "SAP Cloud ALM管理测试，但没有自己的自动化引擎。购买之前先核对您的Tricentis授权"
+  - "Solution Manager的主流维护将于2027年结束。不要围绕它构建新的自动化"
+pullQuote: "构建一个自动化测试，比手工跑一遍的成本更高。只有靠反复运行，才能把这笔成本收回来。"
+mentions:
+  - "SAP Cloud ALM"
+  - "SAP Solution Manager"
+  - "SAP Test Automation by Tricentis"
+  - "Tricentis Tosca"
+  - "Worksoft"
+  - "Panaya"
+  - "UiPath"
+  - "OpenText LoadRunner"
+  - "SAP S/4HANA Cloud Public Edition"
+originalUrl: "https://noeldcosta.com/sap-test-automation-guide/"
+canonicalUrl: "https://noeldcosta.com/zh-CN/sap-test-automation-guide/"
+locale: "zh"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP测试自动化，就是把您一遍又一遍运行的SAP测试（主要是回归测试）变成由工具而不是由人来执行的测试。当测试用例数量大、需要大量反复测试时，它就能收回成本；达不到这个程度，手工测试就可以。
+
+这是我在S/4HANA项目中用的原则。按我的经验，测试约占项目工作量的35%，所以问题从来不是要不要测试，而是这部分工作量中哪一块应该交给工具。
+
+想了解自动化如何与单元测试、集成测试、验收测试和性能测试配合，请先看我的总览文章[SAP测试详解](/zh-CN/sap-testing-explained/)。本文讲从哪里入手、自动化何时见到回报、各种框架，以及SAP Cloud ALM、Solution Manager和Tricentis为您提供了什么。
+
+## SAP测试自动化什么时候值得做
+
+我的原则很简单。测试用例数量大、需要大量反复测试时，就做自动化。达不到这个程度，手工测试就可以。
+
+原因在于成本结构。构建一个自动化测试，比手工跑一遍的成本更高，而且每当流程、界面或数据发生变化时都需要维护。只有靠反复运行，才能把这笔成本收回来。
+
+在SAP项目中，反复运行来自几个可以预见的地方：
+
+1. **传输**。每一个移入质量系统的变更，都可能弄坏昨天还正常的东西。
+2. **SAP版本发布和支持包**。本地部署和私有云上的升级，以及SAP S/4HANA Cloud Public Edition上按计划进行的升级。
+3. **重复的测试轮次**。系统集成测试（SIT）会在不止一轮中运行同样的端到端流程。
+4. **推广批次**。全球模板要在每个国家或公司代码上再测一遍。
+5. **数据密集的检查**。定价、税务或科目确定的大量组合，变化的只是数据。
+
+如果以上都不适用，工具的花费会比它省下的更多。
+
+下表是我会如何按测试类型来分配工作。
+
+| 测试类型 | 要自动化吗？ | 原因 |
+|---|---|---|
+| 核心流程的回归测试，例如订单到收款、采购到付款和记录到报告 | 是，优先 | 每次传输、每次发布后都要运行 |
+| 多轮SIT | 部分 | 自动化稳定的流程；新的和还在变化的场景保持手工 |
+| 用户验收测试（UAT） | 很少 | 由业务用户判断流程是否适合他们，这是脚本做不到的 |
+| 探索性测试和负面测试 | 否 | 价值来自人去寻找没人写进脚本的东西 |
+| 性能和负载 | 是，用负载工具 | 大量并发用户无法靠手工产生 |
+| 一次性的数据迁移检查 | 通常不 | 对账报表做得更好，除非同样的加载在多次模拟运行中重复 |
+
+<decision-tree question="这个SAP测试应该自动化吗？" options="测试用例很多，每次变更或发布后都要重复 => 做自动化|测试用例很少，或只运行一两次 => 手工测试|流程设计还在变化 => 等稳定之后再决定"></decision-tree>
+
+## 从哪里入手
+
+令人失望的自动化，通常一开始铺得太宽：什么都做，在设计阶段就做，而且没有人对结果负责。我会按下面的顺序来做：
+
+1. **挑出业务部门承受不起出错的流程**。月结、开票、付款，以及任何在很多地点推广的流程，都排在锦上添花的报表之前。
+2. **先手工运行测试**。工具自动化的是一个手工已经能跑通的测试，它不会替您设计测试。
+3. **等设计稳定**。在Explore阶段或Realize阶段早期就做自动化，意味着每次设计决策改变都要重建测试。
+4. **建一个小型回归测试包**。端到端覆盖关键流程，然后在每次传输进入质量系统时运行这个测试包。
+5. **指定一位维护负责人**。界面、角色或数据变化时，必须有人修复测试，否则测试包过几个版本就会失效。
+6. **只在反复运行值得的地方扩大覆盖**。一个测试会经常运行，才把它加进来，而不是因为覆盖率指标要求这样做。
+
+### 把项目和日常运营分开
+
+在项目期间，我会运行两套独立的环境：一套给项目，一套给日常运营（BAU）。这样线上支持变更和项目变更就分开测试。
+
+这对自动化很重要。一个回归测试失败时，您希望只排查一个变更来源，而不是两个混在一起。我的[SAP回归测试](/zh-CN/sap-regression-testing/)指南更深入地讲了双环境做法和影响分析。
+
+## SAP给了您什么，您还要补充什么
+
+在我的项目中，我自己用过、或让我的团队用过Tricentis Tosca、Worksoft、Panaya、SAP Cloud ALM、SAP Solution Manager、UiPath和LoadRunner。本文不对它们排名。正确的选择取决于您的系统环境、您的支持合同，以及由谁来维护这些测试。
+
+先从SAP已经提供的东西开始，因为其中一部分您可能已经付过钱了。
+
+### SAP Cloud ALM
+
+SAP Cloud ALM是测试管理层。它针对您的流程和需求来规划、执行和追溯手工测试与自动化测试。拥有SAP Enterprise Support、Product Support for Large Enterprises或符合条件的云订阅的客户，可以开通一个租户（[SAP usage rights](https://support.sap.com/en/alm/usage-rights.html)）。
+
+它本身不执行自动化测试。SAP说明，Cloud ALM没有自研的自动化引擎，其ALM平台对第三方测试自动化保持开放（[SAP Support, test automation](https://support.sap.com/en/alm/partners/test-automation.html)）。
+
+SAP的设置指南介绍了内置集成，以及供其他提供商使用的公开Test Automation API（[SAP Help Portal](https://help.sap.com/docs/cloud-alm/setup-administration/other-test-automation-providers)）。Panaya和UiPath都有针对自动化测试用例的Cloud ALM集成文档。Worksoft把Cloud ALM和Solution Manager列在其集成之中，OpenText则为其云端性能测试产品提供了Cloud ALM集成。
+
+### Tricentis Test Automation for SAP与SAP Test Automation by Tricentis
+
+购买任何东西之前，先核对您的授权。SAP为SAP Enterprise Support、Enterprise Support cloud editions和Product Support for Large Enterprises的客户提供一份与Cloud ALM集成的Tricentis Test Automation for SAP定期许可，目前有效期至2028年12月31日（[SAP usage rights](https://support.sap.com/en/alm/usage-rights.html)）。
+
+限制很紧：5个指定用户，每个日历月500次测试运行，5个由客户管理的执行代理，结果保留12个月。它不能用于自动化生产业务流程。把它当作起步的方式，而不是项目规模的工具。
+
+SAP Test Automation by Tricentis是付费的升级版。它是一款软件即服务产品，由SAP作为解决方案扩展来销售和支持，覆盖SAP和第三方应用。当授权的额度不够用时，它可以扩展Cloud ALM中包含的Tricentis能力。
+
+### SAP Solution Manager
+
+Solution Manager 7.2的主流维护持续到2027年底。选择为SAP Business Suite 7购买延长维护的客户，可获得Solution Manager延长维护至2030年底。它覆盖的范围有限，其中包括测试套件（[SAP Support](https://support.sap.com/en/alm/solution-manager.html)）。
+
+它自带的自动化，即基于组件的测试自动化（CBTA），不会扩展到SAP云产品。Solution Manager集成所用的Tricentis许可目前有效期至2027年12月31日。如果您已经在运行Solution Manager，在系统环境迁移之前可以继续用它，但不要围绕它构建新的自动化。
+
+### SAP S/4HANA Cloud Public Edition
+
+Public Edition自带Test Automation Tool。SAP的指导是，合作伙伴在配置每个流程时创建或更新测试自动化脚本（test automates），以便在升级期间在测试系统中运行（[SAP Learning](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-public-edition/explaining-the-test-strategy_d4b6f563-e5bb-41b5-b7e2-ec899edb756f)）。
+
+经您同意，SAP会对标准的、未经修改的流程运行升级后测试。上线之后，凡是您做过定制的部分，回归测试都由您用自己的自动化脚本负责。
+
+下表按用途而不是按偏好，汇总了上面提到的工具。
+
+| 工具 | 主要用途 | 适用场景 |
+|---|---|---|
+| SAP Cloud ALM | 测试管理与编排 | 新项目；把手工测试和自动化测试与流程关联起来 |
+| SAP Solution Manager | 测试管理，本地部署 | 已经在运行它的系统环境；主流维护于2027年结束 |
+| Tricentis Tosca与SAP Test Automation by Tricentis | 基于模型的自动化 | SAP和非SAP应用；由SAP转售并支持 |
+| Worksoft | 无代码流程自动化 | 与Cloud ALM和Solution Manager集成 |
+| Panaya | 测试管理和无代码自动化 | 针对自动化测试的Cloud ALM集成 |
+| UiPath | 带Test Manager的自动化平台 | 针对自动化测试用例的Cloud ALM集成 |
+| OpenText LoadRunner | 性能和负载测试 | 上线前的并发和业务量测试 |
+
+想看更深入的比较（包括Xray for Jira），请阅读我的[SAP测试工具](/zh-CN/sap-testing-validation-tools-comparison/)指南。关于负载测试，请阅读[写给IT负责人的SAP性能测试](/zh-CN/sap-performance-testing-it-leaders/)。
+
+## 框架：测试是怎样构建的
+
+工具没有测试的构建方式和维护者那么重要。大多数SAP自动化属于以下几种方式之一：
+
+1. **基于模型**。把界面和API扫描成可复用的模块，再组装成测试用例。功能顾问不写代码也能构建和读懂它们。
+2. **无代码流程捕获**。录制业务流程步骤，转换成可复用的测试。适合由关键用户参与构建回归测试包的团队。
+3. **基于代码**。测试工程师在编程框架中编写测试。适合由开发团队负责的Fiori应用和API，需要开发人员来维护。
+4. **带测试模块的机器人流程自动化平台**。业务自动化和测试自动化用同一个平台，如果您已经在用它，会很方便。
+5. **SAP交付的自动化脚本**。在Public Edition上，随Test Automation Tool交付的测试自动化脚本，按您的数据和变更进行调整。
+
+无论选择哪种方式，有三个设计选择决定了测试能否存活下来：
+
+1. **能在API层测试的就在API层测试**。API测试比点击界面的测试更少出错。
+2. **让测试数据可以重置**。一个依赖上一次运行已经用掉的数据的测试，会因为错误的原因而失败。
+3. **用共享模块来构建**。界面变化时，您只需修复一个模块，而不是修复所有涉及它的测试。
+
+## 上线后让自动化保持有效
+
+一个自动化回归测试包是一个产品，而不是项目交付物。它需要一位负责人、一条预算，以及在变更流程中的一个位置。
+
+把它和变更控制挂钩。在回归测试包运行完毕、结果记录到测试管理工具之前，任何传输都不能进入生产。我关于[SAP质量关口](/zh-CN/sap-quality-gates-implementation/)的文章讲了如何让测试结果成为上线/不上线决策的一部分。
+
+也要为SAP的发布节奏做好计划。Public Edition的升级按SAP的时间表到来，而不是按您的，私有云和本地部署系统也仍然需要支持包和升级。每一次都是一轮回归测试，而这正是自动化收回成本的地方。
+
+修复不稳定的测试，淘汰没人运行的测试，让测试包保持足够精简，让大家信任它的结果。
+
+自动化还必须放在测试计划之内。测试周期、准入和退出标准以及角色要先定下来；我的[S/4HANA测试策略](/zh-CN/s4hana-testing-strategy/)对此做了说明。
+
+## 您的下一步
+
+列出每次传输和每次SAP发布之后您都会重新测试的业务流程。数一数它们背后有多少测试用例，以及每个用例一年会运行多少次。
+
+如果数量很大、运行又反复进行，您就有了做自动化的理由。然后，在任何人给您做演示之前，先核对您的SAP支持合同已经包含了什么。
+
+如果您想就测试自动化计划或厂商方案听取独立意见，我可以为您的组织提供这方面的帮助。您可以[在这里联系我](/zh-CN/contact-noel-erp-support/)。
+
+## 常见问题
+
+<details>
+<summary>什么是SAP测试自动化？</summary>
+
+就是用工具来执行原本要手工运行的SAP测试，主要是变更和升级之后的回归测试。由SAP Cloud ALM这样的测试管理工具来规划和记录测试，由自动化工具来运行测试。
+
+</details>
+
+<details>
+<summary>什么时候应该对SAP测试做自动化？</summary>
+
+当测试用例数量大、需要大量反复测试时，例如每次传输、发布或推广批次之后的回归测试。达不到这个程度，手工测试就可以。要等流程设计稳定，否则每次设计变化您都得重建测试。
+
+</details>
+
+<details>
+<summary>SAP Cloud ALM能做测试自动化吗？</summary>
+
+它管理和触发自动化测试，但没有自己的自动化引擎。它与Tricentis Test Automation for SAP集成，与S/4HANA Cloud Public Edition中的Test Automation Tool集成，并通过公开的Test Automation API与其他提供商集成。
+
+</details>
+
+<details>
+<summary>什么是SAP Test Automation by Tricentis？</summary>
+
+它是一款软件即服务的测试自动化产品，由SAP作为解决方案扩展来销售和支持，覆盖SAP和第三方应用。它扩展了SAP Enterprise Support中包含的入门级Tricentis Test Automation for SAP许可。那份许可的上限是5个指定用户和每月500次测试运行。
+
+</details>
+
+<details>
+<summary>SAP用户验收测试能自动化吗？</summary>
+
+很少，而且这不应该是目标。UAT的存在，是为了让业务用户判断系统是否适合他们，这是脚本做不到的。把它周围反复进行的回归测试自动化，把验收决定留给人。
+
+</details>
+
+<details>
+<summary>我还应该用SAP Solution Manager做测试自动化吗？</summary>
+
+只有在它已经支撑着您的系统环境时才用。Solution Manager 7.2的主流维护于2027年结束，它的CBTA自动化不会扩展到SAP云产品。新的自动化请围绕Cloud ALM来规划。
+
+</details>

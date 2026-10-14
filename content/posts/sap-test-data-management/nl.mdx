@@ -1,0 +1,208 @@
+---
+title: "SAP-testdatamanagement: gemaskeerde data op productieschaal"
+h1: "SAP-testdatamanagement: gemaskeerde data op productieschaal"
+slug: "sap-test-data-management"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-test-data-management.webp"
+heroAlt: "Een laptop met een gemaskeerde datatabel naast een datakaart van gekoppelde databases"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "sap-data-migration", "s4hana-implementation", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "SAP-testdatamanagement: kopieën, maskering en tools"
+metaDescription: "SAP-testdatamanagement in de praktijk: gemaskeerde data op productieschaal, systeem- en clientkopieën, tools voor selectieve kopieën en wat de AVG betekent."
+primaryKeyword: "SAP testdatamanagement"
+excerpt: "SAP-testdata moet op productie lijken en mag geen productie zijn. Hoe u gemaskeerde data op productieschaal in uw testsystemen krijgt, welke kopieermethoden en tools passen en waar de privacywet de grens trekt."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "Mijn regel voor SAP-testdata: gemaskeerd, maar op productieniveau qua volume en realisme"
+  - "Kleine, handgemaakte testdata verbergt de defecten die ertoe doen, vooral in performance- en concurrencytests"
+  - "Onder de AVG blijven gepseudonimiseerde gegevens persoonsgegevens, dus ook een gemaskeerde kopie heeft toegangscontrole nodig"
+  - "Kies per testfase tussen volledige kopieën, clientkopieën en tools voor selectieve kopieën, niet uit gewoonte"
+  - "Maskeer voordat de data iemand bereikt die haar niet mag zien, en houd de maskering consistent over gekoppelde systemen"
+  - "Geef het projectlandschap en het landschap voor de lopende bedrijfsvoering elk een eigen verversingsplan"
+pullQuote: "Testdata moet zich gedragen als productie zonder productie te zijn."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Test Data Migration Server"
+  - "SAP Landscape Transformation"
+  - "EPI-USE Labs Data Sync Manager"
+  - "SNP Kyano Test Data Organizer"
+  - "Natuvion DCS Protect"
+  - "Qlik Gold Client"
+  - "GDPR"
+originalUrl: "https://noeldcosta.com/sap-test-data-management/"
+canonicalUrl: "https://noeldcosta.com/nl/sap-test-data-management/"
+locale: "nl"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP-testdatamanagement is de manier waarop u elk testsysteem data geeft die zich gedraagt als productie, zonder de gegevens van echte mensen bloot te stellen. Mijn regel is eenvoudig: gemaskeerde data, maar op productieniveau, qua volume en qua realisme.
+
+Dunne, handgemaakte data verbergt de defecten die ertoe doen. Ongemaskeerde productiedata zet gegevens van klanten, leveranciers en medewerkers in systemen met zwakkere controles dan productie.
+
+Testdata is één onderdeel van een breder testplan. Mijn gids [SAP-testen uitgelegd](/nl/sap-testing-explained/) behandelt de testsoorten, wie er eigenaar van is en waar ze in SAP Activate vallen.
+
+## Waarom testdata bepaalt wat uw tests kunnen vinden
+
+Een test kan alleen een probleem vinden dat zijn data kan uitlokken. Een klant met vijf openstaande posten gedraagt zich anders dan een klant met vijftigduizend, en een prijsconditie die niemand in de testclient heeft aangemaakt, zal in de testclient nooit falen.
+
+De testfout die ik het vaakst heb gezien, is te weinig testen in de systeemintegratietest (SIT) en de gebruikersacceptatietest (UAT). Zwakke testdata is een van de manieren waarop dat ongemerkt gebeurt. De testgevallen draaien, de resultaten zien er groen uit, en de gevallen die zouden zijn gebroken, hadden simpelweg geen data om op te breken.
+
+Daarom sta ik op data op productieniveau. Dat betekent vier dingen:
+
+1. **Volume.** Tabelgroottes dicht bij productie, zodat rapporten, jobs en zoekopdrachten draaien tegen realistische aantallen records.
+2. **Variatie.** De vreemde records die productie werkelijk bevat: geblokkeerde leveranciers, deelleveringen, creditnota's, vreemde valuta, oude openstaande posten.
+3. **Historie.** Genoeg afgesloten perioden om ouderdomsanalyse, afschrijving en jaarafsluiting betekenis te geven.
+4. **Integriteit.** Documenten die na de kopie en na de maskering nog steeds correct over modules heen gekoppeld zijn.
+
+Volume telt het zwaarst voor performance. Performancetesten moet vóór de go-live gebeuren, en in mijn ervaring zijn de concurrencytests, veel gebruikers die tegelijk werken, de belangrijke.
+
+Een concurrencytest op een bijna lege database bewijst heel weinig. Mijn gids over [SAP-performancetesten](/nl/sap-performance-testing-it-leaders/) beschrijft hoe u die tests opzet.
+
+## Wat de privacywet betekent voor SAP-testsystemen
+
+Productiedata in een testsysteem blijven persoonsgegevens. Test- en kwaliteitssystemen hebben meestal bredere toegang dan productie, en dat is precies het risico dat maskering moet afdekken.
+
+De Algemene verordening gegevensbescherming (AVG, in het Engels GDPR) van de EU is het referentiekader waar de meeste organisaties mee werken, en veel nationale wetten volgen vergelijkbare lijnen. Overweging 26 van de [AVG](https://eur-lex.europa.eu/eli/reg/2016/679/oj) maakt een onderscheid dat elk SAP-team moet kennen.
+
+1. **Gepseudonimiseerde gegevens blijven persoonsgegevens.** Als de data met aanvullende informatie, zoals een koppeltabel, weer aan een persoon kan worden gekoppeld, blijft de verordening van toepassing.
+2. **Anonieme gegevens vallen erbuiten.** Data die niemand meer kan identificeren, valt er niet onder.
+
+Het praktische gevolg: de meeste maskering levert gepseudonimiseerde gegevens op, geen anonieme. Een gemaskeerd testsysteem heeft nog steeds toegangscontrole, een doel en een bewaarregel nodig. Vraag uw functionaris gegevensbescherming om de maskeringsregels goed te keuren vóór de eerste kopie, niet nadat een auditor ernaar vraagt.
+
+## De manieren om data in een SAP-testsysteem te krijgen
+
+Er zijn vijf gangbare routes. De meeste programma's gebruiken er meer dan één, omdat elke testfase iets anders nodig heeft.
+
+De tabel vergelijkt ze op de punten die bepalen wat past.
+
+| Methode | Wat u krijgt | Volume | Omgang met privacy | Past het best bij |
+|---|---|---|---|---|
+| Volledige systeemkopie | Een exacte kopie van productie, elke client en elke tabel | Volledig | Maskering moet na de kopie draaien, voordat gebruikers toegang krijgen | Performancetests, mock-conversies, cutover-repetities |
+| Clientkopie | Eén client gekopieerd binnen of tussen systemen; het kopieerprofiel bepaalt of stamgegevens en transactiedata meekomen | Volledig of alleen customizing | Hetzelfde als bij een systeemkopie als applicatiedata wordt gekopieerd | Nieuwe test- of trainingsclients, een client terugzetten naar een bekende stand |
+| SAP Test Data Migration Server (TDMS) | Een verkleinde kopie, geselecteerd op tijd of organisatie-eenheid, met scrambling | Verkleind | Scramblingregels binnen de tool | Bestaande SAP Business Suite-landschappen waar al een licentie voor is |
+| Tools van partners voor selectieve kopieën | Gekozen business objects of segmenten, op aanvraag gekopieerd en onderweg gemaskeerd | Verkleind, gericht | Maskeringsregels binnen de tool, toegepast tijdens de kopie | Regelmatige verversingen, regressiedata, defecten reproduceren |
+| Gebouwde of gemigreerde data | Data gemaakt met scripts, migratieloads of handmatige invoer | Wat u ook bouwt | Geen echte persoonsgegevens als het vanaf nul is gebouwd | Vroege unittests, greenfieldprojecten vóór de go-live |
+
+### Volledige systeemkopieën en clientkopieën
+
+Een volledige systeemkopie geeft de meest realistische data waarmee u ooit zult testen. Ze kopieert ook elk privacyrisico dat productie bevat. Gebruikt u er een, dan blijft het systeem op slot tot de maskering heeft gedraaid en is gecontroleerd.
+
+Een clientkopie is het dagelijkse gereedschap om clients aan te maken en terug te zetten. Het kopieerprofiel is de beslissing die ertoe doet, want dat bepaalt of alleen configuratie meegaat of ook stamgegevens en transactiedata.
+
+### SAP Test Data Migration Server
+
+SAP Test Data Migration Server (TDMS) maakt verkleinde niet-productiesystemen op basis van productiedata, met scrambling van gevoelige velden. Het is ontstaan op de SAP Business Suite, en de huidige documentatie op het [SAP Help Portal](https://help.sap.com/docs/SAP_TEST_DATA_MIGRATION_SERVER) gaat over release 4.0 SP14.
+
+Ik heb geen officiële verklaring van SAP gevonden over de dekking van TDMS voor de huidige S/4HANA-releases of over een benoemde opvolger. Wilt u erop bouwen, vraag SAP dan schriftelijk of het uw doelrelease en uw deploymentmodel ondersteunt, inclusief RISE with SAP.
+
+### SAP Landscape Transformation en shellkopieën
+
+SAP Landscape Transformation is een set analyse- en transformatietools die SAP gebruikt bij selective data transition. [SAP Learning](https://learning.sap.com/courses/discovering-sap-activate-implementation-tools-and-methodology/illustrating-selective-data-transition_dab03cad-3061-40ed-b690-a0d7a2dccc98) beschrijft een shellconversie als een kopie van het productiesysteem zonder stamgegevens en transactiedata, die daarna naar S/4HANA wordt geconverteerd.
+
+Hetzelfde idee helpt bij testdata. Een shell geeft u de repository en de configuratie van productie zonder bedrijfsdata, en die vult u daarna met alleen de data die een test nodig heeft.
+
+## Tools voor selectieve testdata
+
+Verschillende producten van partners kopiëren geselecteerde bedrijfsdata naar SAP-testsystemen en maskeren die onderweg. Dit zijn de producten waarvan ik de claims op de eigen site van de leverancier kon controleren, in willekeurige volgorde.
+
+1. **EPI-USE Labs Data Sync Manager.** Een suite om data te kopiëren en te maskeren over SAP ABAP-landschappen, met onder meer lean clients, kopieën op objectniveau en maskering met vooraf gedefinieerde regels. EPI-USE Labs stelt dat [Data Sync Manager](https://www.epiuselabs.com/data-sync-manager-dsm-software-suite) gecertificeerd is voor integratie met SAP S/4HANA en S/4HANA Cloud en werkt met RISE with SAP.
+2. **SNP Kyano Test Data Organizer.** Haalt de data op die een test nodig heeft in plaats van het hele systeem, en maskeert gevoelige data tijdens het aanleveren. SNP beschrijft de [Test Data Organizer](https://www.snpgroup.com/en/platform/kyano-manage/use-cases/test-management/) als compatibel met RISE with SAP Private Cloud Edition.
+3. **Qlik Gold Client.** Kopieert en synchroniseert geselecteerde transactiedata van productie naar niet-productiedoelen, met statische maskering voor bestaande systemen en dynamische maskering voor data onderweg.
+4. **Natuvion DCS Protect.** Vindt persoonsgegevens en past anonimisering of pseudonimisering toe in test-, kwaliteits-, ontwikkel- en trainingssystemen. [Natuvion](https://natuvion.com/tda) positioneert het voor testmigraties en voor de doorlopende operatie, en noemt S/4HANA op die pagina niet, dus bevestig de dekking rechtstreeks.
+
+Vraag elke leverancier vóór aankoop om deze vragen op uw eigen systemen te beantwoorden:
+
+1. Welke S/4HANA-releases en deploymentmodellen ondersteunt de tool vandaag?
+2. Maskeert de tool voordat de data productie verlaat, of nadat die in het doelsysteem is aangekomen?
+3. Blijft de maskering consistent over gekoppelde systemen, zodat een klant die in S/4HANA is gemaskeerd overeenkomt met dezelfde klant in uw CRM of datawarehouse?
+4. Hoe lang duurt een verversing van één company code op productievolumes?
+5. Wie onderhoudt de maskeringsregels als u eigen tabellen of velden toevoegt?
+
+## Testdata afstemmen op de testfase
+
+Elke testfase heeft om een andere reden data nodig. Hier begin ik als ik testdata plan voor een S/4HANA-programma.
+
+| Testfase | Wat de data moet doen | Gebruikelijke bron |
+|---|---|---|
+| Unittesten | Een ontwikkelaar laten bewijzen dat één object werkt | Gebouwde data, of een klein gemaskeerd segment |
+| Rondes van de systeemintegratietest | Volledige procesketens over modules en interfaces laten lopen | Gemaskeerde kopie op productieniveau of selectieve kopie |
+| Rondes van de gebruikersacceptatietest | Lijken op de eigen data van gebruikers uit de business, zodat ze hun gevallen herkennen | Gemaskeerde data op productieniveau, ververst vóór elke ronde |
+| Regressietesten | Stabiel blijven, zodat resultaten van run tot run vergelijkbaar zijn | Een vaste, herstelbare dataset, plus een verversingsplan |
+| Performancetesten | Overeenkomen met het productievolume, zodat concurrencyresultaten iets betekenen | Volledige gemaskeerde kopie, of volume op productieschaal |
+| Mock-conversies en cutover-repetities | De migratie bewijzen op de echte vorm van de data | Volledige kopieën van productie, gemaskeerd waar mensen buiten het kernteam toegang hebben |
+
+UAT verdient extra zorg. De business hoort eigenaar te zijn van de gebruikersacceptatietest, en naar mijn mening heeft die minstens 6 tot 8 weken nodig.
+
+Geef gebruikers data die ze herkennen: hun eigen klanten, materialen en prijslijsten, ook onder gemaskeerde namen. Mijn gids over de [SAP-gebruikersacceptatietest](/nl/sap-user-acceptance-testing/) beschrijft hoe u die uitvoert.
+
+Mock-conversies volgen dezelfde logica. Bij een brownfield-conversie plan ik drie mock-conversies, en elke conversie moet draaien op een recente kopie van productie.
+
+Datamigratie is in mijn ervaring 30 tot 40 procent van de programma-inspanning, dus plan de toegang tot data voor die runs samen met het migratieteam. Mijn artikel over [waarom SAP-datamigratie mislukt](/nl/why-sap-data-migration-fails-and-how-to-fix-it/) legt uit hoe de mock-loads in elkaar passen.
+
+### Twee landschappen, twee verversingsplannen
+
+Tijdens een programma draai ik twee gescheiden landschappen: één voor het project en één voor de lopende bedrijfsvoering (BAU). Live supportwijzigingen en projectwijzigingen worden dan apart getest.
+
+Elk landschap heeft een eigen testdataplan nodig. BAU-testen vraagt data die dicht bij de productie van vandaag ligt, omdat supportfixes reageren op de problemen van vandaag.
+
+Projecttesten vraagt data die past bij het nieuwe ontwerp, en dat kan een geconverteerde kopie of een selectieve load zijn. Houd voor elk landschap een aparte verversingskalender aan, zodat een verversing in het ene landschap nooit testdata wist die het andere nog nodig heeft.
+
+## Hoe ik SAP-testdatamanagement zou inrichten
+
+Testen kost ongeveer 35 procent van de programma-inspanning. Plan testdata binnen die inspanning, niet in de week vóór de SIT.
+
+Dit is de volgorde die ik zou aanhouden:
+
+1. **Leg het principe schriftelijk vast.** Gemaskeerde data op productieniveau, afgetekend door de sponsor van het programma, de functionaris gegevensbescherming en de eigenaren uit de business.
+2. **Breng de persoonsgegevens en gevoelige data in kaart.** Klanten, leveranciers, medewerkers, bankgegevens, contactpersonen, vrije tekstvelden, bijlagen en alle eigen tabellen die zulke gegevens bevatten.
+3. **Schrijf de maskeringsregels.** Bepaal per veld wat wordt vervangen, behouden of verwijderd, en houd vervangingen consistent over gekoppelde systemen.
+4. **Koppel data aan elke testfase.** Gebruik de tabel hierboven als vertrekpunt en bepaal het volume eerst voor de performance- en concurrencytests.
+5. **Kies de kopieermethoden en tools.** Volledige kopieën waar volume telt, selectieve kopieën waar snelheid en frequentie tellen, en controleer of de tool uw release ondersteunt.
+6. **Stel de verversingskalender vast.** Eén plan per landschap, met verversingen die zijn getimed vóór elke SIT- en UAT-ronde en elke mock-conversie.
+7. **Houd de toegang dicht tot de maskering is gecontroleerd.** Niemand buiten het technische kernteam logt in op een verse kopie voordat een maskeringscontrole is geslaagd.
+
+Maak er daarna een gate van. De strategie en de instap- en exitcriteria voor elke cyclus staan in mijn gids over de [S/4HANA-teststrategie](/nl/s4hana-testing-strategy/), en de gereedheid van testdata hoort in de instapcriteria van elke ronde.
+
+De concrete volgende stap: maak een lijst van elk niet-productiesysteem dat vandaag een kopie van productiedata bevat, en controleer welke daarvan zijn gemaskeerd.
+
+Wilt u een onafhankelijke blik op een aanpak voor testdata of een testplan voor een S/4HANA-programma, dan kunt u [hier contact met mij opnemen](/nl/contact-noel-erp-support/).
+
+## Veelgestelde vragen
+
+<details>
+<summary>Wat is SAP-testdatamanagement?</summary>
+
+Het is de manier waarop u de data in SAP-testsystemen plant, aanmaakt, kopieert, maskeert en ververst. Het doel is data die zich qua volume en realisme gedraagt als productie, zonder echte persoonsgegevens bloot te stellen aan mensen die ze niet mogen zien.
+
+</details>
+
+<details>
+<summary>Mag ik productiedata gebruiken voor SAP-testen?</summary>
+
+Alleen nadat die is gemaskeerd, en zelfs dan met toegangscontrole. Onder de AVG blijven gepseudonimiseerde gegevens persoonsgegevens, dus een gemaskeerde kopie heeft nog steeds een doel, toegangsregels en een bewaarregel nodig. Spreek de maskeringsregels vóór de eerste kopie af met uw functionaris gegevensbescherming.
+
+</details>
+
+<details>
+<summary>Is SAP TDMS nog beschikbaar voor S/4HANA?</summary>
+
+De huidige documentatie van TDMS op het SAP Help Portal gaat over release 4.0 SP14, en TDMS is ontstaan op de SAP Business Suite. Ik heb geen officiële verklaring van SAP gevonden over de dekking van de huidige S/4HANA-releases. Vraag het SAP schriftelijk voordat u erop bouwt.
+
+</details>
+
+<details>
+<summary>Welke tools maken selectieve SAP-testdata?</summary>
+
+SAP Test Data Migration Server, plus producten van partners zoals EPI-USE Labs Data Sync Manager, SNP Kyano Test Data Organizer en Qlik Gold Client. Natuvion DCS Protect richt zich op het anonimiseren en pseudonimiseren van data in testsystemen. Toets elk product aan uw S/4HANA-release en uw deploymentmodel.
+
+</details>
+
+<details>
+<summary>Hoeveel testdata heb ik nodig voor SAP-performancetesten?</summary>
+
+Volume op productieniveau. Performanceproblemen komen boven bij echte tabelgroottes en veel gelijktijdige gebruikers, dus een test op een dunne dataset bewijst heel weinig. Een volledige gemaskeerde kopie van productie is de gebruikelijke bron voor performance- en concurrencytests.
+
+</details>

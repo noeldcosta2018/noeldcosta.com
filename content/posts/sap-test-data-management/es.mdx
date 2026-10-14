@@ -1,0 +1,208 @@
+---
+title: "Gestión de datos de prueba en SAP: datos enmascarados a escala de producción"
+h1: "Gestión de datos de prueba en SAP: datos enmascarados a escala de producción"
+slug: "sap-test-data-management"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-test-data-management.webp"
+heroAlt: "Un portátil que muestra una tabla de datos enmascarados junto a un mapa de bases de datos conectadas"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "sap-data-migration", "s4hana-implementation", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "Datos de prueba SAP: copias, enmascaramiento y herramientas"
+metaDescription: "Gestión de datos de prueba en SAP: datos enmascarados a escala de producción, copias de sistema y de mandante, copias selectivas y lo que implica el RGPD."
+primaryKeyword: "gestión de datos de prueba SAP"
+excerpt: "Los datos de prueba de SAP tienen que parecerse a producción y no pueden ser producción. Cómo llevar datos enmascarados a escala de producción a sus sistemas de prueba, qué métodos de copia y herramientas encajan y dónde pone el límite la ley de privacidad."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "Mi regla para los datos de prueba de SAP: enmascarados, pero a nivel de producción en volumen y realismo"
+  - "Los datos de prueba pequeños y hechos a mano ocultan los defectos que importan, sobre todo en las pruebas de rendimiento y de concurrencia"
+  - "Según el RGPD, los datos seudonimizados siguen siendo datos personales, así que una copia enmascarada sigue necesitando control de acceso"
+  - "Elija entre copias completas, copias de mandante y herramientas de copia selectiva según la fase de prueba, no por costumbre"
+  - "Enmascare antes de que los datos lleguen a alguien que no deba verlos, y mantenga un enmascaramiento coherente entre los sistemas conectados"
+  - "Dé al entorno del proyecto y al de la operación diaria su propio plan de refresco"
+pullQuote: "Los datos de prueba tienen que comportarse como producción sin ser producción."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Test Data Migration Server"
+  - "SAP Landscape Transformation"
+  - "EPI-USE Labs Data Sync Manager"
+  - "SNP Kyano Test Data Organizer"
+  - "Natuvion DCS Protect"
+  - "Qlik Gold Client"
+  - "GDPR"
+originalUrl: "https://noeldcosta.com/sap-test-data-management/"
+canonicalUrl: "https://noeldcosta.com/es/sap-test-data-management/"
+locale: "es"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+La gestión de datos de prueba en SAP es la forma de dar a cada sistema de pruebas datos que se comporten como producción sin exponer los datos de personas reales. Mi regla es sencilla: datos enmascarados, pero a nivel de producción, en volumen y en realismo.
+
+Los datos escasos y hechos a mano ocultan los defectos que importan. Los datos de producción sin enmascarar ponen registros de clientes, proveedores y empleados en sistemas con controles más débiles que los de producción.
+
+Los datos de prueba son una parte de un plan de pruebas más amplio. Mi guía de [pruebas SAP explicadas](/es/sap-testing-explained/) trata los tipos de prueba, quién es responsable de cada uno y dónde se ubican en SAP Activate.
+
+## Por qué los datos de prueba deciden lo que sus pruebas pueden encontrar
+
+Una prueba solo puede encontrar un problema que sus datos puedan provocar. Un cliente con cinco partidas abiertas se comporta de forma distinta a uno con cincuenta mil, y una condición de precio que nadie creó en el mandante de pruebas nunca fallará en el mandante de pruebas.
+
+El fallo de pruebas más frecuente que he visto es probar demasiado poco en las pruebas de integración del sistema (SIT) y en las pruebas de aceptación del usuario (UAT). Unos datos de prueba pobres son una de las formas en que eso ocurre sin hacer ruido. Los casos de prueba se ejecutan, los resultados salen en verde, y los casos que habrían fallado sencillamente no tenían datos con los que fallar.
+
+Por eso insisto en datos a nivel de producción. Eso significa cuatro cosas:
+
+1. **Volumen.** Tamaños de tabla cercanos a producción, para que los informes, los jobs y las búsquedas se ejecuten con un número realista de filas.
+2. **Variedad.** Los registros raros que producción realmente contiene: proveedores bloqueados, entregas parciales, notas de crédito, monedas extranjeras, partidas abiertas antiguas.
+3. **Historia.** Suficientes periodos cerrados para que los análisis de antigüedad, la amortización y los cierres anuales tengan sentido.
+4. **Integridad.** Documentos que siguen enlazados correctamente entre módulos después de la copia y después del enmascaramiento.
+
+El volumen es lo que más importa para el rendimiento. Las pruebas de rendimiento tienen que hacerse antes del go-live y, en mi experiencia, las importantes son las de concurrencia, con muchos usuarios trabajando a la vez.
+
+Una prueba de concurrencia sobre una base de datos casi vacía demuestra muy poco. Mi guía de [pruebas de rendimiento en SAP](/es/sap-performance-testing-it-leaders/) explica cómo preparar esas pruebas.
+
+## Qué implica la ley de privacidad para los sistemas de prueba SAP
+
+Los datos de producción en un sistema de pruebas siguen siendo datos personales. Los sistemas de pruebas y de calidad suelen tener un acceso más amplio que producción, y ese es el riesgo que el enmascaramiento existe para cerrar.
+
+El Reglamento General de Protección de Datos de la UE (RGPD, o GDPR por sus siglas en inglés) es la referencia de la que parten la mayoría de las organizaciones, y muchas leyes nacionales siguen líneas similares. El considerando 26 del [RGPD](https://eur-lex.europa.eu/eli/reg/2016/679/oj) establece una distinción que todo equipo SAP debería conocer.
+
+1. **Los datos seudonimizados siguen siendo datos personales.** Si los datos pueden vincularse de nuevo a una persona con información adicional, como una tabla de correspondencias, el reglamento sigue aplicándose.
+2. **Los datos anónimos quedan fuera de su ámbito.** Los datos que ya no permiten identificar a nadie no están cubiertos.
+
+La consecuencia práctica: la mayor parte del enmascaramiento produce datos seudonimizados, no anónimos. Un sistema de pruebas enmascarado sigue necesitando control de acceso, una finalidad y una regla de conservación. Pida a su delegado de protección de datos que acuerde las reglas de enmascaramiento antes de la primera copia, no después de que pregunte un auditor.
+
+## Las formas de llevar datos a un sistema de pruebas SAP
+
+Hay cinco vías habituales. La mayoría de los programas usan más de una, porque cada fase de prueba necesita algo distinto.
+
+La tabla las compara en los puntos que deciden el encaje.
+
+| Método | Qué obtiene | Volumen | Tratamiento de la privacidad | Mejor encaje |
+|---|---|---|---|---|
+| Copia completa del sistema | Una copia exacta de producción, con todos los mandantes y tablas | Completo | El enmascaramiento tiene que ejecutarse después de la copia, antes de que los usuarios tengan acceso | Pruebas de rendimiento, conversiones de prueba, ensayos de cutover |
+| Copia de mandante | Un mandante copiado dentro de un sistema o entre sistemas; el perfil de copia decide si se copian también los datos maestros y transaccionales | Completo o solo customizing | Igual que una copia de sistema cuando se copian datos de aplicación | Mandantes nuevos de prueba o de formación, devolver un mandante a un estado conocido |
+| SAP Test Data Migration Server (TDMS) | Una copia reducida, seleccionada por periodo o por unidad organizativa, con desordenamiento de datos | Reducido | Reglas de desordenamiento dentro de la herramienta | Entornos existentes de SAP Business Suite que ya tienen licencia |
+| Herramientas de copia selectiva de socios | Objetos de negocio o porciones elegidas, copiados a demanda y enmascarados durante la transferencia | Reducido, dirigido | Reglas de enmascaramiento dentro de la herramienta, aplicadas durante la copia | Refrescos periódicos, datos de regresión, reproducción de defectos |
+| Datos construidos o migrados | Datos creados con scripts, cargas de migración o introducción manual | Lo que usted construya | Sin datos personales reales si se construyen desde cero | Pruebas unitarias tempranas, proyectos greenfield antes del go-live |
+
+### Copias completas del sistema y copias de mandante
+
+Una copia completa del sistema le da los datos más realistas con los que llegará a probar. También copia todos los riesgos de privacidad que contiene producción. Si usa una, el sistema permanece bloqueado hasta que el enmascaramiento se haya ejecutado y comprobado.
+
+La copia de mandante es la herramienta habitual para crear y restablecer mandantes. El perfil de copia es la decisión que importa, porque determina si solo se mueve la configuración o si los datos maestros y transaccionales se mueven con ella.
+
+### SAP Test Data Migration Server
+
+SAP Test Data Migration Server (TDMS) crea sistemas no productivos reducidos a partir de datos de producción, con desordenamiento de los campos sensibles. Nació en SAP Business Suite, y la documentación vigente en el [SAP Help Portal](https://help.sap.com/docs/SAP_TEST_DATA_MIGRATION_SERVER) corresponde a la versión 4.0 SP14.
+
+No encontré ninguna declaración oficial de SAP sobre la cobertura de TDMS para las versiones actuales de S/4HANA ni sobre un sucesor con nombre. Si piensa depender de él, pregunte a SAP por escrito si admite su versión de destino y su modelo de despliegue, incluido RISE with SAP.
+
+### SAP Landscape Transformation y copias shell
+
+SAP Landscape Transformation es un conjunto de herramientas de análisis y transformación que SAP usa en la transición selectiva de datos. [SAP Learning](https://learning.sap.com/courses/discovering-sap-activate-implementation-tools-and-methodology/illustrating-selective-data-transition_dab03cad-3061-40ed-b690-a0d7a2dccc98) describe una conversión shell como una copia del sistema de producción hecha sin datos maestros ni transaccionales, que después se convierte a S/4HANA.
+
+La misma idea sirve para los datos de prueba. Un shell le da el repositorio y la configuración de producción sin datos de negocio, y luego usted lo llena solo con los datos que necesita una prueba.
+
+## Herramientas de datos de prueba selectivos
+
+Varios productos de socios copian datos de negocio seleccionados en los sistemas de prueba SAP y los enmascaran por el camino. Estos son aquellos cuyas afirmaciones pude comprobar en el propio sitio del proveedor, sin ningún orden.
+
+1. **EPI-USE Labs Data Sync Manager.** Un conjunto de herramientas para copiar y enmascarar datos en entornos SAP ABAP, que incluye mandantes ligeros, copias a nivel de objeto y enmascaramiento con reglas predefinidas. EPI-USE Labs afirma que [Data Sync Manager](https://www.epiuselabs.com/data-sync-manager-dsm-software-suite) está certificado para la integración con SAP S/4HANA y S/4HANA Cloud y funciona con RISE with SAP.
+2. **SNP Kyano Test Data Organizer.** Extrae los datos que necesita una prueba en lugar del sistema completo, y enmascara los datos sensibles a medida que los aprovisiona. SNP describe el [Test Data Organizer](https://www.snpgroup.com/en/platform/kyano-manage/use-cases/test-management/) como compatible con RISE with SAP Private Cloud Edition.
+3. **Qlik Gold Client.** Copia y sincroniza datos transaccionales seleccionados de producción a destinos no productivos, con enmascaramiento estático para los sistemas existentes y enmascaramiento dinámico para los datos en tránsito.
+4. **Natuvion DCS Protect.** Localiza datos personales y aplica anonimización o seudonimización en sistemas de prueba, de calidad, de desarrollo y de formación. [Natuvion](https://natuvion.com/tda) lo posiciona para migraciones de prueba y para la operación continua, y no menciona S/4HANA en esa página, así que confirme la cobertura directamente.
+
+Antes de comprar, pida a cada proveedor que responda a estas preguntas sobre sus propios sistemas:
+
+1. ¿Qué versiones de S/4HANA y qué modelos de despliegue admite hoy?
+2. ¿Enmascara antes de que los datos salgan de producción, o después de que lleguen al destino?
+3. ¿El enmascaramiento es coherente entre los sistemas conectados, de modo que un cliente enmascarado en S/4HANA coincida con el mismo cliente en su CRM o en su data warehouse?
+4. ¿Cuánto tarda el refresco de una sociedad con volúmenes de producción?
+5. ¿Quién mantiene las reglas de enmascaramiento cuando usted añade tablas o campos a medida?
+
+## Ajustar los datos de prueba a la fase de prueba
+
+Cada fase de prueba necesita datos por un motivo distinto. Este es mi punto de partida cuando planifico los datos de prueba en un programa S/4HANA.
+
+| Fase de prueba | Qué deben hacer los datos | Origen habitual |
+|---|---|---|
+| Pruebas unitarias | Permitir que un desarrollador demuestre que un objeto funciona | Datos construidos, o una pequeña porción enmascarada |
+| Rondas de pruebas de integración del sistema | Ejecutar cadenas de procesos completas entre módulos e interfaces | Copia enmascarada a nivel de producción o copia selectiva |
+| Rondas de pruebas de aceptación del usuario | Parecerse a los datos de los propios usuarios de negocio, para que reconozcan sus casos | Datos enmascarados a nivel de producción, refrescados antes de cada ronda |
+| Pruebas de regresión | Mantenerse estables para que los resultados se puedan comparar de una ejecución a otra | Un conjunto de datos fijo y restablecible, más un plan de refresco |
+| Pruebas de rendimiento | Igualar el volumen de producción, para que los resultados de concurrencia tengan sentido | Copia completa enmascarada, o volumen a escala de producción |
+| Conversiones de prueba y ensayos de cutover | Demostrar la migración con la forma real de los datos | Copias completas de producción, enmascaradas donde tengan acceso personas ajenas al equipo central |
+
+La UAT merece un cuidado especial. El negocio debe ser responsable de las pruebas de aceptación del usuario y, en mi opinión, necesitan al menos de 6 a 8 semanas.
+
+Dé a los usuarios datos que reconozcan: sus propios clientes, materiales y listas de precios, aunque sea con nombres enmascarados. Mi guía de [pruebas de aceptación del usuario en SAP](/es/sap-user-acceptance-testing/) explica cómo ejecutarlas.
+
+Las conversiones de prueba siguen la misma lógica. En una conversión brownfield planifico tres conversiones de prueba, y cada una debe ejecutarse sobre una copia reciente de producción.
+
+En mi experiencia, la migración de datos supone entre el 30 y el 40 por ciento del esfuerzo del programa, así que planifique el acceso a los datos para esas ejecuciones con el equipo de migración. Mi artículo sobre [por qué fracasa la migración de datos en SAP](/es/why-sap-data-migration-fails-and-how-to-fix-it/) explica cómo encajan las cargas de prueba.
+
+### Dos entornos, dos planes de refresco
+
+Durante un programa mantengo dos entornos separados: uno para el proyecto y otro para la operación diaria (BAU). Así los cambios del soporte en vivo y los del proyecto se prueban por separado.
+
+Cada entorno necesita su propio plan de datos de prueba. Las pruebas de BAU necesitan datos cercanos a la producción de hoy, porque las correcciones del soporte responden a los problemas de hoy.
+
+Las pruebas del proyecto necesitan datos que encajen con el nuevo diseño, lo que puede ser una copia convertida o una carga selectiva. Mantenga un calendario de refresco separado para cada uno, para que un refresco en uno nunca borre datos de prueba que el otro todavía necesita.
+
+## Cómo organizaría la gestión de datos de prueba en SAP
+
+Las pruebas consumen cerca del 35 por ciento del esfuerzo del programa. Planifique los datos de prueba dentro de ese esfuerzo, no en la semana anterior a la SIT.
+
+Este es el orden que yo seguiría:
+
+1. **Acuerde el principio por escrito.** Datos enmascarados a nivel de producción, aprobados por el patrocinador del programa, el delegado de protección de datos y los responsables de negocio.
+2. **Localice los datos personales y sensibles.** Clientes, proveedores, empleados, datos bancarios, contactos, campos de texto libre, anexos y cualquier tabla a medida que los contenga.
+3. **Redacte las reglas de enmascaramiento.** Decida campo por campo qué se sustituye, qué se conserva y qué se elimina, y mantenga las sustituciones coherentes entre los sistemas conectados.
+4. **Asigne los datos a cada fase de prueba.** Use la tabla anterior como punto de partida y dimensione primero el volumen para las pruebas de rendimiento y de concurrencia.
+5. **Elija los métodos de copia y las herramientas.** Copias completas donde importa el volumen, copias selectivas donde importan la rapidez y la frecuencia, y compruebe que la herramienta admite su versión.
+6. **Fije el calendario de refresco.** Un plan por entorno, con refrescos programados antes de cada ronda de SIT y de UAT y de cada conversión de prueba.
+7. **Bloquee el acceso hasta comprobar el enmascaramiento.** Nadie ajeno al equipo técnico central inicia sesión en una copia nueva hasta que se haya superado una comprobación del enmascaramiento.
+
+Después, conviértalo en una puerta. La estrategia y los criterios de entrada y salida de cada ciclo están en mi guía de [estrategia de pruebas de S/4HANA](/es/s4hana-testing-strategy/), y la preparación de los datos de prueba forma parte de los criterios de entrada de cada ronda.
+
+El siguiente paso concreto: haga una lista de todos los sistemas no productivos que hoy contienen una copia de datos de producción y compruebe cuáles se enmascararon.
+
+Si quiere una opinión independiente sobre un enfoque de datos de prueba o un plan de pruebas para un programa S/4HANA, puede [contactarme aquí](/es/contact-noel-erp-support/).
+
+## Preguntas frecuentes
+
+<details>
+<summary>¿Qué es la gestión de datos de prueba en SAP?</summary>
+
+Es la forma de planificar, crear, copiar, enmascarar y refrescar los datos de los sistemas de prueba SAP. El objetivo son datos que se comporten como producción en volumen y realismo, sin exponer datos personales reales a personas que no deberían verlos.
+
+</details>
+
+<details>
+<summary>¿Puedo usar datos de producción para las pruebas SAP?</summary>
+
+Solo después de enmascararlos, e incluso entonces con control de acceso. Según el RGPD, los datos seudonimizados siguen siendo datos personales, así que una copia enmascarada sigue necesitando una finalidad, reglas de acceso y una regla de conservación. Acuerde las reglas de enmascaramiento con su delegado de protección de datos antes de la primera copia.
+
+</details>
+
+<details>
+<summary>¿Sigue disponible SAP TDMS para S/4HANA?</summary>
+
+La documentación vigente de TDMS en el SAP Help Portal corresponde a la versión 4.0 SP14, y TDMS nació en SAP Business Suite. No encontré ninguna declaración oficial de SAP sobre su cobertura de las versiones actuales de S/4HANA. Pregunte a SAP por escrito antes de planificar en torno a él.
+
+</details>
+
+<details>
+<summary>¿Qué herramientas crean datos de prueba selectivos en SAP?</summary>
+
+SAP Test Data Migration Server, además de productos de socios como EPI-USE Labs Data Sync Manager, SNP Kyano Test Data Organizer y Qlik Gold Client. Natuvion DCS Protect se centra en anonimizar y seudonimizar datos en sistemas de prueba. Compruebe cada uno frente a su versión de S/4HANA y su modelo de despliegue.
+
+</details>
+
+<details>
+<summary>¿Cuántos datos de prueba necesito para las pruebas de rendimiento en SAP?</summary>
+
+Volumen a nivel de producción. Los problemas de rendimiento aparecen con tamaños de tabla reales y muchos usuarios concurrentes, así que una prueba con un conjunto de datos escaso demuestra muy poco. Una copia completa enmascarada de producción es el origen habitual para las pruebas de rendimiento y de concurrencia.
+
+</details>

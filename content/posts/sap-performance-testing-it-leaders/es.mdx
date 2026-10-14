@@ -1,39 +1,38 @@
 ---
-title: "Pruebas de rendimiento en SAP: lo que deben saber los líderes de TI"
-h1: "Pruebas de rendimiento en SAP: lo que deben saber los líderes de TI"
-metaTitle: "Pruebas de rendimiento en SAP: guía para líderes de TI"
-metaDescription: "Pruebas de rendimiento en SAP para líderes de TI: cuándo empezar, qué probar, criterios de aceptación y quién es responsable de qué en RISE y S/4HANA Cloud."
-excerpt: "Los problemas de rendimiento en SAP casi siempre son previsibles y casi siempre se descubren después del go-live. Pruébelos desde el diseño, con criterios acordados antes de la primera ejecución."
+title: "Pruebas de rendimiento en SAP: carga, concurrencia y herramientas"
+h1: "Pruebas de rendimiento en SAP: carga, concurrencia y herramientas"
+metaTitle: "Pruebas de rendimiento en SAP: concurrencia y herramientas"
+metaDescription: "Pruebas de rendimiento en SAP antes del go-live: concurrencia y carga, datos enmascarados a nivel de producción, criterios de aceptación, herramientas y RISE."
+primaryKeyword: "pruebas de rendimiento SAP"
+excerpt: "Las pruebas de rendimiento en SAP demuestran, antes del go-live, que el sistema aguanta cuando muchos usuarios y jobs lo usan a la vez. Pruebas de concurrencia con datos enmascarados a nivel de producción, evaluadas frente a criterios acordados de antemano."
 slug: "sap-performance-testing-it-leaders"
 date: "2025-07-12"
-updated: "2026-10-07"
+updated: "2026-10-14"
 lastReviewed: "2026-05-21"
 hero: "/images/wp/2025/07/1-1.webp"
-heroAlt: "Velocímetro con la etiqueta rendimiento y la aguja apuntando hacia el máximo"
+heroAlt: "Indicador tipo velocímetro con la etiqueta rendimiento y la aguja apuntando al máximo"
 category: "erp-consulting-guide"
-tags: ["sap-technical-decisions", "performance-testing", "s4hana-implementation", "rise-with-sap"]
+tags: ["sap-testing", "performance-testing", "s4hana-implementation", "rise-with-sap"]
 author: "Noel D'Costa"
-experienceSource: "Direct experience leading and recovering SAP performance testing on 21 S/4HANA and ECC programmes across manufacturing, financial services, public sector, and retail in Europe, GCC, US, and UK markets. The five-background-jobs-clashed story is anchored to a GCC manufacturing programme in 2024. RISE / GROW / Joule coverage reflects 2024-2025 SAP product positioning."
+experienceSource: "Noel's first-person experience leading and rescuing SAP programmes (confirmed by Noel, 14 October 2026: performance testing before go-live with concurrency tests as the priority, production-level masked test data, and the tools his teams have used). No client names. Product facts checked against official SAP, OpenText and Tricentis documentation, October 2026."
 keyTakeaways:
-  - "El riesgo de rendimiento nace en el diseño: la forma de los informes, las cadenas de jobs y el diseño de los servicios OData deciden el resultado antes de escribir código"
-  - "Los picos de inicio de sesión en el cambio de turno, los informes Z sin límites y los jobs de cierre que se solapan son los fallos más comunes, y todos son previsibles"
-  - "Las pruebas de volumen son el atajo que más programas toman y del que más se arrepienten"
-  - "La responsabilidad del rendimiento necesita un líder a nivel de programa con autoridad para cuestionar el diseño, no solo a QA"
-  - "En RISE, SAP es responsable de la infraestructura; el cliente y el socio lo son del rendimiento de aplicación, integración y procesos"
-  - "Si el sistema aprobó porque los usuarios de la UAT dijeron que se sentía rápido, tiene una opinión, no un criterio de aceptación"
-pullQuote: "Los riesgos de rendimiento se siembran durante el diseño, con las decisiones de arquitectura, la forma en que se estructuran los informes y cuánta lógica se empuja hacia ABAP. Si espera a que el sistema esté completamente construido, está probando consecuencias. Para entonces, el retrabajo es caro."
+  - "Las pruebas de rendimiento tienen que terminar antes del go-live, y las de concurrencia son las que más importan"
+  - "Pruebe con datos enmascarados con volumen y realismo de producción; si no, los resultados no predecirán el comportamiento en vivo"
+  - "Los picos de inicio de sesión, las cadenas de jobs del cierre mensual, los informes a medida sin límites y las colas de interfaces son los fallos previsibles"
+  - "Acuerde los umbrales de superado y fallido por transacción, job e interfaz antes de la primera ejecución, y no los mueva"
+  - "En RISE with SAP, la ejecución de las pruebas de carga y el ajuste de SQL siguen en manos del cliente, salvo que compre los servicios adicionales de SAP"
+pullQuote: "Los riesgos de rendimiento se siembran durante el diseño: en las decisiones de arquitectura, en cómo se estructuran los informes, en cuánta lógica se lleva a ABAP. Si espera a que el sistema esté completamente construido, está probando consecuencias. Para entonces, rehacer el trabajo sale caro."
 mentions:
   - "SAP S/4HANA"
+  - "SAP HANA"
   - "SAP Fiori"
-  - "SAP CPI"
-  - "SAP BTP"
-  - "SAP Solution Manager"
   - "SAP Cloud ALM"
+  - "SAP Solution Manager"
   - "RISE with SAP"
-  - "GROW with SAP"
-  - "Joule"
-  - "LoadRunner"
+  - "OpenText Professional Performance Engineering"
+  - "OpenText LoadRunner"
   - "Tricentis NeoLoad"
+  - "Apache JMeter"
 originalUrl: "https://noeldcosta.com/sap-performance-testing-it-leaders/"
 canonicalUrl: "https://noeldcosta.com/es/sap-performance-testing-it-leaders/"
 locale: "es"
@@ -41,170 +40,189 @@ translatedFrom: "en"
 translationSource: "reviewed-en-2026-10"
 ---
 
-Las pruebas de rendimiento en SAP demuestran, antes del go-live, que las transacciones críticas, los jobs en segundo plano y las interfaces cumplen los tiempos de respuesta acordados con los volúmenes de producción. Empiécelas en el diseño, ejecute las pruebas de volumen y de carga en Realize cuando la configuración sea estable, termine el ciclo antes de las pruebas de aceptación de usuario (UAT) y haga que los resultados sean una condición para el cutover. Esta guía es para CIO, directores de programa y responsables de pruebas en programas S/4HANA, incluido RISE with SAP. Cubre qué probar, quién es responsable, cómo redactar criterios de aceptación y qué cambia en la nube. Empiece por la tabla de criterios de aceptación: si no puede rellenarla, no está listo para probar.
+Las pruebas de rendimiento en SAP demuestran, antes del go-live, que las transacciones críticas, los jobs en segundo plano y las interfaces cumplen los tiempos de respuesta acordados cuando muchos usuarios y jobs se ejecutan a la vez. En mi experiencia, las pruebas que importan son las de concurrencia, ejecutadas con datos enmascarados a volumen de producción y frente a criterios de superado y fallido que el negocio acordó antes de la primera ejecución.
 
-Los problemas de rendimiento en los programas SAP casi siempre se descubren después del go-live. Los mosaicos de Fiori agotan el tiempo de espera cuando 300 usuarios inician sesión en el cambio de turno. Los informes Z se congelan porque alguien lanzó una consulta del ejercicio fiscal sin límites contra una tabla con 50 millones de registros. Los jobs en segundo plano se solapan durante el cierre mensual y la ejecución de contabilización se aborta.
+Esta guía está dirigida a CIO, directores de programa y líderes de pruebas en programas S/4HANA, incluido RISE with SAP. Trata qué probar, qué datos necesita, cómo redactar los criterios de aceptación, qué herramientas hacen el trabajo y quién es responsable de qué. Para ver dónde se ubica el rendimiento entre los demás tipos de prueba, empiece por mi visión general de las [pruebas SAP explicadas](/es/sap-testing-explained/).
 
-Los problemas de rendimiento en los programas SAP rara vez llegan por sorpresa. La mayoría eran previsibles, solo que no se planificaron. El patrón habitual: las pruebas funcionales fueron exhaustivas. Las pruebas de volumen se planificaron y después se aplazaron cuando el calendario se comprimió. Las consecuencias llegaron en las primeras semanas de operación en vivo.
+Los problemas de rendimiento en los programas SAP rara vez son una sorpresa.
 
-No son casos extremos. Son previsibles. La única pregunta es si el programa los probó o si el negocio los descubre con pedidos reales en marcha.
+Los tiles de Fiori agotan el tiempo de espera cuando cientos de usuarios inician sesión al comienzo de un turno. Un informe a medida se congela porque alguien lanzó una selección de ejercicio fiscal sin límites contra una tabla muy grande. Los jobs en segundo plano se solapan en el cierre mensual y la ejecución de contabilización se cancela.
 
-![Infraestructura de un centro de datos que da soporte a entornos de pruebas de rendimiento de SAP y a cargas de producción con usuarios concurrentes](https://images.pexels.com/photos/5480781/pexels-photo-5480781.jpeg)
+Todo esto es previsible. La única pregunta es si el programa lo probó o si el negocio lo descubre con pedidos reales en marcha.
 
-<stepper title="Pruebas de rendimiento a lo largo de SAP Activate" steps="Explore|Realize|Pre-UAT|Cutover|Hypercare" bodies="Identifique los riesgos de rendimiento en el diseño. La arquitectura y la forma de los informes deciden el resultado antes de escribir código.|Ejecute pruebas de volumen y de carga a medida que la configuración se estabiliza. Una configuración parcial produce resultados engañosos.|Complete el ciclo de rendimiento completo antes de la UAT, no como parte de ella.|Apruebe el cutover contra los criterios de aceptación acordados de antemano, no contra la opinión.|Vigile los KPI en vivo durante 30 a 60 días. La mayoría de las regresiones aparecen en el primer ciclo de cierre."></stepper>
+![Infraestructura de centro de datos que soporta los entornos de pruebas de rendimiento SAP y las cargas de producción con usuarios concurrentes](https://images.pexels.com/photos/5480781/pexels-photo-5480781.jpeg)
 
-## Por qué S/4HANA cambió las pruebas de rendimiento
+<stepper title="Pruebas de rendimiento a lo largo de SAP Activate" steps="Explore|Realize|Antes de la UAT|Cutover|Hypercare" bodies="Identifique los riesgos de rendimiento en el diseño. La arquitectura y la forma de los informes deciden los resultados antes de escribir código.|Ejecute pruebas de volumen y de carga a medida que la configuración se estabiliza. Una configuración parcial produce resultados engañosos.|Complete el ciclo completo de rendimiento antes de la UAT, no como parte de ella.|Apruebe el cutover frente a los criterios de aceptación acordados de antemano, no frente a opiniones.|Vigile los KPI en vivo durante 30 a 60 días. La mayoría de las regresiones aparecen en el primer ciclo de cierre."></stepper>
 
-En un sistema ECC sobre una base de datos tradicional, las pruebas de rendimiento significaban hacer pruebas de carga del servidor de aplicaciones y de la base de datos: tiempo de ejecución de ABAP, rendimiento de SQL, planificación de jobs. El front end era SAP GUI, que rara vez sorprendía a nadie.
+## Por qué S/4HANA y SAP HANA cambiaron las pruebas de rendimiento
 
-En S/4HANA, con front ends Fiori, extensiones en SAP BTP e integración mediante SAP Cloud Integration (CPI), el rendimiento depende de varias capas a la vez. Un mosaico de Fiori lento podría deberse a una llamada ABAP larga, un tiempo de espera del gateway, un servicio OData no diseñado para solicitudes concurrentes o la latencia de red en una configuración híbrida. Probar solo el back end no lo encontrará. Probar la ruta completa, sí.
+En un sistema ECC sobre una base de datos tradicional, las pruebas de rendimiento consistían en someter a carga el servidor de aplicaciones y la base de datos: el tiempo de ejecución ABAP, el rendimiento SQL y la planificación de jobs. El front end era SAP GUI, que rara vez sorprendía a nadie.
 
-<explainer-flow title="Dónde puede esconderse un mosaico de Fiori lento" caption="Cada capa puede pasar por separado. Las pruebas de extremo a extremo siguen toda la ruta, que es lo que el usuario realmente espera." steps="Apertura del mosaico|Llamada OData|Procesamiento ABAP|Lectura de base de datos|Renderizado" notes="Tormentas de inicio de sesión al comenzar el turno|Tiempos de espera del gateway, servicios no creados para la concurrencia|Llamadas ABAP de larga duración|Selecciones sin límites sobre tablas grandes|Más la latencia de red de las sedes distantes" result="Un único tiempo de respuesta, medido de extremo a extremo"></explainer-flow>
+En S/4HANA, con front ends Fiori, extensiones en SAP BTP e integración mediante SAP Cloud Integration, el rendimiento depende de varias capas a la vez. Un tile de Fiori lento puede ser una llamada ABAP larga, un timeout del gateway, un servicio OData no diseñado para peticiones concurrentes o la latencia de red en una configuración híbrida. Probar solo el back end no lo encontrará.
 
-Las integraciones añaden su propio riesgo. Los flujos que funcionaban en desarrollo y en QA con mensajes de prueba individuales pueden encolarse o fallar en silencio con los volúmenes de producción. Si las colas de mensajes no están dimensionadas para la carga real, los retrasos se acumulan. Los síntomas parecen otra cosa: fallos intermitentes de pedidos, discrepancias de facturas, datos presentes en un sistema y ausentes en otro.
+<explainer-flow title="Dónde puede esconderse un tile de Fiori lento" caption="Cada capa puede superar la prueba por separado. La prueba de principio a fin sigue todo el camino, que es lo que el usuario realmente espera." steps="Lanzamiento del tile|Llamada OData|Procesamiento ABAP|Lectura de base de datos|Renderizado" notes="Avalanchas de inicios de sesión al comienzo del turno|Timeouts del gateway, servicios no diseñados para la concurrencia|Llamadas ABAP de larga duración|Selecciones sin límites en tablas grandes|Más la latencia de red de las sedes lejanas" result="Un solo tiempo de respuesta, medido de principio a fin"></explainer-flow>
 
-## Las cuatro pruebas que importan
+Las pruebas de rendimiento de SAP HANA tienen su propio matiz en una conversión. El código estable de ECC se comporta de forma distinta en una base de datos en memoria. Muchos programas se vuelven mucho más rápidos, mientras que otros producen perfiles inesperados con determinados patrones de datos, así que la regresión específica de la conversión para el código a medida más pesado no es opcional.
 
-1. **Las pruebas de carga** comprueban el comportamiento con el volumen esperado. La palabra clave es esperado. Necesita volúmenes reales de transacciones, número de usuarios y sesiones concurrentes. Muchas pruebas de carga fracasan porque usaron estimaciones de volumen que todos sabían optimistas.
-2. **Las pruebas de estrés** superan los límites de diseño para encontrar dónde se rompe el sistema. Si los volúmenes se duplicarán en dieciocho meses, le dicen si la arquitectura aguantará y si el dimensionamiento se convertirá en un problema antes de la próxima revisión de infraestructura.
-3. **Las pruebas de resistencia (soak)** mantienen una carga constante durante un periodo prolongado para sacar a la luz problemas que se acumulan con el tiempo: fugas de memoria, fragmentación y contención de cadenas de jobs a lo largo de ejecuciones repetidas. Es la prueba que más se omite y la que habría detectado el fallo de cierre mensual descrito más abajo.
-4. **Las pruebas de extremo a extremo** siguen la ruta completa que recorre un usuario: apertura del mosaico, llamada OData, procesamiento ABAP, lectura de la base de datos, renderizado. Es la única forma de encontrar problemas que son invisibles cuando cada capa se prueba por separado.
+Los flujos de integración añaden su propio riesgo. Flujos que funcionaban en desarrollo con mensajes de prueba sueltos pueden acumularse en cola o fallar sin aviso con volúmenes de producción. Los síntomas parecen otra cosa: fallos intermitentes de pedidos, discrepancias en facturas, datos presentes en un sistema y ausentes en otro.
 
-## Escenarios de alto riesgo
+## Primero la concurrencia: las pruebas que importan
 
-**Cambio de turno y pico de inicios de sesión.** Cuando 200 usuarios abren el launchpad de Fiori a las 8 de la mañana, se disparan la autenticación y el renderizado del launchpad. Un sistema que va bien fuera de hora punta puede resultar inutilizable en esa franja si nunca se probaron los inicios de sesión concurrentes. En manufactura, retail y servicios financieros, las tormentas de inicio de sesión producen las quejas más visibles del primer día.
+Las pruebas de rendimiento deben hacerse antes del go-live. Las que considero importantes son las de concurrencia: muchos usuarios y jobs usando las mismas transacciones, tablas y servicios al mismo tiempo.
 
-**Cierre mensual y anual.** El escenario de mayor riesgo en la mayoría de los programas: contabilizaciones de gran volumen, cadenas de jobs con una secuencia estricta y un equipo de finanzas corriendo contra una fecha límite fija. Ejecute las cadenas de jobs del cierre de extremo a extremo con volúmenes del periodo de cierre, no con los promedios diarios.
+Que un solo usuario cree un pedido de cliente en dos segundos no demuestra casi nada. El mismo pedido con 150 personas introduciendo pedidos, una ejecución de entregas en segundo plano y una interfaz contabilizando mensajes entrantes es la prueba que predice el primer día.
 
-Los jobs por lotes suelen probarse de forma aislada, lo que no refleja la realidad. A fin de mes, el procesamiento en segundo plano llega a su pico y muchos programas se ejecutan en paralelo sobre los mismos recursos. Un solo job mal optimizado puede bloquear otros cinco, y el cierre se pasa de su ventana.
+Esta tabla muestra qué demuestra cada tipo de prueba y cuándo ejecutarla:
 
-**Conversión de ECC a S/4HANA.** El código estable de ECC se comporta de forma distinta en HANA. Muchos programas se vuelven mucho más rápidos; algunos producen perfiles inesperados con patrones de datos concretos. Las pruebas de regresión específicas de la conversión no son opcionales. Mi [guía de migración de ECC a S/4HANA](/es/ecc-to-s4hana-migration/) explica dónde encaja esto en el plan de conversión.
-
-**Usuarios en varias regiones.** La latencia de red afecta a todas las transacciones. Un pedido de venta que tarda dos segundos en el país de alojamiento puede parecer roto a 3000 millas de distancia si nadie probó desde allí. RISE traslada el alojamiento a SAP, pero la latencia sigue dependiendo de la región que elija y del enrutamiento hacia sus usuarios.
-
-## Criterios de aceptación contra los que se puede probar
-
-Acuerde los criterios con el negocio en la fase Prepare, antes de ejecutar ninguna prueba. Cada uno nombra la transacción o el job, la carga y el umbral. Estos ejemplos muestran la forma; fije sus propias cifras a partir de las necesidades operativas:
-
-| Elemento | Condición de carga | Umbral de aprobación | Responsable |
+| Prueba | Qué demuestra | Cuándo ejecutarla | Qué suele encontrar |
 |---|---|---|---|
-| Creación de pedidos de venta (VA01 o app de Fiori) | 150 usuarios concurrentes de entrada de pedidos | Menos de 3 segundos para el 95 % de las transacciones | Responsable del proceso order-to-cash |
-| Primera carga del launchpad de Fiori al inicio del turno | Pico de inicios de sesión concurrentes del mayor turno | Menos de 5 segundos para el 95 % de los usuarios | Responsable de operaciones de TI |
-| Cadena de jobs del cierre mensual | Volúmenes del periodo de cierre, secuencia completa | Termina dentro de la ventana de cierre acordada sin abortos | Controller financiero |
-| Interfaz de pedidos entrantes | Volumen horario máximo de mensajes | Ninguna cola acumulada con más de 15 minutos de antigüedad | Responsable de integración |
-| Informe personalizado de gran volumen | Volumen completo de datos de producción, selección típica | Menos de 60 segundos; selecciones sin límites bloqueadas | Responsable del informe |
+| Concurrencia | Muchos usuarios y jobs pueden trabajar a la vez sobre los mismos objetos | Realize, una vez que la configuración es estable, y otra vez antes de la UAT | Esperas por bloqueos, avalanchas de inicios de sesión, cuellos de botella en el gateway |
+| Carga | El sistema cumple los tiempos de respuesta con el volumen pico previsto | Realize, cuando los guiones de concurrencia funcionan | Servicios OData lentos, informes a medida pesados |
+| Estrés | Dónde se rompe el sistema por encima de los límites de diseño | Antes de la UAT, si se prevé crecimiento | Huecos de dimensionamiento, límites de colas |
+| Resistencia | El sistema mantiene una carga estable durante horas | Antes de la UAT, idealmente a lo largo de un cierre simulado | Crecimiento de memoria, contención entre cadenas de jobs en ejecuciones repetidas |
+| De principio a fin | El camino completo que espera un usuario cumple el objetivo | Junto a las pruebas de carga | Problemas invisibles cuando cada capa se prueba por separado |
 
-«El sistema debería ser lo bastante rápido para las operaciones del negocio» no se puede probar ni aceptar. Cambiar los criterios después de recibir los resultados anula el sentido de tenerlos.
+La palabra clave en las pruebas de carga es previsto. Necesita volúmenes de transacciones, números de usuarios y patrones de sesión reales. Una prueba de carga construida sobre estimaciones de volumen que todos sabían optimistas da un aprobado que no significa nada.
 
-## Qué deben esperar los líderes de TI de sus equipos
+La prueba de resistencia es la que más a menudo se omite. Las pruebas de volumen en general son el atajo que los programas toman con más frecuencia cuando se comprime el calendario, y del que más se arrepienten.
 
-Pida cada uno de estos puntos por su nombre:
+## Escenarios de alto riesgo para los guiones
 
-| Expectativa | Qué debe entregarse | Por qué importa |
+Prepare primero estos guiones. Cubren la mayoría de los fallos que llegan a producción.
+
+1. **Cambio de turno y pico de inicios de sesión.** Cuando unos cientos de usuarios abren el launchpad de Fiori al mismo tiempo, la autenticación y la carga del launchpad se disparan. Un sistema que va bien fuera del pico puede ser inutilizable en esa ventana si nunca se probaron los inicios de sesión concurrentes.
+2. **Cierre mensual y anual.** Contabilizaciones de gran volumen, cadenas de jobs con una secuencia estricta y un equipo de finanzas contra una fecha límite fija. Ejecute las cadenas de jobs del cierre de principio a fin con los volúmenes del periodo de cierre, no con los recuentos diarios medios.
+3. **Jobs en segundo plano que se solapan.** Los jobs batch suelen probarse de uno en uno, lo que no refleja la realidad. Un job mal optimizado puede bloquear a varios otros, y el cierre se sale de su ventana.
+4. **Informes a medida sin límites.** Un informe que responde al instante con datos de prueba puede tardar minutos con un ejercicio fiscal completo. Pruebe las selecciones típicas y las del peor caso, y bloquee las que no tienen límites.
+5. **Usuarios en varias regiones.** La latencia de red afecta a cada transacción. RISE traslada el alojamiento a SAP, pero la latencia sigue dependiendo de la región que elija y del enrutamiento hasta sus usuarios, así que pruebe desde las sedes más lejanas.
+
+Mi [guía de migración de ECC a S/4HANA](/es/ecc-to-s4hana-migration/) explica dónde encajan las pruebas de la conversión en el plan general.
+
+### Datos de prueba a nivel de producción
+
+Los datos deciden si algo de esto tiene sentido. Insisto en datos enmascarados a nivel de producción: volumen y realismo de producción, con los campos personales y sensibles enmascarados.
+
+Un cliente con 200.000 líneas de pedido abiertas se comporta de forma distinta a uno con 5.000. Los filtros que responden al instante en un mandante de pruebas con pocos datos agotan el tiempo de espera en producción. Genere volumen en las áreas de alto riesgo, use una combinación de transacciones representativa y haga llamadas reales a las interfaces donde pueda.
+
+Cómo obtener esos datos de forma segura, mediante copias, herramientas de datos de prueba selectivos y enmascaramiento, se explica en mi guía de [gestión de datos de prueba en SAP](/es/sap-test-data-management/). Planifique el refresco antes del primer ciclo de rendimiento, porque lleva más tiempo del que suponen la mayoría de los planes de prueba.
+
+## Criterios de aceptación que se puedan probar
+
+Acuerde los criterios con el negocio en la fase Prepare, antes de ejecutar ninguna prueba. Cada uno nombra la transacción o el job, la carga y el umbral.
+
+Estos ejemplos muestran la forma. Fije sus propias cifras a partir de las necesidades operativas:
+
+| Elemento | Condición de carga | Umbral de superación | Responsable |
+|---|---|---|---|
+| Creación de pedidos de cliente (VA01 o app Fiori) | 150 usuarios concurrentes introduciendo pedidos | Menos de 3 segundos en el 95 % de las transacciones | Responsable del proceso order-to-cash |
+| Primera carga del launchpad de Fiori al comienzo del turno | Pico de inicios de sesión concurrentes del turno más grande | Menos de 5 segundos para el 95 % de los usuarios | Líder de operaciones de TI |
+| Cadena de jobs del cierre mensual | Volúmenes del periodo de cierre, secuencia completa | Termina dentro de la ventana de cierre acordada, sin cancelaciones | Controller financiero |
+| Interfaz de pedidos entrantes | Volumen pico de mensajes por hora | Ningún mensaje en cola con más de 15 minutos de antigüedad | Líder de integración |
+| Informe a medida de gran volumen | Volumen completo de datos de producción, selección típica | Menos de 60 segundos; selecciones sin límites bloqueadas | Responsable del informe |
+
+«El sistema debe ser lo bastante rápido para las operaciones del negocio» no se puede probar ni aceptar. Cambiar los criterios después de que lleguen los resultados anula el sentido de tenerlos.
+
+Si el sistema se aprobó porque los usuarios de la UAT dijeron que parecía rápido, tiene una opinión, no un criterio de aceptación. Convierta los resultados en una puerta formal antes del cutover, tal como describe mi guía de [quality gates en SAP](/es/sap-quality-gates-implementation/). El plan general de ciclos, con criterios de entrada y salida para cada fase de prueba, corresponde a su [estrategia de pruebas de S/4HANA](/es/s4hana-testing-strategy/).
+
+## Herramientas, responsabilidades y la nube
+
+### Herramientas de pruebas de rendimiento en SAP
+
+Una prueba de rendimiento necesita tres cosas: un generador de carga capaz de manejar los protocolos de SAP, monitorización del lado de SAP y un lugar para gestionar los casos de prueba y los resultados. LoadRunner es la herramienta de carga que mis equipos han usado en programas SAP. Nombre la herramienta pronto en el plan de pruebas, porque las licencias, los generadores de carga y las habilidades de scripting llevan tiempo.
+
+Las principales opciones en 2026:
+
+| Herramienta | Función | Qué conviene saber |
 |---|---|---|
-| Niveles de servicio de rendimiento | Umbrales por transacción, interfaz y job, con criterio de superado y no superado | Evita que la opinión de la UAT se imponga a la evidencia |
-| Alcance basado en riesgos | Priorización por volumen de usuarios, puntos de integración y dependencia de datos | Dedica los ciclos de prueba a las cargas que importan |
-| Participación de varios equipos | Basis, infraestructura, funcional, seguridad e integración presentes durante las ejecuciones | Evita el traspaso de culpas cuando aparecen carencias |
-| Herramientas y entornos listos | Generadores de carga (OpenText LoadRunner, Tricentis NeoLoad, Apache JMeter), monitorización y refrescos de datos preparados antes de que empiecen los ciclos | Hace realista la simulación |
-| Datos de prueba realistas | Datos maestros con volumen de producción, llamadas reales a interfaces, mezcla representativa de transacciones | Hace que los resultados predigan el comportamiento del go-live |
-| Informes de rendimiento | Mezcla de carga, tiempos de respuesta, CPU y memoria, duración de los jobs, tasas de error | Da una base de evidencia a la aprobación del cutover |
-| Plan de monitorización posterior al go-live | KPI a vigilar durante los primeros 30 a 60 días | Confirma que el sistema en vivo se mantiene dentro de los límites probados |
+| [OpenText Professional Performance Engineering](https://www.opentext.com/products/professional-performance-engineering) | Generación de carga | El producto que antes se llamaba LoadRunner Professional. Sus paquetes de protocolos cubren SAP, SAP GUI y SAP Web |
+| [Tricentis NeoLoad](https://www.tricentis.com/products/performance-testing-neoload) | Generación de carga | Tricentis indica soporte para SAP GUI, Fiori, RFC e IDoc, y puede reutilizar activos de Tricentis Tosca |
+| Apache JMeter | Generación de carga | Código abierto. Genera tráfico HTTP, como llamadas Fiori y OData |
+| [SAP Cloud ALM](https://help.sap.com/docs/cloud-alm/applicationhelp/test-execution) | Gestión de pruebas | Prepara y ejecuta casos de prueba manuales y automatizados y hace seguimiento de los defectos. No genera carga por sí mismo |
+| [SAP Solution Manager](https://support.sap.com/en/alm/solution-manager.html) | Gestión de pruebas | El mantenimiento estándar termina el 31 de diciembre de 2027, así que planifique el trabajo nuevo en Cloud ALM |
 
-## Errores comunes
+Para una visión más amplia de las herramientas funcionales y de automatización, consulte mi [comparación de herramientas de pruebas y validación de SAP](/es/sap-testing-validation-tools-comparison/). La herramienta importa menos que los guiones, los datos y los criterios.
 
-Cuatro errores aparecen con más frecuencia, incluso en grandes empresas con modelos de entrega maduros.
+### RISE with SAP reparte la responsabilidad
 
-**Tratar las pruebas funcionales como pruebas de rendimiento.** Las pruebas funcionales demuestran que una transacción da el resultado correcto. No dicen nada sobre 150 personas ejecutándola a la vez.
+Con RISE with SAP, SAP es responsable de la infraestructura: el dimensionamiento, la región del hiperescalador, la red y la disponibilidad de la plataforma. El cliente y el socio son responsables de la capa de aplicación.
 
-**Probar con volúmenes de datos pequeños.** Un cliente con 200 000 posiciones de pedido abiertas se comporta de forma distinta a uno con 5000. Los filtros que responden al instante en pruebas agotan el tiempo en producción. Cargue volumen en las áreas de alto riesgo.
+El [documento de roles y responsabilidades de RISE](https://assets.cdn.sap.com/agreements/product-policy/hec/roles-responsibilities/rise-with-sap-s4hana-cloud-private-edition-and-sap-erp-pce-roles-and-responsibilities-english-v7-2024a.pdf) de SAP lo dice claramente. La ejecución de las pruebas de carga y el ajuste de las sentencias SQL costosas son SAP Cloud Application Services con cargo adicional. Si no los compra, el trabajo lo hace el cliente.
 
-**Dejar el rendimiento en manos de Basis.** Basis es responsable del dimensionamiento y de la planificación de jobs. No lo es del diseño de informes, la arquitectura de servicios OData ni el diseño de flujos de integración, y eso es lo que determina el rendimiento de la aplicación.
-
-**Dar la responsabilidad solo a QA.** QA ejecuta las pruebas e informa de los resultados. Las decisiones que causan problemas de rendimiento las toman los equipos funcional, técnico y de Basis durante el diseño. Un líder de pruebas o arquitecto a nivel de programa necesita autoridad para cuestionar esas decisiones pronto, y la matriz RACI debe indicar quién puede bloquear el go-live por motivos de rendimiento.
-
-## Qué cambia con RISE, GROW y la IA
-
-### RISE reparte la responsabilidad
-
-Con RISE with SAP, SAP es responsable de la infraestructura: dimensionamiento, región del hiperescalador, red y disponibilidad de la plataforma. El cliente y el socio son responsables de la capa de aplicación. El [documento de funciones y responsabilidades de RISE](https://assets.cdn.sap.com/agreements/product-policy/hec/roles-responsibilities/rise-with-sap-s4hana-cloud-private-edition-and-sap-erp-pce-roles-and-responsibilities-english-v7-2024a.pdf) de SAP lo deja claro: encontrar y ajustar las sentencias SQL costosas sigue siendo responsabilidad del cliente, salvo que contrate los servicios de aplicación adicionales de SAP.
-
-Un fallo común en los programas RISE es suponer que SAP detectará los problemas de rendimiento porque gestiona la infraestructura. Detectará problemas de infraestructura. No detectará un servicio OData mal diseñado, un job ABAP ineficiente ni un flujo de integración que no escala. Escriba el reparto en el acta de constitución y en el plan de pruebas:
+Un fallo habitual en los programas RISE es suponer que SAP detectará los problemas de rendimiento porque gestiona la infraestructura. Detectará los problemas de infraestructura. Deje el reparto por escrito en el acta de constitución y en el plan de pruebas:
 
 1. **SAP:** disponibilidad de la infraestructura y respuesta a nivel de plataforma
 2. **Socio:** rendimiento de la aplicación con la carga definida, incluidas las extensiones y los flujos de integración
 3. **Cliente:** resultados a nivel de proceso, como la duración del cierre y el volumen de pedidos procesados, y la decisión de aceptación
 
-### Public Edition y GROW reducen el alcance
+### La nube pública reduce el alcance
 
-En S/4HANA Cloud Public Edition, que normalmente se contrata mediante GROW with SAP, SAP ejecuta las pruebas de rendimiento en su plataforma multi-tenant como parte de su propio estándar de producto y no espera que los clientes hagan pruebas de carga del sistema compartido. Sus pruebas pasan a centrarse en lo que es suyo: integraciones personalizadas, extensiones, informes y analítica de gran volumen, la secuencia de cierre y consolidación, y la ruta de red desde sus sedes. Los problemas de rendimiento de la propia plataforma van al soporte de SAP.
+En la public edition del ERP en la nube de SAP, el sistema se ejecuta en una plataforma compartida que opera SAP. Antes de planificar cualquier prueba de carga contra un tenant, pregunte a SAP por escrito si está permitida y con cuánta antelación debe avisar.
 
-### La IA ayuda con los scripts, no con la arquitectura
+Sus pruebas se centran entonces en lo que es suyo: integraciones a medida, extensiones, informes de gran volumen, la secuencia de cierre y el camino de red desde sus sedes. Los problemas de rendimiento de la plataforma van al soporte de SAP.
 
-Los proveedores de pruebas de carga están incorporando IA para el mantenimiento de scripts y el análisis de resultados, lo que ayuda en programas donde la aplicación cambia entre ciclos. Compruebe esas afirmaciones en su propia arquitectura antes de pagar por ellas. SAP Cloud ALM puede ayudar a generar casos de prueba y requisitos, y los asistentes de IA pueden redactar esquemas de escenarios a partir de descripciones de procesos.
+### Errores frecuentes
 
-Nada de eso arregla la arquitectura. La IA no le dirá que el servicio OData debió diseñarse de otra manera, ni que un informe es demasiado pesado para sus volúmenes. Esas decisiones siguen tomándolas personas, en el diseño, antes de ejecutar ninguna prueba.
+1. **Tratar las pruebas funcionales como pruebas de rendimiento.** Las pruebas funcionales demuestran que una transacción da el resultado correcto. No dicen nada de 150 personas ejecutándola a la vez.
+2. **Dejar el rendimiento en manos de Basis.** Basis es responsable del dimensionamiento y de la planificación de jobs. No lo es del diseño de los informes, de la arquitectura de los servicios OData ni del diseño de los flujos de integración, y eso es lo que determina el rendimiento de la aplicación.
+3. **Dar la responsabilidad solo a QA.** QA ejecuta las pruebas e informa de los resultados, pero las decisiones que causan los problemas de rendimiento se toman en el diseño. Un líder de pruebas o arquitecto a nivel de programa necesita autoridad para cuestionarlas pronto, y la matriz RACI debe decir quién puede bloquear el go-live por motivos de rendimiento.
+4. **Aceptar los huecos como problemas conocidos.** La mayoría de los programas con problemas de rendimiento en producción no se saltaron las pruebas. Probaron sin criterios acordados, o probaron y luego aceptaron los fallos bajo la presión del calendario.
 
-La mayoría de los programas con problemas de rendimiento en producción no omitieron las pruebas por completo. Probaron sin criterios acordados, o probaron y luego aceptaron las brechas como problemas conocidos bajo presión de calendario. La disciplina está en los criterios y en hacerlos cumplir, no en la herramienta. Para ver dónde encaja el rendimiento entre otros tipos de pruebas, consulte mi [comparación de herramientas de pruebas y validación de SAP](/es/sap-testing-validation-tools-comparison/) y mi guía de [puntos de control de calidad en SAP](/es/sap-quality-gates-implementation/).
+## Por dónde empezar esta semana
+
+Redacte los cinco o seis criterios de aceptación de sus transacciones y jobs de mayor riesgo, con un responsable con nombre para cada uno. Si no puede completar la tabla anterior, no está preparado para probar, y ha encontrado el primer hueco.
+
+Después compruebe dos cosas: que el plan incluye un refresco de datos enmascarados a volumen de producción, y que el ciclo de concurrencia termina antes de que empiece la UAT.
+
+Si quiere una opinión independiente sobre un plan de pruebas de rendimiento o una decisión de go-live, ayudo a las organizaciones con esto. Puede [contactarme aquí](/es/contact-noel-erp-support/).
 
 ## Preguntas frecuentes
 
 <details>
-<summary>¿Qué son las pruebas de rendimiento en SAP y por qué importan?</summary>
+<summary>¿Qué son las pruebas de rendimiento en SAP?</summary>
 
-Comprueban cómo se comporta SAP con una carga realista: tiempos de respuesta de las transacciones de usuario, duración de los jobs en segundo plano, rendimiento de las interfaces y uso de recursos con trabajo concurrente.
+Comprueban cómo se comporta SAP con una carga realista: los tiempos de respuesta de las transacciones de usuario, la duración de los jobs en segundo plano, el volumen que procesan las interfaces y el uso de recursos cuando muchas personas trabajan a la vez. Deben hacerse antes del go-live.
 
-La corrección funcional y el rendimiento son propiedades distintas. Una transacción correcta para un usuario puede agotar el tiempo de espera con 200. Un job que tarda diez minutos con datos de prueba puede tardar horas con volúmenes de producción. Descubrirlo después del go-live interrumpe las operaciones, obliga a cambios de emergencia y daña la confianza de los usuarios cuando la adopción es más frágil.
+La corrección funcional y el rendimiento son propiedades distintas. Una transacción correcta para un usuario puede agotar el tiempo de espera con 200.
 
 </details>
 
 <details>
 <summary>¿Cuándo deben empezar las pruebas de rendimiento en un programa SAP?</summary>
 
-La identificación de riesgos empieza en Explore, porque las decisiones de arquitectura fijan los resultados de rendimiento. Las pruebas activas empiezan en Realize, cuando la configuración es lo bastante estable como para que los resultados signifiquen algo. Una configuración parcial da cifras engañosas.
+La identificación de riesgos empieza en Explore, porque las decisiones de arquitectura determinan los resultados de rendimiento. Las pruebas activas empiezan en Realize, cuando la configuración es lo bastante estable para que los resultados tengan sentido.
 
-Termine el último ciclo antes de la UAT, no durante ella. Los defectos de rendimiento encontrados en la UAT comprimen el calendario restante y generan presión para aceptarlos como problemas conocidos.
-
-</details>
-
-<details>
-<summary>¿Quién debe ser responsable de las pruebas de rendimiento en SAP?</summary>
-
-El programa, no solo QA. QA ejecuta e informa, pero las decisiones que determinan el rendimiento se toman en el diseño entre los equipos funcional, técnico y de Basis. Un arquitecto central o un líder de pruebas del programa necesita autoridad para cuestionar esas decisiones pronto.
-
-Déjelo explícito en la matriz RACI: quién aprueba los criterios de aceptación, quién es responsable de la corrección cuando los criterios fallan y quién puede bloquear el go-live por motivos de rendimiento.
+Termine el último ciclo antes de la UAT, no durante ella. Los defectos de rendimiento encontrados en la UAT comprimen el calendario y crean presión para aceptarlos como problemas conocidos.
 
 </details>
 
 <details>
-<summary>¿Cómo cambia RISE with SAP la responsabilidad de las pruebas de rendimiento?</summary>
+<summary>¿Cuál es la diferencia entre las pruebas de carga y las de concurrencia en SAP?</summary>
 
-SAP es responsable de la infraestructura: dimensionamiento, región, red y disponibilidad de la plataforma. El cliente y el socio son responsables del rendimiento de la aplicación: configuración, extensiones, diseño de OData y Fiori, flujos de integración y KPI de proceso. El documento de funciones y responsabilidades de RISE de SAP deja el ajuste de SQL en manos del cliente, salvo que se contraten servicios adicionales de SAP.
+Las pruebas de carga comprueban los tiempos de respuesta con el volumen pico previsto. Las pruebas de concurrencia comprueban qué ocurre cuando muchos usuarios y jobs trabajan sobre las mismas transacciones, tablas y servicios en el mismo momento. Ahí es donde aparecen las esperas por bloqueos, las avalanchas de inicios de sesión y los cuellos de botella en el gateway.
 
-Escriba el reparto en los criterios de aceptación para que cada umbral tenga un responsable.
-
-</details>
-
-<details>
-<summary>¿Cuáles son los problemas de rendimiento más habituales en SAP Fiori?</summary>
-
-Cuatro patrones cubren la mayoría. Tormentas de inicio de sesión al comenzar el turno, cuando se disparan la autenticación y el renderizado del launchpad. Servicios OData que devuelven grandes conjuntos de resultados o hacen varias llamadas al back end por interacción. La capa de gateway convertida en cuello de botella por sí misma, por lo que debe monitorizarse durante las pruebas. Y las apps personalizadas o muy modificadas, donde no se aplican los supuestos estándar de rendimiento.
+En mi experiencia, las pruebas de concurrencia son las importantes. Ejecútelas primero y construya después la prueba de carga completa sobre ellas.
 
 </details>
 
 <details>
-<summary>¿Cómo se definen los criterios de aceptación de rendimiento en SAP?</summary>
+<summary>¿Qué datos de prueba deben usar las pruebas de rendimiento en SAP?</summary>
 
-Nombre la transacción, la carga y el umbral. Por ejemplo: «La creación de pedidos se completa en menos de 3 segundos para el 95 % de las transacciones con 150 usuarios concurrentes en el rol de entrada de pedidos». Eso se puede probar.
-
-«El sistema debería ser lo bastante rápido» no. Acuerde los criterios con el negocio en la fase Prepare, a partir de necesidades operativas reales, y no los cambie después de recibir los resultados.
+Datos enmascarados a nivel de producción. Eso significa volumen y realismo de producción, con los campos personales y sensibles enmascarados. Unos datos de prueba escasos ocultan los filtros lentos, los informes pesados y las largas duraciones de jobs que aparecen el primer día.
 
 </details>
 
 <details>
-<summary>¿Qué ocurre si se omiten o se comprimen las pruebas de rendimiento?</summary>
+<summary>¿Qué herramientas se usan para las pruebas de rendimiento en SAP?</summary>
 
-Los problemas afloran en producción: jobs que se pasan de su ventana y bloquean otros, apps de Fiori que agotan el tiempo de espera en las horas punta, cierres mensuales que tardan el doble y no cumplen los plazos de reporte, colas de interfaces que se acumulan.
+Generadores de carga como OpenText Professional Performance Engineering (antes LoadRunner Professional), Tricentis NeoLoad y Apache JMeter generan la carga. SAP Cloud ALM o SAP Solution Manager gestionan los casos de prueba y los resultados, y la monitorización del lado de SAP muestra lo que hizo el sistema bajo carga.
 
-Los usuarios que se topan con problemas de rendimiento en sus primeras semanas se forman una opinión negativa del sistema que es difícil de revertir. Y la corrección de emergencia con el sistema en operación cuesta más que las pruebas, porque lo que era una decisión de diseño en Realize se convierte en un cambio de arquitectura urgente.
+</details>
+
+<details>
+<summary>¿Quién es responsable de las pruebas de rendimiento en RISE with SAP?</summary>
+
+SAP es responsable de la infraestructura: el dimensionamiento, la región, la red y la disponibilidad de la plataforma. El documento de roles y responsabilidades de RISE de SAP deja la ejecución de las pruebas de carga y el ajuste de SQL costoso en manos del cliente, salvo que se contraten SAP Cloud Application Services con cargo adicional.
+
+El cliente y el socio son responsables del rendimiento de la aplicación y de la decisión de aceptación. Deje el reparto por escrito en los criterios de aceptación para que cada umbral tenga un responsable.
 
 </details>

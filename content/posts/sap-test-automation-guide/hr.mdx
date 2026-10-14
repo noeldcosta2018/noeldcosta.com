@@ -1,0 +1,220 @@
+---
+title: "Automatizacija SAP testiranja: gdje početi i kada se isplati"
+h1: "Automatizacija SAP testiranja: gdje početi i kada se isplati"
+slug: "sap-test-automation-guide"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-test-automation-guide.webp"
+heroAlt: "Noel D'Costa pokraj monitora na kojem se vide automatizirana izvođenja SAP testova i tijek procesa"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "sap-cloud-alm", "sap-technical-decisions", "s4hana-implementation"]
+author: "Noel D'Costa"
+metaTitle: "Automatizacija SAP testiranja: gdje početi i kada se isplati"
+metaDescription: "Automatizacija SAP testiranja: kada se isplati, gdje početi, koji okviri odgovaraju i što Vam daju SAP Cloud ALM, Solution Manager i Tricentis."
+primaryKeyword: "automatizacija SAP testiranja"
+excerpt: "Kada automatizacija SAP testiranja vrati svoj trošak, gdje početi, po čemu se okviri razlikuju i što Vam SAP Cloud ALM, Solution Manager i SAP Test Automation by Tricentis već daju."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "Automatizirajte kada velik broj testnih slučajeva traži opsežno, ponovljeno testiranje. Ispod toga ručno testiranje je u redu"
+  - "Testiranje zauzima oko 35 posto truda na programu, pa je automatizacija pitanje koji udio treba preuzeti alat"
+  - "Kada je dizajn stabilan, počnite s malim regresijskim paketom za procese koje poslovanje ne smije slomiti"
+  - "Vodite odvojene landscapeove za projekt i redovno poslovanje kako bi se promjene iz žive podrške i projektne promjene testirale odvojeno"
+  - "SAP Cloud ALM upravlja testovima, ali nema vlastiti mehanizam za automatizaciju. Provjerite svoje pravo na Tricentis prije nego što kupite"
+  - "Standardno održavanje alata Solution Manager završava 2027. Ne gradite novu automatizaciju oko njega"
+pullQuote: "Izrada automatiziranog testa košta više od jednog ručnog izvođenja. Taj trošak vraćate samo kroz ponavljanje."
+mentions:
+  - "SAP Cloud ALM"
+  - "SAP Solution Manager"
+  - "SAP Test Automation by Tricentis"
+  - "Tricentis Tosca"
+  - "Worksoft"
+  - "Panaya"
+  - "UiPath"
+  - "OpenText LoadRunner"
+  - "SAP S/4HANA Cloud Public Edition"
+originalUrl: "https://noeldcosta.com/sap-test-automation-guide/"
+canonicalUrl: "https://noeldcosta.com/hr/sap-test-automation-guide/"
+locale: "hr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Automatizacija SAP testiranja znači da SAP testove koje izvodite iznova i iznova, uglavnom regresijske, umjesto ljudi izvodi alat. Isplati se kada velik broj testnih slučajeva traži opsežno, ponovljeno testiranje; ispod toga ručno testiranje je u redu.
+
+To je pravilo koje koristim na S/4HANA programima. Prema mom iskustvu testiranje zauzima oko 35 posto truda na programu, pa pitanje nikada nije treba li testirati. Pitanje je koji dio tog truda treba preuzeti alat.
+
+Kako se automatizacija uklapa uz jedinično, integracijsko, prihvatno testiranje i testiranje performansi, pročitajte najprije u mom pregledu [SAP testiranje objašnjeno](/hr/sap-testing-explained/). Ovaj članak pokriva gdje početi, kada se automatizacija isplati, okvire te što Vam daju SAP Cloud ALM, Solution Manager i Tricentis.
+
+## Kada se automatizacija SAP testiranja isplati
+
+Moje pravilo je jednostavno. Kada postoji velik broj testnih slučajeva koji traže opsežno, ponovljeno testiranje, automatizirajte. Ispod toga ručno testiranje je u redu.
+
+Razlog je oblik troška. Izrada automatiziranog testa košta više od jednog ručnog izvođenja, a test treba održavanje svaki put kada se promijene proces, ekran ili podaci. Taj trošak vraćate samo kroz ponavljanje.
+
+Na SAP programu ponavljanje dolazi s predvidljivih mjesta:
+
+1. **Transporti.** Svaka promjena prebačena u sustav za osiguranje kvalitete može slomiti nešto što je jučer radilo.
+2. **SAP izdanja i support packageovi.** Nadogradnje on-premise i u privatnom cloudu te planirane nadogradnje na SAP S/4HANA Cloud Public Edition.
+3. **Ponovljeni krugovi testiranja.** Integracijsko testiranje sustava (SIT) izvodi iste tokove od početka do kraja u više od jednog kruga.
+4. **Valovi rollouta.** Globalni predložak ponovno se testira za svaku zemlju ili šifru poduzeća.
+5. **Provjere s puno podataka.** Mnoge kombinacije određivanja cijena, poreza ili konta, gdje se mijenjaju samo podaci.
+
+Ako ništa od ovoga ne vrijedi za Vas, alat će Vas koštati više nego što uštedi.
+
+Tablica pokazuje kako bih podijelio posao po vrsti testa.
+
+| Vrsta testa | Automatizirati? | Zašto |
+|---|---|---|
+| Regresija ključnih procesa kao što su order to cash, procure to pay i record to report | Da, prvo | Izvodi se nakon svakog transporta i svakog izdanja |
+| Krugovi SIT-a | Djelomično | Automatizirajte stabilne tokove; nove scenarije i one koji se mijenjaju ostavite ručnima |
+| Korisničko testiranje prihvaćanja (UAT) | Rijetko | Poslovni korisnici procjenjuju radi li proces za njih, a to skripta ne može |
+| Istraživački i negativni testovi | Ne | Vrijednost dolazi od osobe koja traži ono što nitko nije skriptirao |
+| Performanse i opterećenje | Da, alatom za opterećenje | Mnogo istodobnih korisnika ne može se proizvesti ručno |
+| Jednokratne provjere migracije podataka | Obično ne | Izvještaji o usklađivanju to rade bolje, osim ako se isto učitavanje ponavlja kroz probna izvođenja |
+
+<decision-tree question="Treba li automatizirati ovaj SAP test?" options="Mnogo testnih slučajeva, ponavljaju se nakon svake promjene ili izdanja => Automatizirajte ga|Malo testnih slučajeva ili se izvodi jednom ili dvaput => Testirajte ga ručno|Dizajn procesa još se mijenja => Pričekajte da se stabilizira, zatim odlučite"></decision-tree>
+
+## Gdje početi
+
+Automatizacija koja razočara obično je počela preširoko: sve odjednom, tijekom dizajna, a da nitko nije vlasnik rezultata. Ovo je redoslijed koji bih slijedio:
+
+1. **Odaberite procese koje poslovanje ne smije slomiti.** Zatvaranje na kraju mjeseca, fakturiranje, plaćanja i sve što se uvodi na mnogo lokacija dolaze prije izvještaja koje je lijepo imati.
+2. **Najprije izvedite testove ručno.** Alat automatizira test koji već radi ručno. Ne dizajnira ga umjesto Vas.
+3. **Pričekajte stabilan dizajn.** Automatizacija tijekom faze Explore ili ranog Realizea znači ponovnu izradu testova svaki put kada se promijeni odluka o dizajnu.
+4. **Izgradite mali regresijski paket.** Pokrijte kritične procese od početka do kraja, zatim izvodite paket pri svakom transportu u sustav za osiguranje kvalitete.
+5. **Imenujte vlasnika održavanja.** Netko mora popravljati testove kada se promijene ekrani, uloge ili podaci, inače paket propada unutar nekoliko izdanja.
+6. **Proširujte pokrivenost samo gdje ponavljanje to opravdava.** Dodajte test kada će se često izvoditi, a ne zato što to traži neki cilj pokrivenosti.
+
+### Odvojite projekt od redovnog poslovanja
+
+Tijekom programa vodim dva odvojena landscapea: jedan za projekt i jedan za redovno poslovanje (BAU). Promjene iz žive podrške i projektne promjene tada se testiraju odvojeno.
+
+To je važno za automatizaciju. Kada regresijski test padne, želite istraživati jedan izvor promjene, a ne dva pomiješana. Moj vodič za [SAP regresijsko testiranje](/hr/sap-regression-testing/) detaljnije pokriva pristup s dva landscapea i analizu utjecaja.
+
+## Što daje SAP, a što dodajete Vi
+
+Na svojim programima koristio sam, ili su moji timovi koristili, Tricentis Tosca, Worksoft, Panaya, SAP Cloud ALM, SAP Solution Manager, UiPath i LoadRunner. Ovaj ih članak ne rangira. Pravi izbor ovisi o Vašem landscapeu, ugovoru o podršci i tome tko će održavati testove.
+
+Počnite s onim što SAP već pruža, jer dio toga možda je već plaćen.
+
+### SAP Cloud ALM
+
+SAP Cloud ALM je sloj za upravljanje testiranjem. Planira, izvodi i prati ručne i automatizirane testove u odnosu na Vaše procese i zahtjeve. Korisnici sa SAP Enterprise Supportom, Product Support for Large Enterprises ili odgovarajućom cloud pretplatom mogu postaviti jedan tenant ([SAP usage rights](https://support.sap.com/en/alm/usage-rights.html)).
+
+Sam ne izvodi automatizirane testove. SAP navodi da Cloud ALM nema vlastiti mehanizam za automatizaciju i da njegove ALM platforme ostaju otvorene za automatizaciju testiranja trećih strana ([SAP Support, test automation](https://support.sap.com/en/alm/partners/test-automation.html)).
+
+SAP-ov vodič za postavljanje opisuje ugrađene integracije i javni Test Automation API za druge pružatelje ([SAP Help Portal](https://help.sap.com/docs/cloud-alm/setup-administration/other-test-automation-providers)). Panaya i UiPath dokumentiraju integracije s Cloud ALM-om za automatizirane testne slučajeve. Worksoft među svojim integracijama navodi Cloud ALM i Solution Manager, a OpenText nudi integraciju s Cloud ALM-om za svoj cloud proizvod za testiranje performansi.
+
+### Tricentis Test Automation for SAP i SAP Test Automation by Tricentis
+
+Provjerite svoje pravo prije nego što išta kupite. SAP uz SAP Enterprise Support, Enterprise Support cloud editions i Product Support for Large Enterprises daje vremenski ograničenu licencu za Tricentis Test Automation for SAP, integriran s Cloud ALM-om. Trenutačno vrijedi do 31. prosinca 2028. ([SAP usage rights](https://support.sap.com/en/alm/usage-rights.html)).
+
+Ograničenja su stroga: 5 imenovanih korisnika, 500 izvođenja testova po kalendarskom mjesecu, 5 agenata za izvođenje kojima upravlja korisnik i 12 mjeseci čuvanja rezultata. Ne smije se koristiti za automatizaciju produktivnih poslovnih procesa. Shvatite ga kao način da počnete, a ne kao alat za razinu cijelog programa.
+
+SAP Test Automation by Tricentis je plaćeni korak više. To je proizvod tipa software-as-a-service koji SAP prodaje i podržava kao solution extension, a pokriva SAP i aplikacije trećih strana. Proširuje Tricentis mogućnosti uključene uz Cloud ALM kada pravo ostane bez prostora.
+
+### SAP Solution Manager
+
+Standardno održavanje alata Solution Manager 7.2 traje do kraja 2027. Korisnici koji se odluče za produljeno održavanje za SAP Business Suite 7 dobivaju produljeno održavanje alata Solution Manager do kraja 2030. Ono pokriva ograničen skup područja, uključujući test suite ([SAP Support](https://support.sap.com/en/alm/solution-manager.html)).
+
+Njegova vlastita automatizacija, Component-Based Test Automation (CBTA), neće se proširiti na SAP cloud proizvode. Tricentis licenca za integraciju sa Solution Managerom trenutačno vrijedi do 31. prosinca 2027. Ako već koristite Solution Manager, zadržite ga dok se Vaš landscape ne preseli, ali ne gradite novu automatizaciju oko njega.
+
+### SAP S/4HANA Cloud Public Edition
+
+Public Edition dolazi s vlastitim Test Automation Toolom. SAP-ova je preporuka da partneri izrađuju ili ažuriraju test automate dok konfiguriraju svaki proces, kako bi se mogli izvoditi u testnom sustavu tijekom nadogradnji ([SAP Learning](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-public-edition/explaining-the-test-strategy_d4b6f563-e5bb-41b5-b7e2-ec899edb756f)).
+
+Uz Vašu suglasnost SAP izvodi testove nakon nadogradnje na standardnim, neizmijenjenim procesima. Nakon puštanja u rad Vi ste vlasnik regresijskog testiranja za sve što ste prilagodili, uz vlastite automate.
+
+Tablica sažima gore navedene alate prema zadatku, a ne prema preferenciji.
+
+| Alat | Glavni zadatak | Gdje se uklapa |
+|---|---|---|
+| SAP Cloud ALM | Upravljanje testiranjem i orkestracija | Novi programi; povezuje ručne i automatizirane testove s procesima |
+| SAP Solution Manager | Upravljanje testiranjem, on-premise | Landscapeovi koji ga već koriste; standardno održavanje završava 2027. |
+| Tricentis Tosca i SAP Test Automation by Tricentis | Automatizacija temeljena na modelima | SAP i ne-SAP aplikacije; SAP ga preprodaje i podržava |
+| Worksoft | Automatizacija procesa bez kodiranja | Integrira se s Cloud ALM-om i Solution Managerom |
+| Panaya | Upravljanje testiranjem i automatizacija bez kodiranja | Integracija s Cloud ALM-om za automatizirane testove |
+| UiPath | Platforma za automatizaciju s Test Managerom | Integracija s Cloud ALM-om za automatizirane testne slučajeve |
+| OpenText LoadRunner | Testiranje performansi i opterećenja | Testovi istodobnosti i volumena prije puštanja u rad |
+
+Za dublju usporedbu, uključujući Xray for Jira, pročitajte moj vodič za [alate za SAP testiranje](/hr/sap-testing-validation-tools-comparison/). Za testiranje opterećenja pročitajte [Testiranje performansi SAP-a za IT čelnike](/hr/sap-performance-testing-it-leaders/).
+
+## Okviri: kako se testovi grade
+
+Alat je manje važan od načina na koji se testovi grade i tko ih održava. Većina SAP automatizacije spada u jedan od ovih pristupa:
+
+1. **Temeljen na modelima.** Ekrani i API-ji skeniraju se u module za višekratnu upotrebu, koji se zatim slažu u testne slučajeve. Funkcionalni konzultanti mogu ih graditi i čitati bez koda.
+2. **Snimanje procesa bez kodiranja.** Koraci poslovnog procesa snimaju se i pretvaraju u testove za višekratnu upotrebu. To odgovara timovima u kojima ključni korisnici pomažu graditi regresijski paket.
+3. **Temeljen na kodu.** Inženjeri za testiranje pišu testove u programskom okviru. Odgovara Fiori aplikacijama i API-jima čiji je vlasnik razvojni tim, a za održavanje trebaju developeri.
+4. **Platforme za robotsku automatizaciju procesa s modulima za testiranje.** Jedna platforma za poslovnu automatizaciju i automatizaciju testiranja, korisna ako je već koristite.
+5. **Automati koje isporučuje SAP.** Na Public Editionu to su test automati isporučeni s Test Automation Toolom, prilagođeni Vašim podacima i promjenama.
+
+Koji god pristup odabrali, tri odluke o dizajnu određuju hoće li testovi opstati:
+
+1. **Testirajte na razini API-ja gdje možete.** API testovi pucaju rjeđe od testova koji klikaju kroz ekrane.
+2. **Neka se testni podaci mogu resetirati.** Test koji ovisi o podacima potrošenima u prošlom izvođenju pada iz pogrešnog razloga.
+3. **Gradite iz zajedničkih modula.** Kada se ekran promijeni, popravljate jedan modul, a ne svaki test koji ga dotiče.
+
+## Kako održati automatizaciju živom nakon puštanja u rad
+
+Automatizirani regresijski paket je proizvod, a ne projektni isporučevni rezultat. Treba vlasnika, stavku u budžetu i mjesto u procesu upravljanja promjenama.
+
+Povežite ga s kontrolom promjena. Nijedan transport ne ide u produkciju dok se regresijski paket ne izvede i dok njegovi rezultati nisu zabilježeni u alatu za upravljanje testiranjem. Moj članak o [SAP quality gates](/hr/sap-quality-gates-implementation/) pokazuje kako rezultate testiranja učiniti dijelom odluke go ili no-go.
+
+Planirajte i SAP-ov ritam izdanja. Nadogradnje Public Editiona stižu prema SAP-ovom rasporedu, a ne Vašem, a sustavi u privatnom cloudu i on-premise i dalje trebaju support packageove i nadogradnje. Svaka od njih je regresijsko izvođenje, a upravo tu automatizacija vraća svoj trošak.
+
+Popravljajte nestabilne testove, umirovite testove koje nitko ne izvodi i držite paket dovoljno malim da ljudi vjeruju njegovim rezultatima.
+
+Automatizacija također mora biti dio plana testiranja. Ciklusi, ulazni i izlazni kriteriji i uloge dolaze prvi; moja [strategija testiranja S/4HANA](/hr/s4hana-testing-strategy/) ih postavlja.
+
+## Vaš sljedeći korak
+
+Popišite poslovne procese koje biste ponovno testirali nakon svakog transporta i svakog SAP izdanja. Prebrojite testne slučajeve iza njih i koliko bi se često svaki izvodio u godini.
+
+Ako je broj velik i izvođenja se ponavljaju, imate argument za automatizaciju. Zatim provjerite što Vaš ugovor o SAP podršci već uključuje prije nego što Vam itko pokaže demo.
+
+Ako želite neovisan pogled na plan automatizacije testiranja ili ponudu dobavljača, pomažem organizacijama u tome. [Ovdje me možete kontaktirati](/hr/contact-noel-erp-support/).
+
+## Često postavljana pitanja
+
+<details>
+<summary>Što je automatizacija SAP testiranja?</summary>
+
+To je upotreba alata za izvođenje SAP testova koji bi se inače izvodili ručno, uglavnom regresijskih testova nakon promjena i nadogradnji. Alat za upravljanje testiranjem kao što je SAP Cloud ALM planira i bilježi testove, a alat za automatizaciju ih izvodi.
+
+</details>
+
+<details>
+<summary>Kada treba automatizirati SAP testiranje?</summary>
+
+Kada velik broj testnih slučajeva traži opsežno, ponovljeno testiranje, kao što je regresija nakon svakog transporta, izdanja ili vala rollouta. Ispod toga ručno testiranje je u redu. Pričekajte da dizajn procesa bude stabilan, inače ćete ponovno graditi testove svaki put kada se dizajn promijeni.
+
+</details>
+
+<details>
+<summary>Radi li SAP Cloud ALM automatizaciju testiranja?</summary>
+
+Upravlja automatiziranim testovima i pokreće ih, ali nema vlastiti mehanizam za automatizaciju. Integrira se s Tricentis Test Automation for SAP, s Test Automation Toolom u S/4HANA Cloud Public Edition i s drugim pružateljima putem javnog Test Automation API-ja.
+
+</details>
+
+<details>
+<summary>Što je SAP Test Automation by Tricentis?</summary>
+
+To je proizvod za automatizaciju testiranja tipa software-as-a-service koji SAP prodaje i podržava kao solution extension, a pokriva SAP i aplikacije trećih strana. Proširuje početnu licencu Tricentis Test Automation for SAP uključenu uz SAP Enterprise Support. Ta je licenca ograničena na 5 imenovanih korisnika i 500 izvođenja testova mjesečno.
+
+</details>
+
+<details>
+<summary>Može li se SAP korisničko testiranje prihvaćanja automatizirati?</summary>
+
+Rijetko, i to ne bi trebao biti cilj. UAT postoji kako bi poslovni korisnici mogli procijeniti radi li sustav za njih, a to skripta ne može. Automatizirajte ponovljenu regresiju oko njega, a odluku o prihvaćanju ostavite ljudima.
+
+</details>
+
+<details>
+<summary>Trebam li i dalje koristiti SAP Solution Manager za automatizaciju testiranja?</summary>
+
+Samo ako već pokreće Vaš landscape. Standardno održavanje alata Solution Manager 7.2 završava 2027., a njegova CBTA automatizacija neće se proširiti na SAP cloud proizvode. Novu automatizaciju planirajte oko Cloud ALM-a.
+
+</details>

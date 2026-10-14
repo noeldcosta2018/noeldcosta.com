@@ -1,39 +1,38 @@
 ---
-title: "Test di performance SAP: cosa devono sapere i leader IT"
-h1: "Test di performance SAP: cosa devono sapere i leader IT"
-metaTitle: "Test di performance SAP: cosa devono sapere i leader IT"
-metaDescription: "Test di performance SAP per i leader IT: quando iniziare, cosa testare, i criteri di accettazione e le responsabilità su RISE e S/4HANA Cloud nel 2026."
-excerpt: "I problemi di performance SAP sono quasi sempre prevedibili e quasi sempre scoperti dopo il go-live. Vanno testati fin dalla progettazione, rispetto a criteri concordati prima della prima esecuzione."
+title: "Test di performance SAP: carico, concorrenza e strumenti"
+h1: "Test di performance SAP: carico, concorrenza e strumenti"
+metaTitle: "Test di performance SAP: concorrenza, dati e strumenti"
+metaDescription: "Test di performance SAP prima del go-live: concorrenza e carico, dati mascherati di livello produttivo, criteri di accettazione, strumenti e ruoli in RISE with SAP."
+primaryKeyword: "test di performance SAP"
+excerpt: "Il test di performance SAP dimostra, prima del go-live, che il sistema regge quando molti utenti e job lo sollecitano nello stesso momento. Test di concorrenza su dati mascherati a livello di produzione, valutati rispetto a criteri concordati in anticipo."
 slug: "sap-performance-testing-it-leaders"
 date: "2025-07-12"
-updated: "2026-10-07"
+updated: "2026-10-14"
 lastReviewed: "2026-05-21"
 hero: "/images/wp/2025/07/1-1.webp"
 heroAlt: "Indicatore di velocità con la scritta performance e la lancetta rivolta verso il massimo"
 category: "erp-consulting-guide"
-tags: ["sap-technical-decisions", "performance-testing", "s4hana-implementation", "rise-with-sap"]
+tags: ["sap-testing", "performance-testing", "s4hana-implementation", "rise-with-sap"]
 author: "Noel D'Costa"
-experienceSource: "Direct experience leading and recovering SAP performance testing on 21 S/4HANA and ECC programmes across manufacturing, financial services, public sector, and retail in Europe, GCC, US, and UK markets. The five-background-jobs-clashed story is anchored to a GCC manufacturing programme in 2024. RISE / GROW / Joule coverage reflects 2024-2025 SAP product positioning."
+experienceSource: "Noel's first-person experience leading and rescuing SAP programmes (confirmed by Noel, 14 October 2026: performance testing before go-live with concurrency tests as the priority, production-level masked test data, and the tools his teams have used). No client names. Product facts checked against official SAP, OpenText and Tricentis documentation, October 2026."
 keyTakeaways:
-  - "Il rischio di performance nasce nella progettazione: la struttura dei report, le catene di job e il design dei servizi OData decidono l'esito prima che venga scritto il codice"
-  - "Picchi di login al cambio turno, report Z con selezioni senza limiti e job di chiusura che si sovrappongono sono i guasti più comuni, e sono tutti prevedibili"
-  - "Il test di volume è la scorciatoia che i programmi prendono più spesso e di cui si pentono di più"
-  - "La responsabilità sulle performance richiede un referente a livello di programma con l'autorità di mettere in discussione il design, non solo il QA"
-  - "Su RISE, SAP è responsabile dell'infrastruttura; cliente e partner lo sono delle performance di applicazione, integrazione e processo"
-  - "Se il sistema è stato approvato perché gli utenti dell'UAT hanno detto che sembrava veloce, si ha un'opinione, non un criterio di accettazione"
+  - "Il test di performance deve concludersi prima del go-live, e i test di concorrenza sono quelli che contano di più"
+  - "Testi su dati mascherati con volumi e realismo di produzione, altrimenti i risultati non prevederanno il comportamento in esercizio"
+  - "Picchi di accesso, catene di job di fine mese, report custom senza limiti di selezione e code delle interfacce sono i malfunzionamenti prevedibili"
+  - "Concordi soglie di superamento e fallimento per transazione, job e interfaccia prima della prima esecuzione, e non le sposti"
+  - "In RISE with SAP l'esecuzione dei load test e il tuning SQL restano al cliente, a meno che non acquisti i servizi aggiuntivi di SAP"
 pullQuote: "I rischi di performance vengono seminati durante la progettazione, con le scelte di architettura, il modo in cui i report sono strutturati, la quantità di logica spostata in ABAP. Se aspetta che il sistema sia completamente realizzato, sta testando le conseguenze. A quel punto rifare il lavoro costa caro."
 mentions:
   - "SAP S/4HANA"
+  - "SAP HANA"
   - "SAP Fiori"
-  - "SAP CPI"
-  - "SAP BTP"
-  - "SAP Solution Manager"
   - "SAP Cloud ALM"
+  - "SAP Solution Manager"
   - "RISE with SAP"
-  - "GROW with SAP"
-  - "Joule"
-  - "LoadRunner"
+  - "OpenText Professional Performance Engineering"
+  - "OpenText LoadRunner"
   - "Tricentis NeoLoad"
+  - "Apache JMeter"
 originalUrl: "https://noeldcosta.com/sap-performance-testing-it-leaders/"
 canonicalUrl: "https://noeldcosta.com/it/sap-performance-testing-it-leaders/"
 locale: "it"
@@ -41,170 +40,189 @@ translatedFrom: "en"
 translationSource: "reviewed-en-2026-10"
 ---
 
-Il test di performance SAP dimostra, prima del go-live, che le transazioni critiche, i job in background e le interfacce rispettano i tempi di risposta concordati con i volumi di produzione. Lo si avvia in fase di progettazione, si eseguono i test di volume e di carico in Realize quando la configurazione è stabile, si chiude il ciclo prima del test di accettazione utente (UAT) e si fa dei risultati un gate di cutover. Questa guida è per CIO, direttori di programma e responsabili dei test nei programmi S/4HANA, compreso RISE with SAP. Spiega che cosa testare, chi ne è responsabile, come scrivere i criteri di accettazione e che cosa cambia nel cloud. Parta dalla tabella dei criteri di accettazione: se non riesce a compilarla, il programma non è pronto per testare.
+Il test di performance SAP dimostra, prima del go-live, che le transazioni critiche, i job in background e le interfacce rispettano tempi di risposta concordati quando molti utenti e job girano nello stesso momento. Nella mia esperienza i test che contano sono quelli di concorrenza, eseguiti su dati mascherati con volumi di produzione e rispetto a criteri di superamento e fallimento che il business ha concordato prima della prima esecuzione.
 
-I problemi di performance nei programmi SAP vengono quasi sempre scoperti dopo il go-live. Le tile Fiori vanno in timeout quando 300 utenti fanno il login al cambio turno. I report Z si bloccano perché qualcuno ha lanciato una query sull'intero esercizio, senza limiti di selezione, su una tabella con 50 milioni di record. I job in background si sovrappongono durante la chiusura mensile e il run di contabilizzazione si interrompe.
+Questa guida è per CIO, program director e test lead dei programmi S/4HANA, compresi quelli RISE with SAP. Tratta che cosa testare, i dati necessari, come scrivere i criteri di accettazione, quali strumenti fanno il lavoro e chi è responsabile di che cosa. Per capire dove si colloca la performance tra gli altri tipi di test, parta dalla mia panoramica sui [test SAP spiegati](/it/sap-testing-explained/).
 
-I problemi di performance nei programmi SAP raramente arrivano di sorpresa. Quasi tutti erano prevedibili, semplicemente non erano stati pianificati. Lo schema è il solito: i test funzionali erano accurati. Il test di volume era pianificato, poi è stato rimandato quando il calendario si è compresso. Le conseguenze sono arrivate nelle prime settimane di esercizio in produzione.
+Nei programmi SAP i problemi di performance raramente sono una sorpresa.
 
-Non sono casi limite. Sono prevedibili. L'unica domanda è se il programma li ha testati o se il business li scopre con gli ordini veri in corso.
+I tile Fiori vanno in timeout quando centinaia di utenti accedono all'inizio di un turno. Un report custom si blocca perché qualcuno ha lanciato una selezione sull'intero esercizio, senza limiti, su una tabella molto grande. I job in background si sovrappongono a fine mese e l'elaborazione delle registrazioni si interrompe.
 
-![Infrastruttura di un data center a supporto degli ambienti di test di performance SAP e dei carichi di produzione con utenti simultanei](https://images.pexels.com/photos/5480781/pexels-photo-5480781.jpeg)
+Sono problemi prevedibili. L'unica domanda è se il programma li ha testati, o se li scopre il business con gli ordini reali in corso.
 
-<stepper title="Test di performance lungo SAP Activate" steps="Explore|Realize|Pre-UAT|Cutover|Hypercare" bodies="Individuare i rischi di performance nella progettazione. Architettura e struttura dei report decidono l'esito prima che venga scritto il codice.|Eseguire i test di volume e di carico man mano che la configurazione si stabilizza. Una configurazione parziale produce risultati fuorvianti.|Completare l'intero ciclo di performance prima dell'UAT, non durante.|Approvare il cutover in base ai criteri di accettazione concordati in anticipo, non in base alle opinioni.|Monitorare i KPI in produzione per 30-60 giorni. La maggior parte delle regressioni emerge nel primo ciclo di chiusura."></stepper>
+![Infrastruttura di data center a supporto degli ambienti di test di performance SAP e dei carichi di produzione con utenti concorrenti](https://images.pexels.com/photos/5480781/pexels-photo-5480781.jpeg)
 
-## Perché S/4HANA ha cambiato il test di performance
+<stepper title="Il test di performance lungo SAP Activate" steps="Explore|Realize|Pre-UAT|Cutover|Hypercare" bodies="Individuare i rischi di performance nel disegno. Architettura e struttura dei report decidono i risultati prima che si scriva il codice.|Eseguire test di volume e di carico man mano che la configurazione si stabilizza. Una configurazione parziale produce risultati fuorvianti.|Completare l'intero ciclo di performance prima della UAT, non al suo interno.|Approvare il cutover rispetto ai criteri di accettazione concordati in anticipo, non in base alle opinioni.|Monitorare i KPI in esercizio per 30-60 giorni. La maggior parte delle regressioni emerge nel primo ciclo di chiusura."></stepper>
 
-In un sistema ECC su un database tradizionale, fare il test di performance significava sottoporre a test di carico l'application server e il database: runtime ABAP, performance SQL, schedulazione dei job. Il front end era SAP GUI, che raramente riservava sorprese.
+## Perché S/4HANA e SAP HANA hanno cambiato il test di performance
 
-Su S/4HANA, con front end Fiori, estensioni su SAP BTP e integrazione tramite SAP Cloud Integration (CPI), le performance dipendono da più livelli contemporaneamente. Una tile Fiori lenta può essere una chiamata ABAP lunga, un timeout del gateway, un servizio OData non progettato per richieste concorrenti o la latenza di rete in un'architettura ibrida. Testare solo il back end non la troverà. Testare l'intero percorso sì.
+In un sistema ECC su database tradizionale, il test di performance significava sottoporre a carico l'application server e il database: runtime ABAP, performance SQL e schedulazione dei job. Il front end era la SAP GUI, che raramente sorprendeva qualcuno.
 
-<explainer-flow title="Dove può nascondersi una tile Fiori lenta" caption="Ogni livello può superare il test da solo. Il test end-to-end segue l'intero percorso, ed è quello che l'utente aspetta davvero." steps="Avvio della tile|Chiamata OData|Elaborazione ABAP|Lettura dal database|Rendering" notes="Picchi di login all'inizio del turno|Timeout del gateway, servizi non progettati per la concorrenza|Chiamate ABAP di lunga durata|Selezioni senza limiti su tabelle grandi|Più la latenza di rete per le sedi lontane" result="Un unico tempo di risposta, misurato end to end"></explainer-flow>
+Su S/4HANA, con front end Fiori, estensioni su SAP BTP e integrazione tramite SAP Cloud Integration, la performance dipende da più livelli contemporaneamente. Un tile Fiori lento può essere una lunga chiamata ABAP, un timeout del gateway, un servizio OData non progettato per richieste concorrenti o la latenza di rete in un'architettura ibrida. Testare solo il back end non lo farà emergere.
 
-I flussi di integrazione aggiungono un rischio proprio. Flussi che funzionavano in sviluppo e in QA con singoli messaggi di test possono accodarsi o fallire in silenzio ai volumi di produzione. Se le code di messaggi non sono dimensionate per il carico reale, i ritardi si accumulano. I sintomi sembrano altro: errori intermittenti sugli ordini, fatture che non quadrano, dati presenti in un sistema e assenti in un altro.
+<explainer-flow title="Dove può nascondersi un tile Fiori lento" caption="Ogni livello può superare il test da solo. Il test end-to-end segue l'intero percorso, cioè ciò che l'utente aspetta davvero." steps="Avvio del tile|Chiamata OData|Elaborazione ABAP|Lettura dal database|Rendering" notes="Ondate di accessi a inizio turno|Timeout del gateway, servizi non costruiti per la concorrenza|Chiamate ABAP di lunga durata|Selezioni senza limiti su tabelle grandi|Più la latenza di rete per le sedi lontane" result="Un unico tempo di risposta, misurato end-to-end"></explainer-flow>
 
-## I quattro test che contano
+Il test di performance su SAP HANA ha una sua particolarità in una conversione. Codice ECC stabile si comporta diversamente su un database in-memory. Molti programmi diventano molto più veloci, mentre alcuni producono profili inattesi su particolari distribuzioni di dati, quindi una regressione specifica per la conversione del codice custom più pesante non è facoltativa.
 
-1. Il **test di carico** verifica il comportamento al volume atteso. La parola chiave è atteso. Servono volumi reali di transazioni, numeri reali di utenti e di sessioni concorrenti. Molti test di carico falliscono perché hanno usato stime di volume che tutti sapevano già essere ottimistiche.
-2. Lo **stress test** spinge oltre i limiti di progetto per scoprire dove il sistema cede. Se i volumi raddoppieranno in diciotto mesi, dice se l'architettura reggerà e se il dimensionamento diventerà un problema prima della prossima revisione dell'infrastruttura.
-3. Il **soak test** applica un carico costante per un periodo prolungato per far emergere i problemi che si accumulano nel tempo: memory leak, frammentazione e contesa tra catene di job su esecuzioni ripetute. È il test saltato più spesso, e quello che avrebbe intercettato il guasto di fine mese descritto più sotto.
-4. Il **test end-to-end** segue l'intero percorso di un utente: avvio della tile, chiamata OData, elaborazione ABAP, lettura dal database, rendering. È l'unico modo per trovare i problemi che restano invisibili quando ogni livello viene testato da solo.
+I flussi di integrazione aggiungono un rischio proprio. Flussi che in sviluppo funzionavano con singoli messaggi di test possono accodarsi o fallire in silenzio con i volumi di produzione. I sintomi sembrano altro: errori intermittenti sugli ordini, fatture che non quadrano, dati presenti in un sistema e assenti in un altro.
 
-## Scenari ad alto rischio
+## Prima la concorrenza: i test che contano
 
-**Cambio turno e picco di login.** Quando 200 utenti aprono il launchpad Fiori alle 8 del mattino, il carico su autenticazione e rendering del launchpad si impenna. Un sistema che va bene fuori dai picchi può diventare inutilizzabile in quella finestra se i login concorrenti non sono mai stati testati. Nel manifatturiero, nel retail e nei servizi finanziari, i picchi di login producono le lamentele più visibili del primo giorno.
+Il test di performance va fatto prima del go-live. I test che considero importanti sono quelli di concorrenza: molti utenti e job che agiscono sulle stesse transazioni, tabelle e servizi nello stesso momento.
 
-**Chiusura mensile e di fine anno.** Lo scenario a più alto rischio nella maggior parte dei programmi: contabilizzazioni ad alto volume, catene di job con sequenze rigide e un team finance in corsa contro una scadenza fissa. Esegua le catene di job di chiusura end to end con i volumi del periodo di chiusura, non con i conteggi medi giornalieri.
+Un singolo utente che crea un ordine di vendita in due secondi non dimostra quasi nulla. Lo stesso ordine con 150 persone che inseriscono ordini, un'elaborazione delle consegne in background e un'interfaccia che registra messaggi in entrata è il test che prevede il primo giorno.
 
-I job batch di solito vengono testati in isolamento, il che non rispecchia la realtà. A fine mese l'elaborazione in background tocca il picco e molti programmi girano in parallelo sulle stesse risorse. Un solo job ottimizzato male può bloccarne altri cinque, e la chiusura sfora la sua finestra.
+Questa tabella mostra che cosa dimostra ciascun tipo di test e quando eseguirlo:
 
-**Conversione da ECC a S/4HANA.** Il codice ECC stabile si comporta in modo diverso su HANA. Molti programmi diventano molto più veloci; alcuni producono profili inattesi con particolari schemi di dati. I test di regressione specifici per la conversione non sono facoltativi. La mia [guida alla migrazione da ECC a S/4HANA](/it/ecc-to-s4hana-migration/) spiega dove si colloca questo passaggio nel piano di conversione.
+| Test | Che cosa dimostra | Quando eseguirlo | Che cosa trova di solito |
+|---|---|---|---|
+| Concorrenza | Molti utenti e job possono lavorare sugli stessi oggetti contemporaneamente | Realize, una volta stabile la configurazione, e di nuovo prima della UAT | Attese sui lock, ondate di accessi, colli di bottiglia del gateway |
+| Carico | Il sistema rispetta i tempi di risposta al volume di picco previsto | Realize, dopo che gli script di concorrenza funzionano | Servizi OData lenti, report custom pesanti |
+| Stress | Dove il sistema si rompe oltre i limiti di progetto | Prima della UAT, se è prevista una crescita | Lacune di dimensionamento, limiti delle code |
+| Soak | Il sistema regge un carico costante per ore | Prima della UAT, idealmente durante una chiusura simulata | Crescita della memoria, contesa tra catene di job su esecuzioni ripetute |
+| End-to-end | L'intero percorso che l'utente attende rispetta l'obiettivo | Insieme ai test di carico | Problemi invisibili quando ogni livello è testato da solo |
 
-**Utenti in più regioni.** La latenza di rete incide su ogni transazione. Un ordine di vendita che richiede due secondi nel paese di hosting può sembrare rotto a 3.000 miglia di distanza se nessuno ha testato da lì. RISE sposta l'hosting a SAP, ma la latenza dipende comunque dalla regione scelta e dall'instradamento verso i suoi utenti.
+La parola chiave nel test di carico è previsto. Servono volumi di transazioni, numeri di utenti e schemi di sessione reali. Un test di carico costruito su stime di volume che tutti sapevano già ottimistiche dà un esito positivo che non significa nulla.
 
-## Criteri di accettazione che si possono testare
+Il soak test è quello che si salta più spesso. Il test di volume in generale è la scorciatoia che i programmi prendono più spesso quando la timeline si comprime, e quella di cui si pentono di più.
 
-Concordi i criteri con il business nella fase Prepare, prima che parta qualsiasi test. Ciascuno indica la transazione o il job, il carico e la soglia. Questi esempi mostrano la forma; definisca i suoi numeri in base alle esigenze operative:
+## Scenari ad alto rischio da scriptare
+
+Scripti per primi questi scenari. Coprono la maggior parte dei malfunzionamenti che arrivano in produzione.
+
+1. **Cambio turno e picco di accessi.** Quando qualche centinaio di utenti apre il Fiori launchpad nello stesso momento, autenticazione e rendering del launchpad hanno un picco. Un sistema che va bene fuori picco può diventare inutilizzabile in quella finestra se gli accessi concorrenti non sono mai stati testati.
+2. **Chiusura mensile e annuale.** Registrazioni ad alto volume, catene di job con sequenze rigide e un team finance che corre contro una scadenza fissa. Esegua le catene di job di chiusura dall'inizio alla fine con i volumi del periodo di chiusura, non con le medie giornaliere.
+3. **Job in background sovrapposti.** I job batch di solito si testano uno alla volta, il che non riflette la realtà. Un job poco ottimizzato può bloccarne diversi altri, e la chiusura sfora la sua finestra.
+4. **Report custom senza limiti di selezione.** Un report che risponde all'istante sui dati di test può girare per minuti su un intero esercizio. Testi selezioni tipiche e quelle nel caso peggiore, e blocchi quelle senza limiti.
+5. **Utenti in più regioni.** La latenza di rete incide su ogni transazione. RISE sposta l'hosting presso SAP, ma la latenza dipende comunque dalla regione scelta e dall'instradamento verso i suoi utenti, quindi testi dalle sedi più lontane.
+
+La mia [guida alla migrazione da ECC a S/4HANA](/it/ecc-to-s4hana-migration/) spiega dove si colloca il test della conversione nel piano complessivo.
+
+### Dati di test a livello di produzione
+
+Sono i dati a decidere se tutto questo ha un senso. Insisto su dati mascherati a livello di produzione: volumi e realismo di produzione, con i campi personali e sensibili mascherati.
+
+Un cliente con 200.000 righe d'ordine aperte si comporta diversamente da uno con 5.000. Filtri che rispondono all'istante in un mandante di test scarno vanno in timeout in produzione. Popoli i volumi per le aree ad alto rischio, usi un mix di transazioni rappresentativo ed effettui chiamate reali alle interfacce dove possibile.
+
+Come ottenere quei dati in sicurezza, tramite copie, strumenti per dati di test selettivi e mascheramento, lo spiego nella mia guida alla [gestione dei dati di test SAP](/it/sap-test-data-management/). Pianifichi l'aggiornamento prima del primo ciclo di performance, perché richiede più tempo di quanto prevedano la maggior parte dei piani di test.
+
+## Criteri di accettazione su cui si può testare
+
+Concordi i criteri con il business nella fase Prepare, prima che giri qualsiasi test. Ognuno indica la transazione o il job, il carico e la soglia.
+
+Questi esempi mostrano la forma. Fissi i suoi numeri in base alle esigenze operative:
 
 | Elemento | Condizione di carico | Soglia di superamento | Responsabile |
 |---|---|---|---|
-| Creazione dell'ordine di vendita (VA01 o app Fiori) | 150 utenti concorrenti per l'inserimento ordini | Meno di 3 secondi per il 95% delle transazioni | Process owner order-to-cash |
-| Primo caricamento del launchpad Fiori all'inizio del turno | Picco di login concorrenti per il turno più numeroso | Meno di 5 secondi per il 95% degli utenti | Responsabile IT operations |
-| Catena di job della chiusura mensile | Volumi del periodo di chiusura, sequenza completa | Si completa entro la finestra di chiusura concordata, senza interruzioni | Financial controller |
-| Interfaccia ordini in ingresso | Picco orario di volume dei messaggi | Nessun arretrato in coda più vecchio di 15 minuti | Responsabile integrazione |
+| Creazione ordine di vendita (VA01 o app Fiori) | 150 utenti concorrenti di inserimento ordini | Meno di 3 secondi per il 95% delle transazioni | Process owner order to cash |
+| Primo caricamento del Fiori launchpad a inizio turno | Picco di accessi concorrenti del turno più numeroso | Meno di 5 secondi per il 95% degli utenti | Responsabile delle IT operations |
+| Catena di job della chiusura mensile | Volumi del periodo di chiusura, sequenza completa | Si conclude entro la finestra di chiusura concordata senza interruzioni | Financial controller |
+| Interfaccia ordini in entrata | Volume orario di messaggi di picco | Nessun arretrato in coda più vecchio di 15 minuti | Responsabile dell'integrazione |
 | Report custom ad alto volume | Volume completo dei dati di produzione, selezione tipica | Meno di 60 secondi; selezioni senza limiti bloccate | Responsabile del report |
 
-«Il sistema deve essere abbastanza veloce per le operazioni di business» non si può testare né accettare. Cambiare i criteri dopo l'arrivo dei risultati vanifica lo scopo di averli.
+«Il sistema deve essere abbastanza veloce per l'operatività aziendale» non si può né testare né accettare. Cambiare i criteri dopo l'arrivo dei risultati vanifica lo scopo di averli.
 
-## Che cosa devono aspettarsi i leader IT dai propri team
+Se il sistema ha superato il test perché gli utenti della UAT hanno detto che sembrava veloce, lei ha un'opinione, non un criterio di accettazione. Trasformi i risultati in un gate formale prima del cutover, come descrive la mia guida ai [quality gate SAP](/it/sap-quality-gates-implementation/). Il piano complessivo dei cicli, con criteri di ingresso e di uscita per ogni fase di test, va inserito nella sua [strategia di test S/4HANA](/it/s4hana-testing-strategy/).
 
-Chieda ciascuno di questi elementi per nome:
+## Strumenti, responsabilità e cloud
 
-| Aspettativa | Che cosa va consegnato | Perché conta |
+### Strumenti per il test di performance SAP
+
+Un test di performance richiede tre cose: un generatore di carico in grado di gestire i protocolli SAP, il monitoraggio lato SAP e un luogo in cui gestire casi di test e risultati. LoadRunner è lo strumento di carico che ho fatto usare ai team nei programmi SAP. Indichi presto lo strumento nel piano di test, perché licenze, generatori di carico e competenze di scripting richiedono tutti tempo per essere predisposti.
+
+Le opzioni principali nel 2026:
+
+| Strumento | Ruolo | Che cosa sapere |
 |---|---|---|
-| Livelli di servizio sulle performance | Soglie per transazione, interfaccia e job, con criteri di superamento e di fallimento | Impedisce che le opinioni dell'UAT prevalgano sulle evidenze |
-| Perimetro basato sul rischio | Priorità in base al numero di utenti, ai punti di integrazione e alla dipendenza dai dati | Concentra i cicli di test sui carichi di lavoro che contano |
-| Partecipazione di più team | Basis, infrastruttura, funzionale, sicurezza e integrazione presenti durante le esecuzioni | Evita lo scaricabarile quando emergono lacune |
-| Strumenti e ambienti pronti | Generatori di carico (OpenText LoadRunner, Tricentis NeoLoad, Apache JMeter), monitoraggio e aggiornamenti dei dati predisposti prima dell'inizio dei cicli | Rende realistica la simulazione |
-| Dati di test realistici | Dati anagrafici con volumi di produzione, chiamate reali alle interfacce, mix di transazioni rappresentativo | Fa sì che i risultati prevedano il comportamento al go-live |
-| Reportistica sulle performance | Mix di carico, tempi di risposta, CPU e memoria, tempi di esecuzione dei job, tassi di errore | Dà all'approvazione del cutover una base di evidenze |
-| Piano di monitoraggio post go-live | KPI da tenere sotto controllo nei primi 30-60 giorni | Conferma che il sistema in produzione resta entro i limiti testati |
+| [OpenText Professional Performance Engineering](https://www.opentext.com/products/professional-performance-engineering) | Generazione del carico | Il prodotto che in precedenza si chiamava LoadRunner Professional. I suoi pacchetti di protocolli coprono SAP, SAP GUI e SAP Web |
+| [Tricentis NeoLoad](https://www.tricentis.com/products/performance-testing-neoload) | Generazione del carico | Tricentis indica il supporto di SAP GUI, Fiori, RFC e IDoc, e può riutilizzare gli asset di Tricentis Tosca |
+| Apache JMeter | Generazione del carico | Open source. Genera traffico HTTP come le chiamate Fiori e OData |
+| [SAP Cloud ALM](https://help.sap.com/docs/cloud-alm/applicationhelp/test-execution) | Gestione dei test | Prepara ed esegue casi di test manuali e automatizzati e traccia i difetti. Non genera carico da sé |
+| [SAP Solution Manager](https://support.sap.com/en/alm/solution-manager.html) | Gestione dei test | La manutenzione mainstream termina il 31 dicembre 2027, quindi pianifichi il nuovo lavoro in Cloud ALM |
 
-## Errori comuni
+Per una visione più ampia degli strumenti funzionali e di automazione, consulti il mio [confronto tra strumenti di test e convalida SAP](/it/sap-testing-validation-tools-comparison/). Lo strumento conta meno degli script, dei dati e dei criteri.
 
-Quattro errori ricorrono più spesso, anche nelle grandi aziende con modelli di delivery maturi.
+### RISE with SAP ripartisce le responsabilità
 
-**Trattare i test funzionali come test di performance.** I test funzionali dimostrano che una transazione dà il risultato giusto. Non dicono nulla su 150 persone che la eseguono contemporaneamente.
+Con RISE with SAP, SAP è responsabile dell'infrastruttura: dimensionamento, regione dell'hyperscaler, rete e disponibilità della piattaforma. Cliente e partner sono responsabili del livello applicativo.
 
-**Testare con volumi di dati ridotti.** Un cliente con 200.000 righe d'ordine aperte si comporta in modo diverso da uno con 5.000. Filtri che in test rispondono all'istante vanno in timeout in produzione. Generi volumi di dati per le aree ad alto rischio.
+Il [documento SAP su ruoli e responsabilità in RISE](https://assets.cdn.sap.com/agreements/product-policy/hec/roles-responsibilities/rise-with-sap-s4hana-cloud-private-edition-and-sap-erp-pce-roles-and-responsibilities-english-v7-2024a.pdf) è chiaro in proposito. L'esecuzione dei load test e il tuning delle istruzioni SQL onerose sono SAP Cloud Application Services a pagamento aggiuntivo. Se non li acquista, il lavoro lo fa il cliente.
 
-**Lasciare le performance al team Basis.** Il Basis è responsabile di dimensionamento e schedulazione dei job. Non è responsabile del design dei report, dell'architettura dei servizi OData né della progettazione dei flussi di integrazione, e sono questi a determinare le performance dell'applicazione.
+Un errore comune nei programmi RISE è dare per scontato che SAP intercetterà i problemi di performance perché gestisce l'infrastruttura. Intercetterà i problemi di infrastruttura. Scriva la ripartizione nel project charter e nel piano di test:
 
-**Affidare la responsabilità al solo QA.** Il QA esegue i test e riporta i risultati. Le decisioni che causano i problemi di performance vengono prese in fase di progettazione dai team funzionale, tecnico e Basis. Un responsabile dei test o un architetto a livello di programma ha bisogno dell'autorità di mettere in discussione quelle decisioni fin dall'inizio, e la matrice RACI dovrebbe dire chi può bloccare il go-live per motivi di performance.
+1. **SAP:** disponibilità dell'infrastruttura e risposta a livello di piattaforma
+2. **Partner:** performance applicativa con il carico definito, comprese estensioni e flussi di integrazione
+3. **Cliente:** risultati a livello di processo, come la durata della chiusura e il volume di ordini evasi, e la decisione di accettazione
 
-## Che cosa cambia con RISE, GROW e con l'AI
+### Il public cloud restringe il perimetro
 
-### RISE divide la responsabilità
+Sulla public edition del cloud ERP di SAP, il sistema gira su una piattaforma condivisa gestita da SAP. Prima di pianificare qualsiasi test di carico su un tenant, chieda a SAP per iscritto se è consentito e con quale preavviso.
 
-Con RISE with SAP, SAP è responsabile dell'infrastruttura: dimensionamento, regione dell'hyperscaler, rete e disponibilità della piattaforma. Cliente e partner sono responsabili del livello applicativo. Il [documento di SAP su ruoli e responsabilità in RISE](https://assets.cdn.sap.com/agreements/product-policy/hec/roles-responsibilities/rise-with-sap-s4hana-cloud-private-edition-and-sap-erp-pce-roles-and-responsibilities-english-v7-2024a.pdf) lo dice con chiarezza: individuare e ottimizzare le istruzioni SQL onerose resta a carico del cliente, a meno che non acquisti i servizi applicativi aggiuntivi di SAP.
+Il suo test si sposta allora su ciò che è suo: integrazioni custom, estensioni, report ad alto volume, la sequenza di chiusura e il percorso di rete dalle sue sedi. I problemi di performance della piattaforma vanno al supporto SAP.
 
-Un errore frequente nei programmi RISE è dare per scontato che SAP individuerà i problemi di performance perché gestisce l'infrastruttura. Individuerà i problemi di infrastruttura. Non individuerà un servizio OData progettato male, un job ABAP inefficiente o un flusso di integrazione che non scala. Scriva questa ripartizione nel charter e nel piano di test:
+### Errori comuni
 
-1. **SAP:** disponibilità dell'infrastruttura e tempi di risposta a livello di piattaforma
-2. **Partner:** performance dell'applicazione sotto il carico definito, comprese estensioni e flussi di integrazione
-3. **Cliente:** risultati a livello di processo, come il tempo di chiusura e il throughput degli ordini, e la decisione di accettazione
+1. **Trattare il test funzionale come test di performance.** I test funzionali dimostrano che una transazione dà il risultato giusto. Non dicono nulla su 150 persone che la eseguono contemporaneamente.
+2. **Lasciare la performance al Basis.** Il Basis è responsabile del dimensionamento e della schedulazione dei job. Non è responsabile del disegno dei report, dell'architettura dei servizi OData o del disegno dei flussi di integrazione, ed è questo che determina la performance applicativa.
+3. **Affidare la responsabilità al solo QA.** Il QA esegue i test e riporta i risultati, ma le decisioni che causano i problemi di performance si prendono nel disegno. Un test lead o un architetto a livello di programma deve avere l'autorità per contestarle presto, e la matrice RACI deve indicare chi può bloccare il go-live per motivi di performance.
+4. **Accettare le lacune come problemi noti.** La maggior parte dei programmi con problemi di performance in produzione non ha saltato i test. Ha testato senza criteri concordati, oppure ha testato e poi accettato i malfunzionamenti sotto la pressione del calendario.
 
-### Public Edition e GROW restringono il perimetro
+## Da dove partire questa settimana
 
-Su S/4HANA Cloud Public Edition, di solito acquistata tramite GROW with SAP, SAP esegue i test di performance sulla propria piattaforma multi-tenant come parte dello standard di prodotto e non si aspetta che i clienti sottopongano a test di carico il sistema condiviso. I suoi test si spostano su ciò che è suo: integrazioni custom, estensioni, report e analytics ad alto volume, la sequenza di chiusura e di consolidamento e il percorso di rete dalle sue sedi. I problemi di performance della piattaforma stessa vanno al supporto SAP.
+Scriva i cinque o sei criteri di accettazione per le transazioni e i job più a rischio, con un responsabile nominato per ciascuno. Se non riesce a compilare la tabella qui sopra, non è pronto per testare, e ha trovato la prima lacuna.
 
-### L'AI aiuta con gli script, non con l'architettura
+Poi verifichi due cose: che nel piano ci sia un aggiornamento dei dati mascherato con volumi di produzione, e che il ciclo di concorrenza finisca prima che inizi la UAT.
 
-I fornitori di strumenti per i test di carico stanno aggiungendo l'AI per la manutenzione degli script e l'analisi dei risultati, il che aiuta nei programmi in cui l'applicazione cambia da un ciclo all'altro. Verifichi queste promesse sul suo ambiente prima di pagarle. SAP Cloud ALM può aiutare a generare casi di test e requisiti, e gli assistenti AI possono abbozzare scenari a partire dalle descrizioni di processo.
-
-Nulla di tutto questo corregge l'architettura. L'AI non le dirà che il servizio OData andava progettato in modo diverso, né che un report è troppo pesante per i suoi volumi. Queste decisioni le prendono ancora le persone, in fase di progettazione, prima che parta qualsiasi test.
-
-La maggior parte dei programmi con problemi di performance in produzione non ha saltato del tutto i test. Ha testato senza criteri concordati, oppure ha testato e poi ha accettato le lacune come problemi noti sotto la pressione del calendario. La disciplina sta nei criteri e nel farli rispettare, non nello strumento. Per capire dove si collocano le performance tra gli altri tipi di test, veda il mio [confronto tra gli strumenti SAP di test e validazione](/it/sap-testing-validation-tools-comparison/) e la mia guida ai [quality gate SAP](/it/sap-quality-gates-implementation/).
+Se desidera un parere indipendente su un piano di test di performance o su una decisione di go-live, aiuto le organizzazioni proprio su questo. Può [contattarmi qui](/it/contact-noel-erp-support/).
 
 ## Domande frequenti
 
 <details>
-<summary>Che cos'è il test di performance SAP e perché è importante?</summary>
+<summary>Che cos'è il test di performance SAP?</summary>
 
-Verifica come si comporta SAP sotto un carico realistico: tempi di risposta delle transazioni utente, tempi di esecuzione dei job in background, throughput delle interfacce e uso delle risorse con lavoro concorrente.
+Verifica come si comporta SAP con un carico realistico: tempi di risposta delle transazioni utente, durata dei job in background, throughput delle interfacce e uso delle risorse quando molte persone lavorano contemporaneamente. Va fatto prima del go-live.
 
-La correttezza funzionale e le performance sono proprietà diverse. Una transazione corretta per un utente può andare in timeout per 200. Un job che gira in dieci minuti sui dati di test può impiegare ore con i volumi di produzione. Scoprirlo dopo il go-live manda in crisi le operazioni, impone modifiche d'emergenza e danneggia la fiducia degli utenti quando l'adozione è più fragile.
+Correttezza funzionale e performance sono proprietà diverse. Una transazione corretta per un utente può andare in timeout con 200.
 
 </details>
 
 <details>
 <summary>Quando deve iniziare il test di performance in un programma SAP?</summary>
 
-L'individuazione dei rischi parte in Explore, perché le scelte di architettura determinano le performance. I test veri e propri partono in Realize, quando la configurazione è abbastanza stabile da rendere significativi i risultati. Una configurazione parziale dà numeri fuorvianti.
+L'individuazione dei rischi inizia in Explore, perché le scelte di architettura determinano i risultati di performance. Il test vero e proprio inizia in Realize, quando la configurazione è abbastanza stabile da rendere significativi i risultati.
 
-L'ultimo ciclo va chiuso prima dell'UAT, non durante. I difetti di performance trovati in UAT comprimono il calendario residuo e spingono ad accettarli come problemi noti.
-
-</details>
-
-<details>
-<summary>Chi deve essere responsabile del test di performance SAP?</summary>
-
-Il programma, non il solo QA. Il QA esegue e riporta, ma le decisioni che determinano le performance vengono prese in fase di progettazione tra i team funzionale, tecnico e Basis. Un architetto centrale o un responsabile dei test di programma ha bisogno dell'autorità di mettere in discussione quelle decisioni fin dall'inizio.
-
-Lo espliciti nella matrice RACI: chi approva i criteri di accettazione, chi è responsabile della correzione quando i criteri non vengono rispettati e chi può bloccare il go-live per motivi di performance.
+Concluda il ciclo finale prima della UAT, non durante. I difetti di performance trovati in UAT comprimono il calendario e creano pressione per accettarli come problemi noti.
 
 </details>
 
 <details>
-<summary>Come cambia con RISE with SAP la responsabilità del test di performance?</summary>
+<summary>Qual è la differenza tra test di carico e test di concorrenza in SAP?</summary>
 
-SAP è responsabile dell'infrastruttura: dimensionamento, regione, rete e disponibilità della piattaforma. Cliente e partner sono responsabili delle performance applicative: configurazione, estensioni, design di OData e Fiori, flussi di integrazione e KPI di processo. Il documento di SAP su ruoli e responsabilità in RISE lascia l'ottimizzazione SQL al cliente, a meno che non vengano acquistati servizi SAP aggiuntivi.
+Il test di carico verifica i tempi di risposta al volume di picco previsto. Il test di concorrenza verifica che cosa succede quando molti utenti e job lavorano sulle stesse transazioni, tabelle e servizi nello stesso momento. È lì che emergono attese sui lock, ondate di accessi e colli di bottiglia del gateway.
 
-Scriva questa ripartizione nei criteri di accettazione, così che ogni soglia abbia un responsabile.
-
-</details>
-
-<details>
-<summary>Quali sono i problemi di performance più comuni in SAP Fiori?</summary>
-
-Quattro schemi ne coprono la maggior parte. I picchi di login all'inizio del turno, quando il carico su autenticazione e rendering del launchpad si impenna. I servizi OData che restituiscono grandi insiemi di risultati o fanno più chiamate al back end per ogni interazione. Il livello gateway che diventa un collo di bottiglia a sé stante, e che quindi va monitorato durante i test. E le app custom o molto modificate, dove le ipotesi di performance standard non valgono.
+Nella mia esperienza i test di concorrenza sono quelli importanti. Li esegua per primi, poi costruisca sopra il test di carico completo.
 
 </details>
 
 <details>
-<summary>Come si definiscono i criteri di accettazione delle performance in SAP?</summary>
+<summary>Quali dati di test deve usare il test di performance SAP?</summary>
 
-Si indicano la transazione, il carico e la soglia. Per esempio: «La creazione dell'ordine si completa in meno di 3 secondi per il 95% delle transazioni con 150 utenti concorrenti nel ruolo di inserimento ordini.» Questo è testabile.
-
-«Il sistema deve essere abbastanza veloce» no. Si concordano i criteri con il business nella fase Prepare, in base a esigenze operative reali, e non si cambiano dopo l'arrivo dei risultati.
+Dati mascherati a livello di produzione. Significa volumi e realismo di produzione, con i campi personali e sensibili mascherati. Dati di test scarni nascondono i filtri lenti, i report pesanti e le lunghe durate dei job che compaiono il primo giorno.
 
 </details>
 
 <details>
-<summary>Che cosa succede se il test di performance viene saltato o compresso?</summary>
+<summary>Quali strumenti si usano per il test di performance SAP?</summary>
 
-I problemi emergono in produzione: job che sforano le proprie finestre e ne bloccano altri, app Fiori che vanno in timeout nei picchi, la chiusura mensile che richiede il doppio del tempo e manca le scadenze di reporting, code delle interfacce che si accumulano.
+Generatori di carico come OpenText Professional Performance Engineering (in precedenza LoadRunner Professional), Tricentis NeoLoad e Apache JMeter producono il carico. SAP Cloud ALM o SAP Solution Manager gestiscono casi di test e risultati, e il monitoraggio lato SAP mostra che cosa ha fatto il sistema sotto carico.
 
-Gli utenti che incontrano problemi di performance nelle prime settimane si fanno un'opinione negativa del sistema, difficile da ribaltare. E la correzione d'emergenza a sistema in produzione costa più dei test, perché ciò che in Realize era una decisione di progettazione diventa una modifica architetturale urgente.
+</details>
+
+<details>
+<summary>Chi è responsabile del test di performance in RISE with SAP?</summary>
+
+SAP è responsabile dell'infrastruttura: dimensionamento, regione, rete e disponibilità della piattaforma. Il documento SAP su ruoli e responsabilità in RISE lascia al cliente l'esecuzione dei load test e il tuning delle istruzioni SQL onerose, a meno che non si acquistino SAP Cloud Application Services a pagamento aggiuntivo.
+
+Cliente e partner sono responsabili della performance applicativa e della decisione di accettazione. Scriva la ripartizione nei criteri di accettazione, così ogni soglia ha un responsabile.
 
 </details>

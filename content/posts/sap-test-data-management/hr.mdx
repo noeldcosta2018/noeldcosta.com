@@ -1,0 +1,208 @@
+---
+title: "Upravljanje SAP testnim podacima: maskirani podaci produkcijskih razmjera"
+h1: "Upravljanje SAP testnim podacima: maskirani podaci produkcijskih razmjera"
+slug: "sap-test-data-management"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-test-data-management.webp"
+heroAlt: "Prijenosno računalo s tablicom maskiranih podataka pokraj karte podataka povezanih baza"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "sap-data-migration", "s4hana-implementation", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "Upravljanje SAP testnim podacima: kopije, maskiranje i alati"
+metaDescription: "Upravljanje SAP testnim podacima u praksi: maskirani podaci produkcijskih razmjera, kopije sustava i klijenata, selektivno kopiranje i što GDPR znači za testne sustave."
+primaryKeyword: "SAP testni podaci"
+excerpt: "SAP testni podaci moraju izgledati kao produkcija, a ne smiju biti produkcija. Kako dovesti maskirane podatke produkcijskih razmjera u testne sustave, koje metode kopiranja i alati odgovaraju i gdje zakon o zaštiti privatnosti povlači granicu."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "Moje pravilo za SAP testne podatke: maskirani, ali na produkcijskoj razini po volumenu i realističnosti"
+  - "Mali, ručno izrađeni testni podaci skrivaju nedostatke koji su važni, posebno u testovima performansi i istodobnosti"
+  - "Prema GDPR-u pseudonimizirani podaci i dalje su osobni podaci, pa maskirana kopija i dalje treba kontrolu pristupa"
+  - "Između punih kopija, kopija klijenata i alata za selektivno kopiranje birajte prema fazi testiranja, a ne iz navike"
+  - "Maskirajte prije nego što podaci dođu do bilo koga tko ih ne bi trebao vidjeti i držite maskiranje dosljednim kroz povezane sustave"
+  - "Projektnom landscapeu i landscapeu za redovno poslovanje dajte zasebne planove osvježavanja"
+pullQuote: "Testni podaci moraju se ponašati kao produkcija, a da ne budu produkcija."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Test Data Migration Server"
+  - "SAP Landscape Transformation"
+  - "EPI-USE Labs Data Sync Manager"
+  - "SNP Kyano Test Data Organizer"
+  - "Natuvion DCS Protect"
+  - "Qlik Gold Client"
+  - "GDPR"
+originalUrl: "https://noeldcosta.com/sap-test-data-management/"
+canonicalUrl: "https://noeldcosta.com/hr/sap-test-data-management/"
+locale: "hr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Upravljanje SAP testnim podacima način je na koji svakom testnom sustavu dajete podatke koji se ponašaju kao produkcija, a da pritom ne izlažete podatke stvarnih ljudi. Moje pravilo je jednostavno: maskirani podaci, ali na produkcijskoj razini, po volumenu i po realističnosti.
+
+Oskudni, ručno izrađeni podaci skrivaju nedostatke koji su važni. Nemaskirani produkcijski podaci stavljaju zapise o kupcima, dobavljačima i zaposlenicima u sustave sa slabijim kontrolama od produkcije.
+
+Testni podaci dio su šireg plana testiranja. Moj vodič [SAP testiranje objašnjeno](/hr/sap-testing-explained/) pokriva vrste testiranja, tko je njihov vlasnik i gdje se nalaze u SAP Activateu.
+
+## Zašto testni podaci određuju što Vaši testovi mogu pronaći
+
+Test može pronaći samo problem koji njegovi podaci mogu izazvati. Kupac s pet otvorenih stavki ponaša se drukčije od kupca s pedeset tisuća, a uvjet određivanja cijena koji nitko nije kreirao u testnom klijentu u testnom klijentu nikada neće pasti.
+
+Najčešći neuspjeh u testiranju koji sam vidio jest premalo testiranja u integracijskom testiranju sustava (SIT) i korisničkom testiranju prihvaćanja (UAT). Slabi testni podaci jedan su od načina na koji se to tiho događa. Testni slučajevi se izvedu, rezultati izgledaju zeleno, a slučajevi koji bi pukli jednostavno nisu imali podatke na kojima bi pukli.
+
+Zato inzistiram na podacima na produkcijskoj razini. To znači četiri stvari:
+
+1. **Volumen.** Veličine tablica bliske produkciji, kako bi se izvještaji, poslovi i pretraživanja izvodili nad realističnim brojem redaka.
+2. **Raznolikost.** Neobični zapisi koje produkcija stvarno sadrži: blokirani dobavljači, djelomične isporuke, odobrenja, strane valute, stare otvorene stavke.
+3. **Povijest.** Dovoljno zatvorenih razdoblja da starosna struktura, amortizacija i izvođenja na kraju godine imaju smisla.
+4. **Cjelovitost.** Dokumenti koji se i nakon kopiranja i maskiranja i dalje ispravno povezuju kroz module.
+
+Volumen je najvažniji za performanse. Testiranje performansi mora se dogoditi prije puštanja u rad, a prema mom iskustvu važni su testovi istodobnosti, s mnogo korisnika koji rade u isto vrijeme.
+
+Test istodobnosti na gotovo praznoj bazi dokazuje vrlo malo. Moj vodič za [testiranje performansi SAP-a](/hr/sap-performance-testing-it-leaders/) pokriva kako postaviti te testove.
+
+## Što zakon o zaštiti privatnosti znači za SAP testne sustave
+
+Produkcijski podaci u testnom sustavu i dalje su osobni podaci. Testni sustavi i sustavi kvalitete obično imaju širi pristup od produkcije, a upravo taj rizik maskiranje treba zatvoriti.
+
+Opća uredba EU-a o zaštiti podataka (GDPR) referenca je od koje polazi većina organizacija, a mnogi nacionalni zakoni slijede slične smjernice. Uvodna izjava 26 [GDPR-a](https://eur-lex.europa.eu/eli/reg/2016/679/oj) postavlja razliku koju bi svaki SAP tim trebao poznavati.
+
+1. **Pseudonimizirani podaci i dalje su osobni podaci.** Ako se podaci uz dodatne informacije, primjerice tablicu mapiranja, mogu povezati s osobom, uredba se i dalje primjenjuje.
+2. **Anonimni podaci izvan su njezina područja primjene.** Podaci koji više ne mogu identificirati nikoga nisu obuhvaćeni.
+
+Praktična posljedica: većina maskiranja proizvodi pseudonimizirane, a ne anonimne podatke. Maskirani testni sustav i dalje treba kontrolu pristupa, svrhu i pravilo zadržavanja. Zamolite svog službenika za zaštitu podataka da pravila maskiranja dogovori prije prve kopije, a ne nakon što revizor pita.
+
+## Načini dovođenja podataka u SAP testni sustav
+
+Postoji pet uobičajenih putova. Većina programa koristi više od jednog, jer svaka faza testiranja treba nešto drugo.
+
+Tablica ih uspoređuje prema točkama koje odlučuju što odgovara.
+
+| Metoda | Što dobivate | Volumen | Postupanje s privatnošću | Najbolje odgovara |
+|---|---|---|---|---|
+| Puna kopija sustava | Točna kopija produkcije, svaki klijent i tablica | Puni | Maskiranje se mora izvesti nakon kopiranja, prije nego što korisnici dobiju pristup | Testovi performansi, probne konverzije, probe cutovera |
+| Kopija klijenta | Jedan klijent kopiran unutar sustava ili između sustava; profil kopije određuje dolaze li i matični i transakcijski podaci | Puni ili samo customizing | Isto kao kod kopije sustava kada se kopiraju aplikacijski podaci | Novi testni klijenti ili klijenti za obuku, vraćanje klijenta u poznato stanje |
+| SAP Test Data Migration Server (TDMS) | Smanjena kopija, odabrana prema vremenu ili organizacijskoj jedinici, s kodiranjem podataka (scrambling) | Smanjeni | Pravila kodiranja unutar alata | Postojeći SAP Business Suite landscapeovi koji već imaju licencu za njega |
+| Partnerski alati za selektivno kopiranje | Odabrani poslovni objekti ili isječci, kopirani na zahtjev i maskirani u prijenosu | Smanjeni, ciljani | Pravila maskiranja unutar alata, primijenjena tijekom kopiranja | Redovna osvježavanja, regresijski podaci, reprodukcija nedostataka |
+| Izgrađeni ili migrirani podaci | Podaci kreirani skriptama, migracijskim učitavanjima ili ručnim unosom | Koliko god izgradite | Nema stvarnih osobnih podataka ako su izgrađeni od nule | Rani jedinični testovi, greenfield projekti prije puštanja u rad |
+
+### Pune kopije sustava i kopije klijenata
+
+Puna kopija sustava daje najrealističnije podatke s kojima ćete ikada testirati. Ona također kopira svaki rizik za privatnost koji produkcija sadrži. Ako je koristite, sustav ostaje zaključan dok se maskiranje ne izvede i provjeri.
+
+Kopija klijenta svakodnevni je alat za kreiranje i vraćanje klijenata. Profil kopije je odluka koja je važna, jer određuje premješta li se samo konfiguracija ili se s njom premještaju i matični i transakcijski podaci.
+
+### SAP Test Data Migration Server
+
+SAP Test Data Migration Server (TDMS) kreira smanjene neprodukcijske sustave iz produkcijskih podataka, uz kodiranje osjetljivih polja. Nastao je na SAP Business Suiteu, a trenutačni skup dokumentacije na [SAP Help Portalu](https://help.sap.com/docs/SAP_TEST_DATA_MIGRATION_SERVER) odnosi se na izdanje 4.0 SP14.
+
+Nisam pronašao službenu izjavu SAP-a o pokrivenosti TDMS-a za trenutačna S/4HANA izdanja ni o imenovanom nasljedniku. Ako se planirate osloniti na njega, pisanim putem pitajte SAP podržava li Vaše ciljno izdanje i Vaš model implementacije, uključujući RISE with SAP.
+
+### SAP Landscape Transformation i shell kopije
+
+SAP Landscape Transformation skup je alata za analizu i transformaciju koje SAP koristi u selektivnom prijelazu podataka. [SAP Learning](https://learning.sap.com/courses/discovering-sap-activate-implementation-tools-and-methodology/illustrating-selective-data-transition_dab03cad-3061-40ed-b690-a0d7a2dccc98) shell konverziju opisuje kao kopiju produkcijskog sustava napravljenu bez matičnih i transakcijskih podataka, koja se zatim konvertira na S/4HANA.
+
+Ista ideja pomaže i kod testnih podataka. Shell Vam daje repozitorij i konfiguraciju produkcije bez poslovnih podataka, a zatim ga punite samo podacima koji su testu potrebni.
+
+## Alati za selektivne testne podatke
+
+Nekoliko partnerskih proizvoda kopira odabrane poslovne podatke u SAP testne sustave i usput ih maskira. Ovo su oni čije sam tvrdnje mogao provjeriti na vlastitoj stranici dobavljača, bez određenog redoslijeda.
+
+1. **EPI-USE Labs Data Sync Manager.** Paket za kopiranje i maskiranje podataka kroz SAP ABAP landscapeove, uključujući lean klijente, kopije na razini objekata i maskiranje s unaprijed definiranim pravilima. EPI-USE Labs navodi da je [Data Sync Manager](https://www.epiuselabs.com/data-sync-manager-dsm-software-suite) certificiran za integraciju sa SAP S/4HANA i S/4HANA Cloud te da radi s RISE with SAP.
+2. **SNP Kyano Test Data Organizer.** Izdvaja podatke koji su testu potrebni umjesto cijelog sustava i maskira osjetljive podatke pri dodjeli. SNP opisuje [Test Data Organizer](https://www.snpgroup.com/en/platform/kyano-manage/use-cases/test-management/) kao kompatibilan s RISE with SAP Private Cloud Edition.
+3. **Qlik Gold Client.** Kopira i sinkronizira odabrane transakcijske podatke iz produkcije u neprodukcijske ciljeve, sa statičkim maskiranjem za postojeće sustave i dinamičkim maskiranjem za podatke u prijenosu.
+4. **Natuvion DCS Protect.** Pronalazi osobne podatke i primjenjuje anonimizaciju ili pseudonimizaciju u testnim sustavima, sustavima kvalitete, razvojnim sustavima i sustavima za obuku. [Natuvion](https://natuvion.com/tda) ga pozicionira za testne migracije i za tekuće poslovanje, a na toj stranici ne spominje S/4HANA, pa pokrivenost potvrdite izravno.
+
+Prije nego što kupite, zatražite od svakog dobavljača da na ova pitanja odgovori na Vašim sustavima:
+
+1. Koja S/4HANA izdanja i modele implementacije danas podržava?
+2. Maskira li prije nego što podaci napuste produkciju ili nakon što stignu u ciljni sustav?
+3. Ostaje li maskiranje dosljedno kroz povezane sustave, tako da kupac maskiran u S/4HANA odgovara istom kupcu u Vašem CRM-u ili skladištu podataka?
+4. Koliko traje osvježavanje jedne šifre poduzeća pri produkcijskim volumenima?
+5. Tko održava pravila maskiranja kada dodate prilagođene tablice ili polja?
+
+## Usklađivanje testnih podataka s fazom testiranja
+
+Svaka faza testiranja treba podatke iz drugog razloga. Odavde polazim kada planiram testne podatke na S/4HANA programu.
+
+| Faza testiranja | Što podaci moraju omogućiti | Uobičajeni izvor |
+|---|---|---|
+| Jedinično testiranje | Developeru dokazati da jedan objekt radi | Izgrađeni podaci ili mali maskirani isječak |
+| Krugovi integracijskog testiranja sustava | Izvesti cijele lance procesa kroz module i sučelja | Maskirana kopija na produkcijskoj razini ili selektivna kopija |
+| Krugovi korisničkog testiranja prihvaćanja | Izgledati kao vlastiti podaci poslovnih korisnika, kako bi prepoznali svoje slučajeve | Maskirani podaci na produkcijskoj razini, osvježeni prije svakog kruga |
+| Regresijsko testiranje | Ostati stabilni kako bi se rezultati mogli uspoređivati od izvođenja do izvođenja | Fiksni skup podataka koji se može resetirati, plus plan osvježavanja |
+| Testiranje performansi | Odgovarati produkcijskom volumenu, kako bi rezultati istodobnosti imali smisla | Puna maskirana kopija ili volumen produkcijskih razmjera |
+| Probne konverzije i probe cutovera | Dokazati migraciju na stvarnom obliku podataka | Pune kopije produkcije, maskirane gdje pristup imaju ljudi izvan ključnog tima |
+
+UAT zaslužuje dodatnu pažnju. Vlasnik korisničkog testiranja prihvaćanja trebalo bi biti poslovanje, a po mom mišljenju treba najmanje 6 do 8 tjedana.
+
+Dajte korisnicima podatke koje prepoznaju: njihove vlastite kupce, materijale i cjenike, čak i pod maskiranim nazivima. Moj vodič za [SAP korisničko testiranje prihvaćanja](/hr/sap-user-acceptance-testing/) pokriva kako ga provesti.
+
+Probne konverzije slijede istu logiku. Na brownfield konverziji planiram tri probne konverzije, a svaka bi se trebala izvoditi na nedavnoj kopiji produkcije.
+
+Prema mom iskustvu migracija podataka zauzima 30 do 40 posto truda na programu, pa pristup podacima za ta izvođenja planirajte s migracijskim timom. Moj članak o tome [zašto migracija podataka u SAP-u ne uspijeva](/hr/why-sap-data-migration-fails-and-how-to-fix-it/) objašnjava kako se probna učitavanja uklapaju.
+
+### Dva landscapea, dva plana osvježavanja
+
+Tijekom programa vodim dva odvojena landscapea: jedan za projekt i jedan za redovno poslovanje (BAU). Promjene iz žive podrške i projektne promjene tada se testiraju odvojeno.
+
+Svaki landscape treba vlastiti plan testnih podataka. BAU testiranje treba podatke bliske današnjoj produkciji, jer ispravci u podršci odgovaraju na današnje probleme.
+
+Projektno testiranje treba podatke koji odgovaraju novom dizajnu, a to može biti konvertirana kopija ili selektivno učitavanje. Za svaki vodite zaseban kalendar osvježavanja, kako osvježavanje u jednom nikada ne bi izbrisalo testne podatke koji su drugom još potrebni.
+
+## Kako bih postavio upravljanje SAP testnim podacima
+
+Testiranje zauzima oko 35 posto truda na programu. Testne podatke planirajte unutar tog truda, a ne u tjednu prije SIT-a.
+
+Ovo je redoslijed koji bih slijedio:
+
+1. **Dogovorite načelo u pisanom obliku.** Maskirani podaci na produkcijskoj razini, uz potpis sponzora programa, službenika za zaštitu podataka i poslovnih vlasnika.
+2. **Pronađite osobne i osjetljive podatke.** Kupci, dobavljači, zaposlenici, bankovni podaci, kontakti, polja slobodnog teksta, privici i sve prilagođene tablice koje ih sadrže.
+3. **Napišite pravila maskiranja.** Polje po polje odlučite što se zamjenjuje, zadržava ili uklanja i držite zamjene dosljednima kroz povezane sustave.
+4. **Mapirajte podatke na svaku fazu testiranja.** Gornju tablicu koristite kao polaznu točku, a volumen najprije dimenzionirajte za testove performansi i istodobnosti.
+5. **Odaberite metode kopiranja i alate.** Pune kopije gdje je važan volumen, selektivne kopije gdje su važni brzina i učestalost, i provjerite podržava li alat Vaše izdanje.
+6. **Postavite kalendar osvježavanja.** Jedan plan po landscapeu, s osvježavanjima tempiranima prije svakog kruga SIT-a i UAT-a i svake probne konverzije.
+7. **Zaključajte pristup dok se maskiranje ne provjeri.** Nitko izvan ključnog tehničkog tima ne prijavljuje se na svježu kopiju dok provjera maskiranja ne prođe.
+
+Zatim od toga napravite vrata. Strategija, ulazni i izlazni kriteriji za svaki ciklus nalaze se u mom vodiču za [strategiju testiranja S/4HANA](/hr/s4hana-testing-strategy/), a spremnost testnih podataka pripada ulaznim kriterijima svakog kruga.
+
+Konkretan sljedeći korak: popišite svaki neprodukcijski sustav koji danas sadrži kopiju produkcijskih podataka i provjerite koji su maskirani.
+
+Ako želite neovisan pogled na pristup testnim podacima ili plan testiranja za S/4HANA program, [ovdje me možete kontaktirati](/hr/contact-noel-erp-support/).
+
+## Često postavljana pitanja
+
+<details>
+<summary>Što je upravljanje SAP testnim podacima?</summary>
+
+To je način na koji planirate, kreirate, kopirate, maskirate i osvježavate podatke u SAP testnim sustavima. Cilj su podaci koji se po volumenu i realističnosti ponašaju kao produkcija, bez izlaganja stvarnih osobnih podataka ljudima koji ih ne bi trebali vidjeti.
+
+</details>
+
+<details>
+<summary>Mogu li koristiti produkcijske podatke za SAP testiranje?</summary>
+
+Samo nakon što su maskirani, a i tada uz kontrolu pristupa. Prema GDPR-u pseudonimizirani podaci i dalje su osobni podaci, pa maskirana kopija i dalje treba svrhu, pravila pristupa i pravilo zadržavanja. Pravila maskiranja dogovorite sa službenikom za zaštitu podataka prije prve kopije.
+
+</details>
+
+<details>
+<summary>Je li SAP TDMS još dostupan za S/4HANA?</summary>
+
+Trenutačna dokumentacija za TDMS na SAP Help Portalu odnosi se na izdanje 4.0 SP14, a TDMS je nastao na SAP Business Suiteu. Nisam pronašao službenu izjavu SAP-a o njegovoj pokrivenosti trenutačnih S/4HANA izdanja. Pitajte SAP pisanim putem prije nego što planirate oko njega.
+
+</details>
+
+<details>
+<summary>Koji alati kreiraju selektivne SAP testne podatke?</summary>
+
+SAP Test Data Migration Server, plus partnerski proizvodi kao što su EPI-USE Labs Data Sync Manager, SNP Kyano Test Data Organizer i Qlik Gold Client. Natuvion DCS Protect usmjeren je na anonimizaciju i pseudonimizaciju podataka u testnim sustavima. Svaki od njih provjerite prema svom S/4HANA izdanju i modelu implementacije.
+
+</details>
+
+<details>
+<summary>Koliko testnih podataka trebam za testiranje performansi SAP-a?</summary>
+
+Volumen na produkcijskoj razini. Problemi s performansama pokazuju se pri stvarnim veličinama tablica i s mnogo istodobnih korisnika, pa test na oskudnom skupu podataka dokazuje vrlo malo. Puna maskirana kopija produkcije uobičajeni je izvor za testove performansi i istodobnosti.
+
+</details>

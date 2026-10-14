@@ -1,0 +1,204 @@
+---
+title: "SAP regresyon testi: yükseltmeler, sürümler ve kapsam"
+h1: "SAP regresyon testi: yükseltmeler, sürümler ve kapsam"
+slug: "sap-regression-testing"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-regression-testing.webp"
+heroAlt: "Yan yana duran iki özdeş sunucu kabini; biri proje, diğeri olağan iş için"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "sap-cloud-alm", "s4hana-implementation", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "SAP Regresyon Testi: Yükseltmeler, Bulut Sürümleri, Kapsam"
+metaDescription: "SAP regresyon testi: onu ne tetikler, bulut sürüm döngüleri, etki analizi araçları, ne zaman otomatikleştirilir ve proje ile BAU neden ayrı tutulmalı."
+primaryKeyword: "SAP regresyon testi"
+excerpt: "SAP regresyon testi, bir değişikliğin, yükseltmenin veya yeni bir sürümün zaten çalışan süreçleri bozmadığını kanıtlar. Etki analiziyle kapsamı nasıl belirlersiniz, bulut sürümlerine nasıl yetişirsiniz ve proje ile destek değişikliklerinin birbirine takılmasını nasıl önlersiniz."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "Regresyon testi, bir değişikliğin zaten çalışan süreçleri bozmadığını kanıtlar"
+  - "SAP Cloud ERP public edition yılda iki kez yükseltilir ve regresyon pencereniz test ile üretim yükseltmeleri arasında kalır"
+  - "Private edition, altı ayda bir feature pack stack'lerle iki yıllık bir sürüm döngüsü izler; teknik yükseltmeyi SAP yapar, test sizin sorumluluğunuzdadır"
+  - "Çalıştırmanın kapsamını etki analiziyle belirleyin, ardından önce en riskli iş süreçlerini test edin"
+  - "Kapsamlı ve tekrar tekrar test edilmesi gereken çok sayıda test senaryosu varsa otomatikleştirin; bunun altında manuel test yeterlidir"
+  - "Bir program süresince proje ve BAU ortamlarını ayrı çalıştırın; böylece her değişiklik grubu kendi başına regresyon testinden geçer"
+pullQuote: "Proje değişikliklerini ve canlı destek değişikliklerini birbirinden ayrı tutun ve her birini ait olduğu yerde test edin."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Cloud ERP"
+  - "SAP Cloud ALM"
+  - "SAP Solution Manager"
+  - "Business Process Change Analyzer"
+  - "Scope and Effort Analyzer"
+  - "Tricentis LiveCompare"
+  - "Tricentis Tosca"
+  - "Panaya"
+  - "Worksoft"
+originalUrl: "https://noeldcosta.com/sap-regression-testing/"
+canonicalUrl: "https://noeldcosta.com/tr/sap-regression-testing/"
+locale: "tr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP regresyon testi; bir değişikliğin, bir destek paketinin veya yeni bir sürümün zaten çalışan iş süreçlerini bozmadığını kanıtlar. Kapsamını etki analiziyle belirlersiniz, önce en riskli süreçleri çalıştırırsınız ve canlıya geçişten önce yalnızca bir kez değil, sistem her değiştiğinde tekrarlarsınız.
+
+Tetikleyiciler transportlar, yükseltmeler ve bulut sürümleridir. SAP Cloud ERP public edition'da yükseltme tarihlerini SAP belirler; dolayısıyla regresyon paketinizin sürüm gelmeden önce hazır olması gerekir.
+
+Regresyon, [SAP testi rehberimdeki](/tr/sap-testing-explained/) test türlerinden biridir. Bu yazı onu neyin tetiklediğini, kapsamının nasıl belirleneceğini, ne zaman otomatikleştirileceğini ve bir program ile canlı desteğin birbirinin işini bozmasının nasıl önleneceğini ele alıyor.
+
+## SAP regresyon testi neleri kapsar
+
+SAP entegre bir sistemdir. Bir fiyatlandırma koşulundaki değişiklik faturalamayı bozabilir, bir satış siparişine eklenen yeni bir alan bir arayüzü durdurabilir. Bir destek paketi, güvendiğiniz standart bir programı değiştirebilir.
+
+Regresyon testi, değişmesi amaçlanmayan süreçlerdeki testleri yeniden çalıştırır. Fonksiyonel test yeni şeyin çalışıp çalışmadığını sorar, regresyon ise geri kalan her şeyin hâlâ çalışıp çalışmadığını.
+
+Yalnızca bir program süresince değil, sistemin tüm ömrü boyunca geçerlidir:
+
+1. **Transportlar.** Geliştirmeden kaliteye taşınan her değişiklik, dokunduğu süreçler için bir regresyon riskidir.
+2. **Destek paketleri ve feature pack'ler.** SAP düzeltmeleri ve yeni özellikler, yapılandırmanızın altındaki standart kodu değiştirir.
+3. **Sürüm yükseltmeleri.** Yeni bir sürüme geçiş veya sizin planlamadığınız bir bulut sürümü, aynı anda çok daha fazlasını değiştirir.
+4. **Dönüşümler.** ECC'den S/4HANA'ya bir dönüşüm yapılandırmanızı ve özel kodunuzu korur; dolayısıyla koruduğunuz her şeyin yeniden test edilmesi gerekir. [ECC'den S/4HANA'ya geçiş rehberim](/tr/ecc-to-s4hana-migration/) bunun plandaki yerini açıklıyor.
+5. **Entegrasyonlar ve uzantılar.** Bağlı bir sistemdeki veya side-by-side bir uzantıdaki değişiklik, hiçbir SAP transportu olmadan SAP tarafını bozabilir.
+
+Regresyon paketini yeni işlevler için yazılan testlerden ayrı tutun. Paket, iş biriminin kaybetmeyi göze alamayacağı süreçlerin istikrarlı bir kütüphanesidir: order to cash, procure to pay ve ay sonu kapanışı gibi.
+
+## Bulut sürümleri regresyon testini nasıl değiştirir
+
+On-premise'de ne zaman yükselteceğinizi siz seçersiniz. Bulut sürümlerinde takvimin daha büyük kısmını SAP belirler ve regresyon testi, takvimde tekrar eden bir taahhüde dönüşür.
+
+### Public edition: yılda iki yükseltme
+
+Eski adıyla S/4HANA Cloud Public Edition olan SAP Cloud ERP public edition, yılda iki büyük yükseltme alır: şubat ve ağustos aylarında. Aralarında daha küçük özellik teslimatları gelir.
+
+SAP önce test sistemini, birkaç hafta sonra da üretimi yükseltir. Bu aralık sizin regresyon pencerenizdir ve üretim yükseltildikten sonra ikinci bir şansınız yoktur.
+
+SAP'nin [yükseltme sonrası test ve regresyon testi üzerine Cloud ALM kursu](https://learning.sap.com/courses/implementing-with-sap-cloud-alm/conducting-post-upgrade-and-regression-testing-for-sap-s-4hana-cloud-public-edition_b6d0c843-9235-4b3a-a6b9-f0a5a62f9360), Cloud ALM'de bir regresyon test planı oluşturup her sürümde yeniden kullanmayı öneriyor. Public edition ayrıca önceden teslim edilmiş test betikleri içeren ücretsiz bir test otomasyonu aracıyla gelir; böylece standart süreçlerin bir başlangıç noktası olur.
+
+### Private edition: iki yıllık bir sürüm döngüsü
+
+RISE with SAP üzerinden satılan private edition, yani SAP Cloud ERP Private, on-premise sürüm döngüsünü izler. [SAP Learning](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-private-edition/navigating-release-upgrades_ae2d796c-bafd-4e04-8b41-562ebda9eb49) verilerine göre iki yılda bir yeni bir temel sürüm çıkar, ardından altı ayda bir feature pack stack'ler gelir ve her sürümün yedi yıllık ana bakım dönemi vardır.
+
+Ana bakım kapsamında kalmak için en az yedi yılda bir yükseltme yapmanız gerekir; RISE ise yılda bir yükseltme talep etmenize izin verir. Teknik yükseltmeyi SAP yapar, ancak planlama, hazırlık ve test müşterinin veya iş ortağının işi olarak kalır.
+
+Bu ayrım bütçeler için önemlidir. Yükseltmenin kendisi abonelikte olabilir, etrafındaki regresyon testi ise olmayabilir.
+
+Bu tablo regresyon tetikleyicilerini yan yana koyuyor:
+
+| Değişiklik | Sıklık | Tarihi kim belirler | Regresyon çalıştırmasının kapsaması gerekenler |
+|---|---|---|---|
+| Kaliteye transport | Günlük veya haftalık | Sizin ekibiniz | Değişen nesnelerin dokunduğu süreçler |
+| Public edition yükseltmesi | Yılda iki kez, şubat ve ağustos | SAP | Kapsamdaki her süreç, önce özel mantık, üretimden önceki pencerede |
+| Private edition feature pack stack | Altı ayda bir, alırsanız | Siz, SAP'nin takvimi içinde | Kullandığınız değişen standart işlevler ve özel kod |
+| Private edition sürüm yükseltmesi | En az yedi yılda bir, RISE kapsamında talep üzerine yılda bire kadar | Siz, SAP ile birlikte | Tam paket, özel kod ve entegrasyonlar |
+| ECC'den S/4HANA'ya dönüşüm | Bir kez | Siz | Koruduğunuz her şey |
+
+## Kapsamı etki analiziyle belirleyin
+
+Her değişiklikten sonra tam paketi çalıştırmak yavaş ve pahalıdır. Çok az çalıştırmak ise hataların geçmesine izin verir ve açık üretimde kendini gösterir.
+
+Etki analizi bu ikisinin arasında durur. Neyin değiştiğini gerçekte kullandığınız şeylerle karşılaştırır ve en çok risk altındaki süreçleri ve nesneleri listeler; böylece regresyon çalıştırması onlarla başlar.
+
+Karşılaşacağınız araçlar şunlar:
+
+1. **SAP Solution Manager.** Test Suite'in parçası olan Business Process Change Analyzer, bir değişikliğin hangi iş süreçlerini etkilediğini gösterir. [Scope and Effort Analyzer](https://support.sap.com/en/alm/solution-manager/processes-72/scope-effort-analyzer.html), bir destek paketinin veya enhancement package'ın etkisini kurmadan önce tahmin eder; SAP onu bir planlama aracı olarak tanımlıyor.
+2. **SAP Cloud ALM.** Cloud ALM regresyon test planlarını, yürütmeyi ve hataları yönetir ve otomasyon araçlarına bağlanır. Public edition yükseltmeleri için SAP'nin Release Assessment and Scope Dependency aracı, bir sürümdeki hangi değişikliklerin kapsamınızı etkilediğini gösterir.
+3. **Tricentis LiveCompare.** [LiveCompare dokümantasyonuna](https://docs.tricentis.com/livecompare-2026.1/content/welcome_to_livecompare.htm) göre test edilecek en çok risk altındaki nesnelerin asgari bir kümesini belirler, ardından test deponuza göre test isabetlerini ve test boşluklarını raporlar. SAP onu SAP Change Impact Analysis by Tricentis adıyla yeniden satıyor ve Tricentis Tosca ile entegre çalışıyor.
+4. **Panaya.** Panaya'nın [SAP yükseltme ürünü](https://www.panaya.com/sap/sap-upgrades/) değişiklik etki analizini, kod düzeltmeyi, test yönetimini ve otomasyonu bir araya getirir; S/4HANA sürümlerini, feature pack stack'leri ve support package stack'leri kapsar.
+
+Üzerine bir şey kurmadan önce Solution Manager'ınızın durumunu kontrol edin. [SAP Support](https://support.sap.com/en/alm/solution-manager.html), Solution Manager 7.2'nin ana bakım döneminin 2027 sonunda sona erdiğini belirtiyor. Business Suite 7 uzatılmış bakımını alan müşteriler onu 2030 sonuna kadar kullanabiliyor ve SAP, 2027 sonundan önce Cloud ALM'ye geçmeyi öneriyor.
+
+Etki analizi kapsamı daraltır. Kapsamı tek başına belirlemez; bu yüzden araç ne derse desin her seferinde çalışan, iş açısından kritik süreçlerden oluşan bir çekirdek tutun.
+
+[SAP test ve doğrulama araçları](/tr/sap-testing-validation-tools-comparison/) karşılaştırmam, bu ürünlerin birbirine nasıl uyduğunu ve SAP destek sözleşmenizin zaten neleri içerdiğini ele alıyor.
+
+## Hacim ve tekrar haklı çıkardığında otomatikleştirin
+
+Regresyon, test otomasyonunun hakkını verdiği yerdir, çünkü aynı testler tekrar tekrar çalışır. Bu, her regresyon paketinin otomatikleştirilmesi gerektiği anlamına gelmez.
+
+Kuralım basit. Kapsamlı ve tekrar tekrar test edilmesi gereken çok sayıda test senaryosu varsa otomatikleştirin. Bunun altında manuel test yeterlidir.
+
+Yılda iki kez tam paketi çalıştıran, araya transportlar da giren bir public edition müşterisi bu çıtayı hızla aşar. Yılda birkaç kez değişen küçük bir private edition sistemi ise aşmayabilir.
+
+Satın almadan önce şu soruları sorun:
+
+1. **Kaç regresyon test senaryonuz var** ve bunların kaçı her döngüde çalışıyor?
+2. **Bunları ne sıklıkla çalıştırıyorsunuz;** yalnızca sürüm yükseltmelerini değil, transportları, feature pack'leri ve yükseltmeleri de sayarak?
+3. **Manuel bir çalıştırma ne kadar sürüyor** ve regresyon penceresine sığıyor mu?
+4. **Ekranlar ve süreçler değiştiğinde betiklerin bakımını kim yapacak?**
+
+Betik bakımı, insanların hafife aldığı maliyettir. Kimsenin güncellemediği otomatik bir paket, sistemle hiçbir ilgisi olmayan nedenlerle başarısız olur ve ekip ona güvenmeyi bırakır.
+
+Yönettiğim programlarda ekiplerim Tricentis Tosca, Worksoft, Panaya, SAP Cloud ALM, SAP Solution Manager ve UiPath kullandı. Demoya göre değil, sistemlerinize ve ekibinize uyumuna göre seçin. [SAP test otomasyonu rehberim](/tr/sap-test-automation-guide/) nereden başlanacağını ve geri dönüşün nasıl değerlendirileceğini ele alıyor.
+
+## Program süresince proje ve BAU değişikliklerini ayrı tutun
+
+Bir SAP programındaki en zor regresyon sorunu araçlar değildir. Aynı sistemlerden aynı anda geçen iki değişiklik akışıdır.
+
+Program yeni işlevler geliştirirken canlı destek üretimi düzeltmeye devam eder. Her iki akış tek bir geliştirme ve kalite yolunu paylaşıyorsa, bir destek düzeltmesi proje testlerini bozabilir, bir proje değişikliği de bir destek sürümüne sızabilir. O zaman bir hataya hangi değişikliğin yol açtığını kimse söyleyemez.
+
+Benim cevabım iki ayrı ortam çalıştırmaktır. Biri proje, biri olağan iş (BAU) içindir; böylece canlı destek değişiklikleri ile proje değişiklikleri ayrı ayrı test edilir.
+
+<explainer-compare title="Bir SAP programı süresince iki ortam" caption="Her değişiklik akışının üretime giden kendi yolu vardır; böylece bir regresyon hatası tek bir değişiklik grubunu işaret eder." options="Proje ortamı|BAU ortamı" criteria="İçinden ne geçer => Program için yeni işlevler, yapılandırma ve özel kod ; Canlı sistem için düzeltmeler ve küçük değişiklikler|Regresyon odağı => Programın değiştirdiği süreçler ve çekirdek paket ; Her düzeltmenin dokunduğu süreçler ve çekirdek paket|Üretime geçişi => Canlıya geçişte veya bir yaygınlaştırma dalgasında ; Destek sürümleri olarak, olağan takvimle"></explainer-compare>
+
+İki ortam ayrım sorununu çözer, ama yeni bir iş yaratır. Her BAU düzeltmesinin proje ortamına da ulaşması gerekir; yoksa proje onsuz canlıya geçer.
+
+Bunu baştan planlayın:
+
+1. **Her BAU değişikliğini sabit bir ritimle proje ortamına geri taşıyın (retrofit)** ve her birini takip edin.
+2. **Etkilenen proje testlerini** yalnızca sonda değil, her retrofit'ten sonra yeniden çalıştırın.
+3. **Cutover yaklaştıkça BAU değişikliklerini dondurun;** her iki ortamdan da geçen acil düzeltmeler hariç.
+4. **Canlıya geçişten önce proje ortamında tam regresyon paketini** üretim düzeyinde maskelenmiş verilerle çalıştırın.
+
+İkinci ortam paraya mal olur, ama faturalamayı hangi değişikliğin bozduğunu kimsenin söyleyemediği bir canlıya geçiş de öyle. [S/4HANA test stratejim](/tr/s4hana-testing-strategy/), regresyon döngülerinin entegrasyon ve kullanıcı kabul testinin yanında nerede durduğunu gösteriyor.
+
+## Nereden başlamalı
+
+Regresyon paketini ihtiyaç duymadan önce oluşturun. İş biriminin kaybetmeyi göze alamayacağı süreçleri listeleyin, her biri için bir test yazın ve tam bir döngünün ne kadar sürdüğünü görmek için bunları bir kez elle çalıştırın.
+
+Bu sayı, bir sonraki yükseltme penceresinin gerçekçi olup olmadığını ve otomasyonun karşılığını verip vermeyeceğini size söyler. Programın ortasındaysanız, proje ve BAU değişikliklerinin üretime giden tek bir yolu paylaşıp paylaşmadığını kontrol edin.
+
+Regresyon yaklaşımınıza veya yükseltme planınıza bağımsız bir gözle bakılmasını istiyorsanız, kurumlara bu konuda yardımcı oluyorum. [Bana buradan ulaşabilirsiniz](/tr/contact-noel-erp-support/).
+
+## Sıkça sorulan sorular
+
+<details>
+<summary>SAP regresyon testi nedir?</summary>
+
+Değişmesi amaçlanmayan SAP iş süreçlerindeki testleri, bir transportun, destek paketinin, yükseltmenin veya yeni bir sürümün onları bozmadığını kanıtlamak için yeniden çalıştırır. Yalnızca değişen nesneleri değil, order to cash ve ay sonu kapanışı gibi entegre akışları kapsar.
+
+</details>
+
+<details>
+<summary>SAP Cloud ERP public edition ne sıklıkla regresyon testi gerektirir?</summary>
+
+En az yılda iki kez, çünkü SAP public edition'ı şubat ve ağustos aylarında yükseltir. SAP önce test sistemini, birkaç hafta sonra üretimi yükseltir; dolayısıyla regresyon çalıştırmasının bu aralıkta bitmesi gerekir. Sürümler arasındaki transportlar kendi, daha küçük çalıştırmalarını gerektirir.
+
+</details>
+
+<details>
+<summary>RISE with SAP private edition yükseltmesinde regresyon testini kim yapar?</summary>
+
+Teknik yükseltmeyi SAP yapar. Planlama, hazırlık ve test müşteride veya uygulama ortağında kalır; bu yüzden regresyon eforunu abonelikten ayrı bütçeleyin.
+
+</details>
+
+<details>
+<summary>SAP regresyon testinin kapsamını belirlemeye hangi araçlar yardımcı olur?</summary>
+
+Etki analizi araçları neyin değiştiğini kullandığınız şeylerle karşılaştırır. Yaygın seçenekler SAP Solution Manager'daki Business Process Change Analyzer ve Scope and Effort Analyzer ile public edition için Release Assessment and Scope Dependency aracıdır. Tricentis LiveCompare ve Panaya aynı işi yapar; SAP Cloud ALM ise regresyon test planlarını ve yürütmeyi yönetir.
+
+</details>
+
+<details>
+<summary>SAP regresyon testi otomatikleştirilmeli mi?</summary>
+
+Kapsamlı ve tekrar tekrar test edilmesi gereken çok sayıda test senaryosu varsa otomatikleştirin. Bunun altında manuel test yeterlidir. Bir araç satın almadan önce test senaryolarınızı ve ne sıklıkla çalıştıklarını sayın, betik bakımı için de bütçe ayırın.
+
+</details>
+
+<details>
+<summary>Canlı sistemi desteklerken bir SAP programı süresince regresyon testi nasıl yapılır?</summary>
+
+Biri proje, biri olağan iş için iki ayrı ortam çalıştırın. Böylece canlı destek değişiklikleri ile proje değişiklikleri ayrı ayrı test edilir. Her BAU düzeltmesini proje ortamına geri taşıyın ve etkilenen testleri yeniden çalıştırın.
+
+</details>

@@ -1,0 +1,211 @@
+---
+title: "Test di accettazione utente SAP: di chi è e come gestirlo"
+h1: "Test di accettazione utente SAP: di chi è e come gestirlo"
+slug: "sap-user-acceptance-testing"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-user-acceptance-testing.webp"
+heroAlt: "Noel D'Costa in un'aula di formazione allestita per il test di accettazione utente, con script e moduli di approvazione"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "s4hana-implementation", "sap-activate", "sap-governance"]
+author: "Noel D'Costa"
+metaTitle: "Test di accettazione utente SAP (UAT): ruoli, script, firma"
+metaDescription: "Test di accettazione utente SAP: perché la UAT è del business, quanto deve durare, come prepararla, scrivere gli script, gestire i difetti e firmarla."
+primaryKeyword: "test di accettazione utente SAP"
+excerpt: "Il test di accettazione utente SAP è il momento in cui il business dimostra che il sistema esegue i suoi processi prima del go-live. Chi ne è responsabile, quanto dura e come gestire script, triage dei difetti e approvazione."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "La UAT SAP è il business che dimostra, con parole sue, che il sistema esegue i suoi processi prima del go-live"
+  - "La UAT è responsabilità del business. L'IT e il partner di implementazione preparano, supportano e correggono, ma non accettano"
+  - "In un programma S/4HANA preveda almeno 6-8 settimane di UAT, dopo la conclusione del test di integrazione"
+  - "Scriva gli script come scenari di business a partire dai disegni di processo approvati, non come checklist di transazioni"
+  - "Classifichi ogni giorno ogni rilievo della UAT come difetto, richiesta di modifica, problema di dati o esigenza di formazione"
+  - "L'approvazione è una decisione firmata da process owner nominati, e alimenta una checklist di cutover dettagliata concordata in anticipo"
+pullQuote: "Se è l'IT ad approvare la UAT, nessuno ha accettato nulla. Deve essere il business a farsene carico."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Activate"
+  - "SAP Cloud ALM"
+  - "SAP Solution Manager"
+  - "SAP Fiori"
+  - "SAP S/4HANA Cloud Private Edition"
+originalUrl: "https://noeldcosta.com/sap-user-acceptance-testing/"
+canonicalUrl: "https://noeldcosta.com/it/sap-user-acceptance-testing/"
+locale: "it"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Il test di accettazione utente SAP (UAT) è la fase in cui gli utenti di business eseguono i propri processi nel sistema configurato e lo accettano formalmente prima del go-live. Ne è responsabile il business, l'IT e il partner di implementazione lo supportano, e in un programma S/4HANA prevedo almeno 6-8 settimane.
+
+L'errore di test più comune che vedo è semplice: troppo pochi test in UAT e nel test di integrazione di sistema (SIT). Quando la timeline slitta, queste due fasi vengono compresse, e le lacune emergono invece dopo il go-live.
+
+Di seguito: chi fa che cosa, preparazione, script, triage dei difetti e un'approvazione che abbia un significato. Per capire dove si colloca la UAT tra gli altri tipi di test, parta dalla mia panoramica sui [test SAP spiegati](/it/sap-testing-explained/).
+
+## Chi è responsabile della UAT SAP: il business, con IT e partner a supporto
+
+Il test di accettazione utente è responsabilità del business. È la mia posizione, e non deve cambiare quando il calendario si stringe.
+
+Il motivo sta nel nome. L'accettazione è una decisione di business sul fatto che il sistema faccia funzionare l'azienda, quindi solo chi gestisce l'azienda può darla. Se è l'IT o il partner ad approvare la UAT, nessuno ha accettato nulla.
+
+La metodologia di SAP dice la stessa cosa. Le sue [indicazioni sulla strategia di test per S/4HANA Cloud Private Edition](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-private-edition/explaining-the-test-strategy_f9e28dee-5e09-49c3-b06c-4c40cfc1f49a) collocano la UAT nella fase Realize. Gli esperti di configurazione del partner predispongono i casi di test manuali, e gli esperti di linea di business del cliente li eseguono e ne documentano i risultati.
+
+Una ripartizione del lavoro praticabile è questa:
+
+| Ruolo | Di che cosa è responsabile nella UAT | Di che cosa non è responsabile |
+|---|---|---|
+| Process owner di business | Perimetro degli scenari, criteri di accettazione, approvazione finale per il proprio processo | Correggere configurazione o codice |
+| Key user e tester | Eseguire gli script, registrare risultati ed evidenze, sollevare rilievi | Decidere da soli che un difetto «non è un difetto» |
+| UAT lead (lato business) | Piano giornaliero, avanzamento, presidenza del triage, report di prontezza allo sponsor | Correzioni tecniche |
+| Partner di implementazione | Stesura degli script, prontezza del sistema di test, correzione dei difetti, supporto ai ritest | Accettazione |
+| IT interno | Ambienti, accessi, interfacce verso altri sistemi, trasporti | Accettazione |
+| Team dati | Caricamento e aggiornamento dei dati di test, supporto alla riconciliazione | Disegno degli scenari di business |
+
+Il UAT lead deve venire dal business, non dal partner. Una UAT guidata dal partner scivola verso la dimostrazione che il build funziona, che è una domanda diversa dal chiedersi se il business possa lavorarci.
+
+## Preparare la UAT, e perché servono 6-8 settimane
+
+La UAT richiede almeno 6-8 settimane. Con meno tempo il business testa una volta sola il percorso ideale, non ha tempo per ritestare le correzioni e non arriva mai alle eccezioni, dove si nascondono i problemi veri.
+
+Quelle settimane funzionano solo se la UAT parte su un sistema stabile. L'indicazione di SAP è che i processi aziendali si testano una volta configurate le integrazioni e migrati i dati per il processo. Questo significa che il SIT deve finire prima, rispetto a criteri di uscita concordati; la mia guida alla [strategia di test S/4HANA](/it/s4hana-testing-strategy/) spiega come si collegano questi cicli.
+
+Prima che il primo tester si colleghi, deve essere tutto pronto:
+
+1. **Disegni di processo approvati.** Gli script si scrivono a partire da quelli, quindi disegni non approvati significano script non definiti.
+2. **Criteri di ingresso soddisfatti e registrati.** SIT completato, nessun difetto critico aperto e sistema di test congelato, salvo correzioni controllate.
+3. **Un sistema di test che somigli alla produzione.** Configurazione, interfacce, ruoli e autorizzazioni come saranno al go-live.
+4. **Dati di test realistici.** Mascherati, a livello di produzione, caricati e riconciliati prima che inizino i test. La mia guida alla [gestione dei dati di test SAP](/it/sap-test-data-management/) spiega come.
+5. **Tester sollevati dal lavoro ordinario.** Li nomini, concordi le loro ore con i rispettivi responsabili e lo metta per iscritto.
+6. **Tester formati sul nuovo sistema.** Una breve presentazione guidata delle app Fiori e delle transazioni che useranno, prima della UAT e non durante.
+7. **Un unico strumento di gestione dei test.** Script, risultati, evidenze e difetti in un solo posto, non in fogli di calcolo paralleli.
+
+Il punto 5 è quello su cui la UAT di solito fallisce senza rumore. I tester a cui si chiede di incastrare la UAT attorno alla chiusura mensile metteranno al primo posto la chiusura mensile, e hanno ragione.
+
+## Scrivere script UAT che gli utenti di business possano eseguire
+
+Uno script UAT è uno scenario di business, non un elenco di transazioni. «Creare un ordine di vendita» testa una schermata. «Prendere un ordine da un nuovo cliente con blocco fido, sbloccarlo, consegnarlo e fatturarlo» testa il business.
+
+Costruisca gli script a partire dai disegni di processo approvati, e dia a ciascuno un risultato atteso chiaro, in termini di business. Il tester deve poter dire superato o fallito senza chiedere a un consulente.
+
+Copra quattro tipi di scenario:
+
+1. **Flussi core.** I processi quotidiani che mandano avanti l'azienda, come order to cash, procure to pay e record to report.
+2. **Eccezioni.** Resi, blocchi fido, consegne parziali, variazioni di prezzo, storni e approvazioni respinte.
+3. **Fine periodo.** I passi di chiusura mensile e annuale che il team finance esegue davvero, nell'ordine in cui li esegue.
+4. **Verifiche dei ruoli.** Ogni tester lavora con il ruolo che avrà al go-live, così le lacune di autorizzazione emergono adesso.
+
+Lasci che il partner prepari la bozza degli script, poi faccia riscrivere ai key user con parole loro. Se il business non riesce a seguire uno script senza aiuto, lo script è stato scritto per il team di build.
+
+In [SAP Cloud ALM](https://learning.sap.com/courses/implementing-with-sap-cloud-alm/planning-and-executing-testing_ef46a49b-9885-4aaa-841d-5ac9c80a3681) i casi di test manuali partono da un processo, e i piani di test li raggruppano in cicli. I tester impostano ogni passo come superato o fallito, registrano il risultato effettivo e aprono un difetto direttamente dall'esecuzione del test, il che mantiene il collegamento tra script e difetto.
+
+Nei programmi che usano ancora SAP Solution Manager 7.2 per la gestione dei test, tenga presente che la sua manutenzione mainstream termina alla fine del 2027 ([SAP Support](https://support.sap.com/en/alm/solution-manager.html)). Pianifichi i nuovi programmi su Cloud ALM.
+
+## Triage dei difetti durante la UAT
+
+Non ogni rilievo della UAT è un difetto. Trattarli tutti come difetti sommerge il partner, e trattarli tutti come richieste di modifica nasconde i veri malfunzionamenti.
+
+Tenga una riunione di triage ogni giorno di UAT. La presiede il UAT lead di business, con i responsabili funzionali del partner e un rappresentante dell'IT, e ogni nuovo rilievo esce dalla stanza con un tipo, una gravità e un responsabile.
+
+Una classificazione semplice copre la maggior parte dei rilievi:
+
+| Tipo di rilievo | Che cosa significa | Chi interviene | Effetto sull'approvazione |
+|---|---|---|---|
+| Difetto | Il sistema non fa ciò che dice il disegno approvato | Il partner corregge, il tester ritesta | I difetti critici e alti bloccano l'approvazione |
+| Richiesta di modifica | Il disegno è stato rispettato, ma ora il business vuole qualcosa di diverso | Decide la design authority, con costi e tempi | Non blocca, a meno che il business dica che il processo non può funzionare senza |
+| Problema di dati | Dati anagrafici o transazionali errati o mancanti | Il team dati corregge, il tester ritesta | Blocca se gli stessi dati andranno in produzione |
+| Problema di formazione o di utilizzo | Il sistema funziona, ma il tester non sapeva come usarlo | Il responsabile della formazione aggiorna il materiale | Non blocca, ma alimenta il piano di formazione |
+| Problema di autorizzazione | Al ruolo manca un accesso, o ne ha troppi | Il team sicurezza adegua il ruolo | Blocca per il ruolo interessato |
+
+Concordi le definizioni di gravità prima che inizi la UAT, in termini di business. Un difetto critico ferma un processo senza alcuna soluzione alternativa. Uno alto ha una soluzione alternativa che il business non può sostenere sui volumi reali.
+
+Tenga d'occhio la colonna delle richieste di modifica. Un lungo elenco di richieste di modifica in UAT di solito significa che il business non è stato coinvolto a dovere nel disegno, ed è un problema da risolvere prima dell'ondata successiva.
+
+## Ottenere un'approvazione della UAT che regga
+
+La formazione SAP su Activate afferma che la fase Realize è completa quando il test di accettazione utente è completato e approvato. Faccia di quell'approvazione un documento, non uno scambio di email.
+
+Ogni process owner di business firma per il proprio processo. L'approvazione deve registrare:
+
+1. **Che cosa è stato testato.** Scenari eseguiti, superati e falliti, con le evidenze conservate nello strumento di test.
+2. **Che cosa è ancora aperto.** Ogni difetto aperto, con gravità, responsabile e data obiettivo.
+3. **Che cosa è stato accettato con una soluzione alternativa.** Ciascun caso indicato per nome, con la soluzione alternativa che il business ha accettato di adottare.
+4. **Chi ha firmato e quando.** Una persona nominata per ogni processo, non un comitato.
+
+Scriva i criteri di uscita prima che inizi la UAT e non li cambi quando arrivano i risultati. Se il business vuole comunque andare live con delle lacune, lo registri come decisione firmata. La mia guida ai [quality gate SAP](/it/sap-quality-gates-implementation/) spiega come questo gate si inserisce nei passaggi di fase.
+
+L'approvazione della UAT non è la decisione di go-live. La alimenta.
+
+Il criterio di go-live su cui insisto è una checklist di cutover dettagliata, concordata in anticipo. L'approvazione della UAT è una riga di quella checklist, accanto alla riconciliazione dei dati, alla formazione e alla prova di cutover.
+
+Dopo l'approvazione, protegga ciò che è stato accettato. Ogni correzione e ogni trasporto da qui al go-live va ritestato, e la mia guida al [test di regressione SAP](/it/sap-regression-testing/) spiega come tenerlo sotto controllo.
+
+## Un modello semplice di UAT
+
+Non serve un documento lungo. Serve un piano che risponda ogni volta alle stesse domande, scritto prima che inizi la UAT e firmato dal business.
+
+Uno schema semplice basta:
+
+| Sezione | Che cosa contiene | Responsabile |
+|---|---|---|
+| Perimetro | Processi, unità organizzative e ruoli in perimetro, e ciò che è esplicitamente escluso | Process owner di business |
+| Calendario | Date di inizio e fine, cicli, finestre di ritest, esecuzioni di fine periodo | UAT lead |
+| Team | Tester per processo, il loro esonero dal lavoro ordinario, contatti di supporto del partner e dell'IT | UAT lead e responsabili di linea |
+| Criteri di ingresso | Uscita dal SIT soddisfatta, sistema di test congelato, dati caricati e riconciliati, tester formati | UAT lead con il program manager |
+| Ambiente e dati | Sistema di test, interfacce in perimetro, dati mascherati a livello di produzione, piano di aggiornamento | IT e team dati |
+| Script | Elenco degli scenari per processo, risultati attesi, collegamento al disegno di processo | Il partner redige, i key user approvano |
+| Processo dei difetti | Tipi di rilievo, definizioni di gravità, triage giornaliero, regole di ritest | Il UAT lead presiede il triage |
+| Reporting | Avanzamento giornaliero, difetti aperti per gravità, blocchi segnalati allo sponsor | UAT lead |
+| Criteri di uscita | Soglie per i difetti aperti per gravità, scenari superati, soluzioni alternative concordate | Process owner di business |
+| Approvazione | Spazio firma per ogni process owner, elenco delle soluzioni alternative accettate | Process owner di business e sponsor |
+
+Mantenga lo stesso modello in tutte le ondate. Il secondo rollout deve riutilizzare gli script e le lezioni della prima ondata, non ripartire da zero.
+
+## Da dove partire
+
+Nomini questo mese il suo UAT lead dal business, e chieda a ogni process owner di indicare dei tester con tempo dedicato. Poi inserisca nel piano 6-8 settimane di UAT dopo il SIT, e le difenda quando la timeline si stringe.
+
+Se la sua UAT è gestita dal partner, o continua a essere compressa, aiuto i programmi a impostarla nel modo giusto. Può [contattarmi qui](/it/contact-noel-erp-support/).
+
+## Domande frequenti
+
+<details>
+<summary>Che cos'è il test di accettazione utente in SAP?</summary>
+
+È la fase in cui gli utenti di business testano il sistema SAP configurato rispetto ai loro processi reali e lo accettano formalmente prima del go-live. In SAP Activate avviene nella fase Realize, dopo il test di integrazione. I key user eseguono script basati su scenari, registrano i risultati e sollevano rilievi, e i process owner danno l'approvazione.
+
+</details>
+
+<details>
+<summary>Chi è responsabile della UAT in un progetto SAP?</summary>
+
+Il business: i process owner decidono il perimetro e danno l'approvazione, e i key user eseguono i test. Il partner di implementazione redige gli script e corregge i difetti, e l'IT interno fornisce ambienti, accessi e interfacce. Né l'IT né il partner devono accettare il sistema al posto del business.
+
+</details>
+
+<details>
+<summary>Quanto deve durare la UAT SAP?</summary>
+
+In un programma S/4HANA preveda almeno 6-8 settimane. Così resta il tempo per eseguire flussi core, eccezioni e passi di fine periodo, e poi ritestare le correzioni. Una UAT più breve di solito testa una volta il percorso ideale e scopre il resto dopo il go-live.
+
+</details>
+
+<details>
+<summary>Qual è la differenza tra SIT e UAT in SAP?</summary>
+
+Il test di integrazione di sistema (SIT) verifica che processi e interfacce funzionino insieme attraverso moduli e sistemi, ed è eseguito soprattutto dal team di progetto. La UAT verifica che il business possa eseguire i suoi processi sul sistema, ed è eseguita dagli utenti di business. Il SIT deve finire prima che inizi la UAT.
+
+</details>
+
+<details>
+<summary>Che cosa deve includere l'approvazione della UAT?</summary>
+
+Gli scenari testati e i loro risultati, ogni difetto aperto con responsabile e data, le eventuali soluzioni alternative accettate dal business e una firma nominativa per ogni process owner. Concordi i criteri di uscita prima che inizi la UAT. Un'approvazione con lacune deve essere una decisione di business registrata.
+
+</details>
+
+<details>
+<summary>SAP Cloud ALM si può usare per la UAT?</summary>
+
+Sì. SAP Cloud ALM supporta casi di test manuali costruiti a partire dai processi, piani di test per ogni ciclo, la registrazione passo per passo di superato o fallito e difetti aperti dall'esecuzione dei test. Secondo le indicazioni di SAP, gli esperti del partner predispongono i casi di test e gli esperti di business del cliente li eseguono e ne documentano lì i risultati.
+
+</details>

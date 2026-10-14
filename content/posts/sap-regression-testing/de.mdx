@@ -1,0 +1,204 @@
+---
+title: "SAP-Regressionstest: Upgrades, Releases und Testumfang"
+h1: "SAP-Regressionstest: Upgrades, Releases und Testumfang"
+slug: "sap-regression-testing"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-regression-testing.webp"
+heroAlt: "Zwei identische Serverschränke nebeneinander, einer für das Projekt und einer für den laufenden Betrieb"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "sap-cloud-alm", "s4hana-implementation", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "SAP-Regressionstest: Upgrades, Cloud-Releases, Umfang"
+metaDescription: "SAP-Regressionstests erklärt: Auslöser, Cloud-Release-Zyklen, Tools für die Auswirkungsanalyse, wann Sie automatisieren und warum Projekt und BAU getrennt gehören."
+primaryKeyword: "SAP Regressionstest"
+excerpt: "Der SAP-Regressionstest belegt, dass eine Änderung, ein Upgrade oder ein neues Release keine Prozesse gebrochen hat, die bereits funktionierten. Wie Sie den Umfang per Auswirkungsanalyse festlegen, mit Cloud-Releases Schritt halten und verhindern, dass Projekt- und Supportänderungen sich gegenseitig in die Quere kommen."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "Der Regressionstest belegt, dass eine Änderung keine Prozesse gebrochen hat, die bereits funktionierten"
+  - "SAP Cloud ERP public edition erhält zweimal im Jahr ein Upgrade, und Ihr Regressionsfenster liegt zwischen dem Upgrade des Testsystems und dem der Produktion"
+  - "Die Private Edition folgt einem zweijährigen Release-Zyklus mit Feature Pack Stacks alle sechs Monate; SAP führt das technische Upgrade durch, das Testen verantworten Sie"
+  - "Legen Sie den Umfang des Laufs per Auswirkungsanalyse fest und testen Sie die riskantesten Geschäftsprozesse zuerst"
+  - "Automatisieren Sie, wenn es viele Testfälle gibt, die umfangreich und wiederholt getestet werden müssen; darunter ist manuelles Testen in Ordnung"
+  - "Betreiben Sie während eines Programms getrennte Landschaften für Projekt und BAU, damit jede Änderungsreihe für sich regressionsgetestet wird"
+pullQuote: "Halten Sie Projektänderungen und Live-Supportänderungen auseinander, und testen Sie jede dort, wo sie hingehört."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Cloud ERP"
+  - "SAP Cloud ALM"
+  - "SAP Solution Manager"
+  - "Business Process Change Analyzer"
+  - "Scope and Effort Analyzer"
+  - "Tricentis LiveCompare"
+  - "Tricentis Tosca"
+  - "Panaya"
+  - "Worksoft"
+originalUrl: "https://noeldcosta.com/sap-regression-testing/"
+canonicalUrl: "https://noeldcosta.com/de/sap-regression-testing/"
+locale: "de"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Der SAP-Regressionstest belegt, dass eine Änderung, ein Support Package oder ein neues Release keine Geschäftsprozesse gebrochen hat, die bereits funktionierten. Den Umfang legen Sie per Auswirkungsanalyse fest, die riskantesten Prozesse laufen zuerst, und Sie wiederholen ihn bei jeder Änderung am System, nicht nur einmal vor dem Go-live.
+
+Die Auslöser sind Transporte, Upgrades und Cloud-Releases. Bei SAP Cloud ERP public edition legt SAP die Upgrade-Termine fest, also muss Ihre Regressionssuite bereit sein, bevor das Release kommt.
+
+Der Regressionstest ist eine der Testarten in meinem [Leitfaden zu SAP-Tests](/de/sap-testing-explained/). Dieser Artikel behandelt, was ihn auslöst, wie Sie den Umfang festlegen, wann Sie automatisieren und wie Sie verhindern, dass ein Programm und der Live-Support sich gegenseitig die Arbeit zerstören.
+
+## Was der SAP-Regressionstest abdeckt
+
+SAP ist ein integriertes System. Eine Änderung an einer Preiskondition kann die Fakturierung brechen, und ein neues Feld im Kundenauftrag kann eine Schnittstelle stoppen. Ein Support Package kann ein Standardprogramm verändern, auf das Sie sich verlassen.
+
+Der Regressionstest wiederholt Tests für Prozesse, die sich nicht ändern sollten. Der funktionale Test fragt, ob das Neue funktioniert, der Regressionstest fragt, ob alles andere noch funktioniert.
+
+Er gilt über die gesamte Lebensdauer des Systems, nicht nur während eines Programms:
+
+1. **Transporte.** Jede Änderung, die von der Entwicklung in die Qualitätssicherung geht, ist ein Regressionsrisiko für die Prozesse, die sie berührt.
+2. **Support Packages und Feature Packs.** SAP-Korrekturen und neue Funktionen verändern Standardcode unter Ihrer Konfiguration.
+3. **Release-Upgrades.** Der Wechsel auf ein neues Release oder ein Cloud-Release, das Sie nicht eingeplant haben, verändert viel mehr auf einmal.
+4. **Konvertierungen.** Eine Konvertierung von ECC auf S/4HANA übernimmt Ihre Konfiguration und Ihre Eigenentwicklungen, also muss alles, was Sie behalten haben, erneut getestet werden. Mein [Leitfaden zur Migration von ECC auf S/4HANA](/de/ecc-to-s4hana-migration/) erklärt, wo das im Plan liegt.
+5. **Integrationen und Erweiterungen.** Eine Änderung in einem angebundenen System oder einer Side-by-Side-Erweiterung kann die SAP-Seite brechen, ohne dass es einen SAP-Transport gibt.
+
+Halten Sie die Regressionssuite getrennt von den Tests, die für neue Funktionen geschrieben werden. Die Suite ist eine stabile Bibliothek der Prozesse, die der Fachbereich nicht verlieren darf, etwa Order-to-Cash, Procure-to-Pay und den Monatsabschluss.
+
+## Wie Cloud-Releases den Regressionstest verändern
+
+On-Premise wählen Sie selbst, wann Sie ein Upgrade machen. In den Cloud-Editionen legt SAP mehr vom Zeitplan fest, und der Regressionstest wird zu einer wiederkehrenden Verpflichtung im Kalender.
+
+### Public Edition: zwei Upgrades pro Jahr
+
+SAP Cloud ERP public edition, früher S/4HANA Cloud Public Edition, erhält zwei große Upgrades pro Jahr, im Februar und im August. Kleinere Funktionslieferungen kommen dazwischen.
+
+SAP aktualisiert zuerst das Testsystem und einige Wochen später die Produktion. Diese Lücke ist Ihr Regressionsfenster, und eine zweite Chance gibt es nicht, sobald die Produktion aktualisiert ist.
+
+Der [Cloud-ALM-Kurs von SAP zu Post-Upgrade- und Regressionstests](https://learning.sap.com/courses/implementing-with-sap-cloud-alm/conducting-post-upgrade-and-regression-testing-for-sap-s-4hana-cloud-public-edition_b6d0c843-9235-4b3a-a6b9-f0a5a62f9360) empfiehlt, in Cloud ALM einen Regressionstestplan anzulegen und ihn für jedes Release wiederzuverwenden. Die Public Edition enthält außerdem ein kostenloses Tool zur Testautomatisierung mit vorab gelieferten Testskripten, sodass die Standardprozesse einen Ausgangspunkt haben.
+
+### Private Edition: ein zweijähriger Release-Zyklus
+
+SAP Cloud ERP Private, die über RISE with SAP verkaufte Private Edition, folgt dem On-Premise-Release-Zyklus. Laut [SAP Learning](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-private-edition/navigating-release-upgrades_ae2d796c-bafd-4e04-8b41-562ebda9eb49) erscheint alle zwei Jahre ein neues Basis-Release, Feature Pack Stacks folgen alle sechs Monate, und jedes Release hat sieben Jahre Mainstream-Wartung.
+
+Sie müssen mindestens alle sieben Jahre ein Upgrade einspielen, um in der Mainstream-Wartung zu bleiben, und RISE erlaubt Ihnen, ein Upgrade pro Jahr anzufordern. SAP führt das technische Upgrade durch, aber Planung, Vorbereitung und Tests bleiben Aufgabe des Kunden oder des Partners.
+
+Diese Aufteilung zählt für das Budget. Das Upgrade selbst ist womöglich im Abonnement enthalten, der Regressionstest drumherum nicht.
+
+Diese Tabelle stellt die Auslöser für Regressionstests nebeneinander:
+
+| Änderung | Wie oft | Wer den Termin festlegt | Was der Regressionslauf abdecken muss |
+|---|---|---|---|
+| Transport in die Qualitätssicherung | Täglich oder wöchentlich | Ihr Team | Prozesse, die die geänderten Objekte berühren |
+| Upgrade der Public Edition | Zweimal pro Jahr, Februar und August | SAP | Jeden Prozess im Scope, eigene Logik zuerst, im Fenster vor der Produktion |
+| Feature Pack Stack der Private Edition | Alle sechs Monate, wenn Sie ihn einspielen | Sie, innerhalb des SAP-Zeitplans | Geänderte Standardfunktionen, die Sie nutzen, plus Eigenentwicklungen |
+| Release-Upgrade der Private Edition | Mindestens alle sieben Jahre, unter RISE auf Anfrage bis zu einmal pro Jahr | Sie, gemeinsam mit SAP | Die komplette Suite, Eigenentwicklungen und Integrationen |
+| Konvertierung von ECC auf S/4HANA | Einmal | Sie | Alles, was Sie behalten haben |
+
+## Den Umfang per Auswirkungsanalyse festlegen
+
+Nach jeder Änderung die komplette Suite laufen zu lassen, ist langsam und teuer. Zu wenig zu testen lässt Fehler durch, und die Lücke zeigt sich in der Produktion.
+
+Die Auswirkungsanalyse liegt dazwischen. Sie vergleicht, was sich geändert hat, mit dem, was Sie tatsächlich nutzen, und listet die am stärksten gefährdeten Prozesse und Objekte auf, sodass der Regressionslauf mit ihnen beginnt.
+
+Diese Tools werden Ihnen begegnen:
+
+1. **SAP Solution Manager.** Der Business Process Change Analyzer, Teil der Test Suite, zeigt, welche Geschäftsprozesse eine Änderung betrifft. Der [Scope and Effort Analyzer](https://support.sap.com/en/alm/solution-manager/processes-72/scope-effort-analyzer.html) schätzt die Auswirkung eines Support Packages oder Enhancement Packages, bevor Sie es einspielen, und SAP bezeichnet ihn als Planungswerkzeug.
+2. **SAP Cloud ALM.** Cloud ALM verwaltet Regressionstestpläne, Durchführung und Fehler und verbindet sich mit Automatisierungstools. Für Upgrades der Public Edition zeigt das SAP-Tool Release Assessment and Scope Dependency, welche Änderungen eines Releases Ihren Scope betreffen.
+3. **Tricentis LiveCompare.** Laut der [LiveCompare-Dokumentation](https://docs.tricentis.com/livecompare-2026.1/content/welcome_to_livecompare.htm) ermittelt es eine minimale Menge der am stärksten gefährdeten Objekte zum Testen und meldet dann Testtreffer und Testlücken gegen Ihr Testrepository. SAP vertreibt es als SAP Change Impact Analysis by Tricentis, und es integriert sich mit Tricentis Tosca.
+4. **Panaya.** Das [SAP-Upgrade-Produkt von Panaya](https://www.panaya.com/sap/sap-upgrades/) kombiniert Auswirkungsanalyse, Codekorrektur, Testmanagement und Automatisierung und deckt S/4HANA-Versionen, Feature Pack Stacks und Support Package Stacks ab.
+
+Prüfen Sie, wo Ihr Solution Manager steht, bevor Sie darauf aufbauen. Laut [SAP Support](https://support.sap.com/en/alm/solution-manager.html) endet die Mainstream-Wartung für Solution Manager 7.2 Ende 2027. Kunden mit erweiterter Wartung für die Business Suite 7 behalten ihn bis Ende 2030, und SAP empfiehlt, vor Ende 2027 auf Cloud ALM zu wechseln.
+
+Die Auswirkungsanalyse grenzt den Umfang ein. Allein festlegen kann sie ihn nicht, also behalten Sie einen Kern geschäftskritischer Prozesse, die jedes Mal laufen, egal was das Tool sagt.
+
+Mein Vergleich von [SAP-Test- und Validierungstools](/de/sap-testing-validation-tools-comparison/) zeigt, wie diese Produkte zusammenpassen und was Ihr SAP-Supportvertrag bereits enthält.
+
+## Automatisieren, wenn Volumen und Wiederholung es rechtfertigen
+
+Beim Regressionstest verdient die Testautomatisierung ihr Geld, weil dieselben Tests immer wieder laufen. Das heißt nicht, dass jede Regressionssuite automatisiert werden sollte.
+
+Meine Regel ist einfach. Wenn es sehr viele Testfälle gibt, die umfangreich und wiederholt getestet werden müssen, automatisieren Sie. Darunter ist manuelles Testen in Ordnung.
+
+Ein Public-Edition-Kunde, der zweimal pro Jahr die komplette Suite laufen lässt, plus Transporte dazwischen, erreicht diese Schwelle schnell. Ein kleines Private-Edition-System, das sich ein paar Mal pro Jahr ändert, vielleicht nicht.
+
+Stellen Sie diese Fragen, bevor Sie kaufen:
+
+1. **Wie viele Regressionstestfälle haben Sie,** und wie viele davon laufen in jedem Zyklus?
+2. **Wie oft führen Sie sie aus,** Transporte, Feature Packs und Upgrades mitgezählt, nicht nur Release-Upgrades?
+3. **Wie lange dauert ein manueller Lauf,** und passt er in das Regressionsfenster?
+4. **Wer pflegt die Skripte,** wenn sich Bildschirme und Prozesse ändern?
+
+Die Skriptpflege ist der Kostenfaktor, den man unterschätzt. Eine automatisierte Suite, die niemand aktualisiert, schlägt aus Gründen fehl, die nichts mit dem System zu tun haben, und das Team vertraut ihr nicht mehr.
+
+In Programmen, die ich geleitet habe, haben meine Teams Tricentis Tosca, Worksoft, Panaya, SAP Cloud ALM, SAP Solution Manager und UiPath eingesetzt. Wählen Sie nach Passung zu Ihren Systemen und Ihrem Team, nicht nach der Demo. Mein [Leitfaden zur SAP-Testautomatisierung](/de/sap-test-automation-guide/) behandelt, wo Sie anfangen und wie Sie die Amortisation beurteilen.
+
+## Projekt- und BAU-Änderungen während eines Programms auseinanderhalten
+
+Das schwierigste Regressionsproblem in einem SAP-Programm sind nicht die Tools. Es sind zwei Änderungsströme, die gleichzeitig durch dieselben Systeme laufen.
+
+Während das Programm neue Funktionen baut, korrigiert der Live-Support weiter die Produktion. Teilen sich beide Ströme einen Entwicklungs- und Qualitätspfad, kann eine Supportkorrektur das Projekttesten brechen und eine Projektänderung in ein Support-Release rutschen. Dann kann niemand sagen, welche Änderung einen Fehler verursacht hat.
+
+Meine Antwort sind zwei getrennte Landschaften. Eine für das Projekt und eine für den laufenden Betrieb (BAU), sodass Live-Supportänderungen und Projektänderungen getrennt getestet werden.
+
+<explainer-compare title="Zwei Landschaften während eines SAP-Programms" caption="Jeder Änderungsstrom hat seinen eigenen Weg in die Produktion, sodass ein Regressionsfehler auf eine einzige Änderungsreihe zeigt." options="Projektlandschaft|BAU-Landschaft" criteria="Was hindurchläuft => Neue Funktionen, Konfiguration und Eigenentwicklungen für das Programm ; Korrekturen und kleine Änderungen am Live-System|Regressionsschwerpunkt => Prozesse, die das Programm ändert, plus die Kernsuite ; Prozesse, die jede Korrektur berührt, plus die Kernsuite|Geht in die Produktion => Zum Go-live oder zu einer Release-Welle ; Als Support-Releases, im üblichen Rhythmus"></explainer-compare>
+
+Zwei Landschaften lösen die Trennung und schaffen eine neue Aufgabe. Jede BAU-Korrektur muss auch die Projektlandschaft erreichen, sonst geht das Projekt ohne sie live.
+
+Planen Sie das von Anfang an ein:
+
+1. **Übernehmen Sie jede BAU-Änderung per Retrofit in die Projektlandschaft,** in festem Rhythmus, und verfolgen Sie jede einzeln.
+2. **Wiederholen Sie die betroffenen Projekttests** nach jedem Retrofit, nicht erst am Ende.
+3. **Frieren Sie BAU-Änderungen ein,** wenn der Cutover näher rückt, mit Ausnahme dringender Korrekturen, die durch beide Landschaften gehen.
+4. **Lassen Sie die komplette Regressionssuite** vor dem Go-live in der Projektlandschaft laufen, mit maskierten Daten auf Produktionsniveau.
+
+Die zweite Landschaft kostet Geld, aber das tut auch ein Go-live, bei dem niemand sagen kann, welche Änderung die Fakturierung gebrochen hat. Meine [S/4HANA-Teststrategie](/de/s4hana-testing-strategy/) zeigt, wo Regressionszyklen neben Integrationstest und Benutzerakzeptanztest liegen.
+
+## Wo Sie anfangen
+
+Bauen Sie eine Regressionssuite, bevor Sie sie brauchen. Listen Sie die Prozesse auf, die der Fachbereich nicht verlieren darf, schreiben Sie für jeden einen Test und führen Sie alle einmal von Hand aus, um zu sehen, wie lange ein vollständiger Zyklus dauert.
+
+Diese Zahl sagt Ihnen, ob das nächste Upgrade-Fenster realistisch ist und ob sich Automatisierung lohnt. Wenn Sie mitten im Programm stecken, prüfen Sie, ob Projekt- und BAU-Änderungen sich einen Weg in die Produktion teilen.
+
+Wenn Sie eine unabhängige Sicht auf Ihren Regressionsansatz oder Ihren Upgrade-Plan möchten: Dabei unterstütze ich Organisationen. Sie können [mich hier kontaktieren](/de/contact-noel-erp-support/).
+
+## Häufig gestellte Fragen
+
+<details>
+<summary>Was ist ein SAP-Regressionstest?</summary>
+
+Er wiederholt Tests für SAP-Geschäftsprozesse, die sich nicht ändern sollten, um zu belegen, dass ein Transport, ein Support Package, ein Upgrade oder ein neues Release sie nicht gebrochen hat. Er deckt integrierte Abläufe wie Order-to-Cash und den Monatsabschluss ab, nicht nur die geänderten Objekte.
+
+</details>
+
+<details>
+<summary>Wie oft braucht SAP Cloud ERP public edition einen Regressionstest?</summary>
+
+Mindestens zweimal pro Jahr, weil SAP die Public Edition im Februar und August aktualisiert. SAP aktualisiert zuerst das Testsystem und einige Wochen später die Produktion, also muss der Regressionslauf in dieser Lücke fertig werden. Transporte zwischen den Releases brauchen eigene, kleinere Läufe.
+
+</details>
+
+<details>
+<summary>Wer übernimmt den Regressionstest bei einem Upgrade der RISE with SAP Private Edition?</summary>
+
+SAP führt das technische Upgrade durch. Planung, Vorbereitung und Tests bleiben beim Kunden oder beim Implementierungspartner, also budgetieren Sie den Regressionsaufwand getrennt vom Abonnement.
+
+</details>
+
+<details>
+<summary>Welche Tools helfen, den Umfang von SAP-Regressionstests festzulegen?</summary>
+
+Tools für die Auswirkungsanalyse vergleichen, was sich geändert hat, mit dem, was Sie nutzen. Übliche Optionen sind der Business Process Change Analyzer und der Scope and Effort Analyzer im SAP Solution Manager sowie das Tool Release Assessment and Scope Dependency für die Public Edition. Tricentis LiveCompare und Panaya erledigen dieselbe Aufgabe, während SAP Cloud ALM die Regressionstestpläne und die Durchführung verwaltet.
+
+</details>
+
+<details>
+<summary>Sollten SAP-Regressionstests automatisiert werden?</summary>
+
+Automatisieren Sie, wenn es sehr viele Testfälle gibt, die umfangreich und wiederholt getestet werden müssen. Darunter ist manuelles Testen in Ordnung. Zählen Sie Ihre Testfälle und wie oft sie laufen, bevor Sie ein Tool kaufen, und budgetieren Sie die Skriptpflege.
+
+</details>
+
+<details>
+<summary>Wie testet man Regressionen während eines SAP-Programms und betreut gleichzeitig das Live-System?</summary>
+
+Betreiben Sie zwei getrennte Landschaften, eine für das Projekt und eine für den laufenden Betrieb. Live-Supportänderungen und Projektänderungen werden dann getrennt getestet. Übernehmen Sie jede BAU-Korrektur per Retrofit in die Projektlandschaft und wiederholen Sie die betroffenen Tests.
+
+</details>

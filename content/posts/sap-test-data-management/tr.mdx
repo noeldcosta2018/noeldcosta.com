@@ -1,0 +1,208 @@
+---
+title: "SAP test verisi yönetimi: maskelenmiş, üretim ölçeğinde veri"
+h1: "SAP test verisi yönetimi: maskelenmiş, üretim ölçeğinde veri"
+slug: "sap-test-data-management"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-test-data-management.webp"
+heroAlt: "Maskelenmiş bir veri tablosunu gösteren dizüstü bilgisayar ve yanında birbirine bağlı veritabanlarının veri haritası"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "sap-data-migration", "s4hana-implementation", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "SAP Test Verisi Yönetimi: Kopyalar, Maskeleme ve Araçlar"
+metaDescription: "Uygulamada SAP test verisi yönetimi: üretim ölçeğinde maskelenmiş veri, sistem ve client kopyaları, seçici kopyalama araçları ve GDPR'ın test sistemleri için anlamı."
+primaryKeyword: "SAP test verisi yönetimi"
+excerpt: "SAP test verileri üretime benzemeli ama üretim verisi olmamalıdır. Üretim ölçeğinde maskelenmiş verileri test sistemlerinize nasıl alırsınız, hangi kopyalama yöntemleri ve araçlar uygundur ve gizlilik mevzuatı sınırı nerede çizer."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "SAP test verileri için kuralım: maskelenmiş, ama hacim ve gerçekçilik açısından üretim düzeyinde"
+  - "Küçük, elle hazırlanmış test verileri önemli hataları gizler; özellikle performans ve eşzamanlılık testlerinde"
+  - "GDPR kapsamında takma adlandırılmış veri hâlâ kişisel veridir; dolayısıyla maskelenmiş bir kopya da erişim kontrolü gerektirir"
+  - "Tam kopyalar, client kopyaları ve seçici kopyalama araçları arasında alışkanlığa göre değil, test aşamasına göre seçim yapın"
+  - "Veriyi, onu görmemesi gereken birine ulaşmadan önce maskeleyin ve maskelemeyi bağlı sistemler arasında tutarlı tutun"
+  - "Proje ortamına ve olağan iş ortamına kendi yenileme planlarını verin"
+pullQuote: "Test verileri üretim verisi olmadan üretim gibi davranmalıdır."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Test Data Migration Server"
+  - "SAP Landscape Transformation"
+  - "EPI-USE Labs Data Sync Manager"
+  - "SNP Kyano Test Data Organizer"
+  - "Natuvion DCS Protect"
+  - "Qlik Gold Client"
+  - "GDPR"
+originalUrl: "https://noeldcosta.com/sap-test-data-management/"
+canonicalUrl: "https://noeldcosta.com/tr/sap-test-data-management/"
+locale: "tr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP test verisi yönetimi, gerçek kişilerin bilgilerini açığa çıkarmadan her test sistemine üretim gibi davranan veriler sağlamanın yoludur. Kuralım basit: maskelenmiş veri, ama hacim ve gerçekçilik açısından üretim düzeyinde.
+
+Az ve elle hazırlanmış veri, önemli hataları gizler. Maskelenmemiş üretim verisi ise müşteri, tedarikçi ve çalışan kayıtlarını üretimden daha zayıf kontrollere sahip sistemlere koyar.
+
+Test verileri daha geniş bir test planının bir parçasıdır. [SAP testi](/tr/sap-testing-explained/) rehberim test türlerini, sahiplerini ve SAP Activate içindeki yerlerini ele alıyor.
+
+## Testlerinizin neyi bulabileceğine neden test verileri karar verir
+
+Bir test, yalnızca verisinin tetikleyebileceği bir sorunu bulabilir. Beş açık kalemi olan bir müşteri, elli bin açık kalemi olan bir müşteriden farklı davranır; test client'ında kimsenin oluşturmadığı bir fiyatlandırma koşulu da test client'ında asla hata vermez.
+
+Gördüğüm en yaygın test başarısızlığı, sistem entegrasyon testinde (SIT) ve kullanıcı kabul testinde (UAT) yeterince test yapılmamasıdır. Zayıf test verileri bunun sessizce gerçekleşme yollarından biridir. Test senaryoları çalışır, sonuçlar yeşil görünür; bozulacak olan senaryoların ise bozulacakları veri yoktur.
+
+Bu yüzden üretim düzeyinde veride ısrar ederim. Bu dört şey demektir:
+
+1. **Hacim.** Üretime yakın tablo boyutları; böylece raporlar, işler ve aramalar gerçekçi kayıt sayılarına karşı çalışır.
+2. **Çeşitlilik.** Üretimin gerçekten barındırdığı sıra dışı kayıtlar: bloke edilmiş tedarikçiler, kısmi teslimatlar, alacak dekontları, yabancı para birimleri, eski açık kalemler.
+3. **Geçmiş.** Yaşlandırma, amortisman ve yıl sonu çalıştırmalarının anlam taşıması için yeterli sayıda kapanmış dönem.
+4. **Bütünlük.** Kopyalamadan ve maskelemeden sonra modüller arasında hâlâ doğru bağlanan belgeler.
+
+Hacim en çok performans için önemlidir. Performans testi canlıya geçişten önce yapılmalıdır ve deneyimime göre önemli olanlar eşzamanlılık testleri, yani çok sayıda kullanıcının aynı anda çalıştığı testlerdir.
+
+Neredeyse boş bir veritabanında yapılan eşzamanlılık testi çok az şey kanıtlar. [SAP performans testi](/tr/sap-performance-testing-it-leaders/) rehberim bu testlerin nasıl kurulacağını ele alıyor.
+
+## Gizlilik mevzuatı SAP test sistemleri için ne anlama gelir
+
+Bir test sistemindeki üretim verisi hâlâ kişisel veridir. Test ve kalite sistemlerine genellikle üretimden daha geniş erişim vardır; maskelemenin kapatmak için var olduğu risk de budur.
+
+AB Genel Veri Koruma Tüzüğü (GDPR), kurumların çoğunun referans aldığı düzenlemedir ve birçok ulusal yasa benzer çizgileri izler. [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj)'ın 26. gerekçesi, her SAP ekibinin bilmesi gereken bir ayrım yapar.
+
+1. **Takma adlandırılmış veri hâlâ kişisel veridir.** Veri, bir eşleştirme tablosu gibi ek bilgilerle bir kişiye geri bağlanabiliyorsa tüzük uygulanmaya devam eder.
+2. **Anonim veri kapsamı dışındadır.** Artık kimseyi tanımlayamayan veri kapsanmaz.
+
+Pratik sonuç şu: maskelemenin çoğu anonim değil, takma adlandırılmış veri üretir. Maskelenmiş bir test sistemi de erişim kontrolü, bir amaç ve bir saklama kuralı gerektirir. Maskeleme kuralları üzerinde bir denetçi sorduktan sonra değil, ilk kopyadan önce veri koruma görevlinizle anlaşın.
+
+## Bir SAP test sistemine veri almanın yolları
+
+Beş yaygın yol vardır. Programların çoğu birden fazlasını kullanır, çünkü her test aşaması farklı bir şeye ihtiyaç duyar.
+
+Tablo, uygunluğa karar veren noktalarda bunları karşılaştırıyor.
+
+| Yöntem | Ne elde edersiniz | Hacim | Gizliliğin ele alınışı | En uygun olduğu yer |
+|---|---|---|---|---|
+| Tam sistem kopyası | Üretimin her client'ı ve tablosuyla birebir kopyası | Tam | Maskeleme kopyadan sonra, kullanıcılar erişim almadan önce çalışmalıdır | Performans testleri, deneme dönüşümleri, cutover provaları |
+| Client kopyası | Bir sistem içinde veya sistemler arasında kopyalanan tek bir client; ana verilerin ve hareket verilerinin de gelip gelmeyeceğine kopya profili karar verir | Tam veya yalnızca customizing | Uygulama verileri kopyalandığında sistem kopyasıyla aynı | Yeni test veya eğitim client'ları, bir client'ı bilinen bir duruma sıfırlamak |
+| SAP Test Data Migration Server (TDMS) | Zamana veya organizasyon birimine göre seçilmiş, karıştırma (scrambling) uygulanmış küçültülmüş bir kopya | Küçültülmüş | Araç içindeki karıştırma kuralları | Bunun için zaten lisansı olan mevcut SAP Business Suite ortamları |
+| İş ortağı seçici kopyalama araçları | Seçilmiş iş nesneleri veya veri dilimleri, talep üzerine kopyalanır, aktarım sırasında maskelenir | Küçültülmüş, hedefli | Araç içindeki, kopyalama sırasında uygulanan maskeleme kuralları | Düzenli yenilemeler, regresyon verileri, hataların yeniden üretilmesi |
+| Oluşturulmuş veya taşınmış veri | Betikler, taşıma yüklemeleri veya manuel girişle oluşturulan veri | Ne oluşturursanız | Sıfırdan oluşturulduysa gerçek kişisel veri yok | Erken birim testleri, canlıya geçiş öncesi greenfield projeler |
+
+### Tam sistem ve client kopyaları
+
+Tam bir sistem kopyası, test edeceğiniz en gerçekçi veriyi verir. Üretimin taşıdığı her gizlilik riskini de kopyalar. Bunu kullanırsanız, maskeleme çalışıp kontrol edilene kadar sistem kilitli kalır.
+
+Client kopyası, client oluşturmak ve sıfırlamak için günlük kullanılan araçtır. Önemli olan karar kopya profilidir, çünkü yalnızca yapılandırmanın mı taşınacağını, yoksa ana veriler ve hareket verilerinin de onunla birlikte mi taşınacağını o belirler.
+
+### SAP Test Data Migration Server
+
+SAP Test Data Migration Server (TDMS), üretim verilerinden hassas alanları karıştırarak küçültülmüş üretim dışı sistemler oluşturur. SAP Business Suite üzerinde gelişmiştir ve [SAP Help Portal](https://help.sap.com/docs/SAP_TEST_DATA_MIGRATION_SERVER)'daki güncel dokümantasyon seti 4.0 SP14 sürümü içindir.
+
+TDMS'in güncel S/4HANA sürümlerini kapsamasına veya adı konmuş bir halefine dair resmi bir SAP açıklaması bulamadım. Ona güvenmeyi planlıyorsanız, RISE with SAP dahil hedef sürümünüzü ve dağıtım modelinizi destekleyip desteklemediğini SAP'ye yazılı olarak sorun.
+
+### SAP Landscape Transformation ve shell kopyalar
+
+SAP Landscape Transformation, SAP'nin seçici veri geçişinde kullandığı bir analiz ve dönüştürme araçları setidir. [SAP Learning](https://learning.sap.com/courses/discovering-sap-activate-implementation-tools-and-methodology/illustrating-selective-data-transition_dab03cad-3061-40ed-b690-a0d7a2dccc98), shell dönüşümünü ana veriler ve hareket verileri olmadan alınan, ardından S/4HANA'ya dönüştürülen bir üretim sistemi kopyası olarak tanımlıyor.
+
+Aynı fikir test verileri için de işe yarar. Bir shell, size üretimin repository'sini ve yapılandırmasını iş verisi olmadan verir; siz de onu yalnızca bir testin ihtiyaç duyduğu verilerle doldurursunuz.
+
+## Seçici test verisi araçları
+
+Birkaç iş ortağı ürünü, seçilmiş iş verilerini SAP test sistemlerine kopyalar ve yol üzerinde maskeler. İddialarını tedarikçinin kendi sitesinde doğrulayabildiklerim bunlar, belirli bir sıra olmadan.
+
+1. **EPI-USE Labs Data Sync Manager.** SAP ABAP ortamları arasında veri kopyalamak ve maskelemek için bir paket; yalın client'lar, nesne düzeyinde kopyalar ve önceden tanımlı kurallarla maskeleme dahil. EPI-USE Labs, [Data Sync Manager](https://www.epiuselabs.com/data-sync-manager-dsm-software-suite)'ın SAP S/4HANA ve S/4HANA Cloud ile entegrasyon için sertifikalı olduğunu ve RISE with SAP ile çalıştığını belirtiyor.
+2. **SNP Kyano Test Data Organizer.** Sistemin tamamı yerine bir testin ihtiyaç duyduğu verileri çıkarır ve hassas verileri sağlarken maskeler. SNP, [Test Data Organizer](https://www.snpgroup.com/en/platform/kyano-manage/use-cases/test-management/)'ı RISE with SAP Private Cloud Edition ile uyumlu olarak tanımlıyor.
+3. **Qlik Gold Client.** Seçilmiş hareket verilerini üretimden üretim dışı hedeflere kopyalar ve senkronize eder; mevcut sistemler için statik, aktarım halindeki veriler için dinamik maskeleme sunar.
+4. **Natuvion DCS Protect.** Kişisel verileri bulur ve test, kalite, geliştirme ve eğitim sistemlerinde anonimleştirme veya takma adlandırma uygular. [Natuvion](https://natuvion.com/tda) onu test taşımaları ve süregelen operasyonlar için konumlandırıyor ve o sayfada S/4HANA'dan söz etmiyor; dolayısıyla kapsamı doğrudan teyit edin.
+
+Satın almadan önce her tedarikçiden şu soruları kendi sistemleriniz üzerinde yanıtlamasını isteyin:
+
+1. Bugün hangi S/4HANA sürümlerini ve dağıtım modellerini destekliyor?
+2. Veriyi üretimden çıkmadan önce mi, yoksa hedefe ulaştıktan sonra mı maskeliyor?
+3. Maskeleme bağlı sistemler arasında tutarlı kalıyor mu; yani S/4HANA'da maskelenen bir müşteri, CRM'inizde veya veri ambarınızdaki aynı müşteriyle eşleşiyor mu?
+4. Üretim hacimlerinde tek bir şirket kodunun yenilenmesi ne kadar sürüyor?
+5. Özel tablolar veya alanlar eklediğinizde maskeleme kurallarının bakımını kim yapıyor?
+
+## Test verilerini test aşamasıyla eşleştirmek
+
+Her test aşaması veriye farklı bir nedenle ihtiyaç duyar. Bir S/4HANA programında test verilerini planlarken başladığım nokta budur.
+
+| Test aşaması | Verinin yapması gereken | Olağan kaynak |
+|---|---|---|
+| Birim testi | Bir geliştiricinin tek bir nesnenin çalıştığını kanıtlamasını sağlamak | Oluşturulmuş veri veya küçük, maskelenmiş bir dilim |
+| Sistem entegrasyon testi turları | Süreç zincirlerinin tamamını modüller ve arayüzler boyunca çalıştırmak | Maskelenmiş, üretim düzeyinde kopya veya seçici kopya |
+| Kullanıcı kabul testi turları | İş kullanıcılarının kendi verilerine benzemek; böylece kendi vakalarını tanırlar | Maskelenmiş, üretim düzeyinde veri; her turdan önce yenilenir |
+| Regresyon testi | Sonuçların çalıştırmadan çalıştırmaya karşılaştırılabilmesi için sabit kalmak | Sabit, sıfırlanabilir bir veri seti ve bir yenileme planı |
+| Performans testi | Eşzamanlılık sonuçlarının anlam taşıması için üretim hacmiyle eşleşmek | Maskelenmiş tam kopya veya üretim ölçeğinde hacim |
+| Deneme dönüşümleri ve cutover provaları | Taşımayı gerçek veri yapısı üzerinde kanıtlamak | Üretimin tam kopyaları; çekirdek ekip dışındaki kişilerin erişimi olan yerlerde maskelenmiş |
+
+UAT ayrıca özen gerektirir. Kullanıcı kabul testinin sahibi iş birimi olmalıdır ve bence en az 6 ila 8 hafta gerektirir.
+
+Kullanıcılara tanıdıkları verileri verin: maskelenmiş adlar altında bile olsa kendi müşterileri, malzemeleri ve fiyat listeleri. [SAP kullanıcı kabul testi](/tr/sap-user-acceptance-testing/) rehberim UAT'nin nasıl yürütüleceğini ele alıyor.
+
+Deneme dönüşümleri de aynı mantığı izler. Brownfield bir dönüşümde üç deneme dönüşümü planlarım ve her biri üretimin yakın tarihli bir kopyası üzerinde çalışmalıdır.
+
+Deneyimime göre veri taşıma, program eforunun yüzde 30 ila 40'ıdır; bu yüzden bu çalıştırmalar için veri erişimini taşıma ekibiyle birlikte planlayın. [SAP veri taşıma projeleri neden başarısız olur](/tr/why-sap-data-migration-fails-and-how-to-fix-it/) yazım, deneme yüklemelerinin birbirine nasıl oturduğunu açıklıyor.
+
+### İki ortam, iki yenileme planı
+
+Bir program süresince iki ayrı ortam çalıştırırım: biri proje, biri olağan iş (BAU) için. Böylece canlı destek değişiklikleri ile proje değişiklikleri ayrı ayrı test edilir.
+
+Her ortamın kendi test verisi planına ihtiyacı vardır. BAU testleri bugünkü üretime yakın verilere ihtiyaç duyar, çünkü destek düzeltmeleri bugünün sorunlarına yanıt verir.
+
+Proje testleri ise yeni tasarıma uyan verilere ihtiyaç duyar; bu, dönüştürülmüş bir kopya veya seçici bir yükleme olabilir. Her biri için ayrı bir yenileme takvimi tutun; böylece birindeki yenileme, diğerinin hâlâ ihtiyaç duyduğu test verilerini asla silmez.
+
+## SAP test verisi yönetimini nasıl kurardım
+
+Test, program eforunun yaklaşık yüzde 35'ini alır. Test verilerini SIT'den önceki haftada değil, bu eforun içinde planlayın.
+
+İzleyeceğim sıra şu:
+
+1. **İlke üzerinde yazılı olarak anlaşın.** Üretim düzeyinde maskelenmiş veri; program sponsoru, veri koruma görevlisi ve iş birimi sahipleri tarafından onaylanmış olarak.
+2. **Kişisel ve hassas verileri bulun.** Müşteriler, tedarikçiler, çalışanlar, banka bilgileri, irtibat kişileri, serbest metin alanları, ekler ve bunları tutan her türlü özel tablo.
+3. **Maskeleme kurallarını yazın.** Alan alan neyin değiştirileceğine, tutulacağına veya kaldırılacağına karar verin ve değiştirilen değerleri bağlı sistemler arasında tutarlı tutun.
+4. **Verileri her test aşamasıyla eşleştirin.** Yukarıdaki tabloyu başlangıç noktası olarak kullanın ve hacmi önce performans ve eşzamanlılık testleri için boyutlandırın.
+5. **Kopyalama yöntemlerini ve araçlarını seçin.** Hacmin önemli olduğu yerde tam kopyalar, hız ve sıklığın önemli olduğu yerde seçici kopyalar; aracın sürümünüzü destekleyip desteklemediğini de kontrol edin.
+6. **Yenileme takvimini belirleyin.** Her ortam için bir plan; yenilemeler her SIT ve UAT turundan ve her deneme dönüşümünden önceye zamanlanmış olarak.
+7. **Maskeleme kontrol edilene kadar erişimi kilitleyin.** Bir maskeleme kontrolü başarıyla geçilene kadar çekirdek teknik ekip dışından kimse yeni bir kopyaya giriş yapmaz.
+
+Ardından bunu bir kapı haline getirin. Her döngünün stratejisi, giriş kriterleri ve çıkış kriterleri [S/4HANA test stratejisi](/tr/s4hana-testing-strategy/) rehberimde yer alıyor; test verilerinin hazır olması da her turun giriş kriterlerine aittir.
+
+Somut bir sonraki adım: bugün üretim verisinin bir kopyasını tutan her üretim dışı sistemi listeleyin ve hangilerinin maskelendiğini kontrol edin.
+
+Bir S/4HANA programı için bir test verisi yaklaşımına veya bir test planına bağımsız bir gözle bakılmasını istiyorsanız, [bana buradan ulaşabilirsiniz](/tr/contact-noel-erp-support/).
+
+## Sıkça sorulan sorular
+
+<details>
+<summary>SAP test verisi yönetimi nedir?</summary>
+
+SAP test sistemlerindeki verileri nasıl planladığınız, oluşturduğunuz, kopyaladığınız, maskelediğiniz ve yenilediğinizdir. Amaç, gerçek kişisel verileri görmemesi gereken kişilere açmadan hacim ve gerçekçilik açısından üretim gibi davranan veridir.
+
+</details>
+
+<details>
+<summary>SAP testi için üretim verisi kullanabilir miyim?</summary>
+
+Yalnızca maskelendikten sonra ve o zaman bile erişim kontrolüyle. GDPR kapsamında takma adlandırılmış veri hâlâ kişisel veridir; dolayısıyla maskelenmiş bir kopya da bir amaç, erişim kuralları ve bir saklama kuralı gerektirir. Maskeleme kuralları üzerinde ilk kopyadan önce veri koruma görevlinizle anlaşın.
+
+</details>
+
+<details>
+<summary>SAP TDMS, S/4HANA için hâlâ mevcut mu?</summary>
+
+SAP Help Portal'daki güncel TDMS dokümantasyonu 4.0 SP14 sürümü içindir ve TDMS, SAP Business Suite üzerinde gelişmiştir. Güncel S/4HANA sürümlerini kapsamasına dair resmi bir SAP açıklaması bulamadım. Onun üzerine plan yapmadan önce SAP'ye yazılı olarak sorun.
+
+</details>
+
+<details>
+<summary>Seçici SAP test verilerini hangi araçlar oluşturur?</summary>
+
+SAP Test Data Migration Server ile EPI-USE Labs Data Sync Manager, SNP Kyano Test Data Organizer ve Qlik Gold Client gibi iş ortağı ürünleri. Natuvion DCS Protect, test sistemlerindeki verilerin anonimleştirilmesine ve takma adlandırılmasına odaklanır. Her birini kendi S/4HANA sürümünüz ve dağıtım modelinizle karşılaştırarak kontrol edin.
+
+</details>
+
+<details>
+<summary>SAP performans testi için ne kadar test verisine ihtiyacım var?</summary>
+
+Üretim düzeyinde hacim. Performans sorunları gerçek tablo boyutları ve çok sayıda eşzamanlı kullanıcı altında ortaya çıkar; dolayısıyla az veri içeren bir sette yapılan test çok az şey kanıtlar. Performans ve eşzamanlılık testleri için olağan kaynak, üretimin maskelenmiş tam bir kopyasıdır.
+
+</details>

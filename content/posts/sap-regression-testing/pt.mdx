@@ -1,0 +1,204 @@
+---
+title: "Teste de regressão SAP: upgrades, releases e escopo"
+h1: "Teste de regressão SAP: upgrades, releases e escopo"
+slug: "sap-regression-testing"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-regression-testing.webp"
+heroAlt: "Dois racks de servidores idênticos lado a lado, um para o projeto e outro para a operação do dia a dia"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "sap-cloud-alm", "s4hana-implementation", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "Teste de regressão SAP: upgrades, releases na nuvem, escopo"
+metaDescription: "Teste de regressão SAP explicado: o que o dispara, ciclos de release na nuvem, ferramentas de análise de impacto, quando automatizar e por que separar projeto e BAU."
+primaryKeyword: "teste de regressão SAP"
+excerpt: "O teste de regressão SAP prova que uma mudança, um upgrade ou um novo release não quebrou processos que já funcionavam. Como definir o escopo com análise de impacto, acompanhar os releases na nuvem e evitar que as mudanças do projeto e do suporte atrapalhem umas às outras."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "O teste de regressão prova que uma mudança não quebrou processos que já funcionavam"
+  - "O SAP Cloud ERP public edition passa por upgrade duas vezes por ano, e a sua janela de regressão fica entre o upgrade do sistema de teste e o de produção"
+  - "A private edition segue um ciclo de release de dois anos, com feature pack stacks a cada seis meses; a SAP faz o upgrade técnico, os testes são responsabilidade sua"
+  - "Use a análise de impacto para definir o escopo da execução e teste primeiro os processos de negócio de maior risco"
+  - "Automatize quando houver muitos casos de teste que exigem testes extensos e repetidos; abaixo disso, o teste manual funciona bem"
+  - "Durante um programa, mantenha ambientes separados para o projeto e para a BAU, para que cada conjunto de mudanças passe pela regressão separadamente"
+pullQuote: "Mantenha separadas as mudanças do projeto e as do suporte em produção, e teste cada uma no lugar a que pertence."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Cloud ERP"
+  - "SAP Cloud ALM"
+  - "SAP Solution Manager"
+  - "Business Process Change Analyzer"
+  - "Scope and Effort Analyzer"
+  - "Tricentis LiveCompare"
+  - "Tricentis Tosca"
+  - "Panaya"
+  - "Worksoft"
+originalUrl: "https://noeldcosta.com/sap-regression-testing/"
+canonicalUrl: "https://noeldcosta.com/pt/sap-regression-testing/"
+locale: "pt"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+O teste de regressão SAP prova que uma mudança, um support package ou um novo release não quebrou processos de negócio que já funcionavam. Você define o escopo com análise de impacto, executa primeiro os processos de maior risco e o repete toda vez que o sistema muda, e não só uma vez antes do go-live.
+
+Os gatilhos são transportes, upgrades e releases na nuvem. No SAP Cloud ERP public edition, é a SAP que define as datas de upgrade, então a sua suíte de regressão precisa estar pronta antes de o release chegar.
+
+A regressão é um dos tipos de teste do meu [guia de testes SAP](/pt/sap-testing-explained/). Este artigo cobre o que a dispara, como definir o escopo, quando automatizar e como impedir que um programa e o suporte em produção quebrem o trabalho um do outro.
+
+## O que o teste de regressão SAP cobre
+
+O SAP é um sistema integrado. Uma mudança em uma condição de preço pode quebrar o faturamento, e um campo novo em uma ordem de venda pode parar uma interface. Um support package pode alterar um programa padrão de que você depende.
+
+O teste de regressão executa de novo testes em processos que não deveriam mudar. O teste funcional pergunta se a novidade funciona, enquanto a regressão pergunta se todo o resto continua funcionando.
+
+Ele vale para toda a vida do sistema, e não só durante um programa:
+
+1. **Transportes.** Cada mudança levada do desenvolvimento para a qualidade é um risco de regressão para os processos que ela toca.
+2. **Support packages e feature packs.** Correções e novas funcionalidades da SAP alteram o código padrão sob a sua configuração.
+3. **Upgrades de release.** A passagem para um novo release, ou um release na nuvem que você não agendou, muda muito mais coisas de uma vez.
+4. **Conversões.** Uma conversão de ECC para S/4HANA mantém a sua configuração e o seu código customizado, então tudo o que você manteve precisa ser testado de novo. O meu [guia de migração de ECC para S/4HANA](/pt/ecc-to-s4hana-migration/) explica onde isso entra no plano.
+5. **Integrações e extensões.** Uma mudança em um sistema conectado ou em uma extensão side-by-side pode quebrar o lado SAP sem nenhum transporte SAP.
+
+Mantenha a suíte de regressão separada dos testes escritos para funções novas. A suíte é uma biblioteca estável dos processos que o negócio não pode se dar ao luxo de perder, como order to cash, procure to pay e o fechamento mensal.
+
+## Como os releases na nuvem mudam o teste de regressão
+
+On-premise, você escolhe quando fazer o upgrade. Nas edições em nuvem, a SAP define uma parte maior do cronograma, e o teste de regressão vira um compromisso recorrente no calendário.
+
+### Public edition: dois upgrades por ano
+
+O SAP Cloud ERP public edition, antes S/4HANA Cloud Public Edition, recebe dois upgrades principais por ano, em fevereiro e agosto. Entregas menores de funcionalidades chegam entre eles.
+
+A SAP faz o upgrade do sistema de teste primeiro e o de produção algumas semanas depois. Esse intervalo é a sua janela de regressão, e não há segunda chance depois que a produção recebe o upgrade.
+
+O [curso de Cloud ALM da SAP sobre testes pós-upgrade e de regressão](https://learning.sap.com/courses/implementing-with-sap-cloud-alm/conducting-post-upgrade-and-regression-testing-for-sap-s-4hana-cloud-public-edition_b6d0c843-9235-4b3a-a6b9-f0a5a62f9360) recomenda criar um plano de teste de regressão no Cloud ALM e reutilizá-lo a cada release. A public edition também inclui uma ferramenta gratuita de automação de testes com scripts de teste pré-entregues, então os processos padrão têm um ponto de partida.
+
+### Private edition: um ciclo de release de dois anos
+
+O SAP Cloud ERP Private, a private edition vendida pelo RISE with SAP, segue o ciclo de release on-premise. Segundo o [SAP Learning](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-private-edition/navigating-release-upgrades_ae2d796c-bafd-4e04-8b41-562ebda9eb49), um novo release base sai a cada dois anos, feature pack stacks vêm a cada seis meses e cada release tem sete anos de manutenção padrão.
+
+Você precisa instalar pelo menos um upgrade a cada sete anos para continuar na manutenção padrão, e o RISE permite solicitar um upgrade por ano. A SAP faz o upgrade técnico, mas o planejamento, a preparação e os testes continuam sendo trabalho do cliente ou do parceiro.
+
+Essa divisão importa para o orçamento. O upgrade em si pode estar na assinatura, enquanto o teste de regressão em volta dele não está.
+
+Esta tabela coloca os gatilhos de regressão lado a lado:
+
+| Mudança | Com que frequência | Quem define a data | O que a execução de regressão deve cobrir |
+|---|---|---|---|
+| Transporte para a qualidade | Diária ou semanal | A sua equipe | Os processos que os objetos alterados tocam |
+| Upgrade da public edition | Duas vezes por ano, fevereiro e agosto | A SAP | Todos os processos no escopo, primeiro a lógica customizada, na janela antes da produção |
+| Feature pack stack da private edition | A cada seis meses, se você aplicar | Você, dentro do cronograma da SAP | As funções padrão alteradas que você usa, mais o código customizado |
+| Upgrade de release da private edition | Pelo menos a cada sete anos, até um por ano sob solicitação no RISE | Você, com a SAP | A suíte completa, o código customizado e as integrações |
+| Conversão de ECC para S/4HANA | Uma vez | Você | Tudo o que você manteve |
+
+## Defina o escopo com análise de impacto
+
+Executar a suíte completa depois de cada mudança é lento e caro. Executar pouco demais deixa defeitos passarem, e a lacuna aparece em produção.
+
+A análise de impacto fica entre esses dois extremos. Ela compara o que mudou com o que você realmente usa e lista os processos e objetos de maior risco, para que a execução de regressão comece por eles.
+
+Estas são as ferramentas que você vai encontrar:
+
+1. **SAP Solution Manager.** O Business Process Change Analyzer, parte da Test Suite, mostra quais processos de negócio uma mudança afeta. O [Scope and Effort Analyzer](https://support.sap.com/en/alm/solution-manager/processes-72/scope-effort-analyzer.html) estima o impacto de um support package ou enhancement package antes da instalação, e a SAP o chama de ferramenta de planejamento.
+2. **SAP Cloud ALM.** O Cloud ALM gerencia os planos de teste de regressão, a execução e os defeitos, e se conecta a ferramentas de automação. Para os upgrades da public edition, a ferramenta Release Assessment and Scope Dependency da SAP mostra quais mudanças de um release afetam o seu escopo.
+3. **Tricentis LiveCompare.** Segundo a [documentação do LiveCompare](https://docs.tricentis.com/livecompare-2026.1/content/welcome_to_livecompare.htm), ele identifica um conjunto mínimo de objetos de maior risco a testar e depois relata acertos e lacunas de teste em relação ao seu repositório de testes. A SAP o revende como SAP Change Impact Analysis by Tricentis, e ele se integra ao Tricentis Tosca.
+4. **Panaya.** O [produto de upgrade SAP da Panaya](https://www.panaya.com/sap/sap-upgrades/) combina análise de impacto de mudanças, correção de código, gestão de testes e automação, e cobre versões do S/4HANA, feature pack stacks e support package stacks.
+
+Verifique a situação do seu Solution Manager antes de construir sobre ele. O [SAP Support](https://support.sap.com/en/alm/solution-manager.html) informa que a manutenção padrão do Solution Manager 7.2 termina no fim de 2027. Os clientes que contratam a manutenção estendida do Business Suite 7 o mantêm até o fim de 2030, e a SAP recomenda migrar para o Cloud ALM antes do fim de 2027.
+
+A análise de impacto estreita o escopo. Ela não o define sozinha, então mantenha um núcleo de processos críticos para o negócio que rodam todas as vezes, diga a ferramenta o que disser.
+
+A minha comparação de [ferramentas de teste e validação SAP](/pt/sap-testing-validation-tools-comparison/) cobre como esses produtos se encaixam e o que o seu contrato de suporte SAP já inclui.
+
+## Automatize quando o volume e a repetição justificarem
+
+A regressão é onde a automação de testes se paga, porque os mesmos testes rodam várias e várias vezes. Isso não significa que toda suíte de regressão deva ser automatizada.
+
+A minha regra é simples. Quando há um grande número de casos de teste que exigem testes extensos e repetidos, automatize. Abaixo disso, o teste manual funciona bem.
+
+Um cliente da public edition que executa uma suíte completa duas vezes por ano, mais os transportes entre elas, atinge esse patamar rapidamente. Um sistema pequeno na private edition que muda poucas vezes por ano talvez não.
+
+Faça estas perguntas antes de comprar:
+
+1. **Quantos casos de teste de regressão você tem,** e quantos deles rodam em cada ciclo?
+2. **Com que frequência você os executa,** contando transportes, feature packs e upgrades, e não só upgrades de release?
+3. **Quanto tempo leva uma execução manual,** e ela cabe dentro da janela de regressão?
+4. **Quem vai manter os scripts** quando telas e processos mudarem?
+
+A manutenção de scripts é o custo que as pessoas subestimam. Uma suíte automatizada que ninguém atualiza falha por motivos que não têm nada a ver com o sistema, e a equipe deixa de confiar nela.
+
+Nos programas que liderei, as minhas equipes usaram Tricentis Tosca, Worksoft, Panaya, SAP Cloud ALM, SAP Solution Manager e UiPath. Escolha pela adequação aos seus sistemas e à sua equipe, não pela demonstração. O meu [guia de automação de testes SAP](/pt/sap-test-automation-guide/) cobre por onde começar e como avaliar o retorno.
+
+## Mantenha separadas as mudanças do projeto e da BAU durante um programa
+
+O problema de regressão mais difícil em um programa SAP não é o ferramental. São dois fluxos de mudança passando pelos mesmos sistemas ao mesmo tempo.
+
+Enquanto o programa constrói funções novas, o suporte em produção continua corrigindo a produção. Se os dois fluxos compartilham um único caminho de desenvolvimento e qualidade, uma correção do suporte pode quebrar os testes do projeto e uma mudança do projeto pode escapar para um release do suporte. Aí ninguém consegue dizer qual mudança causou uma falha.
+
+A minha resposta é manter dois ambientes separados. Um é para o projeto e outro para a operação do dia a dia (BAU), para que as mudanças do suporte em produção e as do projeto sejam testadas separadamente.
+
+<explainer-compare title="Dois ambientes durante um programa SAP" caption="Cada fluxo de mudança tem o seu próprio caminho até a produção, então uma falha de regressão aponta para um único conjunto de mudanças." options="Ambiente do projeto|Ambiente da BAU" criteria="O que passa por ele => Funções novas, configuração e código customizado do programa ; Correções e pequenas mudanças no sistema em produção|Foco da regressão => Os processos que o programa altera, mais a suíte central ; Os processos que cada correção toca, mais a suíte central|Vai para produção => No go-live ou em uma onda de release ; Como releases de suporte, no cronograma habitual"></explainer-compare>
+
+Dois ambientes resolvem a separação e criam uma tarefa nova. Cada correção da BAU também precisa chegar ao ambiente do projeto, ou o projeto entra em produção sem ela.
+
+Planeje isso desde o início:
+
+1. **Faça o retrofit de cada mudança da BAU no ambiente do projeto** em um ritmo fixo, e acompanhe cada uma.
+2. **Execute de novo os testes do projeto afetados** depois de cada retrofit, e não só no final.
+3. **Congele as mudanças da BAU** à medida que o cutover se aproxima, exceto correções urgentes que passam pelos dois ambientes.
+4. **Execute a suíte de regressão completa** no ambiente do projeto antes do go-live, com dados mascarados em nível de produção.
+
+O segundo ambiente custa dinheiro, mas também custa um go-live em que ninguém consegue dizer qual mudança quebrou o faturamento. A minha [estratégia de testes do S/4HANA](/pt/s4hana-testing-strategy/) mostra onde os ciclos de regressão ficam ao lado dos testes de integração e de aceitação do usuário.
+
+## Por onde começar
+
+Construa uma suíte de regressão antes de precisar dela. Liste os processos que o negócio não pode se dar ao luxo de perder, escreva um teste para cada um e execute-os uma vez à mão para ver quanto tempo leva um ciclo completo.
+
+Esse número diz se a próxima janela de upgrade é realista e se a automação vai compensar. Se você está no meio de um programa, verifique se as mudanças do projeto e da BAU compartilham um único caminho até a produção.
+
+Se você quer uma visão independente sobre a sua abordagem de regressão ou o seu plano de upgrade, eu ajudo organizações com isso. Você pode [entrar em contato comigo aqui](/pt/contact-noel-erp-support/).
+
+## Perguntas frequentes
+
+<details>
+<summary>O que é teste de regressão SAP?</summary>
+
+Ele executa de novo testes em processos de negócio SAP que não deveriam mudar, para provar que um transporte, support package, upgrade ou novo release não os quebrou. Ele cobre fluxos integrados como order to cash e o fechamento mensal, e não só os objetos alterados.
+
+</details>
+
+<details>
+<summary>Com que frequência o SAP Cloud ERP public edition precisa de teste de regressão?</summary>
+
+Pelo menos duas vezes por ano, porque a SAP faz o upgrade da public edition em fevereiro e agosto. A SAP atualiza o sistema de teste primeiro e a produção algumas semanas depois, então a execução de regressão precisa terminar nesse intervalo. Os transportes entre os releases precisam de execuções próprias, menores.
+
+</details>
+
+<details>
+<summary>Quem faz o teste de regressão em um upgrade da private edition do RISE with SAP?</summary>
+
+A SAP faz o upgrade técnico. O planejamento, a preparação e os testes ficam com o cliente ou com o parceiro de implementação, então orce o esforço de regressão separadamente da assinatura.
+
+</details>
+
+<details>
+<summary>Quais ferramentas ajudam a definir o escopo do teste de regressão SAP?</summary>
+
+As ferramentas de análise de impacto comparam o que mudou com o que você usa. As opções comuns são o Business Process Change Analyzer e o Scope and Effort Analyzer no SAP Solution Manager, e a ferramenta Release Assessment and Scope Dependency para a public edition. Tricentis LiveCompare e Panaya fazem o mesmo trabalho, enquanto o SAP Cloud ALM gerencia os planos de teste de regressão e a execução.
+
+</details>
+
+<details>
+<summary>O teste de regressão SAP deve ser automatizado?</summary>
+
+Automatize quando houver um grande número de casos de teste que exigem testes extensos e repetidos. Abaixo disso, o teste manual funciona bem. Conte os seus casos de teste e com que frequência rodam antes de comprar uma ferramenta, e orce a manutenção dos scripts.
+
+</details>
+
+<details>
+<summary>Como fazer teste de regressão durante um programa SAP enquanto se dá suporte ao sistema em produção?</summary>
+
+Mantenha dois ambientes separados, um para o projeto e outro para a operação do dia a dia. As mudanças do suporte em produção e as do projeto são então testadas separadamente. Faça o retrofit de cada correção da BAU no ambiente do projeto e execute de novo os testes afetados.
+
+</details>

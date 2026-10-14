@@ -1,0 +1,211 @@
+---
+title: "SAP-Benutzerakzeptanztest: wer ihn verantwortet und wie er läuft"
+h1: "SAP-Benutzerakzeptanztest: wer ihn verantwortet und wie er läuft"
+slug: "sap-user-acceptance-testing"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-user-acceptance-testing.webp"
+heroAlt: "Noel D'Costa in einem Schulungsraum, eingerichtet für den Benutzerakzeptanztest mit Testskripten und Freigabebögen"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "s4hana-implementation", "sap-activate", "sap-governance"]
+author: "Noel D'Costa"
+metaTitle: "SAP-Abnahmetest (UAT): Rollen, Testskripte, Freigabe"
+metaDescription: "SAP-Benutzerakzeptanztest erklärt: warum der Fachbereich den UAT verantwortet, wie lange Sie planen, wie Sie vorbereiten, Skripte schreiben und sauber freigeben."
+primaryKeyword: "SAP UAT Abnahmetest"
+excerpt: "Im SAP-Benutzerakzeptanztest belegt der Fachbereich vor dem Go-live, dass das System seine Prozesse abbildet. Wer ihn verantwortet, wie lange er dauert und wie Sie Testskripte, Fehler-Triage und Freigabe organisieren."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "Im SAP-UAT belegt der Fachbereich mit eigenen Worten, dass das System seine Prozesse vor dem Go-live abbildet"
+  - "Der Fachbereich verantwortet den UAT. IT und Implementierungspartner bereiten vor, unterstützen und korrigieren, aber sie nehmen nicht ab"
+  - "Planen Sie in einem S/4HANA-Programm mindestens 6 bis 8 Wochen für den UAT, nach Abschluss des Integrationstests"
+  - "Schreiben Sie Testskripte als Geschäftsszenarien auf Basis der freigegebenen Prozessdesigns, nicht als Transaktions-Checklisten"
+  - "Ordnen Sie jeden UAT-Befund täglich ein: Fehler, Änderungsantrag, Datenproblem oder Schulungsbedarf"
+  - "Die Freigabe ist eine unterschriebene Entscheidung namentlich benannter Prozessverantwortlicher und fließt in eine ausführliche, vorab vereinbarte Cutover-Checkliste ein"
+pullQuote: "Wenn die IT den UAT freigibt, hat niemand etwas abgenommen. Der Fachbereich muss ihn verantworten."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Activate"
+  - "SAP Cloud ALM"
+  - "SAP Solution Manager"
+  - "SAP Fiori"
+  - "SAP S/4HANA Cloud Private Edition"
+originalUrl: "https://noeldcosta.com/sap-user-acceptance-testing/"
+canonicalUrl: "https://noeldcosta.com/de/sap-user-acceptance-testing/"
+locale: "de"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Der SAP-Benutzerakzeptanztest (UAT) ist die Phase, in der Fachanwender ihre eigenen Prozesse im konfigurierten System durchspielen und es vor dem Go-live formal abnehmen. Der Fachbereich verantwortet ihn, IT und Implementierungspartner unterstützen, und in einem S/4HANA-Programm plane ich mindestens 6 bis 8 Wochen dafür ein.
+
+Der häufigste Testfehler, den ich sehe, ist schlicht: zu wenig Testen im UAT und im Integrationstest (SIT). Wenn ein Zeitplan rutscht, werden diese beiden Phasen zusammengedrückt, und die Lücken tauchen stattdessen nach dem Go-live auf.
+
+Im Folgenden: wer was tut, Vorbereitung, Testskripte, Fehler-Triage und eine Freigabe, die etwas bedeutet. Wo der UAT unter den anderen Testarten steht, zeigt mein Überblick [SAP-Tests erklärt](/de/sap-testing-explained/).
+
+## Wer den SAP-UAT verantwortet: der Fachbereich, unterstützt von IT und Partner
+
+Der Fachbereich verantwortet den Benutzerakzeptanztest. Das ist meine Position, und sie sollte sich nicht verschieben, wenn der Zeitplan eng wird.
+
+Der Grund steckt im Namen. Die Abnahme ist eine geschäftliche Entscheidung darüber, ob das System das Geschäft trägt, also können nur die Leute sie treffen, die das Geschäft betreiben. Wenn IT oder Partner den UAT freigeben, hat niemand etwas abgenommen.
+
+Die Methodik von SAP sagt dasselbe. Ihre [Empfehlungen zur Teststrategie für S/4HANA Cloud Private Edition](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-private-edition/explaining-the-test-strategy_f9e28dee-5e09-49c3-b06c-4c40cfc1f49a) verorten den UAT in der Realize-Phase. Konfigurationsexperten des Partners legen die manuellen Testfälle an, und Fachexperten des Kunden aus den Geschäftsbereichen führen sie aus und dokumentieren die Ergebnisse.
+
+Eine praktikable Aufteilung der Arbeit sieht so aus:
+
+| Rolle | Verantwortet im UAT | Verantwortet nicht |
+|---|---|---|
+| Prozessverantwortliche im Fachbereich | Umfang der Szenarien, Abnahmekriterien, finale Freigabe für ihren Prozess | Korrektur von Konfiguration oder Code |
+| Key User und Tester | Skripte ausführen, Ergebnisse und Nachweise dokumentieren, Befunde melden | Allein zu entscheiden, dass ein Fehler „kein Fehler“ ist |
+| UAT-Leiter (Fachbereich) | Tagesplan, Fortschritt, Vorsitz der Triage, Bereitschaftsberichte an den Sponsor | Technische Korrekturen |
+| Implementierungspartner | Skripte entwerfen, Testsystem bereitstellen, Fehler beheben, Nachtests unterstützen | Abnahme |
+| Interne IT | Umgebungen, Zugänge, Schnittstellen zu anderen Systemen, Transporte | Abnahme |
+| Datenteam | Testdaten laden und auffrischen, Abstimmung unterstützen | Design der Geschäftsszenarien |
+
+Der UAT-Leiter sollte aus dem Fachbereich kommen, nicht vom Partner. Ein vom Partner geführter UAT driftet dahin, zu beweisen, dass der Build funktioniert, und das ist eine andere Frage als die, ob der Fachbereich damit arbeiten kann.
+
+## Den UAT vorbereiten, und warum er 6 bis 8 Wochen braucht
+
+Der UAT braucht mindestens 6 bis 8 Wochen. Mit weniger testet der Fachbereich den Gutfall einmal, hat keine Zeit, Korrekturen nachzutesten, und erreicht nie die Ausnahmen, in denen die echten Probleme stecken.
+
+Diese Wochen funktionieren nur, wenn der UAT auf einem stabilen System beginnt. Laut SAP werden Geschäftsprozesse getestet, sobald die Integrationen eingerichtet und die Daten für den Prozess migriert sind. Der SIT muss also zuerst abgeschlossen sein, gegen vereinbarte Ausgangskriterien, und mein Leitfaden zur [S/4HANA-Teststrategie](/de/s4hana-testing-strategy/) zeigt, wie diese Zyklen zusammenhängen.
+
+Bevor sich der erste Tester anmeldet, sollte Folgendes stehen:
+
+1. **Freigegebene Prozessdesigns.** Die Skripte werden daraus geschrieben, also bedeuten nicht freigegebene Designs ungeklärte Skripte.
+2. **Eingangskriterien erfüllt und dokumentiert.** SIT abgeschlossen, keine offenen kritischen Fehler und das Testsystem eingefroren, abgesehen von kontrollierten Korrekturen.
+3. **Ein Testsystem, das wie die Produktion aussieht.** Konfiguration, Schnittstellen, Rollen und Berechtigungen so, wie sie zum Go-live sein werden.
+4. **Realistische Testdaten.** Maskiert, auf Produktionsniveau, geladen und abgestimmt, bevor das Testen beginnt. Mein Leitfaden zum [SAP-Testdatenmanagement](/de/sap-test-data-management/) zeigt, wie.
+5. **Vom Tagesgeschäft freigestellte Tester.** Benennen Sie sie, vereinbaren Sie ihre Stunden mit ihren Vorgesetzten und halten Sie das schriftlich fest.
+6. **Auf dem neuen System geschulte Tester.** Ein kurzer Durchgang durch die Fiori-Apps und Transaktionen, die sie nutzen werden, vor dem UAT und nicht währenddessen.
+7. **Ein einziges Testmanagement-Tool.** Skripte, Ergebnisse, Nachweise und Fehler an einem Ort, nicht in parallelen Tabellen.
+
+An Punkt 5 scheitert der UAT meist leise. Tester, die den UAT um den Monatsabschluss herum unterbringen sollen, stellen den Monatsabschluss an die erste Stelle, und sie haben recht damit.
+
+## UAT-Skripte schreiben, die Fachanwender ausführen können
+
+Ein UAT-Skript ist ein Geschäftsszenario, keine Liste von Transaktionen. „Einen Kundenauftrag anlegen“ testet einen Bildschirm. „Einen Auftrag eines Neukunden mit Kreditsperre annehmen, freigeben, liefern und fakturieren“ testet das Geschäft.
+
+Bauen Sie die Skripte aus den freigegebenen Prozessdesigns und geben Sie jedem ein klares erwartetes Ergebnis in fachlichen Begriffen. Der Tester sollte bestanden oder nicht bestanden sagen können, ohne einen Berater zu fragen.
+
+Decken Sie vier Arten von Szenarien ab:
+
+1. **Kernabläufe.** Die täglichen Prozesse, die das Geschäft am Laufen halten, etwa Order-to-Cash, Procure-to-Pay und Record-to-Report.
+2. **Ausnahmen.** Retouren, Kreditsperren, Teillieferungen, Preisänderungen, Stornierungen und abgelehnte Genehmigungen.
+3. **Periodenabschluss.** Die Schritte zum Monats- und Jahresabschluss, die das Finanzteam tatsächlich ausführt, in der Reihenfolge, in der es sie ausführt.
+4. **Rollenprüfungen.** Jeder Tester arbeitet mit der Rolle, die er zum Go-live haben wird, damit Berechtigungslücken jetzt sichtbar werden.
+
+Lassen Sie den Partner die Skripte entwerfen und die Key User sie dann in ihrer eigenen Sprache umschreiben. Kann der Fachbereich einem Skript nicht ohne Hilfe folgen, wurde es für das Build-Team geschrieben.
+
+In [SAP Cloud ALM](https://learning.sap.com/courses/implementing-with-sap-cloud-alm/planning-and-executing-testing_ef46a49b-9885-4aaa-841d-5ac9c80a3681) gehen manuelle Testfälle von einem Prozess aus, und Testpläne fassen sie zu Zyklen zusammen. Tester setzen jeden Schritt auf bestanden oder nicht bestanden, dokumentieren das tatsächliche Ergebnis und melden einen Fehler direkt aus der Testdurchführung, sodass die Verbindung zwischen Skript und Fehler erhalten bleibt.
+
+In Programmen, die für das Testmanagement noch SAP Solution Manager 7.2 nutzen, beachten Sie, dass dessen Mainstream-Wartung Ende 2027 endet ([SAP Support](https://support.sap.com/en/alm/solution-manager.html)). Planen Sie neue Programme mit Cloud ALM.
+
+## Fehler-Triage während des UAT
+
+Nicht jeder UAT-Befund ist ein Fehler. Behandeln Sie alle als Fehler, ertrinkt der Partner darin, und behandeln Sie alle als Änderungsanträge, verdecken Sie echte Mängel.
+
+Halten Sie an jedem UAT-Tag eine Triage-Besprechung ab. Der UAT-Leiter aus dem Fachbereich führt den Vorsitz, mit den funktionalen Leads des Partners und einem Vertreter der IT, und jeder neue Befund verlässt den Raum mit einer Art, einem Schweregrad und einem Verantwortlichen.
+
+Eine einfache Einordnung deckt die meisten Befunde ab:
+
+| Art des Befunds | Was er bedeutet | Wer handelt | Auswirkung auf die Freigabe |
+|---|---|---|---|
+| Fehler | Das System tut nicht, was das freigegebene Design vorsieht | Partner korrigiert, Tester testet nach | Kritische und hohe Fehler blockieren die Freigabe |
+| Änderungsantrag | Das Design wurde erfüllt, aber der Fachbereich will jetzt etwas anderes | Design Authority entscheidet, mit Kosten und Zeitplan | Blockiert nicht, es sei denn, der Fachbereich sagt, dass der Prozess ohne ihn nicht laufen kann |
+| Datenproblem | Falsche oder fehlende Stamm- oder Bewegungsdaten | Datenteam korrigiert, Tester testet nach | Blockiert, wenn dieselben Daten live gehen |
+| Schulungs- oder Bedienungsproblem | Das System funktioniert, aber der Tester wusste nicht, wie man es bedient | Schulungsleiter aktualisiert das Material | Blockiert nicht, fließt aber in den Schulungsplan ein |
+| Berechtigungsproblem | Der Rolle fehlt ein Zugriff, oder sie hat zu viel | Security-Team passt die Rolle an | Blockiert für die betroffene Rolle |
+
+Vereinbaren Sie die Definitionen der Schweregrade vor Beginn des UAT, in fachlichen Begriffen. Ein kritischer Fehler stoppt einen Prozess ohne Umgehungslösung. Ein hoher hat eine Umgehungslösung, die der Fachbereich bei vollem Volumen nicht durchhalten kann.
+
+Achten Sie auf die Spalte mit den Änderungsanträgen. Eine lange Liste von Änderungsanträgen im UAT bedeutet meist, dass der Fachbereich nicht richtig in das Design eingebunden war, und das ist ein Problem, das Sie vor der nächsten Welle beheben sollten.
+
+## Eine UAT-Freigabe, die trägt
+
+Die Activate-Schulung von SAP stellt fest, dass die Realize-Phase abgeschlossen ist, sobald der Benutzerakzeptanztest abgeschlossen und freigegeben ist. Machen Sie diese Freigabe zu einem Dokument, nicht zu einem E-Mail-Verlauf.
+
+Jeder Prozessverantwortliche im Fachbereich unterschreibt für seinen eigenen Prozess. Die Freigabe sollte festhalten:
+
+1. **Was getestet wurde.** Ausgeführte, bestandene und nicht bestandene Szenarien, mit Nachweisen im Testtool.
+2. **Was noch offen ist.** Jeder offene Fehler, mit Schweregrad, Verantwortlichem und Zieltermin.
+3. **Was mit Umgehungslösung abgenommen wurde.** Jede einzeln benannt, mit der Umgehungslösung, die der Fachbereich zu betreiben zugesagt hat.
+4. **Wer wann unterschrieben hat.** Eine namentlich benannte Person pro Prozess, kein Gremium.
+
+Schreiben Sie die Ausgangskriterien, bevor der UAT beginnt, und ändern Sie sie nicht, wenn die Ergebnisse eintreffen. Will der Fachbereich trotz Lücken live gehen, halten Sie das als unterschriebene Entscheidung fest. Mein Leitfaden zu [SAP Quality Gates](/de/sap-quality-gates-implementation/) zeigt, wie dieses Gate zu den Phasenübergängen passt.
+
+Die UAT-Freigabe ist nicht die Go-live-Entscheidung. Sie fließt in sie ein.
+
+Das Go-live-Kriterium, auf dem ich bestehe, ist eine ausführliche, vorab vereinbarte Cutover-Checkliste. Die UAT-Freigabe ist eine Zeile darauf, neben Datenabstimmung, Schulung und Cutover-Generalprobe.
+
+Schützen Sie nach der Freigabe, was abgenommen wurde. Jede Korrektur und jeder Transport von hier bis zum Go-live muss nachgetestet werden, und mein Leitfaden zum [SAP-Regressionstest](/de/sap-regression-testing/) erklärt, wie Sie das im Griff behalten.
+
+## Eine einfache UAT-Vorlage
+
+Sie brauchen kein langes Dokument. Sie brauchen einen Plan, der jedes Mal dieselben Fragen beantwortet, geschrieben vor Beginn des UAT und vom Fachbereich unterschrieben.
+
+Eine einfache Gliederung genügt:
+
+| Abschnitt | Was er enthält | Verantwortlich |
+|---|---|---|
+| Scope | Prozesse, Organisationseinheiten und Rollen im Scope und was ausdrücklich nicht dazugehört | Prozessverantwortliche im Fachbereich |
+| Zeitplan | Start- und Endtermine, Zyklen, Zeitfenster für Nachtests, Läufe zum Periodenabschluss | UAT-Leiter |
+| Team | Tester je Prozess, ihre Freistellung vom Tagesgeschäft, Ansprechpartner bei Partner und IT | UAT-Leiter und Linienvorgesetzte |
+| Eingangskriterien | SIT-Ausgang erfüllt, Testsystem eingefroren, Daten geladen und abgestimmt, Tester geschult | UAT-Leiter mit dem Programmmanager |
+| Umgebung und Daten | Testsystem, Schnittstellen im Scope, maskierte Daten auf Produktionsniveau, Plan für die Auffrischung | IT und Datenteam |
+| Skripte | Szenarioliste je Prozess, erwartete Ergebnisse, Verweis auf das Prozessdesign | Partner entwirft, Key User genehmigen |
+| Fehlerprozess | Arten von Befunden, Definitionen der Schweregrade, tägliche Triage, Regeln für Nachtests | UAT-Leiter führt die Triage |
+| Reporting | Täglicher Fortschritt, offene Fehler nach Schweregrad, Blocker an den Sponsor | UAT-Leiter |
+| Ausgangskriterien | Schwellen für offene Fehler nach Schweregrad, bestandene Szenarien, vereinbarte Umgehungslösungen | Prozessverantwortliche im Fachbereich |
+| Freigabe | Unterschriftenblock je Prozessverantwortlichem, Liste der akzeptierten Umgehungslösungen | Prozessverantwortliche im Fachbereich und Sponsor |
+
+Halten Sie die Vorlage über alle Wellen gleich. Der zweite Rollout sollte die Skripte und Erkenntnisse der ersten Welle wiederverwenden, nicht von vorn beginnen.
+
+## Wo Sie anfangen
+
+Benennen Sie noch diesen Monat Ihren UAT-Leiter aus dem Fachbereich und bitten Sie jeden Prozessverantwortlichen, Tester mit freigestellter Zeit zu nominieren. Nehmen Sie dann 6 bis 8 Wochen für den UAT nach dem SIT in den Plan auf und verteidigen Sie sie, wenn der Zeitplan eng wird.
+
+Wenn Ihr UAT vom Partner geführt wird oder immer wieder zusammengedrückt wird: Ich helfe Programmen, das richtig aufzusetzen. Sie können [mich hier kontaktieren](/de/contact-noel-erp-support/).
+
+## Häufig gestellte Fragen
+
+<details>
+<summary>Was ist ein Benutzerakzeptanztest in SAP?</summary>
+
+Die Phase, in der Fachanwender das konfigurierte SAP-System gegen ihre realen Prozesse testen und es vor dem Go-live formal abnehmen. In SAP Activate findet er in der Realize-Phase statt, nach dem Integrationstest. Key User führen Szenarioskripte aus, dokumentieren Ergebnisse und melden Befunde, und die Prozessverantwortlichen geben frei.
+
+</details>
+
+<details>
+<summary>Wer ist in einem SAP-Projekt für den UAT verantwortlich?</summary>
+
+Der Fachbereich: Prozessverantwortliche entscheiden über den Umfang und geben frei, und Key User führen die Tests durch. Der Implementierungspartner entwirft Skripte und behebt Fehler, und die interne IT stellt Umgebungen, Zugänge und Schnittstellen bereit. Weder IT noch Partner sollten das System im Namen des Fachbereichs abnehmen.
+
+</details>
+
+<details>
+<summary>Wie lange sollte ein SAP-UAT dauern?</summary>
+
+Planen Sie in einem S/4HANA-Programm mindestens 6 bis 8 Wochen. Das lässt Zeit für Kernabläufe, Ausnahmen und Schritte des Periodenabschlusses und danach für Nachtests der Korrekturen. Ein kürzerer UAT testet meist den Gutfall einmal und findet den Rest nach dem Go-live.
+
+</details>
+
+<details>
+<summary>Was ist der Unterschied zwischen SIT und UAT in SAP?</summary>
+
+Der Integrationstest (SIT) prüft, dass Prozesse und Schnittstellen über Module und Systeme hinweg zusammenspielen, und wird vor allem vom Projektteam durchgeführt. Der UAT prüft, dass der Fachbereich seine Prozesse auf dem System abwickeln kann, und wird von Fachanwendern durchgeführt. Der SIT sollte abgeschlossen sein, bevor der UAT beginnt.
+
+</details>
+
+<details>
+<summary>Was sollte eine UAT-Freigabe enthalten?</summary>
+
+Die getesteten Szenarien und ihre Ergebnisse, jeden offenen Fehler mit Verantwortlichem und Termin, alle Umgehungslösungen, die der Fachbereich akzeptiert hat, und eine namentliche Unterschrift je Prozessverantwortlichem. Vereinbaren Sie die Ausgangskriterien vor Beginn des UAT. Eine Freigabe mit Lücken sollte eine dokumentierte Entscheidung des Fachbereichs sein.
+
+</details>
+
+<details>
+<summary>Kann SAP Cloud ALM für den UAT genutzt werden?</summary>
+
+Ja. SAP Cloud ALM unterstützt manuelle Testfälle, die aus Prozessen aufgebaut sind, Testpläne für jeden Zyklus, die schrittweise Erfassung von bestanden oder nicht bestanden und Fehler, die direkt aus der Testdurchführung gemeldet werden. Nach der Empfehlung von SAP legen Experten des Partners die Testfälle an, und Fachexperten des Kunden führen sie aus und dokumentieren die Ergebnisse dort.
+
+</details>

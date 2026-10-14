@@ -1,0 +1,220 @@
+---
+title: "SAP test otomasyonu: nereden başlamalı, ne zaman karşılığını verir"
+h1: "SAP test otomasyonu: nereden başlamalı, ne zaman karşılığını verir"
+slug: "sap-test-automation-guide"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-test-automation-guide.webp"
+heroAlt: "Noel D'Costa, otomatik SAP test çalıştırmalarını ve bir süreç akışını gösteren bir monitörün yanında"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "sap-cloud-alm", "sap-technical-decisions", "s4hana-implementation"]
+author: "Noel D'Costa"
+metaTitle: "SAP Test Otomasyonu: Nereden Başlamalı, Ne Zaman Kazandırır"
+metaDescription: "SAP test otomasyonu: ne zaman karşılığını verir, nereden başlanır, hangi framework'ler uygundur ve SAP Cloud ALM, Solution Manager ile Tricentis size ne sunar."
+primaryKeyword: "SAP test otomasyonu"
+excerpt: "SAP test otomasyonu maliyetini ne zaman geri kazanır, nereden başlanır, framework'ler nasıl ayrışır ve SAP Cloud ALM, Solution Manager ile SAP Test Automation by Tricentis size zaten neler sunar."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "Çok sayıda test senaryosunun kapsamlı ve tekrar tekrar test edilmesi gerekiyorsa otomatikleştirin. Bunun altında manuel test yeterlidir"
+  - "Test, program eforunun yaklaşık yüzde 35'ini alır; dolayısıyla otomasyon, bu payın ne kadarını bir aracın taşıması gerektiği sorusudur"
+  - "Tasarım istikrar kazandığında, iş biriminin bozulmasını göze alamayacağı süreçler için küçük bir regresyon paketiyle başlayın"
+  - "Canlı destek değişiklikleri ile proje değişikliklerinin ayrı test edilmesi için proje ve olağan iş ortamlarını ayrı çalıştırın"
+  - "SAP Cloud ALM testleri yönetir ama kendine ait bir otomasyon motoru yoktur. Satın almadan önce Tricentis hakkınızı kontrol edin"
+  - "Solution Manager'ın ana bakım dönemi 2027'de sona eriyor. Yeni otomasyonu onun üzerine kurmayın"
+pullQuote: "Otomatik bir testi oluşturmak, onu bir kez elle çalıştırmaktan daha pahalıdır. Bu maliyeti ancak tekrarla geri kazanırsınız."
+mentions:
+  - "SAP Cloud ALM"
+  - "SAP Solution Manager"
+  - "SAP Test Automation by Tricentis"
+  - "Tricentis Tosca"
+  - "Worksoft"
+  - "Panaya"
+  - "UiPath"
+  - "OpenText LoadRunner"
+  - "SAP S/4HANA Cloud Public Edition"
+originalUrl: "https://noeldcosta.com/sap-test-automation-guide/"
+canonicalUrl: "https://noeldcosta.com/tr/sap-test-automation-guide/"
+locale: "tr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP test otomasyonu, tekrar tekrar çalıştırdığınız SAP testlerini, çoğunlukla da regresyonu, insanlar yerine bir aracın yürüttüğü testlere dönüştürmek demektir. Çok sayıda test senaryosunun kapsamlı ve tekrar tekrar test edilmesi gerektiğinde karşılığını verir; bunun altında manuel test yeterlidir.
+
+S/4HANA programlarında kullandığım kural bu. Deneyimime göre test, program eforunun yaklaşık yüzde 35'ini alır; yani soru hiçbir zaman test yapıp yapmamak değildir. Soru, bu eforun hangi kısmını bir aracın taşıması gerektiğidir.
+
+Otomasyonun birim, entegrasyon, kabul ve performans testinin yanında nasıl konumlandığını görmek için [SAP testi](/tr/sap-testing-explained/) genel bakışımla başlayın. Bu yazı nereden başlanacağını, otomasyonun ne zaman karşılığını verdiğini, framework'leri ve SAP Cloud ALM, Solution Manager ile Tricentis'in size ne sunduğunu ele alıyor.
+
+## SAP test otomasyonu ne zaman karşılığını verir
+
+Kuralım basit. Kapsamlı ve tekrar tekrar test edilmesi gereken çok sayıda test senaryosu varsa otomatikleştirin. Bunun altında manuel test yeterlidir.
+
+Nedeni maliyetin yapısıdır. Otomatik bir testi oluşturmak, onu bir kez elle çalıştırmaktan daha pahalıdır ve süreç, ekran veya veri her değiştiğinde bakım gerektirir. Bu maliyeti ancak tekrarla geri kazanırsınız.
+
+Bir SAP programında tekrar, öngörülebilir yerlerden gelir:
+
+1. **Transportlar.** Kalite sistemine taşınan her değişiklik, dün çalışan bir şeyi bozabilir.
+2. **SAP sürümleri ve destek paketleri.** On-premise ve private cloud'daki yükseltmeler ile SAP S/4HANA Cloud Public Edition'daki planlı yükseltmeler.
+3. **Tekrarlanan test turları.** Sistem entegrasyon testi (SIT), aynı uçtan uca akışları birden fazla turda çalıştırır.
+4. **Yaygınlaştırma dalgaları.** Global bir şablon her ülke veya şirket kodu için yeniden test edilir.
+5. **Veri ağırlıklı kontroller.** Yalnızca verinin değiştiği çok sayıda fiyatlandırma, vergi veya hesap belirleme kombinasyonu.
+
+Bunların hiçbiri geçerli değilse, bir araç size kazandırdığından fazlasına mal olur.
+
+Tablo, işi test türüne göre nasıl bölerdim, onu gösteriyor.
+
+| Test türü | Otomatikleştirilmeli mi? | Neden |
+|---|---|---|
+| Order to cash, procure to pay ve record to report gibi temel süreçlerin regresyonu | Evet, ilk olarak | Her transporttan ve her sürümden sonra çalışır |
+| SIT turları | Kısmen | İstikrarlı akışları otomatikleştirin; yeni ve değişen senaryoları manuel tutun |
+| Kullanıcı kabul testi (UAT) | Nadiren | Sürecin kendileri için işleyip işlemediğine iş kullanıcıları karar verir; bunu bir betik yapamaz |
+| Keşif amaçlı ve negatif testler | Hayır | Değer, kimsenin betiğe dökmediği şeyi arayan bir insandan gelir |
+| Performans ve yük | Evet, bir yük aracıyla | Çok sayıda eşzamanlı kullanıcı elle üretilemez |
+| Tek seferlik veri taşıma kontrolleri | Genellikle hayır | Aynı yükleme deneme çalıştırmalarında tekrarlanmadıkça mutabakat raporları bunu daha iyi yapar |
+
+<decision-tree question="Bu SAP testini otomatikleştirmeli misiniz?" options="Çok sayıda test senaryosu, her değişiklik veya sürümden sonra tekrarlanıyor => Otomatikleştirin|Az sayıda test senaryosu veya bir iki kez çalışıyor => Manuel test edin|Süreç tasarımı hâlâ değişiyor => İstikrar kazanmasını bekleyin, sonra karar verin"></decision-tree>
+
+## Nereden başlamalı
+
+Hayal kırıklığı yaratan otomasyon genellikle fazla geniş başlamıştır: her şey, tasarım sırasında ve sonucun sahibi olmadan. İzleyeceğim sıra şu:
+
+1. **İş biriminin bozulmasını göze alamayacağı süreçleri seçin.** Ay sonu kapanışı, faturalama, ödemeler ve birçok lokasyona yaygınlaştırılan her şey, olsa iyi olur denilen raporlardan önce gelir.
+2. **Testleri önce manuel çalıştırın.** Bir araç, elle zaten çalışan bir testi otomatikleştirir. Sizin için test tasarlamaz.
+3. **İstikrarlı bir tasarımı bekleyin.** Explore veya Realize'ın başında otomatikleştirmek, her tasarım kararı değiştiğinde testleri yeniden oluşturmak demektir.
+4. **Küçük bir regresyon paketi oluşturun.** Kritik süreçleri uçtan uca kapsayın, ardından paketi kalite sistemine giden her transportta çalıştırın.
+5. **Bakım için bir sahip belirleyin.** Ekranlar, roller veya veriler değiştiğinde birinin testleri düzeltmesi gerekir; yoksa paket birkaç sürüm içinde çürür.
+6. **Kapsamı yalnızca tekrarın haklı çıkardığı yerde büyütün.** Bir kapsam hedefi öyle dediği için değil, sık çalışacağı için test ekleyin.
+
+### Projeyi olağan işten ayırın
+
+Bir program süresince iki ayrı ortam çalıştırırım: biri proje, biri olağan iş (BAU) için. Böylece canlı destek değişiklikleri ile proje değişiklikleri ayrı ayrı test edilir.
+
+Bu, otomasyon için önemlidir. Bir regresyon testi başarısız olduğunda, birbirine karışmış iki değil, incelenecek tek bir değişiklik kaynağı istersiniz. [SAP regresyon testi](/tr/sap-regression-testing/) rehberim iki ortamlı yaklaşımı ve etki analizini daha ayrıntılı ele alıyor.
+
+## SAP'nin size verdikleri ve sizin eklediğiniz
+
+Programlarım boyunca Tricentis Tosca, Worksoft, Panaya, SAP Cloud ALM, SAP Solution Manager, UiPath ve LoadRunner'ı kullandım veya ekiplerime kullandırdım. Bu yazı onları sıralamıyor. Doğru seçim ortamınıza, destek sözleşmenize ve testlerin bakımını kimin yapacağına bağlıdır.
+
+SAP'nin zaten sağladıklarıyla başlayın, çünkü bir kısmının parası zaten ödenmiş olabilir.
+
+### SAP Cloud ALM
+
+SAP Cloud ALM, test yönetimi katmanıdır. Manuel ve otomatik testleri süreçlerinize ve gereksinimlerinize göre planlar, çalıştırır ve izler. SAP Enterprise Support, Product Support for Large Enterprises veya uygun bir bulut aboneliği olan müşteriler bir tenant oluşturabilir ([SAP usage rights](https://support.sap.com/en/alm/usage-rights.html)).
+
+Otomatik testleri kendisi yürütmez. SAP, Cloud ALM'nin kendi geliştirdiği bir otomasyon motoru olmadığını ve ALM platformlarının üçüncü taraf test otomasyonuna açık kaldığını belirtiyor ([SAP Support, test automation](https://support.sap.com/en/alm/partners/test-automation.html)).
+
+SAP'nin kurulum kılavuzu, yerleşik entegrasyonların yanı sıra diğer sağlayıcılar için herkese açık bir Test Automation API'sini tarif ediyor ([SAP Help Portal](https://help.sap.com/docs/cloud-alm/setup-administration/other-test-automation-providers)). Panaya ve UiPath, otomatik test senaryoları için Cloud ALM entegrasyonlarını belgeliyor. Worksoft entegrasyonları arasında Cloud ALM ve Solution Manager'ı sayıyor, OpenText de bulut tabanlı performans testi ürünü için bir Cloud ALM entegrasyonu sunuyor.
+
+### Tricentis Test Automation for SAP ve SAP Test Automation by Tricentis
+
+Bir şey satın almadan önce hakkınızı kontrol edin. SAP; SAP Enterprise Support, Enterprise Support cloud editions ve Product Support for Large Enterprises ile birlikte Cloud ALM'ye entegre Tricentis Test Automation for SAP için süreli bir lisans veriyor. Bu lisans şu anda 31 Aralık 2028'e kadar geçerli ([SAP usage rights](https://support.sap.com/en/alm/usage-rights.html)).
+
+Sınırlar dar: 5 adlandırılmış kullanıcı, takvim ayı başına 500 test çalıştırması, müşteri tarafından yönetilen 5 yürütme ajanı ve 12 aylık sonuç saklama. Üretimdeki iş süreçlerini otomatikleştirmek için kullanılamaz. Bunu program ölçeğinde bir araç olarak değil, başlamanın bir yolu olarak görün.
+
+SAP Test Automation by Tricentis ise ücretli bir üst basamaktır. SAP'nin solution extension olarak sattığı ve desteklediği, SAP ve üçüncü taraf uygulamaları kapsayan bir hizmet olarak yazılım (SaaS) ürünüdür. Hak yetmez hale geldiğinde Cloud ALM ile gelen Tricentis yeteneğini genişletir.
+
+### SAP Solution Manager
+
+Solution Manager 7.2'nin ana bakım dönemi 2027 sonuna kadar sürüyor. SAP Business Suite 7 için uzatılmış bakımı seçen müşteriler, 2030 sonuna kadar Solution Manager uzatılmış bakımı alıyor. Bu, test paketi dahil sınırlı sayıda alanı kapsıyor ([SAP Support](https://support.sap.com/en/alm/solution-manager.html)).
+
+Kendi otomasyonu olan Component-Based Test Automation (CBTA), SAP bulut ürünlerine genişletilmeyecek. Solution Manager entegrasyonu için Tricentis lisansı şu anda 31 Aralık 2027'ye kadar geçerli. Zaten Solution Manager çalıştırıyorsanız ortamınız taşınana kadar onu tutun, ama yeni otomasyonu onun üzerine kurmayın.
+
+### SAP S/4HANA Cloud Public Edition
+
+Public Edition, kendi Test Automation Tool'u ile gelir. SAP'nin yönlendirmesi, iş ortaklarının her süreci yapılandırırken test otomasyonlarını oluşturması veya güncellemesi yönünde; böylece bu otomasyonlar yükseltmeler sırasında test sisteminde çalışabilir ([SAP Learning](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-public-edition/explaining-the-test-strategy_d4b6f563-e5bb-41b5-b7e2-ec899edb756f)).
+
+Onayınızla SAP, standart ve değiştirilmemiş süreçlerde yükseltme sonrası testler çalıştırır. Canlıya geçişten sonra özelleştirdiğiniz her şeyin regresyon testi, kendi otomasyonlarınızla sizin sorumluluğunuzdadır.
+
+Tablo, yukarıda adı geçen araçları tercihe göre değil, gördükleri işe göre özetliyor.
+
+| Araç | Ana işi | Nerede uygun |
+|---|---|---|
+| SAP Cloud ALM | Test yönetimi ve orkestrasyon | Yeni programlar; manuel ve otomatik testleri süreçlere bağlar |
+| SAP Solution Manager | Test yönetimi, on-premise | Onu zaten çalıştıran ortamlar; ana bakım 2027'de sona eriyor |
+| Tricentis Tosca ve SAP Test Automation by Tricentis | Model tabanlı otomasyon | SAP ve SAP dışı uygulamalar; SAP tarafından yeniden satılır ve desteklenir |
+| Worksoft | Kodsuz süreç otomasyonu | Cloud ALM ve Solution Manager ile entegre olur |
+| Panaya | Test yönetimi ve kodsuz otomasyon | Otomatik testler için Cloud ALM entegrasyonu |
+| UiPath | Test Manager içeren otomasyon platformu | Otomatik test senaryoları için Cloud ALM entegrasyonu |
+| OpenText LoadRunner | Performans ve yük testi | Canlıya geçişten önce eşzamanlılık ve hacim testleri |
+
+Xray for Jira dahil daha ayrıntılı bir karşılaştırma için [SAP test araçları](/tr/sap-testing-validation-tools-comparison/) rehberimi okuyun. Yük testi için [BT liderleri için SAP performans testi](/tr/sap-performance-testing-it-leaders/) yazımı okuyun.
+
+## Framework'ler: testler nasıl oluşturulur
+
+Araç, testlerin nasıl oluşturulduğundan ve bakımını kimin yaptığından daha az önemlidir. SAP otomasyonunun çoğu şu yaklaşımlardan birine girer:
+
+1. **Model tabanlı.** Ekranlar ve API'ler taranarak yeniden kullanılabilir modüllere dönüştürülür, sonra test senaryolarında birleştirilir. Fonksiyonel danışmanlar bunları kod yazmadan oluşturabilir ve okuyabilir.
+2. **Kodsuz süreç kaydı.** İş süreci adımları kaydedilir ve yeniden kullanılabilir testlere dönüştürülür. Bu, regresyon paketinin oluşturulmasına kilit kullanıcıların yardım ettiği ekiplere uyar.
+3. **Kod tabanlı.** Test mühendisleri testleri bir programlama framework'ünde yazar. Bir geliştirme ekibinin sahip olduğu Fiori uygulamalarına ve API'lere uyar, bakımı için geliştirici gerekir.
+4. **Test modülleri olan robotik süreç otomasyonu platformları.** İş otomasyonu ve test otomasyonu için tek bir platform; zaten kullanıyorsanız işe yarar.
+5. **SAP'nin sunduğu otomasyonlar.** Public Edition'da Test Automation Tool ile gelen, verilerinize ve değişikliklerinize göre uyarlanan test otomasyonları.
+
+Hangi yaklaşımı seçerseniz seçin, testlerin ayakta kalıp kalmayacağını üç tasarım tercihi belirler:
+
+1. **Mümkün olan yerde API düzeyinde test edin.** API testleri, ekranlarda tıklayarak ilerleyen testlerden daha seyrek bozulur.
+2. **Test verilerini sıfırlanabilir tutun.** Bir önceki çalıştırmanın tükettiği verilere bağlı bir test, yanlış nedenle başarısız olur.
+3. **Ortak modüllerden oluşturun.** Bir ekran değiştiğinde ona dokunan her testi değil, tek bir modülü düzeltirsiniz.
+
+## Otomasyonu canlıya geçişten sonra ayakta tutmak
+
+Otomatik bir regresyon paketi bir proje çıktısı değil, bir üründür. Bir sahibe, bir bütçe kalemine ve değişiklik sürecinde bir yere ihtiyaç duyar.
+
+Onu değişiklik kontrolüne bağlayın. Regresyon paketi çalışıp sonuçları test yönetimi aracına kaydedilmeden hiçbir transport üretime geçmesin. [SAP kalite kapıları](/tr/sap-quality-gates-implementation/) yazım, test sonuçlarının bir go veya no-go kararının parçası haline nasıl getirileceğini gösteriyor.
+
+SAP'nin sürüm ritmini de planlayın. Public Edition yükseltmeleri sizin değil SAP'nin takvimine göre gelir; private cloud ve on-premise sistemler de hâlâ destek paketleri ve yükseltmeler gerektirir. Her biri bir regresyon çalıştırmasıdır ve otomasyonun maliyetini geri kazandığı yer tam olarak burasıdır.
+
+Kararsız testleri düzeltin, kimsenin çalıştırmadığı testleri emekliye ayırın ve paketi, insanların sonuçlarına güveneceği kadar küçük tutun.
+
+Otomasyonun bir test planının içinde de yer alması gerekir. Önce döngüler, giriş ve çıkış kriterleri ve roller gelir; [S/4HANA test stratejim](/tr/s4hana-testing-strategy/) bunları ortaya koyuyor.
+
+## Bir sonraki adımınız
+
+Her transporttan ve her SAP sürümünden sonra yeniden test edeceğiniz iş süreçlerini listeleyin. Arkalarındaki test senaryolarını ve her birinin bir yılda kaç kez çalışacağını sayın.
+
+Sayı büyükse ve çalıştırmalar tekrarlanıyorsa, otomasyon için bir gerekçeniz var demektir. Ardından, biri size demo göstermeden önce SAP destek sözleşmenizin zaten neleri içerdiğini kontrol edin.
+
+Bir test otomasyonu planına veya bir tedarikçi teklifine bağımsız bir gözle bakılmasını istiyorsanız, kurumlara bu konuda yardımcı oluyorum. [Bana buradan ulaşabilirsiniz](/tr/contact-noel-erp-support/).
+
+## Sıkça sorulan sorular
+
+<details>
+<summary>SAP test otomasyonu nedir?</summary>
+
+Aksi halde elle çalıştırılacak SAP testlerinin, çoğunlukla da değişiklik ve yükseltmelerden sonraki regresyon testlerinin, bir araçla yürütülmesidir. SAP Cloud ALM gibi bir test yönetimi aracı testleri planlar ve kaydeder, bir otomasyon aracı da onları çalıştırır.
+
+</details>
+
+<details>
+<summary>SAP testi ne zaman otomatikleştirilmeli?</summary>
+
+Çok sayıda test senaryosunun kapsamlı ve tekrar tekrar test edilmesi gerektiğinde; örneğin her transport, sürüm veya yaygınlaştırma dalgasından sonraki regresyonda. Bunun altında manuel test yeterlidir. Süreç tasarımı istikrar kazanana kadar bekleyin, yoksa tasarım her değiştiğinde testleri yeniden oluşturursunuz.
+
+</details>
+
+<details>
+<summary>SAP Cloud ALM test otomasyonu yapar mı?</summary>
+
+Otomatik testleri yönetir ve tetikler, ancak kendine ait bir otomasyon motoru yoktur. Tricentis Test Automation for SAP ile, S/4HANA Cloud Public Edition'daki Test Automation Tool ile ve herkese açık bir Test Automation API'si üzerinden diğer sağlayıcılarla entegre olur.
+
+</details>
+
+<details>
+<summary>SAP Test Automation by Tricentis nedir?</summary>
+
+SAP'nin solution extension olarak sattığı ve desteklediği, SAP ve üçüncü taraf uygulamaları kapsayan bir hizmet olarak yazılım (SaaS) test otomasyonu ürünüdür. SAP Enterprise Support ile gelen giriş düzeyindeki Tricentis Test Automation for SAP lisansını genişletir. O lisans 5 adlandırılmış kullanıcı ve ayda 500 test çalıştırmasıyla sınırlıdır.
+
+</details>
+
+<details>
+<summary>SAP kullanıcı kabul testi otomatikleştirilebilir mi?</summary>
+
+Nadiren ve bu hedef olmamalıdır. UAT, iş kullanıcılarının sistemin kendileri için işleyip işlemediğine karar verebilmesi için vardır; bunu bir betik yapamaz. Etrafındaki tekrarlanan regresyonu otomatikleştirin, kabul kararını insanlarda bırakın.
+
+</details>
+
+<details>
+<summary>Test otomasyonu için hâlâ SAP Solution Manager kullanmalı mıyım?</summary>
+
+Yalnızca ortamınızı zaten o yönetiyorsa. Solution Manager 7.2'nin ana bakım dönemi 2027'de sona eriyor ve CBTA otomasyonu SAP bulut ürünlerine genişletilmeyecek. Yeni otomasyonu Cloud ALM üzerine planlayın.
+
+</details>

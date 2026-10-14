@@ -1,0 +1,204 @@
+---
+title: "SAP regresijsko testiranje: nadogradnje, izdanja i opseg"
+h1: "SAP regresijsko testiranje: nadogradnje, izdanja i opseg"
+slug: "sap-regression-testing"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-regression-testing.webp"
+heroAlt: "Dva identična poslužiteljska ormara jedan uz drugi, jedan za projekt i jedan za redovno poslovanje"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "sap-cloud-alm", "s4hana-implementation", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "SAP regresijsko testiranje: nadogradnje, izdanja, opseg"
+metaDescription: "SAP regresijsko testiranje objašnjeno: što ga pokreće, ciklusi cloud izdanja, alati za analizu utjecaja, kada automatizirati i zašto odvojiti projekt i BAU."
+primaryKeyword: "SAP regresijsko testiranje"
+excerpt: "SAP regresijsko testiranje dokazuje da promjena, nadogradnja ili novo izdanje nisu slomili procese koji su već radili. Kako mu odrediti opseg analizom utjecaja, pratiti cloud izdanja i spriječiti da se projektne promjene i promjene u podršci međusobno ometaju."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "Regresijsko testiranje dokazuje da promjena nije slomila procese koji su već radili"
+  - "SAP Cloud ERP public edition nadograđuje se dvaput godišnje, a Vaš prozor za regresiju nalazi se između nadogradnje testnog i produkcijskog sustava"
+  - "Private edition slijedi dvogodišnji ciklus izdanja s feature pack stackovima svakih šest mjeseci; SAP izvodi tehničku nadogradnju, a testiranje je Vaše"
+  - "Analizom utjecaja odredite opseg izvođenja, zatim najprije testirajte najrizičnije poslovne procese"
+  - "Automatizirajte kada postoji mnogo testnih slučajeva koji traže opsežno, ponovljeno testiranje; ispod toga ručno testiranje je u redu"
+  - "Tijekom programa vodite odvojene landscapeove za projekt i BAU kako bi se svaki skup promjena regresijski testirao zasebno"
+pullQuote: "Držite projektne promjene i promjene iz žive podrške odvojeno i testirajte svaku tamo gdje joj je mjesto."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Cloud ERP"
+  - "SAP Cloud ALM"
+  - "SAP Solution Manager"
+  - "Business Process Change Analyzer"
+  - "Scope and Effort Analyzer"
+  - "Tricentis LiveCompare"
+  - "Tricentis Tosca"
+  - "Panaya"
+  - "Worksoft"
+originalUrl: "https://noeldcosta.com/sap-regression-testing/"
+canonicalUrl: "https://noeldcosta.com/hr/sap-regression-testing/"
+locale: "hr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP regresijsko testiranje dokazuje da promjena, support package ili novo izdanje nisu slomili poslovne procese koji su već radili. Opseg mu određujete analizom utjecaja, najrizičnije procese izvodite prvo i ponavljate ga svaki put kada se sustav promijeni, a ne samo jednom prije puštanja u rad.
+
+Okidači su transporti, nadogradnje i cloud izdanja. Na SAP Cloud ERP public edition datume nadogradnje određuje SAP, pa Vaš regresijski paket mora biti spreman prije nego što izdanje stigne.
+
+Regresija je jedna od vrsta testiranja u mom [vodiču za SAP testiranje](/hr/sap-testing-explained/). Ovaj članak pokriva što je pokreće, kako joj odrediti opseg, kada je automatizirati i kako spriječiti da program i živa podrška kvare jedno drugome posao.
+
+## Što pokriva SAP regresijsko testiranje
+
+SAP je integrirani sustav. Promjena uvjeta određivanja cijena može slomiti fakturiranje, a novo polje na prodajnom nalogu može zaustaviti sučelje. Support package može promijeniti standardni program na koji se oslanjate.
+
+Regresijsko testiranje ponovno izvodi testove na procesima koji se nisu trebali promijeniti. Funkcionalno testiranje pita radi li ono novo, a regresija pita radi li i dalje sve ostalo.
+
+Primjenjuje se kroz cijeli životni vijek sustava, a ne samo tijekom programa:
+
+1. **Transporti.** Svaka promjena prebačena iz razvoja u sustav kvalitete regresijski je rizik za procese koje dotiče.
+2. **Support packageovi i feature packovi.** SAP-ovi ispravci i nove funkcionalnosti mijenjaju standardni kod ispod Vaše konfiguracije.
+3. **Nadogradnje izdanja.** Prelazak na novo izdanje, ili cloud izdanje koje niste Vi planirali, mijenja mnogo više odjednom.
+4. **Konverzije.** Konverzija s ECC-a na S/4HANA zadržava Vašu konfiguraciju i prilagođeni kod, pa sve što ste zadržali treba ponovno testirati. Moj [vodič za migraciju s ECC-a na S/4HANA](/hr/ecc-to-s4hana-migration/) objašnjava gdje se to nalazi u planu.
+5. **Integracije i ekstenzije.** Promjena u povezanom sustavu ili side-by-side ekstenziji može slomiti SAP stranu bez ijednog SAP transporta.
+
+Regresijski paket držite odvojeno od testova napisanih za nove funkcije. Paket je stabilna biblioteka procesa koje poslovanje ne smije izgubiti, kao što su order to cash, procure to pay i zatvaranje na kraju mjeseca.
+
+## Kako cloud izdanja mijenjaju regresijsko testiranje
+
+On-premise sami birate kada ćete nadograditi. U cloud izdanjima SAP određuje veći dio rasporeda, a regresijsko testiranje postaje stalna obveza u kalendaru.
+
+### Public edition: dvije nadogradnje godišnje
+
+SAP Cloud ERP public edition, ranije S/4HANA Cloud Public Edition, dobiva dvije velike nadogradnje godišnje, u veljači i kolovozu. Manje isporuke funkcionalnosti stižu između njih.
+
+SAP najprije nadograđuje testni sustav, a produkcijski nekoliko tjedana kasnije. Taj razmak je Vaš prozor za regresiju i nema druge prilike kada se produkcija nadogradi.
+
+SAP-ov [Cloud ALM tečaj o testiranju nakon nadogradnje i regresijskom testiranju](https://learning.sap.com/courses/implementing-with-sap-cloud-alm/conducting-post-upgrade-and-regression-testing-for-sap-s-4hana-cloud-public-edition_b6d0c843-9235-4b3a-a6b9-f0a5a62f9360) preporučuje izradu plana regresijskog testiranja u Cloud ALM-u i njegovu ponovnu upotrebu za svako izdanje. Public edition uključuje i besplatan alat za automatizaciju testiranja s unaprijed isporučenim testnim skriptama, pa standardni procesi imaju polaznu točku.
+
+### Private edition: dvogodišnji ciklus izdanja
+
+SAP Cloud ERP Private, private edition koji se prodaje kroz RISE with SAP, slijedi on-premise ciklus izdanja. Prema [SAP Learningu](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-private-edition/navigating-release-upgrades_ae2d796c-bafd-4e04-8b41-562ebda9eb49), novo osnovno izdanje izlazi svake dvije godine, feature pack stackovi slijede svakih šest mjeseci, a svako izdanje ima sedam godina standardnog održavanja.
+
+Morate instalirati barem jednu nadogradnju svakih sedam godina da biste ostali u standardnom održavanju, a RISE Vam omogućuje da zatražite jednu nadogradnju godišnje. SAP izvodi tehničku nadogradnju, ali planiranje, priprema i testiranje ostaju posao korisnika ili partnera.
+
+Ta je podjela važna za budžete. Sama nadogradnja može biti uključena u pretplatu, a regresijsko testiranje oko nje nije.
+
+Ova tablica stavlja okidače regresije jedan uz drugi:
+
+| Promjena | Koliko često | Tko određuje datum | Što regresijsko izvođenje mora pokriti |
+|---|---|---|---|
+| Transport u sustav kvalitete | Dnevno ili tjedno | Vaš tim | Procese koje promijenjeni objekti dotiču |
+| Nadogradnja public editiona | Dvaput godišnje, u veljači i kolovozu | SAP | Svaki proces u opsegu, prvo prilagođenu logiku, u prozoru prije produkcije |
+| Feature pack stack za private edition | Svakih šest mjeseci, ako ga preuzmete | Vi, unutar SAP-ova rasporeda | Promijenjene standardne funkcije koje koristite, plus prilagođeni kod |
+| Nadogradnja izdanja za private edition | Najmanje svakih sedam godina, do jedne godišnje na zahtjev u okviru RISE-a | Vi, sa SAP-om | Cijeli paket, prilagođeni kod i integracije |
+| Konverzija s ECC-a na S/4HANA | Jednom | Vi | Sve što ste zadržali |
+
+## Opseg odredite analizom utjecaja
+
+Izvođenje cijelog paketa nakon svake promjene sporo je i skupo. Ako izvedete premalo, nedostaci prolaze, a praznina se pokaže u produkciji.
+
+Analiza utjecaja nalazi se između toga dvoga. Uspoređuje ono što se promijenilo s onim što stvarno koristite i navodi najugroženije procese i objekte, pa regresijsko izvođenje počinje s njima.
+
+Ovo su alati na koje ćete naići:
+
+1. **SAP Solution Manager.** Business Process Change Analyzer, dio Test Suitea, pokazuje na koje poslovne procese promjena utječe. [Scope and Effort Analyzer](https://support.sap.com/en/alm/solution-manager/processes-72/scope-effort-analyzer.html) procjenjuje utjecaj support packagea ili enhancement packagea prije nego što ga instalirate, a SAP ga naziva alatom za planiranje.
+2. **SAP Cloud ALM.** Cloud ALM upravlja planovima regresijskog testiranja, izvođenjem i nedostacima te se povezuje s alatima za automatizaciju. Za nadogradnje public editiona SAP-ov alat Release Assessment and Scope Dependency pokazuje koje promjene u izdanju utječu na Vaš opseg.
+3. **Tricentis LiveCompare.** Prema [dokumentaciji za LiveCompare](https://docs.tricentis.com/livecompare-2026.1/content/welcome_to_livecompare.htm), identificira minimalni skup najugroženijih objekata za testiranje, a zatim izvještava o pogocima i prazninama u testovima u odnosu na Vaš repozitorij testova. SAP ga preprodaje kao SAP Change Impact Analysis by Tricentis, a integrira se s alatom Tricentis Tosca.
+4. **Panaya.** Panayin [proizvod za SAP nadogradnje](https://www.panaya.com/sap/sap-upgrades/) kombinira analizu utjecaja promjena, ispravljanje koda, upravljanje testiranjem i automatizaciju te pokriva S/4HANA verzije, feature pack stackove i support package stackove.
+
+Provjerite gdje je Vaš Solution Manager prije nego što gradite na njemu. [SAP Support](https://support.sap.com/en/alm/solution-manager.html) navodi da standardno održavanje alata Solution Manager 7.2 završava krajem 2027. Korisnici koji uzmu produljeno održavanje za Business Suite 7 zadržavaju ga do kraja 2030., a SAP preporučuje prelazak na Cloud ALM prije kraja 2027.
+
+Analiza utjecaja sužava opseg. Ne određuje ga sama, pa zadržite jezgru poslovno kritičnih procesa koja se izvodi svaki put, bez obzira na to što kaže alat.
+
+Moja usporedba [alata za SAP testiranje i validaciju](/hr/sap-testing-validation-tools-comparison/) pokriva kako se ovi proizvodi uklapaju i što Vaš ugovor o SAP podršci već uključuje.
+
+## Automatizirajte kada to volumen i ponavljanje opravdavaju
+
+Regresija je mjesto gdje se automatizacija testiranja isplati, jer se isti testovi izvode iznova i iznova. To ne znači da svaki regresijski paket treba automatizirati.
+
+Moje pravilo je jednostavno. Kada postoji velik broj testnih slučajeva koji traže opsežno, ponovljeno testiranje, automatizirajte. Ispod toga ručno testiranje je u redu.
+
+Korisnik public editiona koji izvodi cijeli paket dvaput godišnje, plus transporte između toga, brzo dosegne taj prag. Mali sustav na private editionu koji se mijenja nekoliko puta godišnje možda ne.
+
+Postavite ova pitanja prije nego što kupite:
+
+1. **Koliko regresijskih testnih slučajeva imate** i koliko ih se izvodi u svakom ciklusu?
+2. **Koliko ih često izvodite,** računajući transporte, feature packove i nadogradnje, a ne samo nadogradnje izdanja?
+3. **Koliko traje ručno izvođenje** i stane li u prozor za regresiju?
+4. **Tko će održavati skripte** kada se ekrani i procesi promijene?
+
+Održavanje skripti je trošak koji ljudi podcjenjuju. Automatizirani paket koji nitko ne ažurira pada iz razloga koji nemaju veze sa sustavom, a tim mu prestaje vjerovati.
+
+Na programima koje sam vodio moji su timovi koristili Tricentis Tosca, Worksoft, Panaya, SAP Cloud ALM, SAP Solution Manager i UiPath. Birajte prema tome koliko odgovara Vašim sustavima i timu, a ne prema demu. Moj [vodič za automatizaciju SAP testiranja](/hr/sap-test-automation-guide/) pokriva gdje početi i kako procijeniti povrat.
+
+## Držite projektne i BAU promjene odvojeno tijekom programa
+
+Najteži regresijski problem na SAP programu nisu alati. To su dva toka promjena koja istodobno prolaze kroz iste sustave.
+
+Dok program gradi nove funkcije, živa podrška i dalje ispravlja produkciju. Ako oba toka dijele jedan put kroz razvoj i kvalitetu, ispravak iz podrške može slomiti projektno testiranje, a projektna promjena može se provući u izdanje podrške. Tada nitko ne može reći koja je promjena uzrokovala pad.
+
+Moj odgovor je voditi dva odvojena landscapea. Jedan je za projekt, a jedan za redovno poslovanje (BAU), pa se promjene iz žive podrške i projektne promjene testiraju odvojeno.
+
+<explainer-compare title="Dva landscapea tijekom SAP programa" caption="Svaki tok promjena dobiva vlastiti put do produkcije, pa pad regresijskog testa upućuje na jedan skup promjena." options="Projektni landscape|BAU landscape" criteria="Što prolazi kroz njega => Nove funkcije, konfiguracija i prilagođeni kod za program ; Ispravci i male promjene živog sustava|Fokus regresije => Procesi koje program mijenja, plus jezgreni paket ; Procesi koje svaki ispravak dotiče, plus jezgreni paket|Odlazi u produkciju => Pri puštanju u rad ili valu izdanja ; Kao izdanja podrške, prema uobičajenom rasporedu"></explainer-compare>
+
+Dva landscapea rješavaju razdvajanje, a zatim stvaraju novi posao. Svaki BAU ispravak mora stići i u projektni landscape, inače projekt ide u rad bez njega.
+
+Planirajte to od početka:
+
+1. **Svaku BAU promjenu retrofitajte u projektni landscape** prema stalnom ritmu i pratite svaku od njih.
+2. **Ponovno izvedite zahvaćene projektne testove** nakon svakog retrofita, a ne samo na kraju.
+3. **Zamrznite BAU promjene** kako se cutover približava, osim hitnih ispravaka koji prolaze kroz oba landscapea.
+4. **Izvedite cijeli regresijski paket** u projektnom landscapeu prije puštanja u rad, s maskiranim podacima na produkcijskoj razini.
+
+Drugi landscape košta, ali košta i puštanje u rad nakon kojeg nitko ne može reći koja je promjena slomila fakturiranje. Moja [strategija testiranja S/4HANA](/hr/s4hana-testing-strategy/) pokazuje gdje se regresijski ciklusi nalaze uz integracijsko i korisničko testiranje prihvaćanja.
+
+## Gdje početi
+
+Izgradite regresijski paket prije nego što Vam zatreba. Popišite procese koje poslovanje ne smije izgubiti, napišite test za svaki i jednom ih izvedite ručno da vidite koliko traje cijeli ciklus.
+
+Taj broj Vam govori je li sljedeći prozor za nadogradnju realan i hoće li se automatizacija isplatiti. Ako ste usred programa, provjerite dijele li projektne i BAU promjene jedan put do produkcije.
+
+Ako želite neovisan pogled na svoj pristup regresiji ili plan nadogradnje, pomažem organizacijama u tome. [Ovdje me možete kontaktirati](/hr/contact-noel-erp-support/).
+
+## Često postavljana pitanja
+
+<details>
+<summary>Što je SAP regresijsko testiranje?</summary>
+
+Ponovno izvodi testove na SAP poslovnim procesima koji se nisu trebali promijeniti, kako bi dokazalo da ih transport, support package, nadogradnja ili novo izdanje nisu slomili. Pokriva integrirane tokove kao što su order to cash i zatvaranje na kraju mjeseca, a ne samo promijenjene objekte.
+
+</details>
+
+<details>
+<summary>Koliko često SAP Cloud ERP public edition treba regresijsko testiranje?</summary>
+
+Najmanje dvaput godišnje, jer SAP nadograđuje public edition u veljači i kolovozu. SAP najprije nadograđuje testni sustav, a produkcijski nekoliko tjedana kasnije, pa regresijsko izvođenje mora završiti u tom razmaku. Transporti između izdanja trebaju vlastita, manja izvođenja.
+
+</details>
+
+<details>
+<summary>Tko radi regresijsko testiranje pri nadogradnji RISE with SAP private editiona?</summary>
+
+SAP izvodi tehničku nadogradnju. Planiranje, priprema i testiranje ostaju na korisniku ili implementacijskom partneru, pa trud za regresiju budžetirajte odvojeno od pretplate.
+
+</details>
+
+<details>
+<summary>Koji alati pomažu odrediti opseg SAP regresijskog testiranja?</summary>
+
+Alati za analizu utjecaja uspoređuju ono što se promijenilo s onim što koristite. Česte opcije su Business Process Change Analyzer i Scope and Effort Analyzer u SAP Solution Manageru te alat Release Assessment and Scope Dependency za public edition. Tricentis LiveCompare i Panaya rade isti posao, a SAP Cloud ALM upravlja planovima regresijskog testiranja i izvođenjem.
+
+</details>
+
+<details>
+<summary>Treba li SAP regresijsko testiranje automatizirati?</summary>
+
+Automatizirajte kada postoji velik broj testnih slučajeva koji traže opsežno, ponovljeno testiranje. Ispod toga ručno testiranje je u redu. Prebrojite testne slučajeve i koliko se često izvode prije nego što kupite alat, i budžetirajte održavanje skripti.
+
+</details>
+
+<details>
+<summary>Kako regresijski testirati tijekom SAP programa dok podržavate živi sustav?</summary>
+
+Vodite dva odvojena landscapea, jedan za projekt i jedan za redovno poslovanje. Promjene iz žive podrške i projektne promjene tada se testiraju odvojeno. Svaki BAU ispravak retrofitajte u projektni landscape i ponovno izvedite zahvaćene testove.
+
+</details>

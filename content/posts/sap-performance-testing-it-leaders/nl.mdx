@@ -1,39 +1,38 @@
 ---
-title: "SAP-performancetesten: wat IT-leiders moeten weten"
-h1: "SAP-performancetesten: wat IT-leiders moeten weten"
-metaTitle: "SAP-performancetesten: wat IT-leiders moeten weten"
-metaDescription: "SAP-performancetesten voor IT-leiders: wanneer beginnen, wat testen, acceptatiecriteria en wie waarvoor verantwoordelijk is bij RISE en S/4HANA Cloud in 2026."
-excerpt: "Performanceproblemen in SAP zijn bijna altijd voorspelbaar en bijna altijd pas na de go-live gevonden. Test ze vanaf het ontwerp, tegen criteria die vóór de eerste run zijn afgesproken."
+title: "SAP-performancetesten: load, concurrency en tools"
+h1: "SAP-performancetesten: load, concurrency en tools"
+metaTitle: "SAP-performancetesten: concurrency, data en tools"
+metaDescription: "SAP-performancetesten vóór de go-live: concurrency- en loadtests, gemaskeerde data op productieniveau, acceptatiecriteria, tools en wie wat doet bij RISE with SAP."
+primaryKeyword: "SAP performancetesten"
+excerpt: "SAP-performancetesten bewijst vóór de go-live dat het systeem standhoudt als veel gebruikers en jobs er tegelijk op inwerken. Concurrencytests op gemaskeerde data op productieniveau, beoordeeld tegen vooraf afgesproken criteria."
 slug: "sap-performance-testing-it-leaders"
 date: "2025-07-12"
-updated: "2026-10-07"
+updated: "2026-10-14"
 lastReviewed: "2026-05-21"
 hero: "/images/wp/2025/07/1-1.webp"
 heroAlt: "Snelheidsmeter met het opschrift performance, waarvan de naald naar het maximum wijst"
 category: "erp-consulting-guide"
-tags: ["sap-technical-decisions", "performance-testing", "s4hana-implementation", "rise-with-sap"]
+tags: ["sap-testing", "performance-testing", "s4hana-implementation", "rise-with-sap"]
 author: "Noel D'Costa"
-experienceSource: "Direct experience leading and recovering SAP performance testing on 21 S/4HANA and ECC programmes across manufacturing, financial services, public sector, and retail in Europe, GCC, US, and UK markets. The five-background-jobs-clashed story is anchored to a GCC manufacturing programme in 2024. RISE / GROW / Joule coverage reflects 2024-2025 SAP product positioning."
+experienceSource: "Noel's first-person experience leading and rescuing SAP programmes (confirmed by Noel, 14 October 2026: performance testing before go-live with concurrency tests as the priority, production-level masked test data, and the tools his teams have used). No client names. Product facts checked against official SAP, OpenText and Tricentis documentation, October 2026."
 keyTakeaways:
-  - "Performancerisico ontstaat in het ontwerp: de opzet van rapporten, jobketens en het ontwerp van OData-services bepalen de uitkomst voordat er code is geschreven"
-  - "Inlogpieken bij ploegwissel, Z-rapporten zonder selectiegrenzen en overlappende afsluitjobs zijn de meest voorkomende fouten, en alle drie zijn voorspelbaar"
-  - "Volumetesten is wat programma's het vaakst afsnijden en waar ze het meest spijt van hebben"
-  - "Eigenaarschap van performance vraagt een lead op programmaniveau met de bevoegdheid om het ontwerp te betwisten, niet alleen QA"
-  - "Bij RISE is SAP verantwoordelijk voor de infrastructuur; de klant en de partner voor de performance van applicatie, integratie en processen"
-  - "Als het systeem slaagde omdat UAT-gebruikers zeiden dat het snel aanvoelde, hebt u een mening, geen acceptatiecriterium"
+  - "Performancetesten moet vóór de go-live klaar zijn, en concurrencytests zijn de tests die het meest tellen"
+  - "Test op gemaskeerde data met productievolume en productierealisme, anders voorspellen de resultaten het livegedrag niet"
+  - "Inlogpieken, jobketens bij de maandafsluiting, maatwerkrapporten zonder selectiegrenzen en interfacewachtrijen zijn de voorspelbare fouten"
+  - "Spreek vóór de eerste run drempels voor geslaagd en mislukt af per transactie, job en interface, en verschuif ze niet"
+  - "Bij RISE with SAP blijven het uitvoeren van loadtests en SQL-tuning bij de klant, tenzij u de extra diensten van SAP afneemt"
 pullQuote: "Performancerisico's worden tijdens het ontwerp gezaaid, via architectuurkeuzes, de opzet van rapporten en de hoeveelheid logica die in ABAP wordt geduwd. Wacht u tot het systeem volledig is gebouwd, dan test u gevolgen. Dan is herwerk duur."
 mentions:
   - "SAP S/4HANA"
+  - "SAP HANA"
   - "SAP Fiori"
-  - "SAP CPI"
-  - "SAP BTP"
-  - "SAP Solution Manager"
   - "SAP Cloud ALM"
+  - "SAP Solution Manager"
   - "RISE with SAP"
-  - "GROW with SAP"
-  - "Joule"
-  - "LoadRunner"
+  - "OpenText Professional Performance Engineering"
+  - "OpenText LoadRunner"
   - "Tricentis NeoLoad"
+  - "Apache JMeter"
 originalUrl: "https://noeldcosta.com/sap-performance-testing-it-leaders/"
 canonicalUrl: "https://noeldcosta.com/nl/sap-performance-testing-it-leaders/"
 locale: "nl"
@@ -41,170 +40,189 @@ translatedFrom: "en"
 translationSource: "reviewed-en-2026-10"
 ---
 
-SAP-performancetesten bewijzen vóór de go-live dat kritieke transacties, achtergrondjobs en interfaces onder productievolumes de afgesproken responstijden halen. Begin in het ontwerp, voer volume- en belastingstests uit in Realize zodra de configuratie stabiel is, rond de cyclus af vóór de gebruikersacceptatietest (UAT) en maak van de resultaten een poort voor de cutover. Deze gids is voor CIO's, programmadirecteuren en testleads van S/4HANA-programma's, inclusief RISE with SAP. Hij behandelt wat u test, wie het in handen heeft, hoe u acceptatiecriteria opstelt en wat er in de cloud verandert. Begin bij de tabel met acceptatiecriteria: als u die niet kunt invullen, bent u nog niet klaar om te testen.
+SAP-performancetesten bewijst vóór de go-live dat kritieke transacties, achtergrondjobs en interfaces de afgesproken responstijden halen als veel gebruikers en jobs tegelijk draaien. In mijn ervaring zijn de concurrencytests de tests die tellen, uitgevoerd op gemaskeerde data met productievolume, tegen criteria voor geslaagd en mislukt die de business vóór de eerste run heeft afgesproken.
 
-Performanceproblemen in SAP-programma's worden bijna altijd pas na de go-live gevonden. Fiori-tegels lopen op een time-out als 300 gebruikers bij ploegwissel inloggen. Z-rapporten lopen vast omdat iemand een onbegrensde boekjaarselectie losliet op een tabel met 50 miljoen records. Achtergrondjobs overlappen tijdens de maandafsluiting en de boekingsrun breekt af.
+Deze gids is voor CIO's, programmadirecteuren en testleads in S/4HANA-programma's, inclusief RISE with SAP. Hij behandelt wat u test, welke data u nodig hebt, hoe u acceptatiecriteria schrijft, welke tools het werk doen en wie waarvoor verantwoordelijk is. Waar performance tussen de andere testsoorten staat, leest u in mijn overzicht [SAP-testen uitgelegd](/nl/sap-testing-explained/).
 
-Performanceproblemen in SAP-programma's komen zelden als een verrassing. De meeste waren voorspelbaar, er was alleen geen rekening mee gehouden. Het gebruikelijke patroon: het functioneel testen was grondig. Het volumetesten was gepland en werd daarna doorgeschoven toen de planning krap werd. De gevolgen kwamen in de eerste weken van het live gebruik.
+Performanceproblemen in SAP-programma's zijn zelden een verrassing.
 
-Dit zijn geen randgevallen. Ze zijn voorspelbaar. De enige vraag is of het programma erop heeft getest, of dat de business ze ontdekt terwijl er echte orders draaien.
+Fiori-tegels geven een time-out als honderden gebruikers aan het begin van een dienst inloggen. Een maatwerkrapport bevriest omdat iemand een selectie op een volledig boekjaar zonder grenzen draaide tegen een zeer grote tabel. Achtergrondjobs overlappen bij de maandafsluiting en de boekingsrun breekt af.
 
-![Datacenter-infrastructuur die SAP-performancetestomgevingen en productiewerklasten onder gelijktijdige gebruikersbelasting ondersteunt](https://images.pexels.com/photos/5480781/pexels-photo-5480781.jpeg)
+Dit is voorspelbaar. De enige vraag is of het programma erop heeft getest, of dat de business het ontdekt terwijl er echte orders lopen.
 
-<stepper title="Performancetesten door SAP Activate heen" steps="Explore|Realize|Pre-UAT|Cutover|Hypercare" bodies="Identificeer performancerisico's in het ontwerp. Architectuur en rapportopzet bepalen de uitkomst voordat er code is geschreven.|Voer volume- en belastingstests uit naarmate de configuratie stabiliseert. Gedeeltelijke configuratie geeft misleidende resultaten.|Rond de volledige performancecyclus af vóór de UAT, niet als onderdeel ervan.|Keur de cutover goed op basis van de vooraf afgesproken acceptatiecriteria, niet op basis van meningen.|Volg de live KPI's gedurende 30 tot 60 dagen. De meeste achteruitgang komt aan het licht in de eerste afsluitcyclus."></stepper>
+![Datacenterinfrastructuur die SAP-omgevingen voor performancetesten en productiewerklasten onder gelijktijdige gebruikersbelasting ondersteunt](https://images.pexels.com/photos/5480781/pexels-photo-5480781.jpeg)
 
-## Waarom S/4HANA het performancetesten veranderde
+<stepper title="Performancetesten binnen SAP Activate" steps="Explore|Realize|Vóór UAT|Cutover|Hypercare" bodies="Breng performancerisico's in het ontwerp in kaart. Architectuur en de opzet van rapporten bepalen de uitkomst voordat er code is geschreven.|Voer volume- en loadtests uit zodra de configuratie stabiliseert. Gedeeltelijke configuratie geeft misleidende resultaten.|Rond de volledige performancecyclus af vóór UAT, niet als onderdeel ervan.|Keur de cutover goed tegen de vooraf afgesproken acceptatiecriteria, niet op basis van een mening.|Volg de live KPI's 30 tot 60 dagen. De meeste regressies komen boven in de eerste afsluitcyclus."></stepper>
 
-In een ECC-systeem op een traditionele database betekende performancetesten: de applicatieserver en de database belasten. ABAP-runtime, SQL-performance, jobplanning. De front-end was SAP GUI, en die verraste zelden iemand.
+## Waarom S/4HANA en SAP HANA performancetesten hebben veranderd
 
-Op S/4HANA, met Fiori-front-ends, uitbreidingen op SAP BTP en integratie via SAP Cloud Integration (CPI), hangt performance van meerdere lagen tegelijk af. Een trage Fiori-tegel kan een lange ABAP-aanroep zijn, een gateway-time-out, een OData-service die niet is ontworpen voor gelijktijdige verzoeken, of netwerklatentie in een hybride opzet. Alleen de back-end testen vindt het niet. Het hele pad testen wel.
+In een ECC-systeem op een traditionele database betekende performancetesten het load-testen van de applicatieserver en de database: ABAP-runtime, SQL-performance en jobplanning. De front-end was SAP GUI, en die verraste zelden iemand.
 
-<explainer-flow title="Waar een trage Fiori-tegel zich kan verstoppen" caption="Elke laag kan op zichzelf slagen. End-to-end testen volgt het hele pad, en daar wacht de gebruiker daadwerkelijk op." steps="Tegel starten|OData-aanroep|ABAP-verwerking|Databaselezing|Weergave" notes="Inlogpieken bij de start van de dienst|Gateway-time-outs, services die niet zijn gebouwd op gelijktijdigheid|Langlopende ABAP-aanroepen|Onbegrensde selecties op grote tabellen|Plus netwerklatentie voor verre locaties" result="Eén responstijd, end-to-end gemeten"></explainer-flow>
+Op S/4HANA, met Fiori-front-ends, extensies op SAP BTP en integratie via SAP Cloud Integration, hangt performance van meerdere lagen tegelijk af. Een trage Fiori-tegel kan een lange ABAP-aanroep zijn, een gateway-time-out, een OData-service die niet is ontworpen voor gelijktijdige verzoeken of netwerklatentie in een hybride opzet. Alleen de back-end testen vindt dat niet.
 
-Integratiestromen brengen hun eigen risico mee. Stromen die in ontwikkeling en QA werkten met losse testberichten, kunnen bij productievolumes oplopen in een wachtrij of ongemerkt falen. Als berichtenwachtrijen niet zijn gedimensioneerd voor de echte belasting, lopen vertragingen op. De symptomen lijken op iets anders: onregelmatige orderfouten, afwijkende facturen, data die in het ene systeem aanwezig is en in het andere ontbreekt.
+<explainer-flow title="Waar een trage Fiori-tegel zich kan verschuilen" caption="Elke laag kan op zichzelf slagen. End-to-endtesten volgt het hele pad, en daar wacht de gebruiker echt op." steps="Tegel openen|OData-aanroep|ABAP-verwerking|Database lezen|Weergave" notes="Inlogpieken bij het begin van een dienst|Gateway-time-outs, services niet gebouwd voor concurrency|Langlopende ABAP-aanroepen|Selecties zonder grenzen op grote tabellen|Plus netwerklatentie voor verre vestigingen" result="Eén responstijd, van begin tot eind gemeten"></explainer-flow>
 
-## De vier tests die ertoe doen
+Performancetesten op SAP HANA heeft bij een conversie een eigen wending. Stabiele ECC-code gedraagt zich anders op een in-memorydatabase. Veel programma's worden veel sneller, terwijl sommige bij bepaalde datapatronen onverwachte profielen laten zien, dus conversiespecifieke regressie van de zware maatwerkcode is niet optioneel.
 
-1. **Belastingstests** controleren het gedrag onder het verwachte volume. Het sleutelwoord is verwacht. U hebt echte transactievolumes, gebruikersaantallen en gelijktijdige sessies nodig. Veel belastingstests mislukken omdat ze volumeschattingen gebruikten waarvan iedereen al wist dat ze optimistisch waren.
-2. **Stresstests** gaan voorbij de ontwerpgrenzen om te vinden waar het systeem breekt. Als de volumes over achttien maanden verdubbelen, vertellen ze u of de architectuur het aankan en of de dimensionering een probleem wordt vóór de volgende infrastructuurreview.
-3. **Soaktests** draaien lange tijd een constante belasting om problemen bloot te leggen die zich in de loop van de tijd opbouwen: geheugenlekken, fragmentatie en conflicten tussen jobketens bij herhaalde runs. Het is de test die het vaakst wordt overgeslagen, en de test die de hieronder beschreven fout bij de maandafsluiting had opgemerkt.
-4. **End-to-end testen** volgt het volledige pad dat een gebruiker aflegt: tegel starten, OData-aanroep, ABAP-verwerking, databaselezing, weergave. Het is de enige manier om problemen te vinden die onzichtbaar zijn wanneer elke laag afzonderlijk wordt getest.
+Integratiestromen brengen hun eigen risico. Stromen die in ontwikkeling met losse testberichten werkten, kunnen bij productievolumes in de wachtrij blijven hangen of stil falen. De symptomen lijken op iets anders: orders die af en toe mislukken, facturen die niet aansluiten, data die in het ene systeem staat en in het andere ontbreekt.
 
-## Scenario's met hoog risico
+## Eerst concurrency: de tests die tellen
 
-**Ploegwissel en piekmomenten bij het inloggen.** Als 200 gebruikers om 8 uur 's ochtends de Fiori-launchpad openen, pieken authenticatie en het opbouwen van de launchpad. Een systeem dat buiten de piek prima draait, kan in dat tijdvak onbruikbaar zijn als gelijktijdig inloggen nooit is getest. In productie, retail en de financiële sector veroorzaken inlogpieken de meest zichtbare klachten op dag één.
+Performancetesten moet vóór de go-live gebeuren. De tests die ik als de belangrijke beschouw, zijn de concurrencytests: veel gebruikers en jobs die op hetzelfde moment dezelfde transacties, tabellen en services raken.
 
-**Maand- en jaarafsluiting.** Het scenario met het hoogste risico bij de meeste programma's: boekingen in groot volume, jobketens met een strikte volgorde en een financeteam dat tegen een vaste deadline werkt. Laat de jobketens van de afsluiting end-to-end draaien met de volumes van de afsluitperiode, niet met gemiddelde dagaantallen.
+Eén gebruiker die een verkooporder in twee seconden aanmaakt, bewijst bijna niets. Dezelfde order terwijl 150 mensen orders invoeren, er op de achtergrond een leveringsrun draait en een interface inkomende berichten boekt, is de test die dag één voorspelt.
 
-Batchjobs worden meestal afzonderlijk getest, wat de werkelijkheid niet weerspiegelt. Bij de maandafsluiting piekt de achtergrondverwerking en draaien veel programma's parallel op dezelfde resources. Eén slecht geoptimaliseerde job kan er vijf blokkeren, en de afsluiting loopt door buiten het afgesproken venster.
+Deze tabel laat zien wat elk type test bewijst en wanneer u het uitvoert:
 
-**Conversie van ECC naar S/4HANA.** Stabiele ECC-code gedraagt zich anders op HANA. Veel programma's worden veel sneller; sommige vertonen onverwachte profielen bij bepaalde datapatronen. Conversiespecifieke regressietests zijn niet optioneel. Mijn [gids voor de migratie van ECC naar S/4HANA](/nl/ecc-to-s4hana-migration/) laat zien waar dit in het conversieplan past.
+| Test | Wat het bewijst | Wanneer uitvoeren | Wat het meestal vindt |
+|---|---|---|---|
+| Concurrency | Veel gebruikers en jobs kunnen tegelijk op dezelfde objecten werken | Realize, zodra de configuratie stabiel is, en opnieuw vóór UAT | Lock-wachttijden, inlogpieken, gateway-knelpunten |
+| Load | Het systeem haalt de responstijden bij het verwachte piekvolume | Realize, nadat de concurrencyscripts werken | Trage OData-services, zware maatwerkrapporten |
+| Stress | Waar het systeem breekt boven de ontwerpgrenzen | Vóór UAT, als groei wordt verwacht | Gaten in de sizing, wachtrijlimieten |
+| Soak | Het systeem houdt urenlang een gelijkmatige belasting vol | Vóór UAT, bij voorkeur over een gesimuleerde afsluiting | Groeiend geheugengebruik, conflicten in jobketens bij herhaalde runs |
+| End-to-end | Het volledige pad waarop een gebruiker wacht, haalt het doel | Naast de loadtests | Problemen die onzichtbaar zijn als elke laag apart wordt getest |
 
-**Gebruikers in meerdere regio's.** Netwerklatentie raakt elke transactie. Een verkooporder die in het hostingland twee seconden duurt, kan 3.000 mijl verderop kapot aanvoelen als niemand van daaruit heeft getest. RISE verplaatst de hosting naar SAP, maar de latentie hangt nog steeds af van de regio die u kiest en de routering naar uw gebruikers.
+Het sleutelwoord bij loadtesten is verwacht. U hebt echte transactievolumes, gebruikersaantallen en sessiepatronen nodig. Een loadtest die is gebouwd op volume-inschattingen waarvan iedereen al wist dat ze optimistisch waren, levert een geslaagd resultaat op dat niets betekent.
+
+Soaktesten wordt het vaakst overgeslagen. Volumetesten in het algemeen is de shortcut die programma's het vaakst nemen als de planning wordt samengeperst, en waar ze het meest spijt van krijgen.
+
+## Risicovolle scenario's om te scripten
+
+Script deze eerst. Ze dekken de meeste fouten die productie bereiken.
+
+1. **Dienstwissel en piek in inloggen.** Als een paar honderd gebruikers tegelijk het Fiori-launchpad openen, pieken de authenticatie en de weergave van het launchpad. Een systeem dat buiten de piek prima werkt, kan in dat venster onbruikbaar zijn als gelijktijdige logins nooit zijn getest.
+2. **Maand- en jaarafsluiting.** Hoge boekingsvolumes, jobketens met een strikte volgorde en een financieel team dat tegen een vaste deadline racet. Draai de jobketens van de afsluiting van begin tot eind tegen de volumes van de afsluitperiode, niet tegen gemiddelde dagelijkse aantallen.
+3. **Overlappende achtergrondjobs.** Batchjobs worden meestal één voor één getest, en dat weerspiegelt de werkelijkheid niet. Eén slecht geoptimaliseerde job kan verschillende andere blokkeren, en de afsluiting loopt over haar venster heen.
+4. **Maatwerkrapporten zonder selectiegrenzen.** Een rapport dat op testdata direct resultaat geeft, kan op een volledig boekjaar minuten draaien. Test typische selecties en het slechtste geval, en blokkeer de selecties zonder grenzen.
+5. **Gebruikers in meerdere regio's.** Netwerklatentie raakt elke transactie. RISE verplaatst de hosting naar SAP, maar de latentie hangt nog steeds af van de regio die u kiest en de routering naar uw gebruikers, dus test vanaf de vestigingen die het verst weg liggen.
+
+Mijn [gids voor de migratie van ECC naar S/4HANA](/nl/ecc-to-s4hana-migration/) beschrijft waar conversietesten in het bredere plan past.
+
+### Testdata op productieniveau
+
+De data bepaalt of dit alles iets betekent. Ik sta op gemaskeerde data op productieniveau: productievolume en productierealisme, met persoonsgegevens en gevoelige velden gemaskeerd.
+
+Een klant met 200.000 openstaande orderregels gedraagt zich anders dan een klant met 5.000. Filters die in een dunne testclient direct resultaat geven, lopen in productie in een time-out. Vul het volume aan voor de risicovolle gebieden, gebruik een representatieve mix van transacties en doe waar mogelijk echte interface-aanroepen.
+
+Hoe u die data veilig krijgt, via kopieën, tools voor selectieve testdata en maskering, staat in mijn gids over [SAP-testdatamanagement](/nl/sap-test-data-management/). Plan de verversing vóór de eerste performancecyclus, want die duurt langer dan de meeste testplannen aannemen.
 
 ## Acceptatiecriteria waartegen u kunt testen
 
-Spreek de criteria af met de business in de Prepare-fase, vóór er een test draait. Elk criterium noemt de transactie of job, de belasting en de drempel. Deze voorbeelden laten de vorm zien; bepaal uw eigen getallen vanuit de operationele behoeften:
+Spreek de criteria in de Prepare-fase af met de business, voordat er een test draait. Elk criterium noemt de transactie of job, de belasting en de drempel.
 
-| Onderdeel | Belasting | Slaagdrempel | Eigenaar |
+Deze voorbeelden laten de vorm zien. Stel uw eigen getallen vast op basis van operationele behoeften:
+
+| Item | Belastingsconditie | Drempel voor geslaagd | Eigenaar |
 |---|---|---|---|
-| Verkooporder aanmaken (VA01 of Fiori-app) | 150 gelijktijdige gebruikers die orders invoeren | Binnen 3 seconden voor 95% van de transacties | Procesowner order-to-cash |
-| Eerste keer laden van de Fiori-launchpad bij start van de dienst | Piek aan gelijktijdige logins voor de grootste ploeg | Binnen 5 seconden voor 95% van de gebruikers | Lead IT-operatie |
-| Jobketen maandafsluiting | Volumes van de afsluitperiode, volledige reeks | Rondt af binnen het afgesproken afsluitvenster zonder afbrekingen | Financieel controller |
-| Interface voor inkomende orders | Piekvolume aan berichten per uur | Geen wachtrijachterstand ouder dan 15 minuten | Integratielead |
-| Maatwerkrapport met hoog volume | Volledig productievolume, gebruikelijke selectie | Binnen 60 seconden; onbegrensde selecties geblokkeerd | Rapporteigenaar |
+| Verkooporder aanmaken (VA01 of Fiori-app) | 150 gelijktijdige gebruikers voor orderinvoer | Onder 3 seconden voor 95% van de transacties | Proceseigenaar order-to-cash |
+| Eerste keer laden van het Fiori-launchpad bij het begin van een dienst | Piek in gelijktijdige logins voor de grootste dienst | Onder 5 seconden voor 95% van de gebruikers | Lead IT-operations |
+| Jobketen van de maandafsluiting | Volumes van de afsluitperiode, volledige volgorde | Afgerond binnen het afgesproken afsluitvenster, zonder afbrekingen | Financial controller |
+| Interface voor inkomende orders | Piekvolume aan berichten per uur | Geen achterstand in de wachtrij ouder dan 15 minuten | Integratielead |
+| Maatwerkrapport met hoog volume | Volledig productievolume, typische selectie | Onder 60 seconden; selecties zonder grenzen geblokkeerd | Rapporteigenaar |
 
-“Het systeem moet snel genoeg zijn voor de bedrijfsvoering” kan niet worden getest of geaccepteerd. Criteria wijzigen nadat de resultaten binnen zijn, ondermijnt het doel van criteria.
+"Het systeem moet snel genoeg zijn voor de bedrijfsvoering" kan niet worden getest of geaccepteerd. Criteria wijzigen nadat de resultaten binnen zijn, maakt het hebben ervan zinloos.
 
-## Wat IT-leiders van hun teams mogen verwachten
+Als het systeem slaagde omdat UAT-gebruikers zeiden dat het snel aanvoelde, hebt u een mening, geen acceptatiecriterium. Maak de resultaten een formele gate vóór de cutover, zoals mijn gids over [SAP-quality gates](/nl/sap-quality-gates-implementation/) beschrijft. Het totale cyclusplan, met instap- en exitcriteria voor elke testfase, hoort in uw [S/4HANA-teststrategie](/nl/s4hana-testing-strategy/).
 
-Vraag bij naam om elk van deze punten:
+## Tools, eigenaarschap en de cloud
 
-| Verwachting | Wat er moet worden opgeleverd | Waarom het ertoe doet |
+### Tools voor SAP-performancetesten
+
+Een performancetest heeft drie dingen nodig: een loadgenerator die SAP-protocollen kan aansturen, monitoring aan de SAP-kant en een plek om testgevallen en resultaten te beheren. LoadRunner is de loadtool die ik teams heb laten gebruiken in SAP-programma's. Noem de tool vroeg in het testplan, want licenties, loadgenerators en scriptvaardigheden kosten allemaal tijd om te regelen.
+
+De belangrijkste opties in 2026:
+
+| Tool | Rol | Wat u moet weten |
 |---|---|---|
-| Performance-servicelevels | Drempels per transactie, interface en job, met slagen en falen | Voorkomt dat meningen in de UAT de overhand krijgen op het bewijs |
-| Risicogebaseerde scope | Prioritering op basis van gebruikersvolume, integratiepunten en data-afhankelijkheid | Zet testcycli in op de werklasten die ertoe doen |
-| Deelname vanuit alle teams | Basis, infrastructuur, functioneel, security en integratie aanwezig tijdens de runs | Voorkomt schuld afschuiven wanneer er gaten opduiken |
-| Tools en omgevingen gereed | Belastinggeneratoren (OpenText LoadRunner, Tricentis NeoLoad, Apache JMeter), monitoring en datarefreshes zijn geregeld voordat de cycli beginnen | Maakt de simulatie realistisch |
-| Realistische testdata | Stamgegevens in productievolume, echte interface-aanroepen, een representatieve transactiemix | Zorgt dat resultaten het gedrag bij de go-live voorspellen |
-| Performancerapportage | Belastingsmix, responstijden, CPU en geheugen, jobruntimes, foutpercentages | Geeft de goedkeuring van de cutover een bewijsbasis |
-| Monitoringplan na de go-live | KPI's om de eerste 30 tot 60 dagen te volgen | Bevestigt dat het live systeem binnen de geteste grenzen blijft |
+| [OpenText Professional Performance Engineering](https://www.opentext.com/products/professional-performance-engineering) | Loadgeneratie | Het product dat voorheen LoadRunner Professional heette. De protocolbundels dekken SAP, SAP GUI en SAP Web |
+| [Tricentis NeoLoad](https://www.tricentis.com/products/performance-testing-neoload) | Loadgeneratie | Tricentis noemt ondersteuning voor SAP GUI, Fiori, RFC en IDoc, en het kan assets van Tricentis Tosca hergebruiken |
+| Apache JMeter | Loadgeneratie | Open source. Stuurt HTTP-verkeer aan, zoals Fiori- en OData-aanroepen |
+| [SAP Cloud ALM](https://help.sap.com/docs/cloud-alm/applicationhelp/test-execution) | Testmanagement | Bereidt handmatige en geautomatiseerde testgevallen voor, voert ze uit en volgt defecten. Genereert zelf geen belasting |
+| [SAP Solution Manager](https://support.sap.com/en/alm/solution-manager.html) | Testmanagement | De mainstream maintenance eindigt op 31 december 2027, dus plan nieuw werk in Cloud ALM |
 
-## Veelgemaakte fouten
+Voor een breder beeld van functionele tools en automatiseringstools, zie mijn [vergelijking van SAP-tools voor testen en validatie](/nl/sap-testing-validation-tools-comparison/). De tool doet er minder toe dan de scripts, de data en de criteria.
 
-Vier fouten komen het vaakst voor, zelfs bij grote ondernemingen met volwassen deliverymodellen.
+### RISE with SAP verdeelt de verantwoordelijkheid
 
-**Functioneel testen behandelen als performancetesten.** Functionele tests bewijzen dat een transactie het juiste resultaat geeft. Ze zeggen niets over 150 mensen die hem tegelijk draaien.
+Onder RISE with SAP is SAP verantwoordelijk voor de infrastructuur: sizing, hyperscalerregio, netwerk en beschikbaarheid van het platform. De klant en de partner zijn verantwoordelijk voor de applicatielaag.
 
-**Testen met kleine datavolumes.** Een klant met 200.000 openstaande orderregels gedraagt zich anders dan een klant met 5.000. Filters die in test direct antwoorden, lopen in productie op een time-out. Vul de risicovolle gebieden met realistisch volume.
+Het [RISE-document over rollen en verantwoordelijkheden](https://assets.cdn.sap.com/agreements/product-policy/hec/roles-responsibilities/rise-with-sap-s4hana-cloud-private-edition-and-sap-erp-pce-roles-and-responsibilities-english-v7-2024a.pdf) van SAP is daar duidelijk over. Het uitvoeren van loadtests en het tunen van dure SQL-statements zijn SAP Cloud Application Services tegen meerprijs. Neemt u die niet af, dan doet de klant het werk.
 
-**Performance overlaten aan Basis.** Basis is verantwoordelijk voor dimensionering en jobplanning. Het is niet verantwoordelijk voor rapportontwerp, de architectuur van OData-services of het ontwerp van integratiestromen, en juist die bepalen de applicatieperformance.
+Een veelvoorkomende fout in RISE-programma's is de aanname dat SAP performanceproblemen wel opvangt omdat SAP de infrastructuur beheert. SAP vangt infrastructuurproblemen op. Leg de verdeling vast in het charter en het testplan:
 
-**Het eigenaarschap alleen bij QA leggen.** QA voert tests uit en rapporteert resultaten. De beslissingen die performanceproblemen veroorzaken, worden in het ontwerp genomen door functionele, technische en Basis-teams. Een testlead of architect op programmaniveau heeft de bevoegdheid nodig om die beslissingen vroeg te betwisten, en de RACI moet zeggen wie de go-live op grond van performance kan blokkeren.
+1. **SAP:** beschikbaarheid van de infrastructuur en respons op platformniveau
+2. **Partner:** applicatieperformance onder de gedefinieerde belasting, inclusief extensies en integratiestromen
+3. **Klant:** uitkomsten op procesniveau, zoals de looptijd van de afsluiting en de orderdoorvoer, en het acceptatiebesluit
 
-## Wat verandert bij RISE, GROW en met AI
+### Public cloud versmalt de scope
 
-### RISE verdeelt de verantwoordelijkheid
+Op de public edition van de cloud-ERP van SAP draait het systeem op een gedeeld platform dat SAP beheert. Vraag SAP schriftelijk of een loadtest tegen een tenant is toegestaan en welke aankondiging nodig is, voordat u er een plant.
 
-Onder RISE with SAP is SAP verantwoordelijk voor de infrastructuur: dimensionering, hyperscaler-regio, netwerk en beschikbaarheid van het platform. De klant en de partner zijn verantwoordelijk voor de applicatielaag. Het [document met rollen en verantwoordelijkheden voor RISE](https://assets.cdn.sap.com/agreements/product-policy/hec/roles-responsibilities/rise-with-sap-s4hana-cloud-private-edition-and-sap-erp-pce-roles-and-responsibilities-english-v7-2024a.pdf) van SAP zegt het ronduit: het opsporen en tunen van dure SQL-statements blijft bij de klant, tenzij u de aanvullende applicatieservices van SAP afneemt.
+Uw testen verschuift dan naar wat van u is: eigen integraties, extensies, rapporten met hoog volume, de volgorde van de afsluiting en het netwerkpad vanaf uw vestigingen. Performanceproblemen van het platform gaan naar SAP-support.
 
-Een veelvoorkomende fout bij RISE-programma's is de aanname dat SAP performanceproblemen vangt omdat het de infrastructuur beheert. SAP vangt infrastructuurproblemen. SAP vangt geen slecht ontworpen OData-service, geen inefficiënte ABAP-job en geen integratiestroom die niet schaalt. Leg de verdeling vast in het charter en het testplan:
+### Veelgemaakte fouten
 
-1. **SAP:** beschikbaarheid van de infrastructuur en responstijd op platformniveau
-2. **Partner:** applicatieperformance onder de gedefinieerde belasting, inclusief uitbreidingen en integratiestromen
-3. **Klant:** resultaten op procesniveau, zoals de looptijd van de afsluiting en de doorvoer van orders, en het acceptatiebesluit
+1. **Functioneel testen behandelen als performancetesten.** Functionele tests bewijzen dat een transactie het juiste resultaat geeft. Ze zeggen niets over 150 mensen die haar tegelijk uitvoeren.
+2. **Performance overlaten aan Basis.** Basis is verantwoordelijk voor sizing en jobplanning. Basis is niet verantwoordelijk voor het ontwerp van rapporten, de architectuur van OData-services of het ontwerp van integratiestromen, en die bepalen de applicatieperformance.
+3. **Het eigenaarschap alleen bij QA leggen.** QA voert tests uit en rapporteert resultaten, maar de beslissingen die performanceproblemen veroorzaken, worden in het ontwerp genomen. Een testlead of architect op programmaniveau heeft de bevoegdheid nodig om die vroeg te betwisten, en de RACI moet zeggen wie de go-live op grond van performance kan tegenhouden.
+4. **Gaten accepteren als bekende problemen.** De meeste programma's met performanceproblemen in productie hebben het testen niet overgeslagen. Ze testten zonder afgesproken criteria, of ze testten en accepteerden de fouten daarna onder druk van de planning.
 
-### Public Edition en GROW verkleinen de scope
+## Waar u deze week begint
 
-Bij S/4HANA Cloud Public Edition, meestal afgenomen via GROW with SAP, voert SAP performancetests uit op zijn multi-tenantplatform als onderdeel van zijn eigen productstandaard en verwacht het niet dat klanten het gedeelde systeem aan belastingstests onderwerpen. Uw testwerk verschuift naar wat van u is: maatwerkintegraties, uitbreidingen, rapporten en analytics met hoog volume, de afsluit- en consolidatiereeks en het netwerkpad vanaf uw locaties. Performanceproblemen op het platform zelf gaan naar de SAP-support.
+Schrijf de vijf of zes acceptatiecriteria voor uw risicovolste transacties en jobs, met een eigenaar met naam voor elk. Kunt u de tabel hierboven niet invullen, dan bent u niet klaar om te testen, en hebt u het eerste gat gevonden.
 
-### AI helpt bij scripts, niet bij architectuur
+Controleer daarna twee dingen: dat er een verversing met gemaskeerde data op productievolume in het plan staat, en dat de concurrencycyclus klaar is voordat UAT begint.
 
-Leveranciers van belastingstesttools voegen AI toe voor scriptonderhoud en analyse van resultaten, wat helpt bij programma's waar de applicatie tussen de cycli verandert. Toets de beweringen op uw eigen landschap voordat u ervoor betaalt. SAP Cloud ALM kan helpen testcases en requirements te genereren, en AI-assistenten kunnen scenario-schetsen opstellen op basis van procesbeschrijvingen.
-
-Niets daarvan lost architectuur op. AI zal u niet vertellen dat de OData-service anders had moeten worden ontworpen, of dat een rapport te zwaar is voor zijn volumes. Die afwegingen maken nog steeds mensen, in het ontwerp, voordat er een test draait.
-
-De meeste programma's met performanceproblemen in productie hebben niet alle tests overgeslagen. Ze testten zonder afgesproken criteria, of ze testten en accepteerden de tekortkomingen daarna als bekende issues onder tijdsdruk. De discipline zit in de criteria en in het afdwingen ervan, niet in de tool. Voor de plek van performance tussen andere testsoorten, zie mijn [vergelijking van SAP-test- en validatietools](/nl/sap-testing-validation-tools-comparison/) en mijn gids over [SAP quality gates](/nl/sap-quality-gates-implementation/).
+Wilt u een onafhankelijke blik op een plan voor performancetesten of een go-livebesluit, dan help ik organisaties daarbij. U kunt [hier contact met mij opnemen](/nl/contact-noel-erp-support/).
 
 ## Veelgestelde vragen
 
 <details>
-<summary>Wat is SAP-performancetesten en waarom is het belangrijk?</summary>
+<summary>Wat is SAP-performancetesten?</summary>
 
-Het controleert hoe SAP zich gedraagt onder realistische belasting: responstijden van gebruikerstransacties, looptijden van achtergrondjobs, doorvoer van interfaces en resourcegebruik bij gelijktijdig werk.
+Het controleert hoe SAP zich gedraagt onder realistische belasting: responstijden voor gebruikerstransacties, looptijden van achtergrondjobs, doorvoer van interfaces en gebruik van resources als veel mensen tegelijk werken. Het moet vóór de go-live gebeuren.
 
-Functionele juistheid en performance zijn verschillende eigenschappen. Een transactie die voor één gebruiker correct werkt, kan voor 200 gebruikers op een time-out lopen. Een job die op testdata in tien minuten draait, kan op productievolumes uren duren. Dat na de go-live ontdekken verstoort de bedrijfsvoering, dwingt tot noodwijzigingen en schaadt het vertrouwen van gebruikers op het moment dat de adoptie het kwetsbaarst is.
+Functionele juistheid en performance zijn verschillende eigenschappen. Een transactie die voor één gebruiker correct is, kan voor 200 gebruikers een time-out geven.
 
 </details>
 
 <details>
 <summary>Wanneer moet performancetesten beginnen in een SAP-programma?</summary>
 
-Risico-identificatie begint in Explore, omdat architectuurkeuzes de performance bepalen. Actief testen begint in Realize, zodra de configuratie stabiel genoeg is om resultaten betekenis te geven. Gedeeltelijke configuratie geeft misleidende cijfers.
+Het in kaart brengen van risico's begint in Explore, omdat architectuurkeuzes de performance-uitkomsten bepalen. Het actieve testen begint in Realize, zodra de configuratie stabiel genoeg is dat de resultaten iets betekenen.
 
-Rond de laatste cyclus af vóór de UAT, niet tijdens de UAT. Performancedefecten die in de UAT opduiken, persen de resterende planning samen en creëren druk om ze als bekende issues te accepteren.
-
-</details>
-
-<details>
-<summary>Wie moet eigenaar zijn van SAP-performancetesten?</summary>
-
-Het programma, niet alleen QA. QA voert uit en rapporteert, maar de beslissingen die performance bepalen, worden in het ontwerp genomen door functionele, technische en Basis-teams. Een centrale architect of testlead op programmaniveau heeft de bevoegdheid nodig om die beslissingen vroeg te betwisten.
-
-Leg het expliciet vast in de RACI: wie de acceptatiecriteria goedkeurt, wie verantwoordelijk is voor herstel wanneer criteria niet worden gehaald en wie de go-live kan blokkeren op grond van performance.
+Rond de laatste cyclus af vóór UAT, niet tijdens. Performancedefecten die in UAT worden gevonden, persen de planning samen en zetten druk om ze als bekende problemen te accepteren.
 
 </details>
 
 <details>
-<summary>Hoe verandert RISE with SAP de verantwoordelijkheid voor performancetesten?</summary>
+<summary>Wat is het verschil tussen loadtesten en concurrencytesten in SAP?</summary>
 
-SAP is verantwoordelijk voor de infrastructuur: dimensionering, regio, netwerk en beschikbaarheid van het platform. De klant en de partner zijn verantwoordelijk voor de applicatieperformance: configuratie, uitbreidingen, OData- en Fiori-ontwerp, integratiestromen en proces-KPI's. In het document van SAP met rollen en verantwoordelijkheden voor RISE blijft SQL-tuning bij de klant, tenzij aanvullende SAP-services worden afgenomen.
+Loadtesten controleert de responstijden bij het verwachte piekvolume. Concurrencytesten controleert wat er gebeurt als veel gebruikers en jobs op hetzelfde moment op dezelfde transacties, tabellen en services werken. Daar komen lock-wachttijden, inlogpieken en gateway-knelpunten boven.
 
-Leg de verdeling vast in de acceptatiecriteria, zodat elke drempel een eigenaar heeft.
-
-</details>
-
-<details>
-<summary>Wat zijn de meest voorkomende performanceproblemen met SAP Fiori?</summary>
-
-Vier patronen dekken de meeste gevallen. Inlogpieken bij de start van de dienst, wanneer authenticatie en het opbouwen van de launchpad pieken. OData-services die grote resultaatsets teruggeven of per interactie meerdere back-end-aanroepen doen. De gatewaylaag die zelf een knelpunt wordt, en daarom tijdens tests moet worden gemonitord. En maatwerk- of sterk aangepaste apps, waar standaardaannames over performance niet gelden.
+In mijn ervaring zijn de concurrencytests de belangrijke. Voer ze eerst uit en bouw daar de volledige loadtest bovenop.
 
 </details>
 
 <details>
-<summary>Hoe bepaalt u performance-acceptatiecriteria voor SAP?</summary>
+<summary>Welke testdata moet SAP-performancetesten gebruiken?</summary>
 
-Noem de transactie, de belasting en de drempel. Bijvoorbeeld: “Het aanmaken van een order is bij 95% van de transacties binnen 3 seconden klaar met 150 gelijktijdige gebruikers in de rol orderinvoer.” Dat is testbaar.
-
-“Het systeem moet snel genoeg zijn” is dat niet. Spreek criteria af met de business in de Prepare-fase, op basis van echte operationele behoeften, en wijzig ze niet nadat de resultaten binnen zijn.
+Gemaskeerde data op productieniveau. Dat betekent productievolume en productierealisme, met persoonsgegevens en gevoelige velden gemaskeerd. Dunne testdata verbergt de trage filters, zware rapporten en lange looptijden van jobs die op dag één opduiken.
 
 </details>
 
 <details>
-<summary>Wat gebeurt er als performancetesten wordt overgeslagen of ingekort?</summary>
+<summary>Welke tools worden gebruikt voor SAP-performancetesten?</summary>
 
-Problemen komen in productie aan het licht: jobs die hun venster overschrijden en andere blokkeren, Fiori-apps die op piekmomenten op een time-out lopen, een maandafsluiting die twee keer zo lang duurt en rapportagedeadlines mist, interfacewachtrijen die oplopen.
+Loadgenerators zoals OpenText Professional Performance Engineering (voorheen LoadRunner Professional), Tricentis NeoLoad en Apache JMeter genereren de belasting. SAP Cloud ALM of SAP Solution Manager beheren de testgevallen en resultaten, en monitoring aan de SAP-kant laat zien wat het systeem onder belasting deed.
 
-Gebruikers die in hun eerste weken performanceproblemen tegenkomen, vormen een negatief beeld van het systeem dat moeilijk om te keren is. En noodherstel tijdens live gebruik kost meer dan het testen had gekost, omdat wat in Realize een ontwerpbeslissing was, een urgente architectuurwijziging wordt.
+</details>
+
+<details>
+<summary>Wie is verantwoordelijk voor performancetesten bij RISE with SAP?</summary>
+
+SAP is verantwoordelijk voor de infrastructuur: sizing, regio, netwerk en beschikbaarheid van het platform. Het RISE-document over rollen en verantwoordelijkheden van SAP laat het uitvoeren van loadtests en het tunen van dure SQL-statements bij de klant, tenzij SAP Cloud Application Services tegen meerprijs worden afgenomen.
+
+De klant en de partner zijn verantwoordelijk voor de applicatieperformance en het acceptatiebesluit. Leg de verdeling vast in de acceptatiecriteria, zodat elke drempel een eigenaar heeft.
 
 </details>

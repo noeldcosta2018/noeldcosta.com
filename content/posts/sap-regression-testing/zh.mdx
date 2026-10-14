@@ -1,0 +1,204 @@
+---
+title: "SAP回归测试：升级、版本发布与测试范围"
+h1: "SAP回归测试：升级、版本发布与测试范围"
+slug: "sap-regression-testing"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-regression-testing.webp"
+heroAlt: "两组一模一样的服务器机柜并排而立，一组给项目，一组给日常运营"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "sap-cloud-alm", "s4hana-implementation", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "SAP回归测试：升级、云版本发布与测试范围"
+metaDescription: "SAP回归测试详解：什么会触发回归测试、公有版和私有版云版本的发布周期、用哪些影响分析工具确定范围、何时做自动化，以及项目期间为什么要把项目环境和BAU环境分开。"
+primaryKeyword: "SAP回归测试"
+excerpt: "SAP回归测试证明一次变更、一次升级或一个新版本没有弄坏原本正常的流程。本文讲如何用影响分析确定范围，如何跟上云版本的发布节奏，以及如何不让项目变更和支持变更互相干扰。"
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "回归测试证明一次变更没有弄坏原本正常的流程"
+  - "SAP Cloud ERP公有版每年升级两次，您的回归测试窗口就在测试系统升级和生产系统升级之间"
+  - "私有版遵循两年一次的版本周期，每六个月发布一次功能包堆栈；技术升级由SAP执行，测试由您负责"
+  - "用影响分析确定运行范围，然后先测风险最高的业务流程"
+  - "测试用例多、需要大量反复测试时就做自动化；达不到这个程度，手工测试就可以"
+  - "在项目期间，运行相互独立的项目环境和BAU环境，让每一组变更单独做回归测试"
+pullQuote: "把项目变更和线上支持变更分开，各自在该测的地方测。"
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Cloud ERP"
+  - "SAP Cloud ALM"
+  - "SAP Solution Manager"
+  - "Business Process Change Analyzer"
+  - "Scope and Effort Analyzer"
+  - "Tricentis LiveCompare"
+  - "Tricentis Tosca"
+  - "Panaya"
+  - "Worksoft"
+originalUrl: "https://noeldcosta.com/sap-regression-testing/"
+canonicalUrl: "https://noeldcosta.com/zh-CN/sap-regression-testing/"
+locale: "zh"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP回归测试证明一次变更、一个支持包或一个新版本没有弄坏原本正常的业务流程。您用影响分析来确定范围，先跑风险最高的流程，并且每次系统变化都要重复进行，而不是只在上线前做一次。
+
+触发因素是传输、升级和云版本发布。在SAP Cloud ERP公有版上，升级日期由SAP决定，所以您的回归测试套件必须在新版本到来之前准备好。
+
+回归测试是我的[SAP测试指南](/zh-CN/sap-testing-explained/)中的一种测试类型。本文讲什么会触发它、如何确定范围、何时做自动化，以及如何不让项目和线上支持互相弄坏对方的工作。
+
+## SAP回归测试覆盖什么
+
+SAP是一个集成系统。改一个定价条件可能弄坏开票，销售订单上加一个新字段可能让一个接口停掉。一个支持包可能改动您所依赖的某个标准程序。
+
+回归测试是对本来不应该变化的流程重新运行测试。功能测试问的是新东西能不能用，回归测试问的是其他一切是否依然正常。
+
+它贯穿系统的整个生命周期，而不只是在项目期间：
+
+1. **传输**。每一个从开发系统移到质量系统的变更，对它涉及的流程都是回归风险。
+2. **支持包和功能包**。SAP的修正和新功能会改变您配置之下的标准代码。
+3. **版本升级**。迁移到新版本，或者一个不由您安排的云版本发布，一次改变的东西要多得多。
+4. **转换**。ECC到S/4HANA的转换会保留您的配置和自定义代码，所以凡是保留下来的都必须重新测试。我的[ECC到S/4HANA迁移指南](/zh-CN/ecc-to-s4hana-migration/)说明了这在计划中处于什么位置。
+5. **集成和扩展**。一个相连系统中的变更，或一个并行（side-by-side）扩展，可以在没有任何SAP传输的情况下弄坏SAP这一侧。
+
+让回归测试套件和为新功能编写的测试分开。这个套件是一个稳定的库，收录业务部门承受不起失去的流程，例如订单到收款、采购到付款和月结。
+
+## 云版本发布如何改变回归测试
+
+在本地部署中，升级时间由您选择。在云版本中，时间表更多由SAP决定，回归测试变成了一项周期性的日程承诺。
+
+### 公有版：每年两次升级
+
+SAP Cloud ERP公有版（原名S/4HANA Cloud Public Edition）每年有两次大升级，在2月和8月。两次之间还会有较小的功能交付。
+
+SAP先升级测试系统，几周后再升级生产系统。这段间隔就是您的回归测试窗口，生产系统一旦升级，就没有第二次机会。
+
+SAP的[关于升级后测试和回归测试的Cloud ALM课程](https://learning.sap.com/courses/implementing-with-sap-cloud-alm/conducting-post-upgrade-and-regression-testing-for-sap-s-4hana-cloud-public-edition_b6d0c843-9235-4b3a-a6b9-f0a5a62f9360)建议在Cloud ALM中创建一个回归测试计划，并在每个版本中重复使用。公有版还包含一个免费的测试自动化工具，带有预先交付的测试脚本，因此标准流程有一个起点。
+
+### 私有版：两年一次的版本周期
+
+SAP Cloud ERP Private，即通过RISE with SAP销售的私有版，遵循本地部署的版本周期。根据[SAP Learning](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-private-edition/navigating-release-upgrades_ae2d796c-bafd-4e04-8b41-562ebda9eb49)，每两年发布一个新的基础版本，每六个月跟进一次功能包堆栈，每个版本有七年的主流维护。
+
+要留在主流维护之内，您必须至少每七年安装一次升级，而RISE允许您每年申请一次升级。技术升级由SAP执行，但规划、准备和测试仍然是客户或合作伙伴的工作。
+
+这种分工对预算很重要。升级本身可能包含在订阅之中，而围绕升级的回归测试却不包含在内。
+
+下表把各种回归测试触发因素并列在一起：
+
+| 变更 | 频率 | 谁定日期 | 回归测试必须覆盖什么 |
+|---|---|---|---|
+| 传输到质量系统 | 每天或每周 | 您的团队 | 变更对象涉及的流程 |
+| 公有版升级 | 每年两次，2月和8月 | SAP | 范围内的每一个流程，先测自定义逻辑，在生产系统升级前的窗口内完成 |
+| 私有版功能包堆栈 | 每六个月一次，如果您采用 | 您，在SAP的时间表之内 | 您在用的、发生变化的标准功能，加上自定义代码 |
+| 私有版版本升级 | 至少每七年一次，在RISE下可申请每年最多一次 | 您，与SAP一起 | 完整套件、自定义代码和集成 |
+| ECC到S/4HANA转换 | 一次 | 您 | 您保留下来的一切 |
+
+## 用影响分析确定范围
+
+每次变更后都跑完整套件，又慢又贵。跑得太少，缺陷就会漏过去，这个缺口会在生产中暴露出来。
+
+影响分析介于两者之间。它把变更的内容和您实际在用的内容做比较，列出风险最高的流程和对象，让回归测试从它们开始。
+
+您会遇到这些工具：
+
+1. **SAP Solution Manager**。Business Process Change Analyzer是Test Suite的一部分，显示一次变更影响哪些业务流程。[Scope and Effort Analyzer](https://support.sap.com/en/alm/solution-manager/processes-72/scope-effort-analyzer.html)在您安装支持包或增强包之前估算其影响，SAP称之为一种规划工具。
+2. **SAP Cloud ALM**。Cloud ALM管理回归测试计划、执行和缺陷，并与自动化工具连接。对于公有版升级，SAP的Release Assessment and Scope Dependency工具会显示一个版本中的哪些变更影响您的范围。
+3. **Tricentis LiveCompare**。根据[LiveCompare文档](https://docs.tricentis.com/livecompare-2026.1/content/welcome_to_livecompare.htm)，它识别出一组最小的、风险最高的待测对象，然后对照您的测试库报告测试命中和测试缺口。SAP以SAP Change Impact Analysis by Tricentis之名转售它，它与Tricentis Tosca集成。
+4. **Panaya**。Panaya的[SAP升级产品](https://www.panaya.com/sap/sap-upgrades/)把变更影响分析、代码修正、测试管理和自动化结合在一起，覆盖S/4HANA各版本、功能包堆栈和支持包堆栈。
+
+在以Solution Manager为基础构建之前，先看看它的状况。[SAP Support](https://support.sap.com/en/alm/solution-manager.html)表示，Solution Manager 7.2的主流维护于2027年底结束。购买Business Suite 7延长维护的客户可以用到2030年底，SAP建议在2027年底之前迁移到Cloud ALM。
+
+影响分析缩小范围，但范围不能只由它来定，所以无论工具怎么说，都要保留一组每次都运行的业务关键流程。
+
+我对[SAP测试与验证工具](/zh-CN/sap-testing-validation-tools-comparison/)的比较，讲了这些产品如何配合，以及您的SAP支持合同已经包含了什么。
+
+## 业务量和重复次数值得时再做自动化
+
+回归测试是测试自动化最能体现价值的地方，因为同样的测试要一遍又一遍地运行。但这并不意味着每个回归测试套件都应该自动化。
+
+我的原则很简单。测试用例数量大、需要大量反复测试时，就做自动化。达不到这个程度，手工测试就可以。
+
+一个公有版客户每年跑两次完整套件，中间还有传输，很快就会达到这个门槛。一个每年只变几次的小型私有版系统，可能达不到。
+
+购买之前先问这些问题：
+
+1. **您有多少个回归测试用例**，其中多少个每个周期都要运行？
+2. **您多久运行一次**，把传输、功能包和升级都算进去，而不只是版本升级？
+3. **手工跑一遍要多久**，能否放进回归测试窗口之内？
+4. **界面和流程变化时，谁来维护脚本**？
+
+脚本维护是人们低估的成本。一个没人更新的自动化套件，会因为与系统毫不相干的原因而失败，团队也就不再信任它。
+
+在我主导的项目中，我的团队用过Tricentis Tosca、Worksoft、Panaya、SAP Cloud ALM、SAP Solution Manager和UiPath。按与您的系统和团队的契合度来挑，而不是按演示来挑。我的[SAP测试自动化指南](/zh-CN/sap-test-automation-guide/)讲了从哪里入手，以及如何判断回报。
+
+## 项目期间把项目变更和BAU变更分开
+
+SAP项目中最难的回归测试问题不是工具，而是两股变更同时穿过同一套系统。
+
+项目在构建新功能的同时，线上支持还在不断修复生产问题。如果两股变更共用一条开发和质量路径，一个支持修复可能弄坏项目测试，一个项目变更也可能混进支持发布。到那时，谁也说不清是哪个变更导致了失败。
+
+我的答案是运行两套独立的环境。一套给项目，一套给日常运营（BAU），这样线上支持变更和项目变更就分开测试。
+
+<explainer-compare title="SAP项目期间的两套环境" caption="每一股变更都有自己通往生产的路径，所以一次回归测试失败只指向一组变更。" options="项目环境|BAU环境" criteria="经过它的是什么 => 项目的新功能、配置和自定义代码 ; 对线上系统的修复和小变更|回归测试重点 => 项目改动的流程，加上核心套件 ; 每个修复涉及的流程，加上核心套件|进入生产 => 在上线或推广批次时 ; 作为支持发布，按常规时间表"></explainer-compare>
+
+两套环境解决了隔离问题，随之又带来一项新工作。每一个BAU修复也必须进入项目环境，否则项目上线时就会缺少它。
+
+从一开始就为此做好计划：
+
+1. **按固定节奏把每一个BAU变更回补到项目环境**，并逐一跟踪。
+2. **每次回补后重新运行受影响的项目测试**，而不只是在最后才跑。
+3. **临近切换时冻结BAU变更**，紧急修复除外，紧急修复要经过两套环境。
+4. **上线前在项目环境中运行完整的回归测试套件**，使用生产级的脱敏数据。
+
+第二套环境要花钱，但一次没人说得清是哪个变更弄坏了开票的上线也要花钱。我的[S/4HANA测试策略](/zh-CN/s4hana-testing-strategy/)讲了回归测试周期与集成测试、用户验收测试如何并行。
+
+## 从哪里开始
+
+在需要之前就把回归测试套件建好。列出业务部门承受不起失去的流程，为每个流程写一个测试，手工跑一遍，看看一个完整周期要多长时间。
+
+这个数字会告诉您，下一个升级窗口是否现实，自动化是否值得。如果您正处在项目中途，检查一下项目变更和BAU变更是否共用一条通往生产的路径。
+
+如果您想就回归测试方法或升级计划听取独立意见，我可以为您的组织提供这方面的帮助。您可以[在这里联系我](/zh-CN/contact-noel-erp-support/)。
+
+## 常见问题
+
+<details>
+<summary>什么是SAP回归测试？</summary>
+
+它对本来不应该变化的SAP业务流程重新运行测试，证明一次传输、一个支持包、一次升级或一个新版本没有弄坏它们。它覆盖订单到收款和月结这样的集成流程，而不只是发生变化的对象。
+
+</details>
+
+<details>
+<summary>SAP Cloud ERP公有版多久需要做一次回归测试？</summary>
+
+每年至少两次，因为SAP在2月和8月升级公有版。SAP先升级测试系统，几周后再升级生产系统，所以回归测试必须在这段间隔内完成。两个版本之间的传输还需要各自做规模较小的回归测试。
+
+</details>
+
+<details>
+<summary>RISE with SAP私有版升级时，回归测试由谁来做？</summary>
+
+技术升级由SAP执行。规划、准备和测试仍由客户或实施合作伙伴负责，所以回归测试的工作量要在订阅之外单独做预算。
+
+</details>
+
+<details>
+<summary>哪些工具有助于确定SAP回归测试的范围？</summary>
+
+影响分析工具把变更的内容和您在用的内容做比较。常见的选择有SAP Solution Manager中的Business Process Change Analyzer和Scope and Effort Analyzer，以及针对公有版的Release Assessment and Scope Dependency工具。Tricentis LiveCompare和Panaya做的是同样的工作，SAP Cloud ALM则管理回归测试计划和执行。
+
+</details>
+
+<details>
+<summary>SAP回归测试应该自动化吗？</summary>
+
+测试用例数量大、需要大量反复测试时就做自动化。达不到这个程度，手工测试就可以。购买工具之前，先数一数您的测试用例以及它们多久运行一次，并为脚本维护做好预算。
+
+</details>
+
+<details>
+<summary>在SAP项目期间，如何一边支持线上系统一边做回归测试？</summary>
+
+运行两套独立的环境，一套给项目，一套给日常运营。这样线上支持变更和项目变更就分开测试。把每一个BAU修复回补到项目环境，并重新运行受影响的测试。
+
+</details>

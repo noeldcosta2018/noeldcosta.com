@@ -1,0 +1,211 @@
+---
+title: "SAP korisničko testiranje prihvaćanja: tko je vlasnik i kako ga provesti"
+h1: "SAP korisničko testiranje prihvaćanja: tko je vlasnik i kako ga provesti"
+slug: "sap-user-acceptance-testing"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-user-acceptance-testing.webp"
+heroAlt: "Noel D'Costa u prostoriji za obuku pripremljenoj za korisničko testiranje prihvaćanja, sa skriptama i obrascima za potpis"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "s4hana-implementation", "sap-activate", "sap-governance"]
+author: "Noel D'Costa"
+metaTitle: "SAP UAT (testiranje prihvaćanja): uloge, skripte, potpis"
+metaDescription: "SAP korisničko testiranje prihvaćanja objašnjeno: zašto je UAT vlasništvo poslovanja, koliko ga planirati, kako ga pripremiti, pisati skripte i dobiti valjan potpis."
+primaryKeyword: "SAP UAT testiranje"
+excerpt: "SAP korisničko testiranje prihvaćanja je faza u kojoj poslovanje dokazuje da sustav izvodi njegove procese prije puštanja u rad. Tko je vlasnik, koliko traje i kako provesti skripte, trijažu nedostataka i potpisivanje."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "SAP UAT je dokaz poslovanja, vlastitim riječima, da sustav izvodi njegove procese prije puštanja u rad"
+  - "UAT pripada poslovanju. IT i implementacijski partner pripremaju, podržavaju i ispravljaju, ali ne prihvaćaju"
+  - "Na S/4HANA programu za UAT planirajte najmanje 6 do 8 tjedana, nakon što integracijsko testiranje završi"
+  - "Skripte pišite kao poslovne scenarije iz potpisanih dizajna procesa, a ne kao kontrolne liste transakcija"
+  - "Svaki nalaz iz UAT-a svakodnevno razvrstajte kao nedostatak, zahtjev za promjenom, problem s podacima ili potrebu za obukom"
+  - "Potpis je potpisana odluka imenovanih vlasnika procesa i ulazi u opsežnu kontrolnu listu za cutover dogovorenu unaprijed"
+pullQuote: "Ako UAT potpiše IT, nitko ništa nije prihvatio. Vlasnik mora biti poslovanje."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Activate"
+  - "SAP Cloud ALM"
+  - "SAP Solution Manager"
+  - "SAP Fiori"
+  - "SAP S/4HANA Cloud Private Edition"
+originalUrl: "https://noeldcosta.com/sap-user-acceptance-testing/"
+canonicalUrl: "https://noeldcosta.com/hr/sap-user-acceptance-testing/"
+locale: "hr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP korisničko testiranje prihvaćanja (UAT) je faza u kojoj poslovni korisnici izvode vlastite procese u konfiguriranom sustavu i formalno ga prihvaćaju prije puštanja u rad. Vlasnik je poslovanje, IT i implementacijski partner ga podržavaju, a na S/4HANA programu za njega planiram najmanje 6 do 8 tjedana.
+
+Najčešći neuspjeh u testiranju koji vidim je jednostavan: premalo testiranja u UAT-u i u integracijskom testiranju sustava (SIT). Kada vremenski plan klizne, te se dvije faze stisnu, a praznine se umjesto toga pojave nakon puštanja u rad.
+
+U nastavku: tko što radi, priprema, skripte, trijaža nedostataka i potpis koji nešto znači. Gdje se UAT nalazi među ostalim vrstama testiranja, pročitajte najprije u mom pregledu [SAP testiranje objašnjeno](/hr/sap-testing-explained/).
+
+## Tko je vlasnik SAP UAT-a: poslovanje, uz podršku IT-a i partnera
+
+Korisničko testiranje prihvaćanja pripada poslovanju. To je moj stav i ne bi se smio pomaknuti kada raspored postane tijesan.
+
+Razlog je u nazivu. Prihvaćanje je poslovna odluka o tome izvodi li sustav poslovanje, pa je mogu donijeti samo ljudi koji vode poslovanje. Ako UAT potpiše IT ili partner, nitko ništa nije prihvatio.
+
+SAP-ova vlastita metodologija kaže isto. Njezine [smjernice o strategiji testiranja za S/4HANA Cloud Private Edition](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-private-edition/explaining-the-test-strategy_f9e28dee-5e09-49c3-b06c-4c40cfc1f49a) stavljaju UAT u fazu Realize. Partnerovi stručnjaci za konfiguraciju postavljaju ručne testne slučajeve, a korisnikovi stručnjaci iz poslovnih područja ih izvode i dokumentiraju rezultate.
+
+Izvediva podjela posla izgleda ovako:
+
+| Uloga | Vlasnik je u UAT-u | Nije vlasnik |
+|---|---|---|
+| Vlasnici poslovnih procesa | Opsega scenarija, kriterija prihvaćanja, konačnog potpisa za svoj proces | Ispravljanja konfiguracije ili koda |
+| Ključni korisnici i testeri | Izvođenja skripti, bilježenja rezultata i dokaza, prijave nalaza | Samostalne odluke da nedostatak „nije nedostatak" |
+| Voditelj UAT-a (s poslovne strane) | Dnevnog plana, napretka, vođenja trijaže, izvještaja o spremnosti sponzoru | Tehničkih ispravaka |
+| Implementacijski partner | Nacrta skripti, spremnosti testnog sustava, ispravljanja nedostataka, podrške ponovnom testiranju | Prihvaćanja |
+| Interni IT | Okruženja, pristupa, sučelja prema drugim sustavima, transporta | Prihvaćanja |
+| Podatkovni tim | Učitavanja i osvježavanja testnih podataka, podrške usklađivanju | Dizajna poslovnih scenarija |
+
+Voditelj UAT-a trebao bi dolaziti iz poslovanja, a ne od partnera. UAT koji vodi partner skreće prema dokazivanju da izgradnja radi, a to je drugo pitanje od toga može li poslovanje raditi na sustavu.
+
+## Priprema za UAT i zašto treba 6 do 8 tjedana
+
+UAT treba najmanje 6 do 8 tjedana. S manje od toga poslovanje jednom testira idealni tijek, nema vremena ponovno testirati ispravke i nikada ne stigne do iznimaka u kojima žive stvarni problemi.
+
+Ti tjedni funkcioniraju samo ako UAT počne na stabilnom sustavu. SAP-ova je smjernica da se poslovni procesi testiraju kada su integracije postavljene i podaci migrirani za taj proces. To znači da SIT mora prvo završiti, prema dogovorenim izlaznim kriterijima, a moj vodič za [strategiju testiranja S/4HANA](/hr/s4hana-testing-strategy/) opisuje kako su ti ciklusi povezani.
+
+Prije nego što se prvi tester prijavi, ovo bi trebalo biti spremno:
+
+1. **Potpisani dizajni procesa.** Skripte se pišu iz njih, pa nepotpisani dizajni znače nedovršene skripte.
+2. **Ulazni kriteriji ispunjeni i zabilježeni.** SIT dovršen, nema otvorenih kritičnih nedostataka, a testni sustav zamrznut osim kontroliranih ispravaka.
+3. **Testni sustav koji izgleda kao produkcija.** Konfiguracija, sučelja, uloge i autorizacije onakvi kakvi će biti pri puštanju u rad.
+4. **Realistični testni podaci.** Maskirani, na produkcijskoj razini, učitani i usklađeni prije početka testiranja. Moj vodič za [upravljanje SAP testnim podacima](/hr/sap-test-data-management/) pokriva kako.
+5. **Testeri oslobođeni redovnog posla.** Imenujte ih, dogovorite njihove sate s njihovim nadređenima i stavite to u pisani oblik.
+6. **Testeri obučeni na novom sustavu.** Kratak prolazak kroz Fiori aplikacije i transakcije koje će koristiti, prije UAT-a, a ne tijekom njega.
+7. **Jedan alat za upravljanje testiranjem.** Skripte, rezultati, dokazi i nedostaci na jednom mjestu, a ne u paralelnim proračunskim tablicama.
+
+Stavka 5 je mjesto gdje UAT obično tiho propada. Testeri od kojih se traži da UAT uklope oko zatvaranja na kraju mjeseca stavit će zatvaranje na prvo mjesto, i u pravu su.
+
+## Pisanje UAT skripti koje poslovni korisnici mogu izvesti
+
+UAT skripta je poslovni scenarij, a ne popis transakcija. „Kreirajte prodajni nalog" testira ekran. „Preuzmite narudžbu od novog kupca s kreditnom blokadom, otpustite je, isporučite i fakturirajte" testira poslovanje.
+
+Skripte gradite iz potpisanih dizajna procesa i svakoj dajte jasan očekivani rezultat poslovnim pojmovima. Tester bi trebao moći reći prolazi ili ne prolazi bez pitanja konzultantu.
+
+Pokrijte četiri vrste scenarija:
+
+1. **Ključni tokovi.** Svakodnevni procesi koji održavaju poslovanje, kao što su order to cash, procure to pay i record to report.
+2. **Iznimke.** Povrati, kreditne blokade, djelomične isporuke, promjene cijena, storniranja i odobrenja koja budu odbijena.
+3. **Kraj razdoblja.** Koraci zatvaranja mjeseca i godine koje financijski tim stvarno izvodi, redoslijedom kojim ih izvodi.
+4. **Provjere uloga.** Svaki tester radi u ulozi koju će imati pri puštanju u rad, kako bi se praznine u autorizacijama pokazale sada.
+
+Neka partner napiše nacrte skripti, a zatim neka ih ključni korisnici prepišu svojim jezikom. Ako poslovanje ne može slijediti skriptu bez pomoći, napisana je za tim za izgradnju.
+
+U [SAP Cloud ALM-u](https://learning.sap.com/courses/implementing-with-sap-cloud-alm/planning-and-executing-testing_ef46a49b-9885-4aaa-841d-5ac9c80a3681) ručni testni slučajevi polaze od procesa, a planovi testiranja grupiraju ih u cikluse. Testeri svaki korak označavaju kao prolaz ili pad, bilježe stvarni rezultat i prijavljuju nedostatak iz izvođenja testa, čime se čuva veza između skripte i nedostatka.
+
+Na programima koji za upravljanje testiranjem još koriste SAP Solution Manager 7.2 imajte na umu da njegovo standardno održavanje završava krajem 2027. ([SAP Support](https://support.sap.com/en/alm/solution-manager.html)). Nove programe planirajte na Cloud ALM-u.
+
+## Trijaža nedostataka tijekom UAT-a
+
+Nije svaki nalaz iz UAT-a nedostatak. Ako ih sve tretirate kao nedostatke, zatrpat ćete partnera, a ako ih sve tretirate kao zahtjeve za promjenom, sakrit ćete stvarne pogreške.
+
+Održavajte sastanak trijaže svaki dan UAT-a. Vodi ga poslovni voditelj UAT-a, uz partnerove funkcionalne voditelje i predstavnika IT-a, a svaki novi nalaz napušta prostoriju s vrstom, ozbiljnošću i vlasnikom.
+
+Jednostavna klasifikacija pokriva većinu nalaza:
+
+| Vrsta nalaza | Što znači | Tko postupa | Učinak na potpis |
+|---|---|---|---|
+| Nedostatak | Sustav ne radi ono što kaže potpisani dizajn | Partner ispravlja, tester ponovno testira | Kritični i visoki nedostaci blokiraju potpis |
+| Zahtjev za promjenom | Dizajn je ispunjen, ali poslovanje sada želi nešto drugo | Odlučuje tijelo za dizajn, uz trošak i vrijeme | Ne blokira, osim ako poslovanje kaže da proces bez toga ne može raditi |
+| Problem s podacima | Pogrešni ili nedostajući matični ili transakcijski podaci | Podatkovni tim ispravlja, tester ponovno testira | Blokira ako isti podaci idu u produkciju |
+| Problem s obukom ili upotrebom | Sustav radi, ali tester nije znao kako ga koristiti | Voditelj obuke ažurira materijale | Ne blokira, ali ulazi u plan obuke |
+| Problem s autorizacijom | Ulozi nedostaje pristup ili ga ima previše | Sigurnosni tim prilagođava ulogu | Blokira za zahvaćenu ulogu |
+
+Definicije ozbiljnosti dogovorite prije početka UAT-a, poslovnim pojmovima. Kritični nedostatak zaustavlja proces bez zaobilaznog rješenja. Visoki ima zaobilazno rješenje koje poslovanje ne može održati pri punom volumenu.
+
+Pratite stupac zahtjeva za promjenom. Dugačak popis zahtjeva za promjenom u UAT-u obično znači da poslovanje nije bilo pravilno uključeno u dizajn, a to je problem koji treba riješiti prije sljedećeg vala.
+
+## Kako dobiti UAT potpis koji vrijedi
+
+SAP-ova Activate obuka navodi da je faza Realize završena kada je korisničko testiranje prihvaćanja dovršeno i potpisano. Neka taj potpis bude dokument, a ne niz e-poruka.
+
+Svaki vlasnik poslovnog procesa potpisuje za svoj proces. Potpis treba zabilježiti:
+
+1. **Što je testirano.** Izvedeni, uspješni i neuspješni scenariji, s dokazima pohranjenima u alatu za testiranje.
+2. **Što je još otvoreno.** Svaki otvoreni nedostatak, s ozbiljnošću, vlasnikom i ciljnim datumom.
+3. **Što je prihvaćeno uz zaobilazno rješenje.** Svako navedeno poimence, sa zaobilaznim rješenjem koje je poslovanje pristalo provoditi.
+4. **Tko je potpisao i kada.** Imenovana osoba po procesu, a ne odbor.
+
+Izlazne kriterije napišite prije početka UAT-a i ne mijenjajte ih kada stignu rezultati. Ako poslovanje ipak želi ići u rad s prazninama, zabilježite to kao potpisanu odluku. Moj vodič za [SAP quality gates](/hr/sap-quality-gates-implementation/) pokriva kako se ova vrata uklapaju u prijelaze između faza.
+
+Potpis UAT-a nije odluka o puštanju u rad. On je ulaz u nju.
+
+Kriterij za puštanje u rad na kojem inzistiram je opsežna kontrolna lista za cutover dogovorena unaprijed. Potpis UAT-a jedan je redak na njoj, uz usklađivanje podataka, obuku i probu cutovera.
+
+Nakon potpisa zaštitite ono što je prihvaćeno. Svaki ispravak i transport od tog trenutka do puštanja u rad treba ponovno testirati, a moj vodič za [SAP regresijsko testiranje](/hr/sap-regression-testing/) objašnjava kako to držati pod kontrolom.
+
+## Jednostavan UAT predložak
+
+Ne trebate dugačak dokument. Trebate jedan plan koji svaki put odgovara na ista pitanja, napisan prije početka UAT-a i potpisan od strane poslovanja.
+
+Jednostavan okvir to pokriva:
+
+| Odjeljak | Što sadrži | Vlasnik |
+|---|---|---|
+| Opseg | Procesi, organizacijske jedinice i uloge u opsegu te što je izričito izvan njega | Vlasnici poslovnih procesa |
+| Raspored | Datumi početka i završetka, ciklusi, prozori za ponovno testiranje, izvođenja na kraju razdoblja | Voditelj UAT-a |
+| Tim | Testeri po procesu, njihovo oslobađanje od redovnog posla, kontakti za podršku partnera i IT-a | Voditelj UAT-a i neposredni nadređeni |
+| Ulazni kriteriji | Izlaz iz SIT-a ispunjen, testni sustav zamrznut, podaci učitani i usklađeni, testeri obučeni | Voditelj UAT-a s voditeljem programa |
+| Okruženje i podaci | Testni sustav, sučelja u opsegu, maskirani podaci na produkcijskoj razini, plan osvježavanja | IT i podatkovni tim |
+| Skripte | Popis scenarija po procesu, očekivani rezultati, veza na dizajn procesa | Partner piše nacrte, ključni korisnici odobravaju |
+| Proces za nedostatke | Vrste nalaza, definicije ozbiljnosti, dnevna trijaža, pravila ponovnog testiranja | Voditelj UAT-a vodi trijažu |
+| Izvještavanje | Dnevni napredak, otvoreni nedostaci po ozbiljnosti, blokade prema sponzoru | Voditelj UAT-a |
+| Izlazni kriteriji | Pragovi za otvorene nedostatke po ozbiljnosti, uspješni scenariji, dogovorena zaobilazna rješenja | Vlasnici poslovnih procesa |
+| Potpis | Blok za potpis po vlasniku procesa, popis prihvaćenih zaobilaznih rješenja | Vlasnici poslovnih procesa i sponzor |
+
+Predložak držite istim kroz valove. Drugi rollout trebao bi ponovno koristiti skripte i lekcije iz prvog vala, a ne početi ispočetka.
+
+## Gdje početi
+
+Ovaj mjesec imenujte voditelja UAT-a iz poslovanja i zamolite svakog vlasnika procesa da nominira testere s oslobođenim vremenom. Zatim u plan nakon SIT-a stavite 6 do 8 tjedana za UAT i branite ih kada vremenski plan postane tijesan.
+
+Ako Vaš UAT vodi partner ili ga se stalno stišće, pomažem programima da ga pravilno postave. [Ovdje me možete kontaktirati](/hr/contact-noel-erp-support/).
+
+## Često postavljana pitanja
+
+<details>
+<summary>Što je korisničko testiranje prihvaćanja u SAP-u?</summary>
+
+To je faza u kojoj poslovni korisnici testiraju konfigurirani SAP sustav prema svojim stvarnim procesima i formalno ga prihvaćaju prije puštanja u rad. U SAP Activateu odvija se u fazi Realize, nakon integracijskog testiranja. Ključni korisnici izvode skripte scenarija, bilježe rezultate i prijavljuju nalaze, a vlasnici procesa potpisuju.
+
+</details>
+
+<details>
+<summary>Tko je odgovoran za UAT na SAP projektu?</summary>
+
+Poslovanje: vlasnici procesa odlučuju o opsegu i potpisuju, a ključni korisnici izvode testove. Implementacijski partner piše nacrte skripti i ispravlja nedostatke, a interni IT osigurava okruženja, pristup i sučelja. Ni IT ni partner ne bi trebali prihvatiti sustav u ime poslovanja.
+
+</details>
+
+<details>
+<summary>Koliko treba trajati SAP UAT?</summary>
+
+Na S/4HANA programu planirajte najmanje 6 do 8 tjedana. To ostavlja vremena za izvođenje ključnih tokova, iznimaka i koraka na kraju razdoblja, a zatim za ponovno testiranje ispravaka. Kraći UAT obično jednom testira idealni tijek, a ostalo pronađe nakon puštanja u rad.
+
+</details>
+
+<details>
+<summary>Koja je razlika između SIT-a i UAT-a u SAP-u?</summary>
+
+Integracijsko testiranje sustava (SIT) provjerava rade li procesi i sučelja zajedno kroz module i sustave, a izvodi ga uglavnom projektni tim. UAT provjerava može li poslovanje izvoditi svoje procese na sustavu, a izvode ga poslovni korisnici. SIT bi trebao završiti prije početka UAT-a.
+
+</details>
+
+<details>
+<summary>Što treba sadržavati UAT potpis?</summary>
+
+Testirane scenarije i njihove rezultate, svaki otvoreni nedostatak s vlasnikom i datumom, sva zaobilazna rješenja koja je poslovanje prihvatilo i imenovani potpis po vlasniku procesa. Izlazne kriterije dogovorite prije početka UAT-a. Potpis s prazninama treba biti zabilježena poslovna odluka.
+
+</details>
+
+<details>
+<summary>Može li se SAP Cloud ALM koristiti za UAT?</summary>
+
+Da. SAP Cloud ALM podržava ručne testne slučajeve izgrađene iz procesa, planove testiranja za svaki ciklus, bilježenje prolaza ili pada korak po korak i nedostatke prijavljene iz izvođenja testa. Prema SAP-ovim smjernicama partnerovi stručnjaci postavljaju testne slučajeve, a korisnikovi poslovni stručnjaci ih ondje izvode i dokumentiraju rezultate.
+
+</details>

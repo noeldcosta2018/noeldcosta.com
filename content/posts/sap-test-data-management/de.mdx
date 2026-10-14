@@ -1,0 +1,208 @@
+---
+title: "SAP-Testdatenmanagement: maskierte Daten in Produktionsgröße"
+h1: "SAP-Testdatenmanagement: maskierte Daten in Produktionsgröße"
+slug: "sap-test-data-management"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-test-data-management.webp"
+heroAlt: "Ein Laptop mit einer maskierten Datentabelle neben einer Datenlandkarte verbundener Datenbanken"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "sap-data-migration", "s4hana-implementation", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "SAP-Testdatenmanagement: Kopien, Maskierung und Tools"
+metaDescription: "SAP-Testdatenmanagement in der Praxis: maskierte Daten in Produktionsgröße, System- und Mandantenkopien, selektive Kopiertools und was die DSGVO für Testsysteme heißt."
+primaryKeyword: "SAP Testdatenmanagement"
+excerpt: "SAP-Testdaten müssen wie Produktionsdaten aussehen und dürfen keine Produktionsdaten sein. Wie Sie maskierte Daten in Produktionsgröße in Ihre Testsysteme bringen, welche Kopiermethoden und Tools passen und wo das Datenschutzrecht die Grenze zieht."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "Meine Regel für SAP-Testdaten: maskiert, aber auf Produktionsniveau in Volumen und Realitätsnähe"
+  - "Kleine, von Hand erstellte Testdaten verbergen die Fehler, die zählen, besonders bei Performance- und Parallelitätstests"
+  - "Nach der DSGVO sind pseudonymisierte Daten weiterhin personenbezogene Daten, also braucht auch eine maskierte Kopie eine Zugriffskontrolle"
+  - "Wählen Sie zwischen Vollkopien, Mandantenkopien und selektiven Kopiertools nach Testphase, nicht aus Gewohnheit"
+  - "Maskieren Sie, bevor die Daten jemanden erreichen, der sie nicht sehen sollte, und halten Sie die Maskierung über verbundene Systeme hinweg konsistent"
+  - "Geben Sie der Projektlandschaft und der Landschaft für den laufenden Betrieb jeweils einen eigenen Plan für die Auffrischung"
+pullQuote: "Testdaten müssen sich wie Produktionsdaten verhalten, ohne Produktionsdaten zu sein."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Test Data Migration Server"
+  - "SAP Landscape Transformation"
+  - "EPI-USE Labs Data Sync Manager"
+  - "SNP Kyano Test Data Organizer"
+  - "Natuvion DCS Protect"
+  - "Qlik Gold Client"
+  - "GDPR"
+originalUrl: "https://noeldcosta.com/sap-test-data-management/"
+canonicalUrl: "https://noeldcosta.com/de/sap-test-data-management/"
+locale: "de"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP-Testdatenmanagement ist die Art, wie Sie jedem Testsystem Daten geben, die sich wie Produktionsdaten verhalten, ohne die Angaben realer Personen offenzulegen. Meine Regel ist einfach: maskierte Daten, aber auf Produktionsniveau, in Volumen und Realitätsnähe.
+
+Dünne, von Hand erstellte Daten verbergen die Fehler, die zählen. Unmaskierte Produktionsdaten bringen Kunden-, Lieferanten- und Mitarbeiterdatensätze in Systeme mit schwächeren Kontrollen als die Produktion.
+
+Testdaten sind ein Teil eines umfassenderen Testplans. Mein Leitfaden [SAP-Tests erklärt](/de/sap-testing-explained/) behandelt die Testarten, wer sie verantwortet und wo sie in SAP Activate liegen.
+
+## Warum die Testdaten bestimmen, was Ihre Tests finden können
+
+Ein Test kann nur ein Problem finden, das seine Daten auslösen können. Ein Kunde mit fünf offenen Posten verhält sich anders als einer mit fünfzigtausend, und eine Preiskondition, die niemand im Testmandanten angelegt hat, wird im Testmandanten nie fehlschlagen.
+
+Der häufigste Testfehler, den ich gesehen habe, ist zu wenig Testen im Integrationstest (SIT) und im Benutzerakzeptanztest (UAT). Schwache Testdaten sind einer der Wege, auf denen das leise passiert. Die Testfälle laufen, die Ergebnisse sehen grün aus, und die Fälle, die gebrochen wären, hatten schlicht keine Daten, an denen sie brechen konnten.
+
+Deshalb bestehe ich auf Daten auf Produktionsniveau. Das bedeutet vier Dinge:
+
+1. **Volumen.** Tabellengrößen nahe an der Produktion, damit Berichte, Jobs und Suchen gegen realistische Zeilenzahlen laufen.
+2. **Vielfalt.** Die ungewöhnlichen Datensätze, die die Produktion tatsächlich enthält: gesperrte Lieferanten, Teillieferungen, Gutschriften, Fremdwährungen, alte offene Posten.
+3. **Historie.** Genug abgeschlossene Perioden, damit Altersstrukturanalyse, Abschreibung und Jahresabschlussläufe aussagekräftig sind.
+4. **Integrität.** Belege, die nach der Kopie und nach der Maskierung über die Module hinweg noch korrekt verknüpft sind.
+
+Das Volumen zählt am meisten für die Performance. Performancetests müssen vor dem Go-live stattfinden, und nach meiner Erfahrung sind die Parallelitätstests, bei denen viele Anwender gleichzeitig arbeiten, die wichtigen.
+
+Ein Parallelitätstest auf einer fast leeren Datenbank beweist sehr wenig. Mein Leitfaden zu [SAP-Performancetests](/de/sap-performance-testing-it-leaders/) zeigt, wie Sie diese Tests aufsetzen.
+
+## Was das Datenschutzrecht für SAP-Testsysteme bedeutet
+
+Produktionsdaten in einem Testsystem bleiben personenbezogene Daten. Test- und Qualitätssicherungssysteme haben meist breitere Zugriffe als die Produktion, und genau dieses Risiko soll die Maskierung schließen.
+
+Die EU-Datenschutz-Grundverordnung (DSGVO) ist die Referenz, mit der die meisten Organisationen arbeiten, und viele nationale Gesetze folgen ähnlichen Linien. Erwägungsgrund 26 der [DSGVO](https://eur-lex.europa.eu/eli/reg/2016/679/oj) trifft eine Unterscheidung, die jedes SAP-Team kennen sollte.
+
+1. **Pseudonymisierte Daten bleiben personenbezogene Daten.** Lassen sich die Daten mit zusätzlichen Informationen, etwa einer Zuordnungstabelle, wieder einer Person zuordnen, gilt die Verordnung weiterhin.
+2. **Anonyme Daten liegen außerhalb ihres Anwendungsbereichs.** Daten, die niemanden mehr identifizieren können, sind nicht erfasst.
+
+Die praktische Folge: Die meiste Maskierung erzeugt pseudonymisierte Daten, keine anonymen. Auch ein maskiertes Testsystem braucht eine Zugriffskontrolle, einen Zweck und eine Aufbewahrungsregel. Bitten Sie Ihren Datenschutzbeauftragten, die Maskierungsregeln vor der ersten Kopie abzustimmen, nicht erst, wenn ein Prüfer danach fragt.
+
+## Wie Daten in ein SAP-Testsystem kommen
+
+Es gibt fünf übliche Wege. Die meisten Programme nutzen mehr als einen, weil jede Testphase etwas anderes braucht.
+
+Die Tabelle vergleicht sie in den Punkten, die über die Eignung entscheiden.
+
+| Methode | Was Sie erhalten | Volumen | Umgang mit Datenschutz | Passt am besten zu |
+|---|---|---|---|---|
+| Vollständige Systemkopie | Eine exakte Kopie der Produktion, jeder Mandant und jede Tabelle | Vollständig | Die Maskierung muss nach der Kopie laufen, bevor Anwender Zugriff erhalten | Performancetests, Probekonvertierungen, Cutover-Generalproben |
+| Mandantenkopie | Ein Mandant, kopiert innerhalb eines Systems oder zwischen Systemen; das Kopierprofil entscheidet, ob Stamm- und Bewegungsdaten mitkommen | Vollständig oder nur Customizing | Wie bei einer Systemkopie, wenn Anwendungsdaten kopiert werden | Neue Test- oder Schulungsmandanten, Zurücksetzen eines Mandanten auf einen bekannten Stand |
+| SAP Test Data Migration Server (TDMS) | Eine reduzierte Kopie, ausgewählt nach Zeitraum oder Organisationseinheit, mit Verschleierung | Reduziert | Verschleierungsregeln im Tool | Bestehende SAP-Business-Suite-Landschaften, die bereits dafür lizenziert sind |
+| Selektive Kopiertools von Partnern | Ausgewählte Geschäftsobjekte oder Ausschnitte, bei Bedarf kopiert und während der Übertragung maskiert | Reduziert, gezielt | Maskierungsregeln im Tool, angewandt während der Kopie | Regelmäßige Auffrischungen, Regressionsdaten, Nachstellen von Fehlern |
+| Aufgebaute oder migrierte Daten | Daten aus Skripten, Migrationsladungen oder manueller Eingabe | So viel, wie Sie aufbauen | Keine echten personenbezogenen Daten, wenn von Grund auf aufgebaut | Frühe Unit-Tests, Greenfield-Projekte vor dem Go-live |
+
+### Vollständige System- und Mandantenkopien
+
+Eine vollständige Systemkopie liefert die realistischsten Daten, mit denen Sie je testen werden. Sie kopiert aber auch jedes Datenschutzrisiko, das die Produktion enthält. Nutzen Sie eine, bleibt das System gesperrt, bis die Maskierung gelaufen und geprüft ist.
+
+Die Mandantenkopie ist das Alltagswerkzeug, um Mandanten anzulegen und zurückzusetzen. Das Kopierprofil ist die Entscheidung, auf die es ankommt, denn es legt fest, ob nur Konfiguration übertragen wird oder auch Stamm- und Bewegungsdaten.
+
+### SAP Test Data Migration Server
+
+SAP Test Data Migration Server (TDMS) erzeugt aus Produktionsdaten reduzierte Nicht-Produktivsysteme und verschleiert dabei sensible Felder. Er ist auf der SAP Business Suite groß geworden, und die aktuelle Dokumentation im [SAP Help Portal](https://help.sap.com/docs/SAP_TEST_DATA_MIGRATION_SERVER) gilt für Release 4.0 SP14.
+
+Eine offizielle Aussage von SAP zur Abdeckung aktueller S/4HANA-Releases durch TDMS oder zu einem benannten Nachfolger konnte ich nicht finden. Wenn Sie sich darauf stützen wollen, fragen Sie SAP schriftlich, ob er Ihr Ziel-Release und Ihr Bereitstellungsmodell unterstützt, einschließlich RISE with SAP.
+
+### SAP Landscape Transformation und Shell-Kopien
+
+SAP Landscape Transformation ist eine Sammlung von Analyse- und Transformationswerkzeugen, die SAP bei der selektiven Datenübernahme einsetzt. [SAP Learning](https://learning.sap.com/courses/discovering-sap-activate-implementation-tools-and-methodology/illustrating-selective-data-transition_dab03cad-3061-40ed-b690-a0d7a2dccc98) beschreibt eine Shell-Konvertierung als Kopie des Produktivsystems ohne Stamm- und Bewegungsdaten, die anschließend auf S/4HANA konvertiert wird.
+
+Dieselbe Idee hilft bei Testdaten. Eine Shell gibt Ihnen das Repository und die Konfiguration der Produktion ohne Geschäftsdaten, und Sie füllen sie dann nur mit den Daten, die ein Test braucht.
+
+## Tools für selektive Testdaten
+
+Mehrere Partnerprodukte kopieren ausgewählte Geschäftsdaten in SAP-Testsysteme und maskieren sie unterwegs. Dies sind die, deren Aussagen ich auf der eigenen Website des Anbieters prüfen konnte, in keiner bestimmten Reihenfolge.
+
+1. **EPI-USE Labs Data Sync Manager.** Eine Suite zum Kopieren und Maskieren von Daten über SAP-ABAP-Landschaften hinweg, einschließlich schlanker Mandanten, Kopien auf Objektebene und Maskierung mit vordefinierten Regeln. EPI-USE Labs gibt an, dass [Data Sync Manager](https://www.epiuselabs.com/data-sync-manager-dsm-software-suite) für die Integration mit SAP S/4HANA und S/4HANA Cloud zertifiziert ist und mit RISE with SAP funktioniert.
+2. **SNP Kyano Test Data Organizer.** Extrahiert die Daten, die ein Test braucht, statt des ganzen Systems und maskiert sensible Daten bei der Bereitstellung. SNP beschreibt den [Test Data Organizer](https://www.snpgroup.com/en/platform/kyano-manage/use-cases/test-management/) als kompatibel mit RISE with SAP Private Cloud Edition.
+3. **Qlik Gold Client.** Kopiert und synchronisiert ausgewählte Bewegungsdaten aus der Produktion in Nicht-Produktivziele, mit statischer Maskierung für bestehende Systeme und dynamischer Maskierung für Daten während der Übertragung.
+4. **Natuvion DCS Protect.** Findet personenbezogene Daten und wendet Anonymisierung oder Pseudonymisierung in Test-, Qualitätssicherungs-, Entwicklungs- und Schulungssystemen an. [Natuvion](https://natuvion.com/tda) positioniert es für Testmigrationen und den laufenden Betrieb und erwähnt S/4HANA auf dieser Seite nicht, also klären Sie die Abdeckung direkt.
+
+Bevor Sie kaufen, lassen Sie jeden Anbieter diese Fragen auf Ihren eigenen Systemen beantworten:
+
+1. Welche S/4HANA-Releases und Bereitstellungsmodelle unterstützt es heute?
+2. Maskiert es, bevor die Daten die Produktion verlassen, oder erst, nachdem sie im Ziel angekommen sind?
+3. Bleibt die Maskierung über verbundene Systeme hinweg konsistent, sodass ein in S/4HANA maskierter Kunde zum selben Kunden in Ihrem CRM oder Data Warehouse passt?
+4. Wie lange dauert die Auffrischung eines Buchungskreises bei Produktionsvolumen?
+5. Wer pflegt die Maskierungsregeln, wenn Sie eigene Tabellen oder Felder hinzufügen?
+
+## Testdaten passend zur Testphase
+
+Jede Testphase braucht Daten aus einem anderen Grund. Hier fange ich an, wenn ich Testdaten für ein S/4HANA-Programm plane.
+
+| Testphase | Was die Daten leisten müssen | Übliche Quelle |
+|---|---|---|
+| Unit-Test | Einem Entwickler erlauben zu belegen, dass ein Objekt funktioniert | Aufgebaute Daten oder ein kleiner maskierter Ausschnitt |
+| Runden des Integrationstests | Vollständige Prozessketten über Module und Schnittstellen laufen lassen | Maskierte Kopie auf Produktionsniveau oder selektive Kopie |
+| Runden des Benutzerakzeptanztests | Wie die eigenen Daten der Fachanwender aussehen, damit sie ihre Fälle wiedererkennen | Maskierte Daten auf Produktionsniveau, vor jeder Runde aufgefrischt |
+| Regressionstest | Stabil bleiben, damit sich Ergebnisse von Lauf zu Lauf vergleichen lassen | Ein fester, zurücksetzbarer Datenbestand plus ein Plan für die Auffrischung |
+| Performancetest | Dem Produktionsvolumen entsprechen, damit Ergebnisse zur Parallelität aussagekräftig sind | Vollständige maskierte Kopie oder Volumen in Produktionsgröße |
+| Probekonvertierungen und Cutover-Generalproben | Die Migration an der echten Datenstruktur belegen | Vollständige Kopien der Produktion, maskiert, wo Personen außerhalb des Kernteams Zugriff haben |
+
+Der UAT verdient besondere Sorgfalt. Der Fachbereich sollte den Benutzerakzeptanztest verantworten, und aus meiner Sicht braucht er mindestens 6 bis 8 Wochen.
+
+Geben Sie den Anwendern Daten, die sie wiedererkennen: ihre eigenen Kunden, Materialien und Preislisten, auch unter maskierten Namen. Mein Leitfaden zum [SAP-Benutzerakzeptanztest](/de/sap-user-acceptance-testing/) zeigt, wie Sie ihn durchführen.
+
+Probekonvertierungen folgen derselben Logik. Bei einer Brownfield-Konvertierung plane ich drei Probekonvertierungen, und jede sollte auf einer aktuellen Kopie der Produktion laufen.
+
+Die Datenmigration macht nach meiner Erfahrung 30 bis 40 Prozent des Programmaufwands aus, also planen Sie den Datenzugriff für diese Läufe gemeinsam mit dem Migrationsteam. Mein Artikel dazu, [warum SAP-Datenmigrationen scheitern](/de/why-sap-data-migration-fails-and-how-to-fix-it/), erklärt, wie die Probeladungen zusammenpassen.
+
+### Zwei Landschaften, zwei Pläne für die Auffrischung
+
+Während eines Programms betreibe ich zwei getrennte Landschaften: eine für das Projekt und eine für den laufenden Betrieb (BAU). Live-Supportänderungen und Projektänderungen werden dann getrennt getestet.
+
+Jede Landschaft braucht ihren eigenen Testdatenplan. Das BAU-Testen braucht Daten nahe an der heutigen Produktion, denn Supportkorrekturen reagieren auf die Probleme von heute.
+
+Das Projekttesten braucht Daten, die zum neuen Design passen, etwa eine konvertierte Kopie oder eine selektive Ladung. Führen Sie für jede Landschaft einen eigenen Kalender für die Auffrischung, damit eine Auffrischung in der einen nie Testdaten löscht, die die andere noch braucht.
+
+## Wie ich SAP-Testdatenmanagement aufsetzen würde
+
+Tests beanspruchen rund 35 Prozent des Programmaufwands. Planen Sie die Testdaten innerhalb dieses Aufwands, nicht in der Woche vor dem SIT.
+
+Diese Reihenfolge würde ich einhalten:
+
+1. **Das Prinzip schriftlich vereinbaren.** Maskierte Daten auf Produktionsniveau, freigegeben vom Programmsponsor, dem Datenschutzbeauftragten und den Verantwortlichen im Fachbereich.
+2. **Die personenbezogenen und sensiblen Daten finden.** Kunden, Lieferanten, Mitarbeitende, Bankverbindungen, Kontakte, Freitextfelder, Anhänge und alle eigenen Tabellen, die solche Daten enthalten.
+3. **Die Maskierungsregeln schreiben.** Feld für Feld entscheiden, was ersetzt, behalten oder entfernt wird, und Ersetzungen über verbundene Systeme hinweg konsistent halten.
+4. **Daten jeder Testphase zuordnen.** Nutzen Sie die Tabelle oben als Ausgangspunkt und bemessen Sie das Volumen zuerst für die Performance- und Parallelitätstests.
+5. **Kopiermethoden und Tools wählen.** Vollkopien, wo das Volumen zählt, selektive Kopien, wo Geschwindigkeit und Häufigkeit zählen, und die Unterstützung des Tools für Ihr Release prüfen.
+6. **Den Kalender für die Auffrischung festlegen.** Ein Plan pro Landschaft, mit Auffrischungen vor jeder SIT- und UAT-Runde und jeder Probekonvertierung.
+7. **Den Zugriff sperren, bis die Maskierung geprüft ist.** Niemand außerhalb des technischen Kernteams meldet sich an einer frischen Kopie an, bevor eine Maskierungsprüfung bestanden ist.
+
+Machen Sie daraus dann ein Gate. Strategie, Eingangs- und Ausgangskriterien für jeden Zyklus stehen in meinem Leitfaden zur [S/4HANA-Teststrategie](/de/s4hana-testing-strategy/), und die Bereitschaft der Testdaten gehört in die Eingangskriterien jeder Runde.
+
+Der konkrete nächste Schritt: Listen Sie jedes Nicht-Produktivsystem auf, das heute eine Kopie von Produktionsdaten enthält, und prüfen Sie, welche davon maskiert wurden.
+
+Wenn Sie eine unabhängige Sicht auf einen Testdatenansatz oder einen Testplan für ein S/4HANA-Programm möchten, können Sie [mich hier kontaktieren](/de/contact-noel-erp-support/).
+
+## Häufig gestellte Fragen
+
+<details>
+<summary>Was ist SAP-Testdatenmanagement?</summary>
+
+Die Art, wie Sie die Daten in SAP-Testsystemen planen, erzeugen, kopieren, maskieren und auffrischen. Das Ziel sind Daten, die sich in Volumen und Realitätsnähe wie Produktionsdaten verhalten, ohne echte personenbezogene Daten Personen offenzulegen, die sie nicht sehen sollten.
+
+</details>
+
+<details>
+<summary>Darf ich Produktionsdaten für SAP-Tests verwenden?</summary>
+
+Nur nach der Maskierung und selbst dann mit Zugriffskontrolle. Nach der DSGVO sind pseudonymisierte Daten weiterhin personenbezogene Daten, also braucht auch eine maskierte Kopie einen Zweck, Zugriffsregeln und eine Aufbewahrungsregel. Stimmen Sie die Maskierungsregeln vor der ersten Kopie mit Ihrem Datenschutzbeauftragten ab.
+
+</details>
+
+<details>
+<summary>Ist SAP TDMS für S/4HANA noch verfügbar?</summary>
+
+Die aktuelle TDMS-Dokumentation im SAP Help Portal gilt für Release 4.0 SP14, und TDMS ist auf der SAP Business Suite groß geworden. Eine offizielle Aussage von SAP zur Abdeckung aktueller S/4HANA-Releases konnte ich nicht finden. Fragen Sie SAP schriftlich, bevor Sie damit planen.
+
+</details>
+
+<details>
+<summary>Welche Tools erzeugen selektive SAP-Testdaten?</summary>
+
+SAP Test Data Migration Server sowie Partnerprodukte wie EPI-USE Labs Data Sync Manager, SNP Kyano Test Data Organizer und Qlik Gold Client. Natuvion DCS Protect konzentriert sich auf das Anonymisieren und Pseudonymisieren von Daten in Testsystemen. Prüfen Sie jedes gegen Ihr S/4HANA-Release und Ihr Bereitstellungsmodell.
+
+</details>
+
+<details>
+<summary>Wie viele Testdaten brauche ich für SAP-Performancetests?</summary>
+
+Volumen auf Produktionsniveau. Performanceprobleme zeigen sich bei echten Tabellengrößen und vielen gleichzeitigen Anwendern, also beweist ein Test auf einem dünnen Datenbestand sehr wenig. Eine vollständige maskierte Kopie der Produktion ist die übliche Quelle für Performance- und Parallelitätstests.
+
+</details>

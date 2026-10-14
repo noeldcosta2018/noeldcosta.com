@@ -55,7 +55,7 @@ function expectReciprocalMember(metadata, expected, locale, keys = POST_LANGUAGE
 }
 
 describe("Phase 4A reciprocal manifest-backed SEO language graph", () => {
-  it("limits the graph inventory to 99 post families and 28 equivalent page families", () => {
+  it("limits the graph inventory to 105 post families and 28 equivalent page families", () => {
     const postFamilies = localeContentManifest.items.filter(
       (item) =>
         item.kind === "post" &&
@@ -67,7 +67,7 @@ describe("Phase 4A reciprocal manifest-backed SEO language graph", () => {
         buildPageMetadata(getPage(item.slug, "en")).alternates?.languages,
     );
 
-    expect(postFamilies).toHaveLength(99);
+    expect(postFamilies).toHaveLength(105);
     expect(pageFamilies.map((item) => item.slug)).toEqual(
       localeContentManifest.items
         .filter(
@@ -90,7 +90,7 @@ describe("Phase 4A reciprocal manifest-backed SEO language graph", () => {
   });
 
   it(
-    "proves reciprocity, self-inclusion, URL shape, and x-default across every member of all 127 eligible families",
+    "proves reciprocity, self-inclusion, URL shape, and x-default across every member of all 133 eligible families",
     () => {
       const eligiblePosts = localeContentManifest.items.filter(
         (item) =>
@@ -103,7 +103,7 @@ describe("Phase 4A reciprocal manifest-backed SEO language graph", () => {
           buildPageMetadata(getPage(item.slug, "en")).alternates?.languages,
       );
 
-      expect(eligiblePosts).toHaveLength(99);
+      expect(eligiblePosts).toHaveLength(105);
       expect(eligiblePages).toHaveLength(28);
 
       for (const item of eligiblePosts) {
@@ -471,8 +471,8 @@ describe("Phase 4A reciprocal manifest-backed SEO language graph", () => {
   });
 
   it("preserves the approved route parameter inventory", () => {
-    expect(getLocalizedArticleParams()).toHaveLength(99 * 16);
+    expect(getLocalizedArticleParams()).toHaveLength(105 * 16);
     expect(getLocalizedPageParams()).toHaveLength(29 * 16);
-    expect(getLocalizedContentParams()).toHaveLength(99 * 16 + 29 * 16);
+    expect(getLocalizedContentParams()).toHaveLength(105 * 16 + 29 * 16);
   });
 });
