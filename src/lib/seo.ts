@@ -23,8 +23,6 @@ export const AUTHOR = {
     "https://www.youtube.com/@NoelDCostaERPAI",
     "https://erpcv.com/",
     "https://ai.sapopedia.com/",
-    "https://clarity.fm/noeldcosta",
-    "https://www.connectively.us/p/noel-dcosta",
   ],
 };
 
