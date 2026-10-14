@@ -29,7 +29,8 @@ import {
   ExplainerTimeline,
   explainerProps,
 } from "@/components/article/explainers";
-import { explainerLabels, tableLabel } from "@/components/article/explainers/labels";
+import { explainerLabels, playLabel, tableLabel } from "@/components/article/explainers/labels";
+import YouTubeVideo from "@/components/article/video/YouTubeVideo";
 import TestimonialsGrid from "@/components/article/testimonials/TestimonialsGrid";
 import ContactBlock from "@/components/article/contact/ContactBlock";
 import CalendlyEmbed from "@/components/article/contact/CalendlyEmbed";
@@ -263,6 +264,7 @@ export default function MdxBody({
             "capabilities-row",
             "safeguard-band",
             "calendly-embed",
+            "youtube-video",
             "contact-hero",
             ...EXPLAINER_TAGS,
           ]);
@@ -399,6 +401,9 @@ export default function MdxBody({
         // Lazy-loaded Calendly inline widget for the Contact page.
         // Loads on first user interaction or after a 2s delay.
         "calendly-embed": (() => <CalendlyEmbed />) as never,
+        // Click-to-load YouTube video with VideoObject schema.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "youtube-video": ((props: any) => <YouTubeVideo {...playLabel(locale)} {...props} />) as never,
         // Contact-page hero (eyebrow, one-line display headline, lede).
         "contact-hero": (() => <ContactHero />) as never,
         // FAQ accordion. Articles use <details><summary>Q</summary>A</details>
