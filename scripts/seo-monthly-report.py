@@ -53,6 +53,11 @@ CLUSTERS = {
         "snowflake-vs-databricks", "snowflake-pricing-credits-explained", "erp-data-into-snowflake",
         "snowflake-cortex-ai-snowflake-intelligence", "snowflake-architecture-explained",
     ],
+    "SAP testing": [
+        "sap-testing-explained", "sap-testing-validation-tools-comparison", "sap-performance-testing-it-leaders",
+        "sap-test-automation-guide", "sap-regression-testing", "s4hana-testing-strategy",
+        "sap-user-acceptance-testing", "sap-test-data-management",
+    ],
 }
 
 
