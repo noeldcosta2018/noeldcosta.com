@@ -1,0 +1,230 @@
+---
+title: "DatabricksとMicrosoft Fabricの比較：選択のためのガイド"
+h1: "DatabricksとMicrosoft Fabricの比較：選択のためのガイド"
+slug: "databricks-vs-microsoft-fabric"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/databricks-vs-microsoft-fabric.webp"
+heroAlt: "データアーキテクチャのスケッチがホワイトボードに描かれたガラス張りの会議室のそば、明るいオフィスに立つNoel D'Costa"
+category: "data-and-ai"
+tags: ["databricks", "microsoft-fabric", "data-platform-cost"]
+author: "Noel D'Costa"
+metaTitle: "Databricks vs Microsoft Fabric：どちらを選び、いつ併用するか"
+metaDescription: "Microsoft中心の組織のためのDatabricksとMicrosoft Fabricの比較。アーキテクチャ、定価、Power BI、ガバナンス、AI、政府クラウドを、判断基準とともに解説します。"
+primaryKeyword: "Databricks Microsoft Fabric 比較"
+excerpt: "主なアウトプットがPower BIであるMicrosoft中心の組織なら、Fabricのほうが早道です。エンジニアリングと機械学習のプラットフォームとしてはDatabricksのほうが強力です。多くの組織は結局両方を運用しており、意図して設計するならそれが正解になり得ます。"
+experienceSource: "Noel's first-person experience with Databricks on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts and prices checked against official Microsoft Learn, Azure pricing and Databricks documentation, October 2026."
+keyTakeaways:
+  - "Fabricは購入して共有するキャパシティです。Databricksはワークロードごとに計測する消費です。この違いが、想定外のコストの大半を生みます。"
+  - "Power BIが主な利用先で、チームがSQLとPower BIを軸にしているならFabricを選びます。"
+  - "BIの手軽さよりも、高負荷のエンジニアリング、ストリーミング、機械学習、マルチクラウドが重要ならDatabricksを選びます。"
+  - "両方の運用は一般的で、十分に成り立ちます。エンジニアリングはAzure Databricks、Power BIはミラーリングとDirect Lakeを通じてFabricが担います。"
+  - "ミラーリングでは、Unity Catalogの権限はFabricに引き継がれません。2つのセキュリティモデルか、意図的な受け渡しを1つ計画してください。"
+  - "米国政府クラウドでは、現時点でどちらのプラットフォームにも大きな機能の欠落があります。何かを設計する前に機能一覧を確認してください。"
+pullQuote: "失敗するのはプラットフォームそのものではないことがほとんどです。失敗するのは、2つのプラットフォームの間の運用モデルです。"
+mentions:
+  - "Databricks"
+  - "Azure Databricks"
+  - "Microsoft Fabric"
+  - "OneLake"
+  - "Unity Catalog"
+  - "Power BI"
+  - "Direct Lake"
+  - "Microsoft Purview"
+  - "Genie"
+  - "Agent Bricks"
+  - "Copilot in Fabric"
+  - "Azure Government"
+originalUrl: "https://noeldcosta.com/databricks-vs-microsoft-fabric/"
+canonicalUrl: "https://noeldcosta.com/ja/databricks-vs-microsoft-fabric/"
+locale: "ja"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+DatabricksとMicrosoft Fabricのどちらを選ぶかは、誰がデータを使うかで決まります。データの大半が最終的にPower BIに行き着き、チームがSQLで考えるなら、通常はFabricのほうが速く、シンプルな選択です。難しい課題がエンジニアリング、ストリーミング、機械学習、あるいは複数のクラウドにあるなら、Databricksのほうが強力なプラットフォームです。
+
+Microsoft中心の多くの組織にとって、率直な答えは「両方」です。高負荷のエンジニアリングはAzure Databricksが担います。
+
+ビジネスにはFabricとPower BIが提供します。これは機能しますが、両者の継ぎ目を意図して設計した場合に限ります。
+
+私が関わってきた製造業と防衛分野のプログラムでは、判断が機能一覧で決まることはまれでした。決め手になるのは、コストモデル、スキル、セキュリティの境界、そしてデータを置いてよい場所です。
+
+## 2つのプラットフォームの成り立ち
+
+どちらもオープンなテーブル形式の上に作られたレイクハウスです。違うのは、ストレージを誰が持つか、そしてコンピュートの支払い方です。
+
+**Microsoft Fabric**はSaaSのプラットフォームです。すべてのデータはOneLakeに格納されます。OneLakeはテナントごとに1つの論理的なレイクで、テーブルはDelta形式で保存されます。レイクハウス、ウェアハウス、パイプライン、Real-Time Intelligence、Power BIのすべてが、1つの共有キャパシティを使います。
+
+ショートカットは、データをコピーせずに他のストアのデータを参照します。ミラーリングは、データベースや外部カタログを取り込みます。
+
+**Databricks**は自社のクラウドアカウントで動きます（AzureではMicrosoftのファーストパーティサービスであるAzure Databricksとして）。データは自社のストレージに置かれ、Unity Catalogで統制されます。コンピュートはクラスター、SQLウェアハウス、サーバーレスで、ワークロードごとにDatabricks Units（DBU）で計測されます。
+
+オープン性の差は縮まりました。OneLakeはメタデータを仮想化するため、DeltaテーブルをIcebergとして、IcebergテーブルをDeltaとして読み取れます。ただし実際の制限があります。対象はParquetのみ、出力はIceberg V2で、等価削除があると変換が成り立ちません。
+
+Unity CatalogのマネージドIcebergテーブルは一般提供されており、外部エンジンはUnity CatalogのIceberg REST Catalog APIを通じて読み書きできます。どちらのプラットフォームも、データを独自形式に閉じ込めることはありません。どちらも囲い込むのはパイプライン、セキュリティモデル、スキルであり、乗り換えのコストが本当にあるのはそこです。
+
+Microsoft中心の組織にとって最も重要なのは、両者の橋渡しです。FabricはAzure DatabricksのUnity Catalogをカタログ項目として[ミラーリング](https://learn.microsoft.com/en-us/fabric/mirroring/azure-databricks)でき、これは一般提供されています。ミラーリングされるのはメタデータだけです。
+
+データはショートカットを通じてその場で読み取られます。注意点が1つあります。Unity Catalogの権限は引き継がれません。Fabricは独自の権限モデルを適用します。
+
+## DatabricksとFabricの料金：キャパシティか消費か
+
+**Fabric**は、F2からF8192までのF-SKUでキャパシティを販売し、キャパシティユニット（CU）で計測します。Azureはコミットメントなしで秒単位に課金するか、1年間の予約で提供します。East USでは、従量課金の定価はCU時間あたり$0.18です。
+
+つまりF64は1時間あたり約$11.52で、稼働させたままにすると月におよそ$8,400になります。Microsoftによると、予約を使えば従量課金より約41%節約できます。
+
+OneLakeのホットストレージの定価は、1GBあたり月$0.026です。[Microsoft Fabricの料金ページ](https://azure.microsoft.com/en-us/pricing/details/microsoft-fabric/)をご覧ください。
+
+F64はライセンス上の境目でもあります。[Fabricのライセンスに関するドキュメント](https://learn.microsoft.com/en-us/fabric/enterprise/licenses)によると、F64未満では、Power BIのコンテンツを閲覧するすべての人にProまたはPremium Per Userのライセンスが必要です。
+
+F64以上では、無料ライセンスと閲覧者ロールを持つユーザーがレポートを閲覧できます。レポートの閲覧者が数百人いるなら、それだけでSKUが決まることもあります。
+
+**Azure Databricks**は、ワークロードの種類ごとのDBUに加え、クラシックコンピュートではその下で動くAzureの仮想マシンの費用を請求します。サーバーレスの料金にはコンピュートが含まれます。
+
+East USのPremiumの定価は以下のとおりです。[Azure Databricksの料金ページ](https://azure.microsoft.com/en-us/pricing/details/databricks/)をご覧ください。
+
+1. ジョブコンピュート：DBU時間あたり$0.30。
+2. 汎用コンピュート（対話型ノートブック）：DBU時間あたり$0.55。
+3. SQL Pro：DBU時間あたり$0.55。サーバーレスSQL：DBU時間あたり$0.70。
+4. サーバーレスジョブ：DBU時間あたり$0.45。サーバーレスの対話型コンピュート：DBU時間あたり$0.95。
+
+すべてEast USの定価で、2026年10月に確認したものです。他のリージョンでは異なります。
+
+エンタープライズ契約、Databricksの事前購入コミットメント、Azureの予約によって、実際の金額は変わります。DBUについては私の[Databricks料金ガイド](/ja/databricks-pricing-explained/)で詳しく扱っています。
+
+実務上の意味は次のとおりです。
+
+1. **Fabricは予測しやすいが共有される。** 1つの重いSparkジョブが、同じキャパシティ上のPower BIレポートを抑制することがあります。共有サーバーのようにキャパシティを管理する人が必要です。
+2. **Databricksはきめ細かいが漏れやすい。** 各ワークロードのコストは使った分だけです。よくある漏れは、稼働したままのクラスター、過大なサイズのウェアハウス、スケジュールジョブに使われる汎用コンピュートです。
+3. **実際のワークロードで総コストを比較する。** 上位10本のパイプラインと、最も混み合うレポーティングの1時間を、両方のプラットフォームで見積もってください。定価を並べたスプレッドシートでは何も証明できません。
+
+## 比較表
+
+Microsoft中心の組織で通常決め手となる点をまとめました。
+
+| 基準 | Microsoft Fabric | Databricks（Azure Databricks） |
+|---|---|---|
+| 提供モデル | SaaS、テナント全体で1つのOneLake | 自社のクラウドアカウントとストレージ上のプラットフォーム |
+| 料金 | F-SKUのキャパシティ、従量課金または予約 | ワークロードごとのDBU、クラシックコンピュートではVMも加算 |
+| データエンジニアリングの深さ | SQL、パイプライン、Dataflows、Sparkノートブックには十分 | より深い：Sparkのチューニング、ストリーミング、宣言型パイプライン、CI/CD |
+| 機械学習と生成AI | Copilot in Fabric、Fabricデータエージェント（GA）、機械学習モデルと実験 | モデルサービング、MLflow、Genie、Agent Bricks |
+| Power BI | ネイティブ、OneLake上のDirect Lake | Fabricへのミラーリング経由、またはDirectQueryとインポート |
+| ガバナンス | Fabricの権限、OneLakeセキュリティ、Purview、秘密度ラベル | Unity Catalog、Purviewでスキャン可能 |
+| マルチクラウド | Azureのみ | Azure、AWS、Google Cloud |
+| 適するスキル | Power BI、SQL、Microsoftのデータチーム | データエンジニア、PythonとSpark、機械学習エンジニア |
+
+**Power BIとDirect Lake。** Direct Lakeを使うと、Power BIのセマンティックモデルがOneLake上のDeltaテーブルを、インポートの更新なしで直接メモリに読み込めます。Fabricを使う最大の理由です。
+
+Fabricのキャパシティが必要で、テーブルの上限はSKUに応じて上がります。ミラーリングしたAzure Databricksのカタログは、サポートされたDirect Lakeのソースです。つまりDatabricksで作ったゴールドテーブルからDirect Lakeのレポートにデータを供給できます。
+
+**機械学習と生成AI。** OneLakeのデータに対する自然な言葉の質問に答えるFabricデータエージェントは、一般提供されています。Microsoft 365 Copilotから利用するなど、一部の連携はまだプレビューです。Copilot in Fabricには有料のF2以上のキャパシティが必要で、そのキャパシティを消費します。
+
+Databricksでは、Genieを使えば業務ユーザーがガバナンスの効いたテーブルに自然な言葉で問い合わせできます。Agent Bricksは、コードでカスタムエージェントを構築しデプロイするためのプラットフォームです。
+
+DatabricksはKnowledge AssistantとSupervisor Agentをレガシーとして位置付け、新しいローコードの作業にはGenie Agentsを案内しています。詳しくは私の[GenieとAgent Bricksの記事](/ja/databricks-genie-agent-bricks/)で扱っています。
+
+**ガバナンス。** ワークスペースとクラウドをまたいで、テーブル、モデル、リネージ、きめ細かなアクセスを1つで統制するコントロールプレーンとしては、Unity Catalogのほうが成熟しています。Fabricのガバナンスも急速に改善しています。
+
+Microsoft環境では、Purviewがすでに全社のカタログになっていることが多く、Unity Catalogのメタデータとリネージをスキャンできます。Databricks側については私の[Unity Catalogガバナンスガイド](/ja/databricks-unity-catalog-data-governance/)で扱っています。
+
+## 「両方使う」パターンの実際
+
+私が見るMicrosoft中心の組織の多くは、どちらか1つを選びません。取り込み、エンジニアリング、機械学習にはAzure Databricksを使い、整えたテーブルをPower BI用にFabricへ公開します。カタログのミラーリングとDirect Lakeによって、このパターンは今では十分にサポートされています。
+
+うまくいくのは、次の3つが成り立つときです。
+
+1. **各層を1つのプラットフォームが受け持つ。** ブロンズからゴールドまではDatabricksが受け持ちます。セマンティックモデルとレポートはFabricが受け持ちます。同じテーブルを両方で作り直すことはしません。
+2. **セキュリティは2つの場所に、1回で設計する。** ミラーリングではUnity Catalogの権限はコピーされません。Fabricで行レベルと列レベルのルールを誰が受け持つかを決め、その対応関係を文書化します。
+3. **両方の請求に責任者が1人いる。** DBUとキャパシティは別々のコスト項目に計上されます。責任者が1人いなければ、各チームが自分のプラットフォームを最適化し、合計は増えていきます。
+
+失敗するのは、Fabricがいつの間にか2つ目のエンジニアリング基盤になり、食い違う2つのゴールド層を抱えることになった場合です。私が「両方使う」がうまくいかなかったのを見たケースでは、原因は2つでした。プラットフォーム間の連携が正しくなかったこと、そしてどのプラットフォームがデータを受け持つのか誰もわかっていなかったことです。後で解きほぐすより、初日にルールを決めておくほうがよいと私は考えます。
+
+ERPデータ（SAP、Oracle、Microsoft Dynamics 365）にも同じ考え方が当てはまります。取り込みとモデル化は、1か所で1回だけ行います。ERP側がプラットフォームと同じくらい重要な理由は、[ERPのモダナイゼーションとクリーンコア](/ja/erp-modernization-2025-cloud-ai-clean-core/)についての私のメモで説明しています。
+
+## 防衛と製造業で考慮すべきこと
+
+**製造業。** 工場データが試金石です。ヒストリアンとMESのフィード、高頻度のセンサーストリーム、ERPと結び付けた品質と保全の記録。FabricのReal-Time Intelligence（イベントストリームとイベントハウス）は、現場の運用ダッシュボードをうまく扱えます。
+
+大規模なストリーミングのエンジニアリング、予知保全のための特徴量パイプライン、センサーデータでの機械学習には、私はDatabricksを使います。センサーと機械のデータに対するストリーミングと機械学習こそ、私の仕事でDatabricksが真価を発揮するところです。
+
+**防衛。** データ主権と分離が最優先です。機密環境と非機密環境は分けたままにします。輸出管理の対象データ（カテゴリーとしてのITAR）には、厳格なアクセス制御と監査が必要です。
+
+プログラムは数十年続きます。政府クラウドは商用のAzureより遅れているため、何かを設計する前に提供状況を確認してください。
+
+1. **GCC HighのFabric。** [Microsoft Learn](https://learn.microsoft.com/en-us/fabric/enterprise/us-government-community-cloud-high)によると（2026年10月に確認）、FabricはUS Gov VirginiaとUS Gov Texasで動いています。レイクハウス、ウェアハウス、パイプライン、Direct Lake付きのPower BIなど、中核のワークロードは利用できます。カスタマーマネージドキー、大半のミラーリングのソース、ワークスペースのPrivate Link、Copilot for Power BIはサポートされていません。GCC HighのFedRAMP High認可はまだ審査中です。
+2. **Azure GovernmentのAzure Databricks。** [Azure Databricksのリージョン別機能一覧](https://learn.microsoft.com/en-us/azure/databricks/resources/feature-region-support)（2026年10月1日更新）によると、US GovのリージョンではDatabricks SQLとUnity Catalogがサポートされていません。サーバーレスと新しいAI機能もありません。DatabricksはAzure Governmentにプラットフォームの全機能を提供する計画を発表しています。判断するその日に、自社のリージョンで何が稼働しているかを確認してください。
+
+米国外でも同じ規律が当てはまります。自社が縛られている正確なAzureリージョンについて、リージョン別の一覧を確認してください。一部のリージョンでは、Databricksのサーバーレス機能やAI機能のいくつかが地域をまたいだ処理を必要とし、主権の求められるデータでは採用できない場合があります。
+
+## 判断基準：Fabric、Databricks、または両方
+
+**Fabricを選ぶべきとき：**
+
+1. Power BIが主な利用先で、Direct Lakeを使いたい。
+2. チームがSQL、Power BI、Microsoftを軸にしており、Sparkの経験が浅い。
+3. プラットフォームのエンジニアリングではなく、1本のキャパシティの請求とSaaSの運用を望んでいる。
+4. レポートの閲覧者が数百人いて、F64のライセンスで採算が合う。
+
+**Databricksを選ぶべきとき：**
+
+1. 難しいのはレポーティングではなく、データエンジニアリング、ストリーミング、機械学習である。
+2. 複数のクラウドで運用している、またはその予定がある。
+3. 多数のワークスペースにまたがる1つのガバナンス基盤としてUnity Catalogが必要である。
+4. ワークロード単位の厳密なコスト管理が必要で、それを運用するスキルがある。
+
+**両方を選ぶべきとき**は、すでにAzure Databricksをうまく運用していて、ビジネスがPower BIで回っている場合です。Unity CatalogをFabricにミラーリングし、レポートにはDirect Lakeを使い、各層の責任者を書き出しておきます。
+
+すでに成熟したDatabricksプラットフォームを運用しているなら、BIのコストを下げるためにFabricへ移行してはいけません。より広い視点については、私の[SnowflakeとDatabricksの比較](/ja/snowflake-vs-databricks/)をご覧ください。
+
+## 次にすべきこと
+
+実際の3つのワークロードで、2週間の同条件テストを実施してください。高負荷のパイプライン1本、経営層向けのPower BIモデル1つ、機械学習またはAIのユースケース1つです。実行あたりのコスト、更新の遅延、チームが要した工数を測定します。ベンダーまたはSIに、交渉済みの料金でその組み合わせをそのまま見積もってもらいます。
+
+各ベンダーには3つの質問をしてください。自社のリージョンでGAなのはどれで、プレビューなのはどれか。使用量が倍になったらコストはどうなるか。継ぎ目をまたいでセキュリティはどう機能するか。
+
+プラットフォームの判断やテストの設計について中立的な意見が必要なら、私はまさにこうした支援を組織に提供しています。[30分の打ち合わせを予約](/ja/contact-noel-erp-support/)できます。
+
+## よくある質問
+
+<details>
+<summary>Microsoft FabricはAzure Databricksに取って代わるのですか？</summary>
+
+いいえ。Azure DatabricksはAzureのファーストパーティサービスであり続けており、Microsoftは両者の連携方法を文書化しています。FabricはAzure DatabricksのUnity Catalogをミラーリングでき、これは一般提供されています。そのため、Power BIはデータをコピーせずにDirect Lakeを通じてDatabricksのテーブルを使えます。多くの組織が両方を運用しています。
+
+</details>
+
+<details>
+<summary>FabricはDatabricksより安いですか？</summary>
+
+ワークロードの構成によります。Fabricは共有キャパシティです（East USの定価はCU時間あたり$0.18で、1年間の予約を使うと約41%安くなります）。DatabricksはワークロードごとのDBUに加え、クラシックコンピュートではVMの費用を請求します。自社の主要なワークロードを両方で見積もってください。
+
+</details>
+
+<details>
+<summary>Power BIはFabricなしでDatabricksのデータを使えますか？</summary>
+
+はい。Power BIはインポートモードまたはDirectQueryモードでDatabricksのSQLウェアハウスに接続できます。Direct LakeにはFabricのキャパシティが必要で、ミラーリングしたAzure DatabricksのカタログはサポートされたDirect Lakeのソースです。
+
+</details>
+
+<details>
+<summary>Unity CatalogのセキュリティはFabricに引き継がれますか？</summary>
+
+いいえ。FabricがAzure Databricksのカタログをミラーリングするとき、ミラーリングされるのはメタデータで、データはショートカットを通じて読み取られます。Unity Catalogのポリシーと権限はミラーリングされないため、Fabric独自の権限モデルが適用されます。アクセスのルールはFabric側で設計し、文書化してください。
+
+</details>
+
+<details>
+<summary>Microsoft FabricはAzure Governmentで利用できますか？</summary>
+
+FabricはGCC High環境のUS Gov VirginiaとUS Gov Texasで動いていますが、機能は商用のFabricより限られています。2026年10月時点のMicrosoft Learnによると、カスタマーマネージドキー、大半のミラーリングのソース、Copilot for Power BIはサポートされていません。GCC HighのFedRAMP Highはまだ審査中です。計画の前に最新の一覧を確認してください。
+
+</details>
+
+<details>
+<summary>機械学習にはDatabricksとFabricのどちらが適していますか？</summary>
+
+機械学習と生成AIのツールはDatabricksのほうが充実しています。MLflow、モデルサービング、Genie、カスタムエージェント向けのAgent Bricksです。Fabricは機械学習の実験とモデル、データエージェント（GA）、Copilotをカバーしており、データエージェントはMicrosoft Foundryから利用できます（プレビュー）。機械学習が追加機能ではなく中核の能力であるなら、通常はDatabricksのほうが強固な基盤です。
+
+</details>

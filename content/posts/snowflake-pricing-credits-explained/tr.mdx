@@ -1,0 +1,223 @@
+---
+title: "Snowflake fiyatlandırması: credits, sürümler ve maliyetler"
+h1: "Snowflake fiyatlandırması: credits, sürümler ve maliyetler"
+slug: "snowflake-pricing-credits-explained"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/snowflake-pricing-credits-explained.webp"
+heroAlt: "Noel D'Costa, maliyet dashboard'u ve basılı faturalar bulunan bir finans masasının yanında"
+category: "data-and-ai"
+tags: ["snowflake", "data-platform-cost"]
+author: "Noel D'Costa"
+metaTitle: "Snowflake Fiyatlandırması: Credits, Sürümler ve Maliyetler"
+metaDescription: "Snowflake fiyatlandırması: sürüme ve bölgeye göre credit fiyatı, warehouse'ların saatlik credit'i, depolama, yapay zeka ve serverless ücretleri, tasarruf."
+primaryKeyword: "Snowflake fiyatlandırması"
+excerpt: "Snowflake işlem gücünü credits ile, depolamayı terabayt başına, veri hareketini de terabayt başına faturalar. Her birinin liste fiyatıyla ne tuttuğunu, faturaların kimse fark etmeden nerede büyüdüğünü ve canlıya geçişten önce kurduğum kontrolleri anlatıyorum."
+experienceSource: "Noel's first-person experience with Snowflake on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts and prices checked against official Snowflake documentation and the Snowflake Service Consumption Table effective 9 October 2026, checked October 2026."
+keyTakeaways:
+  - "Faturanın kendisi işlem gücüdür. Bir credit'in isteğe bağlı liste fiyatı sürüme, buluta ve bölgeye göre $2.00 ile $9.75 arasındadır"
+  - "Warehouse boyutu her adımda credit oranını ikiye katlar: X-Small saatte 1 credit, 4X-Large saatte 128 credit yakar"
+  - "Depolama ABD bölgelerinde ayda sıkıştırılmış TB başına yaklaşık $23'tür ve bir CFO'yu şaşırtan kalem nadiren budur"
+  - "Serverless özellikler, %10 kotanın üzerindeki cloud services ve Cortex AI credits, warehouse bütçenizin dışında durur"
+  - "Kapasite sözleşmeleri platform credits'te indirim sağlar, ama bu indirim AI credits'e uygulanmaz"
+  - "Auto-suspend, resource monitor'lar, bütçeler ve etiketlemeyi ilk faturadan sonra değil, ilk üretim yüklemesinden önce kurun"
+pullQuote: "Snowflake nadiren credit başına fiyat yüzünden pahalılaşır. Warehouse'ların sahibi olmadığı için pahalılaşır."
+mentions:
+  - "Snowflake"
+  - "Snowflake Cortex"
+  - "Snowpark Container Services"
+  - "Snowpipe"
+  - "Query Acceleration Service"
+  - "Search Optimization Service"
+  - "Virtual Private Snowflake"
+  - "Amazon Web Services"
+  - "Microsoft Azure"
+  - "Google Cloud"
+originalUrl: "https://noeldcosta.com/snowflake-pricing-credits-explained/"
+canonicalUrl: "https://noeldcosta.com/tr/snowflake-pricing-credits-explained/"
+locale: "tr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Snowflake fiyatlandırması kullanıma dayalıdır: işlem gücü için credits ile, depolama için ayda terabayt başına ve bir bölgeden dışarı taşınan veri için ödeme yaparsınız. Bir credit'in liste fiyatı, buluta ve bölgeye göre Standard sürümde $2.00 ile $3.25, Business Critical'da $4.00 ile $6.50 arasındadır (liste fiyatı, Ekim 2026'da kontrol edildi).
+
+Bu manşet rakam size çok az şey söyler. Ne ödeyeceğiniz; warehouse'larınızın ne kadar büyük olduğuna, ne kadar süre çalıştığına, hangi serverless özelliklerin açık olduğuna ve birinin bunları izleyip izlemediğine bağlıdır.
+
+Çalıştığım üretim ve savunma programlarında credit başına fiyat hiçbir zaman sorun olmadı. Sorunlar; açık bırakılan warehouse'lar, kimsenin bütçelemediği serverless özellikler ve tahmine göre boyutlandırılmış bir sözleşmeydi. Bu rehber birimleri, liste fiyatlarını, gizli maliyet kalemlerini ve ilk gün kuracağım kontrolleri ele alıyor.
+
+## Snowflake credits nasıl işler
+
+Snowflake'in artık iki faturalama birimi var. Platform credits; sanal warehouse'lar, Snowpark Container Services, serverless özellikler ve cloud services için ödenir.
+
+AI credits ise Cortex AI özellikleri için ödenir. Eski bir sözleşme "credits" dediğinde platform credits'i kastediyor.
+
+Sanal warehouse, adı olan bir işlem gücü bloğudur. Bir boyut seçersiniz ve boyut credit oranını belirler. Her bir üst boyut oranı ikiye katlar.
+
+Çalışan bir warehouse saniye bazında faturalanır; her başladığında veya devam ettirildiğinde 60 saniyelik bir minimum vardır. Askıya alınmış bir warehouse hiçbir şey tutmaz.
+
+Aşağıdaki tablo, Snowflake'in [warehouse dokümantasyonundan](https://docs.snowflake.com/en/user-guide/warehouses-overview) ve 9 Ekim 2026'dan itibaren geçerli Service Consumption Table'dan alındı.
+
+| Boyut | Saat başına credit (standart, Gen1) | Saat başına credit (Gen2, AWS) |
+|---|---|---|
+| X-Small | 1 | 1.35 |
+| Small | 2 | 2.7 |
+| Medium | 4 | 5.4 |
+| Large | 8 | 10.8 |
+| X-Large | 16 | 21.6 |
+| 2X-Large | 32 | 43.2 |
+| 3X-Large | 64 | 86.4 |
+| 4X-Large | 128 | 172.8 |
+| 5X-Large | 256 | yok |
+| 6X-Large | 512 | yok |
+
+Gen2 warehouse'lar daha hızlı çalıştıkları için saat başına daha pahalıdır (Azure'da 1,25 kat, AWS ve GCP'de 1,35 kat). Daha ucuza gelip gelmeyecekleri iş yükünüze bağlıdır, bu yüzden geçmeden önce test edin. Gen2 her bölgede mevcut değildir ve varsayılan değildir.
+
+İki warehouse türünün daha kendi minimumları var. Interactive warehouse'ların liste saatlik oranları daha düşüktür (X-Small'da saatte 0,6 credit), ama her başladıklarında en az 60 dakika faturalanırlar. Bellek yoğun Python ve ML işleri için Snowpark-optimised warehouse'lar, küçük boyutlarda bellek seçeneğine bağlı olarak saatte 1 ile 6 credit arasında çalışır.
+
+Çok kümeli (multi-cluster) warehouse'lar oranı çalışan küme sayısıyla çarpar. Üç kümeye izin verilen bir Medium warehouse saatte 12 credit'e kadar yakabilir. Multi-cluster, Enterprise sürümünün bir özelliğidir.
+
+## Sürümler ve credit başına fiyat
+
+Seçtiğiniz sürüm, yaktığınız her credit'in fiyatını belirler; bu yüzden sözleşmedeki en büyük tek kaldıraçtır. Aşağıdaki aralıklar, [Snowflake Service Consumption Table'ın](https://www.snowflake.com/legal-files/CreditConsumptionTable.pdf) Tablo 2(a)'sından alındı: platform credit başına isteğe bağlı liste fiyatı, Ekim 2026'da kontrol edildi.
+
+| Sürüm | Ne ekler | Credit başına isteğe bağlı liste fiyatı | AWS US East (N. Virginia) |
+|---|---|---|---|
+| Standard | Temel platform, Snowpark, veri paylaşımı, Time Travel | $2.00 ile $3.25 arası | $2.00 |
+| Enterprise | Multi-cluster warehouse'lar, daha ince yönetişim kontrolleri, daha uzun Time Travel, Query Acceleration | $3.00 ile $4.90 arası | $3.00 |
+| Business Critical | Tri-Secret Secure, özel bağlantı, failover ve failback | $4.00 ile $6.50 arası | $4.00 |
+| Virtual Private Snowflake (VPS) | Business Critical'daki her şey, diğer hesaplardan izole bir ortamda | $6.00 ile $9.75 arası, artı yıllık dağıtım ücreti | $6.00 |
+
+En ucuz bölgeler ana ABD bölgeleridir. En pahalıları Zürih, Switzerland North, Hong Kong ve Dammam gibi yerlerdir. Körfez (GCC) veya Avrupa'daki bir alıcı için bölge seçimi, tek bir sorgu yazmadan faturayı %30 veya daha fazla değiştirebilir.
+
+Savunma için bu daha da önemlidir. Tablodaki ABD kamu bölgelerinde (AWS US Gov West 1, DoD bölgesi ve FedRAMP High Plus bölgeleri dahil) Standard ve Enterprise sunulmuyor. Business Critical credit başına $4.80 ile $5.60 arasından başlıyor.
+
+Programınızın egemenlik veya ihracat kontrolü kısıtları varsa, baştan Business Critical için bütçe ayırın. Standard sürümde, bir savunma güvenlik incelemesinin soracağı şifreleme ve özel bağlantı kontrolleri yok. Snowflake'i bir kamu veya Körfez bölgesinde kendim devreye almadım; bu yüzden bu bölgesel rakamları liste fiyatı rehberi olarak görün ve hedef bölgenizde hangi servislerin canlı olduğunu Snowflake ile teyit edin.
+
+Çoğu üretici için Enterprise ile başlardım. Ay sonu raporlamasının veri bilimi ekibinin arkasında kuyrukta beklemesini önleyen şey multi-cluster warehouse'lar ve Query Acceleration'dır.
+
+## Depolama, veri transferi ve diğer kalemler
+
+**Depolama**, sıkıştırılmış verinin aylık ortalaması üzerinden faturalanır. İsteğe bağlı liste fiyatı ana ABD bölgelerinde ayda TB başına $23, Frankfurt'ta $24.50 ve AWS US Gov West 1'de $39'dur. Daha büyük yıllık taahhütlü kapasite sözleşmeleri bunu düşürür; US East'te en üst kademede TB başına $13.80'e iner.
+
+**Veri transferi** aynı bulut ve bölge içinde ücretsizdir. Veriyi dışarı taşımak para tutar. AWS US East'ten başka bir AWS bölgesine TB başına $20, başka bir buluta veya internete TB başına $90 olarak listeleniyor.
+
+Kamu bölgeleri daha fazla ücret alır. ERP'niz Azure'da, Snowflake AWS'deyse, Snowflake'ten Azure'a geri çıkan her veri aktarımı bu bulutlar arası ücreti taşır. [ERP verisini Snowflake'e taşıma](/tr/erp-data-into-snowflake/) rehberim hesabın nereye konumlandırılacağını ele alıyor.
+
+**Cloud services**; oturum açmaları, sorgu derlemeyi ve meta veriyi yöneten katmandır. Kullanım saati başına 4,4 credit olarak faturalanır, ama yalnızca o günün warehouse credits'inin %10'unun üzerindeki kısmı için.
+
+Çoğu hesap hiç ücret görmez. Çok sayıda küçük sorgu çalıştıran veya BI araçlarından sürekli meta veri sorgulayan hesaplar görür.
+
+**Serverless özellikler**, Snowflake tarafından yönetilen işlem gücü üzerinde, işlem saati başına bir credit çarpı bir özellik çarpanıyla çalışır. Warehouse listenizde hiçbir şey görünmez; insanları şaşırtmalarının nedeni budur. Tüketim tablosunun Tablo 5'inden:
+
+1. Snowpipe: yüklenen GB başına 0,0037 credit.
+2. Otomatik kümeleme (automatic clustering): 2 kat işlem gücü, artı cloud services.
+3. Search Optimization Service: 2 kat işlem gücü, artı cloud services.
+4. Materialized view bakımı: 2 kat işlem gücü, artı cloud services.
+5. Serverless görevler: 0,9 kat işlem gücü, artı cloud services.
+6. Query Acceleration: 1 kat işlem gücü, kullanıldığında saniye bazında faturalanır.
+
+Hızla değişen bir tablo üzerindeki kümeleme ve arama optimizasyonu, onu sorgulayan warehouse'lardan sessizce daha pahalıya gelebilir. Canlıya geçişten önce bunların her birini gözden geçiririm.
+
+## Cortex AI ve Snowpark Container Services
+
+**Cortex AI**, ayrı bir birim olan AI credits ile faturalanır. İsteğe bağlı bir AI credit'in liste fiyatı $2.00 (global) veya $2.20'dir (bölgesel). Platform credit indiriminiz AI credits'e uygulanmaz.
+
+Cortex fonksiyonları milyon token başına ücret alır; girdi ve çıktı çoğu zaman farklı fiyatlanır. Tüketim tablosunda llama3.3-70b her iki yönde milyon token başına 0,36 AI credit, mistral-large2 ise girdi için 1,00 ve çıktı için 3,00 olarak listeleniyor. Cortex Analyst 1.000 mesaj başına 67 platform credit, Cortex Search ise indekslenmiş veri için ayda GB başına 6,3 AI credit faturalıyor.
+
+Veri yerleşimi için Cortex'i yalnızca bölgesel modda çalıştırıyorsanız, daha yüksek oranı bekleyin. [Bölgeler arası çıkarım (inference) dokümantasyonu](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cross-region-inference) yönlendirme seçeneklerini açıklıyor.
+
+Savunma için genellikle kabul edilebilir tek ayar bölgesel işlemedir. [Snowflake Cortex AI ve Snowflake Intelligence](/tr/snowflake-cortex-ai-snowflake-intelligence/) yazım bu özelliklerin ne yaptığını ele alıyor.
+
+**Snowpark Container Services**, kendi container'larınızı işlem havuzları (compute pools) üzerinde çalıştırır. Her düğüm türünün bir credit oranı vardır. En küçük genel amaçlı düğümler saatte 0,1 credit'in epey altında listelenir, GPU düğümleri ise yaklaşık 0,5'ten 20'nin üzerine kadar çıkar.
+
+Düğümler her başladığında beş dakikalık bir minimum faturalanır. Bir hafta sonu boyunca açık bırakılan bir GPU havuzu, bu platformda aklıma gelen en pahalı hatadır.
+
+## Örnek hesap: bir warehouse, iki alışkanlık
+
+Bu örnek yalnızca açıklama amaçlıdır. Ekim 2026 tüketim tablosundaki liste fiyatlarını kullanıyor: Enterprise sürümü, AWS US East, credit başına $3.00, TB başına $23 depolama.
+
+Bir Medium warehouse saatte 4 credit yakar. 22 iş gününde günde on saat kullanıldığında bu 880 credit, yani ayda $2,640 eder. Auto-suspend kapalı olan aynı warehouse ayda 720 saat çalışır.
+
+Bu da 2.880 credit, yani $8,640 eder. Aynı sorgular, aynı kullanıcılar, üç kattan fazla fatura.
+
+Şimdi 20 TB sıkıştırılmış depolama ekleyin: ayda $460. Depolama gerçek paradır, ama çalıştığım platformlarda bir CFO'yu endişelendiren kalem nadiren bu oldu. Endişelendiren, boşta duran işlem gücü ve izlenmeyen serverless özelliklerdi.
+
+Kurumsal indirimler ve kapasite taahhütleri bu rakamları değiştirir. Şekli değiştirmez.
+
+## İsteğe bağlı ve kapasite sözleşmeleri
+
+Snowflake iki şekilde satar. **İsteğe bağlı (on demand)**, taahhüt olmadan, ay sonunda liste fiyatıyla ödemek demektir. **Kapasite** ise yıllık bir harcamayı taahhüt etmeniz ve sipariş formunuzda belirlenen bir indirimi platform credits üzerinden almanız demektir.
+
+Kapasite tüm hesaplarınızda kullanılabilir. Yıllık sözleşme değeriniz büyüdükçe depolama ucuzlar. AI credits'in kendi kademeleri vardır.
+
+Kuralım şu: yaklaşık üç ay isteğe bağlı ya da küçük bir taahhütle çalıştırın. Sonra sözleşmeyi tedarikçinin boyutlandırma çalışma kitabından değil, `ACCOUNT_USAGE` verisinden boyutlandırın. Bu üç ay size tüketim modelinin kendi iş yüklerinizde nasıl davrandığını da gösterir.
+
+Gereğinden büyük bir taahhüt, kullansanız da kullanmasanız da harcanmış paradır. Devir (rollover) koşullarını dikkatle okuyun. Aynı disiplin her kurumsal yazılım anlaşması için geçerli; bunu [ERP sözleşme pazarlığı vaka çalışmamda](/tr/erp-implementation-contract-negotiation-cost-review-cfo/) ele alıyorum.
+
+## Canlıya geçişten önce kurduğum kontroller
+
+Snowflake size iyi araçlar veriyor. [Maliyet kontrolü dokümantasyonu](https://docs.snowflake.com/en/user-guide/cost-controlling) bunları açıklıyor. Ancak yalnızca biri onları ilk üretim yüklemesinden önce yapılandırırsa işe yararlar.
+
+1. **Her warehouse'ta auto-suspend.** Varsayılan olarak açıktır. Kimsenin kapatmadığını kontrol edin. Ani yük artışları olan iş yüklerinde çok kısa ayarlar daha pahalıya gelebilir, çünkü her devam ettirme 60 saniyelik minimumu faturalar.
+2. **İş yüküne göre doğru boyutlandırın.** ELT, BI ve veri bilimi için ayrı warehouse'lar. Küçük başlayın ve yalnızca sorgu geçmişi taşma (spilling) veya kuyruk gösterdiğinde büyütün.
+3. **Sınırlarla multi-cluster.** Makul bir maksimum küme sayısı belirleyin. Bir miktar kuyruğun kabul edilebilir olduğu yerlerde Economy ölçekleme politikasını kullanın.
+4. **Resource monitor'lar.** Warehouse credits'i izlerler ve bir eşikte bir warehouse'u askıya alabilirler. Serverless özellikleri kapsamazlar.
+5. **Bütçeler.** Serverless özellikleri de kapsayan uyarılarla aylık harcama limitleri. Departman başına özel bütçeler kullanın.
+6. **Ölçek faktörüyle Query Acceleration.** Ani taramalar için faydalı, ama tavan koyun. Varsayılan ölçek faktörü, warehouse'un kendi oranının sekiz katına kadar ekleme yapmasına izin verir.
+7. **Etiketleme.** Warehouse'lar ve kullanıcılar üzerinde nesne etiketleri, paylaşılan uygulamalar için sorgu etiketleri. Bunlar olmadan hangi tesisin, programın veya fonksiyonun ne harcadığını kimse söyleyemez.
+8. **`ACCOUNT_USAGE`'ın haftalık incelemesi.** Warehouse credits için `WAREHOUSE_METERING_HISTORY`, sorgu başına maliyet için `QUERY_ATTRIBUTION_HISTORY`, bunu sahiplerle eşleştirmek için `TAG_REFERENCES`. Sorgu başına maliyetin boşta geçen süreyi, depolamayı, serverless'ı ve yapay zekayı içermediğini unutmayın.
+
+Taahhütte bulunmadan önce bunu öğrenmenin iyi bir yolu deneme sürümüdür. Snowflake şu anda $400 ücretsiz credit içeren 30 günlük bir deneme sunuyor.
+
+Yapay zeka özellikleri siz bir kart ekleyene kadar kapalıdır. Gerçekten satın alacağınız bulutu, bölgeyi ve sürümü seçin, çünkü bunlar sonradan değiştirilemez.
+
+## Sırada ne var
+
+İmzalamadan önce üç rakamı tek bir sayfada görün: iş yüküne göre aylık credits, sürüm ve bölge fiyatı ve ayrı kalemler olarak serverless ile yapay zeka. Tedarikçiniz veya entegratörünüz (SI) bunu veremiyorsa, tahmin bir tahminden ibarettir. Hâlâ bir platform seçiyorsanız, [Snowflake ve Databricks karşılaştırmam](/tr/snowflake-vs-databricks/) ve [Databricks fiyatlandırma rehberim](/tr/databricks-pricing-explained/) aynı bakış açısını kullanıyor.
+
+Kurumlara veri platformu sözleşmelerini boyutlandırma ve canlıya geçişten önce maliyet yönetişimini kurma konusunda yardımcı oluyorum. İşinize yarayacaksa [benimle iletişime geçin](/tr/contact-noel-erp-support/).
+
+## Sıkça sorulan sorular
+
+<details>
+<summary>Bir Snowflake credit'i ne kadar tutar?</summary>
+
+İsteğe bağlı olarak bir platform credit'inin liste fiyatı, buluta ve bölgeye göre Standard sürümde $2.00 ile $3.25, Enterprise'da $3.00 ile $4.90, Business Critical'da $4.00 ile $6.50 ve Virtual Private Snowflake'te $6.00 ile $9.75 arasındadır (liste fiyatı, Ekim 2026'da kontrol edildi). AWS US East'te rakamlar $2, $3, $4 ve $6'dır. Kapasite sözleşmeleri bu fiyatlara pazarlıkla belirlenen bir indirim uygular.
+
+</details>
+
+<details>
+<summary>Snowflake saniye bazında mı faturalanır?</summary>
+
+Evet. Standart sanal warehouse'lar, her başladığında veya devam ettirildiğinde 60 saniyelik minimumla saniye bazında faturalanır. Interactive warehouse'ların 60 dakikalık, Snowpark Container Services düğümlerinin ise beş dakikalık minimumu vardır. Askıya alınmış warehouse'lar hiçbir şey tutmaz.
+
+</details>
+
+<details>
+<summary>Snowflake depolaması TB başına ne kadar tutar?</summary>
+
+İsteğe bağlı depolamanın liste fiyatı ana ABD bölgelerinde ayda TB başına $23'tür; bazı bölgelerde daha yüksektir, örneğin Frankfurt'ta $24.50 ve AWS US Gov West 1'de $39. Sıkıştırılmış boyut üzerinden faturalanır. Kapasite sözleşmeleri, yıllık sözleşme değeriniz büyüdükçe oranı düşürür.
+
+</details>
+
+<details>
+<summary>Snowflake'in ücretsiz deneme sürümü var mı?</summary>
+
+Evet. Snowflake, $400 ücretsiz credit içeren 30 günlük bir deneme sunuyor. Deneme, 30 gün dolduğunda ya da credits bittiğinde, hangisi önce olursa, sona erer. Yapay zeka özellikleri siz bir kredi kartı ekleyene kadar kapalıdır ve seçtiğiniz bulut, bölge ve sürüm sonradan değiştirilemez.
+
+</details>
+
+<details>
+<summary>Snowflake cloud services %10 düzeltmesi nedir?</summary>
+
+Cloud services kullanımı, o günün warehouse credits'inin %10'una kadar ücretsizdir. Yalnızca bu çizginin üzerindeki kullanım faturalanır. Serverless özellikler ve Snowpark Container Services kullanımı bu kotaya sayılmaz.
+
+</details>
+
+<details>
+<summary>Snowflake faturam neden beklenenden yüksek?</summary>
+
+Olağan nedenler; hiç askıya alınmayan warehouse'lar, gereğinden büyük warehouse'lar, tavanı olmayan multi-cluster ve otomatik kümeleme, arama optimizasyonu ve materialized view'lar gibi serverless özelliklerdir. Cortex AI kullanımı ve bulutlar arası veri transferi de birikir. Kaynağı bulmak için `WAREHOUSE_METERING_HISTORY`'yi ve serverless kullanım view'larını sorgulayın, ardından bütçeleri ve resource monitor'ları kurun.
+
+</details>

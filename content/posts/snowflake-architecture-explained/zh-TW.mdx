@@ -1,0 +1,210 @@
+---
+title: "Snowflake 架構說明，以及它的用途"
+h1: "Snowflake 架構說明，以及它的用途"
+slug: "snowflake-architecture-explained"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/snowflake-architecture-explained.webp"
+heroAlt: "明亮的工程組裝廠房全景，有多個工作站與一座天車"
+category: "data-and-ai"
+tags: ["snowflake", "data-governance", "manufacturing"]
+author: "Noel D'Costa"
+metaTitle: "Snowflake 架構說明：分層、用途與限制"
+metaDescription: "用白話說明 Snowflake 架構：儲存、運算與雲端服務、micro-partitions、Time Travel、資料共享、Iceberg、各版本，以及它的用途。"
+primaryKeyword: "Snowflake 架構"
+excerpt: "Snowflake 是一個雲端資料平台，把儲存、運算與協調分成三個獨立的層。本文說明這個架構如何運作、企業用它來做什麼，以及它在哪些情況下並不合適。"
+experienceSource: "Noel's first-person experience with Snowflake on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts checked against official Snowflake documentation, October 2026."
+keyTakeaways:
+  - "Snowflake 把儲存、運算（虛擬 warehouse）與雲端服務分開，因此每一層都能各自擴充、各自計費"
+  - "資料存放在壓縮的欄式 micro-partitions 中；中繼資料讓查詢可以跳過不需要的部分"
+  - "Time Travel、零複製複製與安全資料共享，都來自同一套中繼資料設計"
+  - "Iceberg 資料表、Horizon Catalog 與 Snowflake Postgres（2026 年 2 月 GA）讓它超越傳統資料倉儲"
+  - "受監管的工作通常需要 Business Critical 以上版本；Snowflake 無法安裝在地端"
+  - "它不適合繁重的交易型工作負載，也不適合絕對不能離開您自有資料中心的資料"
+pullQuote: "大多數 Snowflake 的成本意外，都是沒有人寫下來的架構決策。"
+mentions:
+  - "Snowflake"
+  - "Snowpark"
+  - "Snowflake Horizon Catalog"
+  - "Snowflake Open Catalog"
+  - "Apache Polaris"
+  - "Apache Iceberg"
+  - "Snowflake Postgres"
+  - "Snowflake Marketplace"
+  - "Tri-Secret Secure"
+  - "Amazon Web Services"
+  - "Microsoft Azure"
+  - "Google Cloud"
+originalUrl: "https://noeldcosta.com/snowflake-architecture-explained/"
+canonicalUrl: "https://noeldcosta.com/zh-TW/snowflake-architecture-explained/"
+locale: "zh-TW"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Snowflake 架構把資料平台分成三個可以獨立擴充的層：儲存、運算（稱為虛擬 warehouse），以及協調一切的雲端服務層。企業把 Snowflake 當作雲端資料倉儲，用於報表與分析，也越來越常用它來共享資料、執行 Python，以及在受治理的資料上建構 AI。
+
+把儲存與運算分開，這一個設計選擇，解釋了 Snowflake 大部分的長處，也解釋了它大部分的成本。
+
+我曾在製造業與國防產業的資料平台專案中使用 Snowflake。我常看到一種模式：主管們為了分析功能買下它，後來才發現架構決策（要幾個 warehouse、哪個版本、資料放在哪裡）決定了帳單與合規立場。這份指南寫給在簽約前需要理解這些決策的 CIO、CDO 或架構師。
+
+## 用一段話說明 Snowflake 是什麼
+
+Snowflake 是一個完全託管的資料平台，執行於 Amazon Web Services、Microsoft Azure 與 Google Cloud 上。您不需要安裝、修補或調校索引。您載入資料、撰寫 SQL（或 Python），並分別為儲存與運算付費。
+
+Snowflake 將其設計描述為共享磁碟與無共享架構的混合：一個集中的資料儲存，由各自獨立的運算叢集查詢。對國防買方來說，有一個事實要及早知道：根據 Snowflake 自己的[關鍵概念與架構指南](https://docs.snowflake.com/en/user-guide/intro-key-concepts)，它無法安裝在地端或私有雲基礎架構上。
+
+## Snowflake 架構的三個層
+
+以下是由下而上的架構。
+
+<explainer-layers title="逐層解析 Snowflake 架構" caption="儲存與運算各自擴充、各自計費，由雲端服務將兩者串連起來。" layers="雲端服務 => 安全性、存取控管、中繼資料、查詢最佳化與交易|運算 => 虛擬 warehouse：執行 SQL 與 Python 的獨立叢集，執行期間以 credits 計費|儲存 => 雲端物件儲存中壓縮的欄式 micro-partitions，按 TB 計費" tones="accent|data|"></explainer-layers>
+
+### 儲存
+
+當您載入資料時，Snowflake 會把它重新組織成壓縮的欄式格式，並存放在雲端物件儲存中。它把每一張資料表切成 micro-partitions，每個包含 50 MB 到 500 MB 的未壓縮資料。Snowflake 會為每一個 micro-partition 記錄中繼資料，例如每個欄位的值範圍。
+
+這些中繼資料就是聰明之處。一個以上個月生產訂單為篩選條件的查詢，會跳過所有日期範圍不可能符合的 micro-partitions。
+
+這稱為剪除（pruning），也是 Snowflake 不需要索引就能有良好效能的原因。這也代表資料進來的方式（依日期或工廠排序，或是隨機）會影響超大型資料表的成本。
+
+### 運算：虛擬 warehouse
+
+虛擬 warehouse 是執行查詢與程式碼的運算叢集。每一個都是獨立的。財務的月結報表可以在一個 warehouse 上執行，同時資料科學在另一個上跑繁重的作業，彼此不會拖慢對方。
+
+Warehouse 以 T 恤尺寸區分規格，只在執行時消耗 credits。閒置時可以自動暫停。較大的規格能讓單一繁重查詢跑得更快。
+
+更多叢集能同時服務更多使用者，這正是多叢集 warehouse 的作用：在 Enterprise 以上版本，當查詢開始排隊時，warehouse 可以自動增加叢集，負載下降後再移除。Snowflake 明確表示，多叢集有助於並行處理，而不是加快單一緩慢的查詢。那種情況要靠調整規格。
+
+我的定價指南 [Snowflake credits 與帳單的驅動因素](/zh-TW/snowflake-pricing-credits-explained/)詳細說明了成本面。
+
+### 雲端服務
+
+最上層負責驗證、存取控管、中繼資料、查詢最佳化與交易。Time Travel 與複製大多是中繼資料操作，所以是這一層讓它們成為可能。您很少會想到它，這正是重點。
+
+## 從架構衍生出的功能
+
+有趣的功能並不是外掛上去的，而是從儲存與中繼資料設計自然衍生出來的。
+
+1. **Time Travel。** 您可以查詢、複製或還原過去某個時間點的資料。Standard 版保留 1 天。Enterprise 以上版本對永久資料表最多可保留 90 天，詳見 [Time Travel 文件](https://docs.snowflake.com/en/user-guide/data-time-travel)。
+2. **Fail-safe。** Time Travel 期限到期後，永久資料表的資料會進入 7 天的 Fail-safe 期間。只有 Snowflake 能復原它。請把它當作災難復原，而不是您能掌控的備份。
+3. **零複製複製（Zero-copy cloning）。** 資料表、結構描述或資料庫的複本在建立時不會使用額外儲存，因為它指向同樣的 micro-partitions。您只需為之後變動的資料付費。團隊就是用這種方式在幾分鐘內建立完整規模的測試環境。
+4. **安全資料共享。** 提供者把即時資料表共享給另一個 Snowflake 帳戶，過程中不會複製任何資料。使用方只需為查詢所用的運算付費。直接共享只能在同一區域內進行；跨區域共享則透過具自動履行功能的 listings 進行。
+5. **Snowflake Marketplace。** Listings 讓您把資料產品發布給特定合作夥伴或公開發布，包括天氣或市場指數等第三方資料。
+6. **Snowpark。** 適用於 Python、Java 與 Scala 的函式庫，把處理工作推進 Snowflake 內，而不是把資料拉出來。在資料旁邊執行容器化應用程式的 Snowpark Container Services，已在三大雲端的商用區域正式上市。
+
+對製造商來說，安全資料共享值得試行。但請實際看待起點：我看到的大多數供應商資料交換，仍然是檔案傳輸。
+
+共享一張受治理的資料表更乾淨，而且可以撤銷。從一家供應商與一個資料集開始，先證明可行，再規劃更多。
+
+## Iceberg、目錄、混合資料表與 Postgres：Snowflake 的發展方向
+
+Snowflake 過去代表「您的資料以 Snowflake 的格式存放」。這已經改變了，名稱也變了。以下是截至 2026 年 10 月的現況：
+
+| 功能 | 作用 | 狀態（2026 年 10 月） |
+|---|---|---|
+| Apache Iceberg 資料表 | 資料以開放的 Iceberg 格式存放在您或 Snowflake 的雲端儲存中 | 自 2024 年 6 月起 GA；Snowflake 託管儲存選項於 2026 年 6 月 GA（商用 AWS 與 Azure） |
+| Snowflake Horizon Catalog | 建立在 Apache Polaris 上的治理與目錄；外部引擎透過 Iceberg REST API 讀取 Snowflake 託管的 Iceberg 資料表 | 建議新客戶使用 |
+| Snowflake Open Catalog | 託管的 Apache Polaris 服務（前身為 Polaris Catalog） | GA，但不再接受新客戶；既有使用者可繼續使用 |
+| 混合資料表（Unistore） | 以列為基礎的資料表，在分析資料旁邊提供低延遲的交易查詢 | 僅在商用 AWS 與 Azure 區域 GA |
+| Snowflake Postgres | Snowflake 平台內完全託管的 PostgreSQL | 自 2026 年 2 月 24 日起在 AWS 與 Azure 上 GA |
+
+實際上的結果是：Iceberg 資料表讓 Spark、Databricks 或其他引擎能處理 Snowflake 所查詢的同一批檔案，降低了綁定程度。Snowflake 的 [Open Catalog 概覽](https://docs.snowflake.com/en/user-guide/opencatalog/overview)現在告訴新客戶改用 Horizon Catalog。
+
+在任何人把混合資料表當作營運資料庫推銷之前，先讀一讀它的限制。每個資料庫的混合資料表資料上限為 2 TB，而且不支援 Fail-safe、資料共享、複寫或 streams。用來做應用程式的查詢對照表沒有問題。
+
+它們不是營運資料庫。如果應用程式需要在分析資料旁邊有一個營運資料庫，[Snowflake Postgres 已於 2026 年 2 月正式上市](https://docs.snowflake.com/en/release-notes/2026/other/2026-02-24-snowflake-postgres-ga)，是更名副其實的選擇。
+
+## 受監管產業的版本與安全性
+
+Snowflake 銷售四個版本：Standard、Enterprise、Business Critical 與 Virtual Private Snowflake（VPS）。版本決定您能獲得哪些安全功能，credit 價格也隨之提高。
+
+| 功能 | Standard | Enterprise | Business Critical | VPS |
+|---|---|---|---|---|
+| Time Travel | 1 天 | 最多 90 天 | 最多 90 天 | 最多 90 天 |
+| 多叢集 warehouse | 否 | 是 | 是 | 是 |
+| Tri-Secret Secure（客戶自管金鑰） | 否 | 否 | 是 | 是 |
+| 私人連線（AWS PrivateLink、Azure Private Link、Google Private Service Connect） | 否 | 否 | 是 | 是 |
+| 支援 HIPAA 與 PCI DSS | 否 | 否 | 是 | 是 |
+| 專用環境，不共用硬體 | 否 | 否 | 否 | 是 |
+
+Tri-Secret Secure 結合一把 Snowflake 金鑰，以及一把由您保存在雲端供應商金鑰管理服務中的金鑰。撤銷您的金鑰，Snowflake 就再也無法解密您的資料。對國防與航太供應商來說，這項控管比任何分析功能都重要。
+
+針對美國政府工作，Snowflake 在 AWS GovCloud 與 Azure Government 上運作 SnowGov 區域，開放給美國政府客戶與承包商。Snowflake 的[支援區域頁面](https://docs.snowflake.com/en/user-guide/intro-regions)列出這些區域支援 FedRAMP High、Impact Level 4 與 ITAR，其中一個 AWS 區域支援 Impact Level 5，並要求 Business Critical 以上版本。請逐區域確認功能可用性：Open Catalog、混合資料表與部分 Snowpark Container Services 並非在所有政府區域都可用。
+
+在我參與過的國防專案中，第一個問題從來不是「它有多快」，而是「資料放在哪裡、誰能看到，我們能不能向稽核人員證明」。在正確的區域與版本下，Snowflake 能好好回答這個問題。
+
+但對於必須留在您自己建築物內的資料，它無法回答。需要地端處理的機密或受出口管制的工作負載，需要另一個平台，而由 Snowflake 處理非機密的部分。
+
+## Snowflake 用來做什麼，以及不適合做什麼
+
+我看到的大多數用途，可以歸納為幾種模式。
+
+1. **企業報表與 BI。** 以 ERP 資料（SAP、Oracle 或 Microsoft Dynamics 365）產出財務、銷售與營運報表，上層搭配 Power BI、Tableau 或類似工具。這仍然是核心用途。我的[把 ERP 資料導入 Snowflake](/zh-TW/erp-data-into-snowflake/) 指南涵蓋了各種擷取選項。
+2. **製造營運資料。** 我看過落地到 Snowflake 的工廠與營運資料，是生產規劃資料。歷史資料庫、MES、品質與維護資料可以與它並存，JSON 格式的半結構化感測器資料也能原生載入。
+3. **與合作夥伴共享資料。** 供應商、經銷商與客戶可以直接查詢受治理的資料表。實務上，我看到的大多數供應商資料交換仍然是檔案傳輸。
+4. **在受治理資料上進行資料科學與 AI。** 透過 Snowpark 執行 Python，以及 Snowflake 的 AI 服務，我在 [Snowflake Cortex AI 與 Snowflake Intelligence](/zh-TW/snowflake-cortex-ai-snowflake-intelligence/) 一文中有說明。
+5. **併購後的整併。** 多套 ERP，一個報表層，並以複製功能建立安全的測試環境。
+
+我會猶豫的情況：
+
+1. **大量交易型系統。** 混合資料表與 Snowflake Postgres 有幫助，但您的 ERP 與 MES 交易應該留在它們自己的資料庫中。
+2. **即時機台控制。** Snowflake 適合以分鐘計的情境，而不是毫秒。把感測器資料串流進來沒問題，但用它來形成控制迴路就不行。
+3. **嚴格的地端要求。** 不存在地端安裝版本。
+4. **在 Spark 中進行大量自訂機器學習與資料工程。** 做得到，但許多團隊覺得 Databricks 更順手。我的 [Snowflake vs Databricks 比較](/zh-TW/snowflake-vs-databricks/)討論了這個選擇。
+
+### 雪花綱要 vs 星狀綱要：完全不同的東西
+
+搜尋 Snowflake 的人常常會看到「snowflake schema」（雪花綱要）。它和這個產品毫無關係。雪花綱要是一種資料建模模式，維度資料表被正規化成子資料表，所以圖形會像雪花一樣分支。
+
+星狀綱要則把每個維度保留在一張扁平的資料表中。這兩種模型您都可以在 Snowflake 或任何其他資料倉儲中建立。大多數 BI 團隊偏好星狀綱要，因為查詢更簡單。
+
+## 我會從哪裡開始
+
+簽約之前，寫下四個決策：依您的合規立場需要哪個版本、哪個雲端與區域、如何把工作負載分配到各個 warehouse，以及您的資料要留在 Snowflake 格式還是 Iceberg。請廠商與您的系統整合商提供每個 warehouse 的 credit 估算，而不是一個年度總數。大多數 Snowflake 的成本意外，都是沒有人寫下來的架構決策。
+
+如果 ERP 資料在範圍內，請先讀[為什麼 SAP 資料移轉會失敗](/zh-TW/why-sap-data-migration-fails-and-how-to-fix-it/)；同樣的資料品質問題會跟著您進入任何平台。如果您希望在 Snowflake 的決策上聽取第二意見，[歡迎與我聯繫](/zh-TW/contact-noel-erp-support/)。
+
+## 常見問題
+
+<details>
+<summary>Snowflake 用來做什麼？</summary>
+
+主要作為雲端資料倉儲，用於 ERP、CRM 與營運資料等業務資料的報表與分析。企業也用它與合作夥伴共享即時資料、透過 Snowpark 執行 Python 資料科學，以及在受治理的資料上建構 AI 應用程式。
+
+</details>
+
+<details>
+<summary>Snowflake 架構的三個層是什麼？</summary>
+
+儲存、運算與雲端服務。儲存層以壓縮的欄式 micro-partitions 保存資料。運算層由執行查詢的虛擬 warehouse 組成。雲端服務層負責安全性、中繼資料、查詢最佳化與交易。儲存與運算各自擴充、各自計費。
+
+</details>
+
+<details>
+<summary>Snowflake 是資料庫還是資料倉儲？</summary>
+
+兩者都是，取決於定義。它是為分析型工作負載打造的 SQL 資料庫，所以通常被稱為雲端資料倉儲。有了 Iceberg 資料表、混合資料表與 Snowflake Postgres，它現在也在一定限制內涵蓋 Lakehouse 與部分交易型使用情境。
+
+</details>
+
+<details>
+<summary>Snowflake 可以在地端執行嗎？</summary>
+
+不行。Snowflake 只在 AWS、Microsoft Azure 與 Google Cloud 上執行。針對美國政府與國防工作負載，它在 AWS GovCloud 與 Azure Government 上提供 SnowGov 區域，需要 Business Critical 以上版本。
+
+</details>
+
+<details>
+<summary>雪花綱要和 Snowflake 這家公司有關嗎？</summary>
+
+沒有。雪花綱要是一種維度資料表經過正規化的資料建模模式。它比這家公司更早出現，適用於任何資料倉儲。
+
+</details>
+
+<details>
+<summary>受監管的企業需要哪個 Snowflake 版本？</summary>
+
+通常是 Business Critical。它增加了搭配客戶自管金鑰的 Tri-Secret Secure、私人連線，以及 HIPAA 與 PCI DSS 支援，也是政府區域的最低要求。Virtual Private Snowflake 則再加上不共用硬體的專用環境。
+
+</details>

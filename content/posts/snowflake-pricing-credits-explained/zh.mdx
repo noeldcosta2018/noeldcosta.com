@@ -1,0 +1,223 @@
+---
+title: "Snowflake 定价详解：credits、版本与成本"
+h1: "Snowflake 定价详解：credits、版本与成本"
+slug: "snowflake-pricing-credits-explained"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/snowflake-pricing-credits-explained.webp"
+heroAlt: "Noel D'Costa 站在财务办公桌旁，桌上有成本仪表板和打印出来的发票"
+category: "data-and-ai"
+tags: ["snowflake", "data-platform-cost"]
+author: "Noel D'Costa"
+metaTitle: "Snowflake 定价详解：credits、版本与成本"
+metaDescription: "用大白话讲清 Snowflake 定价：按版本和区域的 credit 价格、warehouse 每小时 credits、存储、AI 和无服务器费用，以及如何削减支出。"
+primaryKeyword: "Snowflake 价格"
+excerpt: "Snowflake 按 credits 计费计算，按 TB 计费存储，按 TB 计费数据移动。本文说明每一项按标价要花多少钱、账单在哪里不知不觉地增长，以及我在上线前会设置的控制措施。"
+experienceSource: "Noel's first-person experience with Snowflake on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts and prices checked against official Snowflake documentation and the Snowflake Service Consumption Table effective 9 October 2026, checked October 2026."
+keyTakeaways:
+  - "计算才是账单的大头。按需情况下，一个 credit 的标价从 2.00 美元到 9.75 美元不等，取决于版本、云平台和区域"
+  - "warehouse 规格每升一级，credit 费率翻一倍：X-Small 每小时消耗 1 个 credit，4X-Large 消耗 128 个"
+  - "在美国区域，存储标价约为每压缩 TB 每月 23 美元，很少是让 CFO 感到意外的那一项"
+  - "无服务器功能、超出 10% 额度的云服务以及 Cortex AI credits 都不在您的 warehouse 预算之内"
+  - "容量合同对平台 credits 打折，但折扣不适用于 AI credits"
+  - "在第一次生产加载之前，而不是在收到第一张账单之后，设置自动挂起、资源监视器、预算和标签"
+pullQuote: "Snowflake 很少因为每个 credit 的价格而变贵。它变贵，是因为没人对 warehouse 负责。"
+mentions:
+  - "Snowflake"
+  - "Snowflake Cortex"
+  - "Snowpark Container Services"
+  - "Snowpipe"
+  - "Query Acceleration Service"
+  - "Search Optimization Service"
+  - "Virtual Private Snowflake"
+  - "Amazon Web Services"
+  - "Microsoft Azure"
+  - "Google Cloud"
+originalUrl: "https://noeldcosta.com/snowflake-pricing-credits-explained/"
+canonicalUrl: "https://noeldcosta.com/zh-CN/snowflake-pricing-credits-explained/"
+locale: "zh"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Snowflake 定价基于用量：您以 credits 为计算付费，按每 TB 每月为存储付费，并为移出区域的数据付费。根据云平台和区域不同，Standard 版本一个 credit 的标价为 2.00 美元到 3.25 美元，Business Critical 版本为 4.00 美元到 6.50 美元（标价，2026 年 10 月核实）。
+
+这个标题数字说明不了多少问题。您实际支付多少，取决于 warehouse 有多大、运行多久、开启了哪些无服务器功能，以及是否有人在盯着。
+
+在我参与过的制造业和国防项目中，每个 credit 的价格从来都不是问题。问题在于忘记关闭的 warehouse、没人做过预算的无服务器功能，以及凭猜测确定规模的合同。本指南涵盖计费单位、标价费率、隐藏的成本驱动因素，以及我会在第一天就设置的控制措施。
+
+## Snowflake credits 如何运作
+
+Snowflake 现在有两种计费单位。平台 credits 用于支付虚拟 warehouse、Snowpark Container Services、无服务器功能和云服务。
+
+AI credits 用于支付 Cortex AI 功能。较早的合同中说的“credits”，指的是平台 credits。
+
+虚拟 warehouse 是一块命名的计算资源。您选择一个规格，规格决定 credit 费率。每升一级，费率翻一倍。
+
+运行中的 warehouse 按秒计费，每次启动或恢复时最少计费 60 秒。挂起的 warehouse 不产生任何费用。
+
+下表来自 Snowflake 的 [warehouse 文档](https://docs.snowflake.com/en/user-guide/warehouses-overview)以及 2026 年 10 月 9 日生效的 Service Consumption Table。
+
+| 规格 | 每小时 credits（标准，Gen1） | 每小时 credits（Gen2，AWS） |
+|---|---|---|
+| X-Small | 1 | 1.35 |
+| Small | 2 | 2.7 |
+| Medium | 4 | 5.4 |
+| Large | 8 | 10.8 |
+| X-Large | 16 | 21.6 |
+| 2X-Large | 32 | 43.2 |
+| 3X-Large | 64 | 86.4 |
+| 4X-Large | 128 | 172.8 |
+| 5X-Large | 256 | 不适用 |
+| 6X-Large | 512 | 不适用 |
+
+Gen2 warehouse 每小时成本更高（Azure 上为 1.25 倍，AWS 和 GCP 上为 1.35 倍），因为它们运行得更快。它们最终是否更便宜取决于您的工作负载，所以切换之前先测试。Gen2 并非在每个区域都可用，也不是默认选项。
+
+另外两种 warehouse 类型有各自的最低计费。Interactive warehouse 的小时费率较低（X-Small 每小时 0.6 个 credit），但每次启动至少计费 60 分钟。用于内存密集型 Python 和机器学习工作的 Snowpark-optimised warehouse，在较小规格下每小时 1 到 6 个 credit，取决于内存选项。
+
+多集群 warehouse 的费率要乘以正在运行的集群数量。一个允许三个集群的 Medium warehouse，每小时最多可消耗 12 个 credit。多集群是 Enterprise 版本的功能。
+
+## 版本与每个 credit 的价格
+
+您选择的版本决定了您消耗的每一个 credit 的价格，所以它是合同中最大的单一杠杆。以下范围来自 [Snowflake Service Consumption Table](https://www.snowflake.com/legal-files/CreditConsumptionTable.pdf) 的表 2(a)，为每个平台 credit 的按需标价，于 2026 年 10 月核实。
+
+| 版本 | 增加的内容 | 每个 credit 的按需标价 | AWS US East（N. Virginia） |
+|---|---|---|---|
+| Standard | 核心平台、Snowpark、数据共享、Time Travel | 2.00 美元至 3.25 美元 | 2.00 美元 |
+| Enterprise | 多集群 warehouse、更细的治理控制、更长的 Time Travel、Query Acceleration | 3.00 美元至 4.90 美元 | 3.00 美元 |
+| Business Critical | Tri-Secret Secure、专用连接、故障转移与故障回切 | 4.00 美元至 6.50 美元 | 4.00 美元 |
+| Virtual Private Snowflake（VPS） | Business Critical 的全部内容，运行在与其他账户隔离的环境中 | 6.00 美元至 9.75 美元，另加年度部署费 | 6.00 美元 |
+
+最便宜的区域是美国的主要区域。最贵的是苏黎世、Switzerland North、香港和达曼这样的地方。对于海湾地区或欧洲的买家来说，在写下第一条查询之前，区域选择就可能让账单变动 30% 或更多。
+
+对于国防领域，这一点更加重要。在表中列出的美国政府区域（包括 AWS US Gov West 1、DoD 区域和 FedRAMP High Plus 区域），不提供 Standard 和 Enterprise 版本。Business Critical 每个 credit 起价为 4.80 美元至 5.60 美元。
+
+如果您的项目有主权或出口管制方面的约束，从一开始就按 Business Critical 做预算。Standard 版本缺少国防安全审查会问到的加密和专用连接控制。我自己没有在政府区域或海湾地区部署过 Snowflake，所以请把这些区域数字当作标价参考，并与 Snowflake 确认您的目标区域中有哪些服务已经上线。
+
+对大多数制造企业，我会从 Enterprise 版本开始。正是多集群 warehouse 和 Query Acceleration，让月末报表不必排在数据科学团队后面等待。
+
+## 存储、数据传输和其他费用项
+
+**存储**按压缩数据的月平均量计费。按需情况下，美国主要区域的标价为每 TB 每月 23 美元，法兰克福为 24.50 美元，AWS US Gov West 1 为 39 美元。年度承诺金额更大的容量合同可以把它降下来，在 US East 最高档可降至每 TB 13.80 美元。
+
+**数据传输**在同一云平台和区域内免费。把数据移出需要付费。从 AWS US East 出发，传到另一个 AWS 区域的标价为每 TB 20 美元，传到另一个云平台或互联网为每 TB 90 美元。
+
+政府区域收费更高。如果您的 ERP 在 Azure 上而 Snowflake 在 AWS 上，每一次从 Snowflake 传回 Azure 的抽取都要按跨云费率计费。我关于[把 ERP 数据导入 Snowflake](/zh-CN/erp-data-into-snowflake/) 的指南介绍了账户应该放在哪里。
+
+**云服务**是处理登录、查询编译和元数据的那一层。它按每使用一小时 4.4 个 credit 计费，但只对超出当天 warehouse credits 10% 的部分收费。
+
+大多数账户从来不会看到这笔费用。运行大量微小查询，或者 BI 工具不停轮询元数据的账户，就会看到。
+
+**无服务器功能**运行在 Snowflake 管理的计算上，按每计算小时一个 credit 乘以功能倍数计费。您的 warehouse 列表中什么都看不到，这就是它们让人意外的原因。以下来自消耗表的表 5：
+
+1. Snowpipe：每加载 1 GB 0.0037 个 credit。
+2. 自动聚簇：计算的 2 倍，另加云服务。
+3. Search Optimization Service：计算的 2 倍，另加云服务。
+4. 物化视图维护：计算的 2 倍，另加云服务。
+5. 无服务器任务：计算的 0.9 倍，另加云服务。
+6. Query Acceleration：计算的 1 倍，使用时按秒计费。
+
+在一张变化很快的表上，聚簇和搜索优化的成本可能悄悄超过查询它的 warehouse。上线前我会逐一审查它们。
+
+## Cortex AI 与 Snowpark Container Services
+
+**Cortex AI** 以 AI credits 计费，这是一个单独的单位。按需情况下，一个 AI credit 的标价为 2.00 美元（全球）或 2.20 美元（区域）。您的平台 credit 折扣不适用于 AI credits。
+
+Cortex 函数按每百万 token 收费，输入和输出的定价往往不同。在消耗表中，llama3.3-70b 的输入和输出均为每百万 token 0.36 个 AI credit，mistral-large2 的输入为 1.00、输出为 3.00。Cortex Analyst 每 1,000 条消息收取 67 个平台 credit，Cortex Search 按索引数据每 GB 每月收取 6.3 个 AI credit。
+
+如果您出于数据驻留要求以仅限区域的模式运行 Cortex，预计要按较高的费率付费。[跨区域推理文档](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cross-region-inference)解释了各种路由选项。
+
+对于国防领域，区域内处理通常是唯一可以接受的设置。我关于 [Snowflake Cortex AI 和 Snowflake Intelligence](/zh-CN/snowflake-cortex-ai-snowflake-intelligence/) 的文章介绍了这些功能能做什么。
+
+**Snowpark Container Services** 在计算池上运行您自己的容器。每种节点类型都有一个 credit 费率。最小的通用节点标价远低于每小时 0.1 个 credit，GPU 节点则从约 0.5 到超过 20 不等。
+
+节点每次启动最少计费五分钟。一个整个周末都开着的 GPU 池，是我能想到的在这个平台上代价最高的错误。
+
+## 示意性计算：一个 warehouse，两种习惯
+
+此示例仅作说明。它使用 2026 年 10 月消耗表中的标价：Enterprise 版本，AWS US East，每 credit 3.00 美元，存储每 TB 23 美元。
+
+一个 Medium warehouse 每小时消耗 4 个 credit。每天使用十小时，每月 22 个工作日，就是 880 个 credit，即每月 2,640 美元。同一个 warehouse 如果关闭了自动挂起，每月要运行 720 小时。
+
+那就是 2,880 个 credit，即 8,640 美元。同样的查询，同样的用户，账单是三倍多。
+
+再加上 20 TB 的压缩存储：每月 460 美元。存储确实要花钱，但在我参与过的平台中，它很少是让 CFO 担心的那一项。让人担心的是空闲的计算和无人看管的无服务器功能。
+
+企业折扣和容量承诺会改变这些数字。但形态不会变。
+
+## 按需与容量合同
+
+Snowflake 有两种销售方式。**按需**是指您按标价每月后付，没有承诺。**容量**是指您承诺一个年度支出，并在订单中约定平台 credits 的折扣。
+
+容量可以在您所有的账户之间使用。存储价格随年度合同金额增长而降低。AI credits 有自己的分档。
+
+我的规则是：先按需运行，或者只做一个小额承诺，持续大约三个月。然后根据 `ACCOUNT_USAGE` 数据确定合同规模，而不是根据厂商的规模测算工作簿。这三个月也会让您看到消耗模式在您自己的工作负载上如何表现。
+
+规模过大的承诺，不管用不用都是花出去的钱。仔细阅读结转条款。同样的纪律也适用于任何企业软件交易，我在 [ERP 合同谈判案例研究](/zh-CN/erp-implementation-contract-negotiation-cost-review-cfo/)中对此有介绍。
+
+## 上线前我会设置的控制措施
+
+Snowflake 提供了好用的工具。[成本控制文档](https://docs.snowflake.com/en/user-guide/cost-controlling)对其有说明。只有在第一次生产加载之前有人把它们配置好，它们才会起作用。
+
+1. **每个 warehouse 都启用自动挂起。** 它默认是开启的。检查没人把它关掉。对于突发性工作负载，设置得太短反而可能更贵，因为每次恢复都要按最低 60 秒计费。
+2. **按工作负载确定规格。** 为 ELT、BI 和数据科学分别设置 warehouse。从小规格开始，只有当查询历史显示出现溢出或排队时才升级。
+3. **多集群要有上限。** 设置合理的最大集群数。在可以接受一定排队的地方使用 Economy 扩展策略。
+4. **资源监视器。** 它们跟踪 warehouse credits，可以在达到阈值时挂起 warehouse。它们不覆盖无服务器功能。
+5. **预算。** 带告警的每月支出上限，确实覆盖无服务器功能。按部门使用自定义预算。
+6. **为 Query Acceleration 设置扩展系数。** 它对突发性扫描很有用，但要设上限。默认扩展系数允许它最多增加相当于 warehouse 自身费率八倍的消耗。
+7. **标签。** 在 warehouse 和用户上使用对象标签，为共享应用使用查询标签。没有它们，就没人说得清哪个工厂、哪个项目或哪个职能花了多少钱。
+8. **每周审查 `ACCOUNT_USAGE`。** 用 `WAREHOUSE_METERING_HISTORY` 查看 warehouse credits，用 `QUERY_ATTRIBUTION_HISTORY` 查看每条查询的成本，用 `TAG_REFERENCES` 将其与负责人关联。请记住，单条查询成本不包括空闲时间、存储、无服务器和 AI。
+
+在做出承诺之前，试用是学习这些的好方法。Snowflake 目前提供 30 天试用，附带 400 美元的免费 credits。
+
+在您添加信用卡之前，AI 功能处于禁用状态。请选择您实际会购买的云平台、区域和版本，因为之后无法更改。
+
+## 下一步做什么
+
+签约之前，把三个数字放在一页纸上：按工作负载划分的每月 credits、版本和区域对应的价格，以及单独列出的无服务器和 AI 费用。如果您的厂商或系统集成商给不出这些，那估算就只是猜测。如果您还在选择平台，我的 [Snowflake 与 Databricks 对比](/zh-CN/snowflake-vs-databricks/)和 [Databricks 定价指南](/zh-CN/databricks-pricing-explained/)用的是同样的视角。
+
+我帮助企业确定数据平台合同的规模，并在上线前建立成本治理。如果这对您有用，请[与我联系](/zh-CN/contact-noel-erp-support/)。
+
+## 常见问题
+
+<details>
+<summary>一个 Snowflake credit 要多少钱？</summary>
+
+按需情况下，平台 credit 的标价为：Standard 版本 2.00 美元至 3.25 美元，Enterprise 3.00 美元至 4.90 美元，Business Critical 4.00 美元至 6.50 美元，Virtual Private Snowflake 6.00 美元至 9.75 美元，取决于云平台和区域（标价，2026 年 10 月核实）。在 AWS US East，分别为 2 美元、3 美元、4 美元和 6 美元。容量合同会在这些费率上应用谈定的折扣。
+
+</details>
+
+<details>
+<summary>Snowflake 是按秒计费的吗？</summary>
+
+是的。标准虚拟 warehouse 按秒计费，每次启动或恢复时最少计费 60 秒。Interactive warehouse 最少计费 60 分钟，Snowpark Container Services 节点最少计费五分钟。挂起的 warehouse 不产生费用。
+
+</details>
+
+<details>
+<summary>Snowflake 存储每 TB 多少钱？</summary>
+
+按需存储在美国主要区域的标价为每 TB 每月 23 美元，在某些区域更高，例如法兰克福 24.50 美元，AWS US Gov West 1 为 39 美元。按压缩后的大小计费。容量合同会随着年度合同金额的增长降低费率。
+
+</details>
+
+<details>
+<summary>Snowflake 有免费试用吗？</summary>
+
+有。Snowflake 提供 30 天试用，附带 400 美元的免费 credits。30 天期满或 credits 用完，以先到者为准，试用即结束。在您添加信用卡之前，AI 功能处于禁用状态，而且您选择的云平台、区域和版本之后无法更改。
+
+</details>
+
+<details>
+<summary>Snowflake 云服务的 10% 调整是什么？</summary>
+
+云服务用量在当天 warehouse credits 的 10% 以内免费。只有超出这条线的用量才计费。无服务器功能和 Snowpark Container Services 的用量不计入这一额度。
+
+</details>
+
+<details>
+<summary>为什么我的 Snowflake 账单比预期高？</summary>
+
+常见原因包括从不挂起的 warehouse、规格过大的 warehouse、没有上限的多集群，以及自动聚簇、搜索优化和物化视图等无服务器功能。Cortex AI 用量和跨云数据传输也会累积起来。查询 `WAREHOUSE_METERING_HISTORY` 和无服务器用量视图来找到来源，然后设置预算和资源监视器。
+
+</details>

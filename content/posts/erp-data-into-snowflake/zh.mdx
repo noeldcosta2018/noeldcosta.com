@@ -1,0 +1,203 @@
+---
+title: "把 ERP 数据导入 Snowflake：SAP、Oracle 与 Dynamics 365"
+h1: "把 ERP 数据导入 Snowflake：SAP、Oracle 与 Dynamics 365"
+slug: "erp-data-into-snowflake"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/erp-data-into-snowflake.webp"
+heroAlt: "明亮的仓库里有高位货架、托盘、一把条码扫描枪和一台加固型平板电脑"
+category: "data-and-ai"
+tags: ["snowflake", "erp-data", "manufacturing"]
+author: "Noel D'Costa"
+metaTitle: "SAP 数据导入 Snowflake：SAP、Oracle 与 D365 的方案"
+metaDescription: "如何把 SAP 数据导入 Snowflake，以及 Oracle 和 Dynamics 365：对比 BDC 零复制、ODP 许可说明、Openflow、GoldenGate、BICC 和 Synapse Link。"
+primaryKeyword: "SAP 数据导入 Snowflake"
+excerpt: "2026 年把 SAP、Oracle 和 Microsoft Dynamics 365 的 ERP 数据导入 Snowflake 的现实途径，每条途径的许可陷阱，以及决定平台能否获得信任的数据模型工作。"
+experienceSource: "Noel's first-person experience with Snowflake and Databricks on data platform work in manufacturing and defence, including ERP data from SAP, Oracle and Microsoft Dynamics 365 (confirmed by Noel, 11 October 2026). No client names or figures. Product facts checked against official Snowflake, SAP, Oracle and Microsoft documentation, October 2026."
+keyTakeaways:
+  - "对于 SAP，有厂商支持的途径是 SAP Business Data Cloud，通过零复制共享进入 Snowflake，自 2026 年 5 月起正式发布"
+  - "SAP Note 3255746 指出，第三方使用 ODP 的 RFC 模块是不被允许的。要问清楚每家连接器厂商用的是哪个接口"
+  - "Oracle E-Business Suite 可以使用基于日志的 CDC（Openflow 或 GoldenGate）；Oracle Fusion Cloud ERP 不行，通常要通过 BICC 抽取"
+  - "Dynamics 365 的 Export to Azure Data Lake 将于 2026 年 11 月 30 日彻底停止。现在就迁移到 Synapse Link 或 Fabric link"
+  - "抽取只是较小的那部分工作。删除、币种、计量单位、主数据和丢失的权限占据了大部分工作量"
+pullQuote: "连接器是容易的部分。重建 ERP 原本对数据所了解的一切，才是真正的项目。"
+mentions:
+  - "Snowflake"
+  - "SAP Business Data Cloud"
+  - "SAP Snowflake"
+  - "SAP Datasphere"
+  - "SAP S/4HANA"
+  - "Snowflake Openflow"
+  - "Oracle E-Business Suite"
+  - "Oracle Fusion Cloud ERP"
+  - "Oracle GoldenGate"
+  - "Microsoft Dynamics 365 Finance and Operations"
+  - "Azure Synapse Link for Dataverse"
+  - "Microsoft Fabric"
+originalUrl: "https://noeldcosta.com/erp-data-into-snowflake/"
+canonicalUrl: "https://noeldcosta.com/zh-CN/erp-data-into-snowflake/"
+locale: "zh"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+2026 年，把 SAP 数据导入 Snowflake 有三条现实的途径。通过零复制共享的 SAP Business Data Cloud；用 SAP Datasphere 复制到云存储，再由 Snowflake 加载；或者使用一个采用 SAP 允许的接口的第三方工具。Oracle 和 Microsoft Dynamics 365 看起来更简单，但各有各的问题。
+
+Oracle Fusion Cloud ERP 不提供可供复制的数据库。Dynamics 365 finance and operations 再过几周就要失去 Export to Azure Data Lake。
+
+抽取工具是较小的那个决定。在我参与过的制造业和国防项目中，时间都花在数据落地之后：解读 ERP 表、处理删除、统一币种和计量单位，以及重建 ERP 原本执行的访问规则。
+
+对于 SAP、Oracle 和 Dynamics 365 的数据，我实际采用的途径是中间件。我的建议是选择能够支撑更大技术栈的中间件，也就是能接入比眼前这一个更多的源系统，而不是只做一件事的连接器。无论您选择哪个产品，都要对照下面这条说明，检查它在 SAP 上使用的接口。
+
+## 把 SAP 数据导入 Snowflake
+
+### SAP Business Data Cloud 与零复制共享
+
+SAP 和 Snowflake 于 2026 年 5 月的 SAP Sapphire 上宣布两项联合产品正式发布。Snowflake 关于该连接器的发布说明日期为 2026 年 5 月 4 日。
+
+1. **SAP Snowflake。** 在 SAP Business Data Cloud（BDC）内交付的 Snowflake，作为经认证的 SAP Solution Extension，由 SAP 销售和支持，并从 SAP for Me 开通。它面向没有 Snowflake 账户的 SAP 客户。
+2. **SAP BDC Connect for Snowflake。** 面向已经在运行 Snowflake 的企业。您使用来自 SAP for Me 的邀请链接连接现有账户。
+
+在这两种情况下，SAP 数据产品都以与目录关联的数据库形式挂载到 Snowflake 中，无需复制数据。您可以对它们进行查询和关联，根据 SAP 的元数据为 Cortex Analyst 生成语义视图，还可以把 Snowflake 数据发布回 BDC。
+
+Snowflake 的 [SAP 零复制集成文档](https://docs.snowflake.com/en/user-guide/data-integration/zero-copy/about-sap-snowflake)列出了 AWS、Azure 和 GCP 的商业区域，并排除了政府区域。对于国防工作，仅这一项排除就可能让它出局。
+
+问题在于范围。零复制共享的是 BDC 数据产品，所以您需要 BDC 订阅，而且您得到的是 SAP 已经打包好的内容。在围绕它做规划之前，先把您的报表需求与您所用版本可用的数据产品做一次对照。
+
+尤其要检查您的自定义字段和 Z 表。对于未覆盖的部分，您需要自定义数据产品或第二条途径。
+
+### SAP Datasphere 复制流
+
+SAP Datasphere 复制流通过 SAP 所称的高级出站集成（premium outbound integration），把数据从 S/4HANA、ECC 和 BW 移到非 SAP 目标。它必须在租户中启用并确定容量。在 SAP 的连接矩阵中，Snowflake 不是复制流的目标。
+
+通常的模式是先复制到云对象存储（Amazon S3、Azure Data Lake Storage Gen2 或 Google Cloud Storage），再从那里加载到 Snowflake。您要为 Datasphere 容量付费，并且要走两跳。
+
+### ODP 说明：购买连接器之前先读一读
+
+SAP Note 3255746《Unpermitted usage of ODP Data Replication APIs》首次发布于 2022 年 10 月。2024 年 2 月的修订版涉及 Operational Data Provisioning（ODP）Data Replication API 的 RFC 模块。它指出，从客户或第三方应用中使用这些模块访问 SAP ABAP 源系统（无论是本地部署还是 Cloud Private Edition），是 SAP 不允许的。
+
+2024 年 7 月的更新引导客户使用 SAP Datasphere 把 SAP 数据复制到第三方工具。该说明于 2026 年 4 月再次修订。
+
+2026 年 6 月，SAP 还针对这些 API 中缺少调用方识别的问题发布了一条漏洞记录 CVE-2026-44754。我的理解是，这项限制正在从纸面规定转向技术强制执行。该说明需要登录 SAP 才能查看，所以请自己阅读最新版本，而不要依赖厂商的摘要。
+
+许多第三方 SAP 连接器都是基于 RFC 上的 ODP 构建的。问清楚每家厂商的连接器使用哪个 SAP 接口；如果是 RFC 上的 ODP，请对方以书面形式说明他们对该说明的立场。
+
+Snowflake 的托管数据接入服务 Snowflake Openflow，在其[当前连接器列表](https://docs.snowflake.com/en/user-guide/data-integration/openflow/connectors/about-openflow-connectors)中没有 SAP 连接器（2026 年 10 月核实）。SAP 只出现在零复制连接器之下。
+
+## Oracle：E-Business Suite 和 Fusion 是两类不同的问题
+
+**Oracle E-Business Suite** 运行在您可以控制的 Oracle 数据库上，因此可以使用基于日志的变更数据捕获（CDC）。[Openflow Connector for Oracle](https://docs.snowflake.com/en/user-guide/data-integration/openflow/connectors/oracle/about) 于 2026 年 2 月正式发布。它使用 Oracle XStream，支持本地部署、Exadata 以及 OCI 虚拟机或裸金属上的 Oracle Database 11g 及更高版本。
+
+许可需要谨慎处理。您要么采用通过 Snowflake 计费的嵌入式 XStream 许可，承诺期 36 个月；要么自带具有 XStream 权利的 Oracle 许可，例如 GoldenGate。Snowflake 的文档特别指出，Oracle 要求 XStream 使用 Enterprise Edition。
+
+每张被复制的表都需要主键、唯一约束或唯一索引，或者一个声明的逻辑键，而且 TRUNCATE 不会被复制。在做出承诺之前，先检查您需要的 EBS 表的键覆盖情况。
+
+Oracle GoldenGate 是另一条成熟的途径。Snowflake 是有文档说明的 GoldenGate 目标，可以使用暂存再合并的微批处理，也可以使用 Snowpipe Streaming。
+
+**Oracle Fusion Cloud ERP** 是 SaaS。Openflow Oracle 连接器明确不支持 Fusion Cloud Applications。标准的抽取途径是 Business Intelligence Cloud Connector（BICC）。
+
+它以定时全量或增量抽取的方式，把带有清单文件的压缩 CSV 文件写入 OCI Object Storage 或 Oracle 的内容服务器。然后由您把这些文件移入 Snowflake。BICC 还可以单独抽取主键，这正是检测删除的方法。
+
+Oracle 的 GoldenGate 常见问题说明，GoldenGate 可以从运行在 OCI 中的 Fusion SaaS 应用捕获数据。如果这对您很重要，请向 Oracle 询问这对您的租户和许可意味着什么。
+
+## Microsoft Dynamics 365：截止日期是真的
+
+对于 Dynamics 365 Finance and Operations，微软已于 2024 年 11 月 1 日弃用 Export to Azure Data Lake。它将于 [2026 年 11 月 30 日永久停止](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/fin-ops/get-started/removed-deprecated-features-platform-updates)，不会延期。如果有任何 Snowflake 管道仍然依赖它，那就是您本季度的头号任务。
+
+替代方案是 Azure Synapse Link for Dataverse 和 Fabric link。微软向大多数客户推荐 Fabric link，但它把数据落在 Microsoft Fabric 中。如果目标是 Snowflake，Synapse Link 是实际可行的选项。
+
+它以 Delta Parquet 格式把 finance and operations 的表写入您自己的存储账户，被删除的行会保留下来，并在 `isDelete` 字段中做标记。Snowflake 可以把对象存储中的 Delta 文件作为只读 Iceberg 表来读取（自 2025 年 4 月起正式发布），您也可以加载它们。
+
+对于基于 Dataverse 的应用，例如 Dynamics 365 Sales 和 Customer Service，Openflow Connector for Microsoft Dataverse 已正式发布。它用一个标记列对行进行软删除。
+
+它的变更令牌在七天无活动后过期，会强制进行一次完整的重新同步，所以不要让调度中断。文档没有提到 Finance and Operations，所以除非您测试过，否则请把它当作客户互动类应用的途径。
+
+## 各方案一览
+
+截至 2026 年 10 月，我会为每种 ERP 列入候选的途径：
+
+| ERP | 现实可行的方案 | 说明 |
+|---|---|---|
+| SAP S/4HANA、ECC | SAP BDC 搭配 SAP Snowflake 或 BDC Connect for Snowflake；经由对象存储的 Datasphere 复制流；第三方工具 | 零复制只覆盖 BDC 数据产品。SAP Note 3255746 限制 RFC 上的 ODP。没有 Openflow SAP 连接器 |
+| Oracle E-Business Suite | Openflow Connector for Oracle；Oracle GoldenGate；第三方 CDC | XStream 许可和 Enterprise Edition。每张表都需要键。TRUNCATE 不会被复制 |
+| Oracle Fusion Cloud ERP | BICC 抽取到对象存储，再加载；GoldenGate（向 Oracle 确认） | 无法直接访问数据库。Openflow Oracle 连接器不支持 Fusion |
+| Dynamics 365 Finance and Operations | Azure Synapse Link for Dataverse 写入您的存储，再作为 Iceberg 表读取或加载；Fabric link | Export to Azure Data Lake 于 2026 年 11 月 30 日停止。删除以带标记的行形式到达 |
+| Dynamics 365 Sales、Customer Service | Openflow Connector for Microsoft Dataverse | 软删除。七天令牌过期会强制重新同步 |
+
+## 没人算进预算的数据模型问题
+
+我见过的每一条 ERP 管道，无论采用哪种抽取途径，都会遇到同样的问题。预算就花在这里。
+
+1. **表的复杂性。** ERP 表是为交易设计的，不是为分析设计的。在 SAP S/4HANA 中，通用日记账（`ACDOCA`）和物料凭证（`MATDOC`）取代了许多 ECC 表，所以 ECC 的逻辑无法直接移植。EBS 有多组织结构；Dynamics 的实体与其表并非一一对应。要为熟悉源系统的人员留出预算。
+2. **变更捕获与删除。** 每条途径传递删除的方式都不同：标记列、仅含键的抽取，或者根本没有。TRUNCATE 和归档运行可能让 Snowflake 与 ERP 悄无声息地出现偏差。要定期核对记录数和余额，而不是只核对一次。
+3. **币种和计量单位。** ERP 金额以凭证货币、本位币和集团货币记录，并带有汇率类型和过账日期。数量带有计量单位，还有特定于物料的换算。在 SQL 中重建这些内容，正是财务开始不信任数字的地方。
+4. **主数据。** 物料、客户、供应商和工厂在不同 ERP 和实体之间各不相同。如果您运行两套 ERP，主数据映射本身就是一个项目。我关于 [SAP 数据迁移为什么失败](/zh-CN/why-sap-data-migration-fails-and-how-to-fix-it/)的文章讲的是同样的根本原因。
+5. **权限不会随数据一起过来。** ERP 执行公司代码、工厂和利润中心层面的限制。Snowflake 对这些一无所知。在核心团队以外的任何人获得访问权限之前，您必须重建行级和列级安全，在国防领域还要重建受控数据的隔离。
+
+## 一个行之有效的顺序
+
+1. **先确定目标问题。** 选出五到十个业务问题，以及回答这些问题的报表。这决定了您需要哪些表。
+2. **盘点数据源。** ERP 版本、部署方式、数据库版本、自定义字段，以及下游系统所依赖的每一个现有抽取。
+3. **先解决许可，再选工具。** BDC 订阅、Datasphere 容量、XStream 权利、任何厂商对 ODP 说明的立场。以书面形式拿到答复。
+4. **为每种 ERP 选择途径**，参照上表。混合途径很正常。
+5. **构建一个与源系统镜像的原始层**，保留加载时间戳和删除标记。
+6. **在其上构建统一的模型**：币种和计量单位换算、主数据映射、会计日历。
+7. **在开放访问之前，用行访问策略和掩码策略重建安全。**
+8. **与 ERP 对账**，并把检查自动化。在财务信任模型之前必须通过的一项检查，是试算平衡表与 ERP 对得上。库存价值也值得用同样的方式检查。
+9. **移交运营**：监控、schema 变更处理，以及每条管道指定一位负责人。
+
+关于成本规划，本系列的 [Snowflake 定价与 credits 指南](/zh-CN/snowflake-pricing-credits-explained/)解释了持续复制会对您的账单产生什么影响。
+
+## 制造业团队通常最先想要什么
+
+制造业的头几个需求是可以预见的，而且它们会检验数据模型。
+
+1. **库存。** 按工厂的库存、库龄和呆滞物料。它会尽早暴露计量单位和估值问题。
+2. **准时足量交付（OTIF）。** 需要把销售订单、交货和确认日期对齐，这会检验您的变更捕获。
+3. **产品成本。** 标准成本与实际成本及差异。它需要财务数据和生产数据对得上。
+4. **质量。** 检验结果、缺陷和不合格项，常常要与 ERP 之外的设备数据或历史数据库数据关联。
+
+我会从库存开始。它一次就会触及主数据、计量单位和估值，而且工厂经理可以拿它和货架上实际存放的东西对照检查。如果您还在选择 ERP 本身，我关于[最适合制造业的 ERP](/zh-CN/best-erp-for-manufacturing/) 的指南介绍了选型这一侧。
+
+想先比较平台？请参阅 [Snowflake 与 Databricks 对比](/zh-CN/snowflake-vs-databricks/)。
+
+## 本周从哪里开始
+
+列出今天离开您 ERP 的每一个抽取、它使用的接口，以及谁依赖它。仅这一份清单，就能显示您在 ODP 说明、Dynamics 截止日期以及任何 Fusion 抽取缺口上的风险敞口。如果您希望就途径或数据模型获得第二意见，我帮助企业做这类决策；您可以[预约与我通话](/zh-CN/contact-noel-erp-support/)。
+
+## 常见问题
+
+<details>
+<summary>如何把 SAP 数据导入 Snowflake？</summary>
+
+SAP 支持的选项是 SAP Business Data Cloud 搭配 SAP Snowflake 或 BDC Connect for Snowflake，它们无需复制即可共享 SAP 数据产品。另一个选项是 SAP Datasphere 复制流，先写入云对象存储，再由 Snowflake 加载。也有第三方工具可用，但要对照 SAP Note 3255746 检查它们使用的是哪个 SAP 接口。
+
+</details>
+
+<details>
+<summary>SAP Snowflake 已经正式发布了吗？</summary>
+
+是的。SAP Snowflake 和 SAP BDC Connect for Snowflake 于 2026 年 5 月的 SAP Sapphire 上宣布正式发布。Snowflake 的文档排除了政府区域，这对国防和公共部门很重要。
+
+</details>
+
+<details>
+<summary>第三方工具还能用 ODP 抽取 SAP 数据吗？</summary>
+
+SAP Note 3255746 指出，客户或第三方使用 ODP Data Replication API 的 RFC 模块是不被允许的。SAP 引导客户改用 Datasphere。问清楚每家厂商使用哪个接口，以及他们如何应对该说明。请自己在 SAP 支持门户中阅读最新的说明。
+
+</details>
+
+<details>
+<summary>如何把 Oracle Fusion Cloud ERP 数据迁移到 Snowflake？</summary>
+
+Fusion 是 SaaS，所以数据库 CDC 工具不适用，Snowflake 的 Openflow Oracle 连接器也不支持它。标准途径是用 BICC 抽取到对象存储，然后加载到 Snowflake。单独抽取主键，以便检测删除。
+
+</details>
+
+<details>
+<summary>对于 Dynamics 365 Finance and Operations，用什么替代 Export to Data Lake？</summary>
+
+Azure Synapse Link for Dataverse 或 Fabric link。Export to Azure Data Lake 将于 2026 年 11 月 30 日永久停止。如果目标是 Snowflake，Synapse Link 会把 Delta Parquet 写入您自己的存储，Snowflake 可以将其作为 Iceberg 表读取，也可以加载。
+
+</details>

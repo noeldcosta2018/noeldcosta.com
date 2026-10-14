@@ -1,0 +1,210 @@
+---
+title: "Snowflakeのアーキテクチャ解説と、その用途"
+h1: "Snowflakeのアーキテクチャ解説と、その用途"
+slug: "snowflake-architecture-explained"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/snowflake-architecture-explained.webp"
+heroAlt: "作業台と天井クレーンがある、明るいエンジニアリングの組立ホールの全景"
+category: "data-and-ai"
+tags: ["snowflake", "data-governance", "manufacturing"]
+author: "Noel D'Costa"
+metaTitle: "Snowflakeのアーキテクチャ解説：各層、用途、限界"
+metaDescription: "Snowflakeのアーキテクチャをわかりやすく解説。ストレージ、コンピュート、クラウドサービス、マイクロパーティション、Time Travel、共有、Iceberg、エディション、用途まで。"
+primaryKeyword: "Snowflake アーキテクチャ"
+excerpt: "Snowflakeは、ストレージ、コンピュート、調整の3つを別々の層に分けたクラウドデータプラットフォームです。そのアーキテクチャの仕組み、企業が何に使っているのか、そして適さない場面を解説します。"
+experienceSource: "Noel's first-person experience with Snowflake on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts checked against official Snowflake documentation, October 2026."
+keyTakeaways:
+  - "Snowflakeはストレージ、コンピュート（仮想ウェアハウス）、クラウドサービスを分離しているため、それぞれを別々に拡張し、別々に支払えます"
+  - "データは圧縮された列指向のマイクロパーティションに置かれ、メタデータによってクエリは不要なパーティションを読み飛ばせます"
+  - "Time Travel、ゼロコピークローン、セキュアなデータ共有は、すべて同じメタデータの設計から生まれています"
+  - "Icebergテーブル、Horizon Catalog、Snowflake Postgres（2026年2月にGA）によって、従来型のデータウェアハウスの枠を超えて広がっています"
+  - "規制対象の業務では通常Business Criticalエディション以上が必要です。Snowflakeはオンプレミスにはインストールできません"
+  - "高負荷のトランザクション処理や、自社のデータセンターから決して出してはならないデータには適していません"
+pullQuote: "Snowflakeのコストの想定外の大半は、誰も書き残さなかったアーキテクチャの判断です。"
+mentions:
+  - "Snowflake"
+  - "Snowpark"
+  - "Snowflake Horizon Catalog"
+  - "Snowflake Open Catalog"
+  - "Apache Polaris"
+  - "Apache Iceberg"
+  - "Snowflake Postgres"
+  - "Snowflake Marketplace"
+  - "Tri-Secret Secure"
+  - "Amazon Web Services"
+  - "Microsoft Azure"
+  - "Google Cloud"
+originalUrl: "https://noeldcosta.com/snowflake-architecture-explained/"
+canonicalUrl: "https://noeldcosta.com/ja/snowflake-architecture-explained/"
+locale: "ja"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Snowflakeのアーキテクチャは、データプラットフォームを、それぞれ独立して拡張できる3つの層に分けています。ストレージ、コンピュート（仮想ウェアハウスと呼ばれます）、そしてすべてを調整するクラウドサービスの層です。企業はSnowflakeを、レポーティングと分析のためのクラウドデータウェアハウスとして使い、さらにデータの共有、Pythonの実行、ガバナンスの効いたデータの上でのAIの構築の場としても使うようになっています。
+
+ストレージとコンピュートを分けるというその1つの設計判断が、Snowflakeが得意なことの大半と、コストの大半を説明します。
+
+私は製造業と防衛分野のデータプラットフォームのプログラムでSnowflakeに携わってきました。よく見るパターンがあります。経営層は分析のために購入し、その後で、アーキテクチャの判断（ウェアハウスの数、エディション、データの置き場所）が請求額とコンプライアンス上の立場を決めることに気付くのです。このガイドは、契約前にそうした判断を理解する必要があるCIO、CDO、アーキテクトに向けたものです。
+
+## Snowflakeとは何か、ひと言で
+
+Snowflakeは、Amazon Web Services、Microsoft Azure、Google Cloudの上で動く、フルマネージドのデータプラットフォームです。インストール、パッチ適用、インデックスのチューニングは不要です。データをロードし、SQL（またはPython）を書き、ストレージとコンピュートに別々に支払います。
+
+Snowflakeは自社の設計を、共有ディスク型とシェアードナッシング型のアーキテクチャのハイブリッドと説明しています。中央に1つのデータストアがあり、独立したコンピュートのクラスターがそれに問い合わせます。防衛分野の購入者にとって早い段階で重要になる事実が1つあります。Snowflake自身の[主要な概念とアーキテクチャのガイド](https://docs.snowflake.com/en/user-guide/intro-key-concepts)によると、ローカルやプライベートクラウドのインフラにはインストールできません。
+
+## Snowflakeのアーキテクチャの3つの層
+
+下から順に構成を示します。
+
+<explainer-layers title="Snowflakeのアーキテクチャを層ごとに" caption="ストレージとコンピュートは別々に拡張され、別々に課金されます。それをまとめているのがクラウドサービスです。" layers="クラウドサービス => セキュリティ、アクセス制御、メタデータ、クエリの最適化、トランザクション|コンピュート => 仮想ウェアハウス。SQLとPythonを実行する独立したクラスターで、稼働中はクレジットで課金|ストレージ => クラウドのオブジェクトストレージ上の、圧縮された列指向のマイクロパーティション。テラバイト単位で課金" tones="accent|data|"></explainer-layers>
+
+### ストレージ
+
+データをロードすると、Snowflakeはそれを圧縮された列指向の形式に再編成し、クラウドのオブジェクトストレージに保存します。すべてのテーブルはマイクロパーティションに分割され、それぞれが非圧縮で50MBから500MBのデータを保持します。Snowflakeは各パーティションについて、すべての列の値の範囲などのメタデータを記録します。
+
+そのメタデータが巧妙な部分です。先月の製造指図で絞り込んだクエリは、日付の範囲が一致し得ないマイクロパーティションをすべて読み飛ばします。
+
+これはプルーニングと呼ばれ、Snowflakeがインデックスなしでも高い性能を出せる理由です。また、非常に大きなテーブルでは、データがどう届くか（日付順か工場順か、あるいはランダムか）がコストに影響するということでもあります。
+
+### コンピュート：仮想ウェアハウス
+
+仮想ウェアハウスは、クエリとコードを実行するコンピュートのクラスターです。それぞれが独立しています。財務の月末のレポートを1つのウェアハウスで動かし、データサイエンスの重いジョブを別のウェアハウスで動かしても、互いに遅くなることはありません。
+
+ウェアハウスにはTシャツのようなサイズがあり、稼働中だけクレジットを消費します。アイドル状態になると自動で一時停止できます。サイズが大きいほど、個々の重いクエリが速くなります。
+
+クラスターを増やせば、同時に多くのユーザーを処理できます。それがマルチクラスターウェアハウスの役割です。Enterpriseエディション以上では、クエリが順番待ちになり始めるとウェアハウスが自動でクラスターを追加し、負荷が下がると取り除きます。Snowflakeは、マルチクラスターが役立つのは同時実行であり、1本の遅いクエリではないと明言しています。そのためにはサイズを変更します。
+
+コストの面は、私の料金ガイド[Snowflakeのクレジットと請求額を左右するもの](/ja/snowflake-pricing-credits-explained/)で詳しく扱っています。
+
+### クラウドサービス
+
+最上位の層は、認証、アクセス制御、メタデータ、クエリの最適化、トランザクションを扱います。Time Travelとクローンは主にメタデータの操作なので、この層がそれを可能にしています。この層を意識することはめったにありませんが、それこそが狙いです。
+
+## アーキテクチャから生まれる機能
+
+興味深い機能は後付けではありません。ストレージとメタデータの設計から自然に生まれたものです。
+
+1. **Time Travel。** 過去のある時点の状態のデータに対して、問い合わせ、クローン、復元ができます。Standardエディションでは1日保持されます。[Time Travelのドキュメント](https://docs.snowflake.com/en/user-guide/data-time-travel)にあるとおり、Enterprise以上では永続テーブルについて最大90日保持できます。
+2. **Fail-safe。** Time Travelの期間が過ぎると、永続テーブルのデータは7日間のFail-safeの期間に移ります。復旧できるのはSnowflakeだけです。自社で管理するバックアップではなく、災害復旧として扱ってください。
+3. **ゼロコピークローン。** テーブル、スキーマ、データベースのクローンは、同じマイクロパーティションを参照するため、作成時に追加のストレージを使いません。支払うのは、その後に変更されたデータの分だけです。チームはこうして、本番と同じ規模のテスト環境を数分で立ち上げています。
+4. **セキュアなデータ共有。** 提供者は、データをコピーせずに、ライブのテーブルを別のSnowflakeアカウントと共有します。利用者が支払うのは、問い合わせに使ったコンピュートの分だけです。直接の共有は1つのリージョン内で機能し、リージョンをまたぐ共有は自動フルフィルメント付きのリスティングを通じて行います。
+5. **Snowflake Marketplace。** リスティングを使うと、天候や市場指数などのサードパーティのデータも含め、データ製品を特定のパートナー向けや一般向けに公開できます。
+6. **Snowpark。** データを外に取り出すのではなく、処理をSnowflakeの中に持ち込むための、Python、Java、Scala向けのライブラリです。コンテナ化したアプリをデータのそばで動かすSnowpark Container Servicesは、3つのクラウドすべての商用リージョンで一般提供されています。
+
+製造業者にとって、セキュアなデータ共有は試してみる価値があります。出発点については現実的に考えてください。私が目にするサプライヤーとのデータ交換の大半は、今もファイル転送です。
+
+ガバナンスの効いたテーブルを共有するほうがすっきりしていて、取り消すこともできます。サプライヤー1社、データセット1つから始め、それを証明してから次を計画してください。
+
+## Iceberg、カタログ、ハイブリッドテーブル、Postgres：Snowflakeはどこまで広がったか
+
+かつてSnowflakeといえば「Snowflakeの形式で保存された自社のデータ」を意味しました。それは変わり、名称も変わりました。2026年10月時点の状況です。
+
+| 機能 | 何をするか | 状況（2026年10月） |
+|---|---|---|
+| Apache Icebergテーブル | 自社またはSnowflakeのクラウドストレージに、オープンなIceberg形式でデータを保存する | 2024年6月からGA。Snowflake管理のストレージのオプションは2026年6月にGA（商用のAWSとAzure） |
+| Snowflake Horizon Catalog | Apache Polarisの上に構築されたガバナンスとカタログ。外部エンジンはIceberg REST APIを通じてSnowflake管理のIcebergテーブルを読み取る | 新規顧客に推奨 |
+| Snowflake Open Catalog | マネージドのApache Polarisサービス（旧Polaris Catalog） | GAだが新規顧客は受け付けていない。既存のユーザーは継続可能 |
+| ハイブリッドテーブル（Unistore） | 分析のそばで、低遅延のトランザクションの参照を行うための行ベースのテーブル | 商用のAWSとAzureのリージョンでのみGA |
+| Snowflake Postgres | Snowflakeのプラットフォーム内のフルマネージドのPostgreSQL | 2026年2月24日からAWSとAzureでGA |
+
+実務上の結論はこうです。Icebergテーブルを使えば、Spark、Databricksなどのエンジンが、Snowflakeが問い合わせるのと同じファイルを扱えるため、ロックインが減ります。Snowflakeの[Open Catalogの概要](https://docs.snowflake.com/en/user-guide/opencatalog/overview)は現在、新規顧客には代わりにHorizon Catalogを使うよう案内しています。
+
+誰かがハイブリッドテーブルを運用データベースとして売り込む前に、その制限を読んでください。データベースごとにハイブリッドテーブルのデータは2TBが上限で、Fail-safe、データ共有、レプリケーション、ストリームには対応していません。アプリケーションの参照テーブルとしては問題ありません。
+
+運用データベースではありません。アプリケーションが分析のそばに運用データベースを必要とするなら、2026年2月に[Snowflake Postgresが一般提供になりました](https://docs.snowflake.com/en/release-notes/2026/other/2026-02-24-snowflake-postgres-ga)。そちらのほうが素直に適合します。
+
+## 規制対象の業種のためのエディションとセキュリティ
+
+Snowflakeは、Standard、Enterprise、Business Critical、Virtual Private Snowflake（VPS）の4つのエディションを販売しています。エディションによって使えるセキュリティ機能が決まり、それとともにクレジットの価格も上がります。
+
+| 機能 | Standard | Enterprise | Business Critical | VPS |
+|---|---|---|---|---|
+| Time Travel | 1日 | 最大90日 | 最大90日 | 最大90日 |
+| マルチクラスターウェアハウス | なし | あり | あり | あり |
+| Tri-Secret Secure（カスタマーマネージドキー） | なし | なし | あり | あり |
+| プライベート接続（AWS PrivateLink、Azure Private Link、Google Private Service Connect） | なし | なし | あり | あり |
+| HIPAAとPCI DSSへの対応 | なし | なし | あり | あり |
+| 専用環境、共有ハードウェアなし | なし | なし | なし | あり |
+
+Tri-Secret Secureは、Snowflakeのキーと、クラウドプロバイダーの鍵管理サービスで自社が保持するキーを組み合わせます。自社のキーを取り消せば、Snowflakeはもうデータを復号できません。防衛と航空宇宙のサプライヤーにとっては、この管理がどんな分析機能よりも重要です。
+
+米国政府向けの業務のために、SnowflakeはAWS GovCloudとAzure Government上でSnowGovリージョンを運用しており、米国政府の顧客と請負業者が利用できます。Snowflakeの[サポート対象リージョンのページ](https://docs.snowflake.com/en/user-guide/intro-regions)には、それらのリージョンでのFedRAMP High、Impact Level 4、ITARへの対応、1つのAWSリージョンでのImpact Level 5への対応が掲載されており、Business Criticalエディション以上が必要です。機能の提供状況はリージョンごとに確認してください。Open Catalog、ハイブリッドテーブル、Snowpark Container Servicesの一部は、すべての政府向けリージョンで利用できるわけではありません。
+
+私が関わってきた防衛分野のプログラムでは、最初の質問は決して「どれくらい速いか」ではありません。「データはどこにあり、誰が見られて、それを監査人に証明できるか」です。適切なリージョンとエディションなら、Snowflakeはそれにうまく答えられます。
+
+自社の建物の中にとどめなければならないデータについては答えられません。オンプレミスでの処理が必要な機密データや輸出管理の対象のワークロードには別のプラットフォームが必要で、Snowflakeは非機密の領域を担うことになります。
+
+## Snowflakeの用途と、適さないこと
+
+私が目にするものの大半は、いくつかのパターンに分かれます。
+
+1. **全社のレポーティングとBI。** ERPデータ（SAP、Oracle、Microsoft Dynamics 365）からの財務、営業、オペレーションのレポーティングで、その上にPower BI、Tableauなどを載せます。これが今も中核の用途です。抽出の選択肢は、私の[ERPデータをSnowflakeに取り込む](/ja/erp-data-into-snowflake/)ガイドで扱っています。
+2. **製造業のオペレーションのデータ。** 私が見てきた、Snowflakeに取り込まれた工場とオペレーションのデータは、生産計画のデータです。ヒストリアン、MES、品質、保全のデータをその隣に置くこともでき、JSONの半構造化のセンサーデータはネイティブにロードできます。
+3. **パートナーとのデータ共有。** サプライヤー、販売代理店、顧客が、ガバナンスの効いたテーブルに直接問い合わせできます。実際には、私が目にするサプライヤーとのやり取りの大半は今もファイル転送です。
+4. **ガバナンスの効いたデータの上でのデータサイエンスとAI。** SnowparkによるPythonとSnowflakeのAIサービスで、私の[Snowflake Cortex AIとSnowflake Intelligence](/ja/snowflake-cortex-ai-snowflake-intelligence/)の記事で扱っています。
+5. **買収後の統合。** 複数のERP、1つのレポーティング層、そして安全なテスト環境のためのクローンです。
+
+私がためらう場面は次のとおりです。
+
+1. **大量のトランザクションを扱うシステム。** ハイブリッドテーブルとSnowflake Postgresは役に立ちますが、ERPとMESのトランザクションはそれぞれのデータベースに置くべきです。
+2. **リアルタイムの機械制御。** Snowflakeに向いているのは分単位であり、ミリ秒単位ではありません。センサーデータをストリーミングで取り込むのは問題ありません。制御ループを閉じるのは無理です。
+3. **厳格なオンプレミスの要件。** オンプレミス版は存在しません。
+4. **Sparkでの高負荷の独自の機械学習とデータエンジニアリング。** できなくはありませんが、多くのチームはDatabricksのほうが自然だと感じます。その選択については、私の[SnowflakeとDatabricksの比較](/ja/snowflake-vs-databricks/)で解説しています。
+
+### スノーフレークスキーマとスタースキーマ：別の話
+
+Snowflakeを検索した人が、よく「スノーフレークスキーマ」にたどり着きます。これは製品とは何の関係もありません。スノーフレークスキーマは、ディメンションテーブルをサブテーブルに正規化するデータモデリングのパターンで、図が雪の結晶のように枝分かれします。
+
+スタースキーマは、各ディメンションを1つのフラットなテーブルに保持します。どちらのモデルも、Snowflakeでも他のどのデータウェアハウスでも構築できます。多くのBIチームは、クエリがシンプルになるスタースキーマを好みます。
+
+## 私ならどこから始めるか
+
+契約する前に、4つの判断を書き出してください。コンプライアンス上の立場に必要なエディション、クラウドとリージョン、ウェアハウス間でのワークロードの分け方、そしてデータをSnowflakeの形式で持つかIcebergで持つかです。ベンダーとシステムインテグレーターには、年間の数字1つではなく、ウェアハウスごとのクレジットの見積もりを示すよう求めてください。Snowflakeのコストの想定外の大半は、誰も書き残さなかったアーキテクチャの判断です。
+
+ERPのデータが範囲に含まれるなら、まず[SAPのデータ移行が失敗する理由](/ja/why-sap-data-migration-fails-and-how-to-fix-it/)を読んでください。同じデータ品質の問題は、どのプラットフォームにもついてきます。Snowflakeに関する判断についてセカンドオピニオンが必要なら、[ご連絡ください](/ja/contact-noel-erp-support/)。
+
+## よくある質問
+
+<details>
+<summary>Snowflakeは何に使われますか？</summary>
+
+主に、ERP、CRM、オペレーションのデータなどのビジネスデータに対するレポーティングと分析のためのクラウドデータウェアハウスとして使われます。企業はほかにも、パートナーとのライブデータの共有、SnowparkによるPythonのデータサイエンス、ガバナンスの効いたデータの上でのAIアプリケーションの構築に使っています。
+
+</details>
+
+<details>
+<summary>Snowflakeのアーキテクチャの3つの層とは何ですか？</summary>
+
+ストレージ、コンピュート、クラウドサービスです。ストレージは、圧縮された列指向のマイクロパーティションにデータを保持します。コンピュートは、クエリを実行する仮想ウェアハウスで構成されます。クラウドサービスは、セキュリティ、メタデータ、クエリの最適化、トランザクションを扱います。ストレージとコンピュートは別々に拡張され、別々に課金されます。
+
+</details>
+
+<details>
+<summary>Snowflakeはデータベースですか、それともデータウェアハウスですか？</summary>
+
+定義によってはその両方です。分析のワークロード向けに作られたSQLデータベースであり、そのため通常はクラウドデータウェアハウスと呼ばれます。Icebergテーブル、ハイブリッドテーブル、Snowflake Postgresによって、現在は制限の範囲内でレイクハウスと一部のトランザクションのユースケースもカバーしています。
+
+</details>
+
+<details>
+<summary>Snowflakeはオンプレミスで動かせますか？</summary>
+
+いいえ。SnowflakeはAWS、Microsoft Azure、Google Cloudの上でのみ動きます。米国政府と防衛分野のワークロード向けには、AWS GovCloudとAzure Government上のSnowGovリージョンを提供しており、Business Criticalエディション以上が必要です。
+
+</details>
+
+<details>
+<summary>スノーフレークスキーマはSnowflake社と関係がありますか？</summary>
+
+いいえ。スノーフレークスキーマは、正規化されたディメンションテーブルを持つデータモデリングのパターンです。Snowflake社より前から存在し、どのデータウェアハウスでも使えます。
+
+</details>
+
+<details>
+<summary>規制対象の企業にはどのSnowflakeエディションが必要ですか？</summary>
+
+通常はBusiness Criticalです。カスタマーマネージドキーによるTri-Secret Secure、プライベート接続、HIPAAとPCI DSSへの対応が加わり、政府向けリージョンの最低条件でもあります。Virtual Private Snowflakeは、共有ハードウェアのない専用環境を追加します。
+
+</details>

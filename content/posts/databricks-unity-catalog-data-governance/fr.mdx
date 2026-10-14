@@ -1,0 +1,230 @@
+---
+title: "Unity Catalog dans Databricks : une gouvernance bien mise en place"
+h1: "Unity Catalog dans Databricks : une gouvernance bien mise en place"
+slug: "databricks-unity-catalog-data-governance"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/databricks-unity-catalog-data-governance.webp"
+heroAlt: "Allée de centre de données blanche et lumineuse avec des baies de serveurs et une porte d'accès sécurisée"
+category: "data-and-ai"
+tags: ["databricks", "data-governance", "defence", "manufacturing"]
+author: "Noel D'Costa"
+metaTitle: "Unity Catalog Databricks : mettre en place la gouvernance"
+metaDescription: "Ce qu'est Unity Catalog dans Databricks, comment fonctionnent hiérarchie, droits, ABAC, lignage et audit, et un plan de déploiement pour les secteurs réglementés."
+primaryKeyword: "Unity Catalog Databricks"
+excerpt: "Unity Catalog est la couche de gouvernance de tout ce qui se trouve dans Databricks : un seul endroit pour contrôler les accès, suivre le lignage et prouver qui a touché à quoi. Voici comment il fonctionne et comment le concevoir pour qu'il ait encore du sens la troisième année."
+experienceSource: "Noel's first-person experience with Databricks on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts checked against official Databricks documentation and release notes, October 2026."
+keyTakeaways:
+  - "Unity Catalog gouverne tables, vues, volumes, fonctions et modèles à travers un espace de noms unique à trois niveaux : catalog.schema.object"
+  - "Vous disposez d'un seul metastore par région cloud, donc c'est la conception des catalogues qui porte les vraies décisions de gouvernance"
+  - "Les politiques ABAC, les governed tags et la classification des données sont passés en disponibilité générale en avril 2026 ; les politiques DENY sont encore en Beta"
+  - "Les groupes viennent de votre fournisseur d'identité et possèdent chaque catalogue de production. N'attribuez jamais de droits à des individus"
+  - "Delta Sharing s'appelle désormais OpenSharing (juin 2026) ; les tables Iceberg managées et étrangères sont passées en GA en mai 2026"
+  - "Activez les preuves d'audit et de lignage dès le premier jour. Les rajouter juste avant un audit est pénible"
+pullQuote: "La plupart des problèmes d'Unity Catalog sont des problèmes de nommage et de responsabilité que quelqu'un a essayé de résoudre avec des autorisations."
+mentions:
+  - "Databricks"
+  - "Unity Catalog"
+  - "OpenSharing"
+  - "Delta Sharing"
+  - "Apache Iceberg"
+  - "UCX"
+  - "Hive metastore"
+  - "Lakehouse Federation"
+  - "Microsoft Entra ID"
+  - "SAP"
+  - "Oracle"
+  - "Microsoft Dynamics 365"
+originalUrl: "https://noeldcosta.com/databricks-unity-catalog-data-governance/"
+canonicalUrl: "https://noeldcosta.com/fr/databricks-unity-catalog-data-governance/"
+locale: "fr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Unity Catalog est la couche de gouvernance de Databricks. Il contrôle qui peut voir et modifier chaque table, vue, volume de fichiers, fonction et modèle d'IA, enregistre le lignage entre eux et journalise les accès pour que vous puissiez le prouver à un auditeur.
+
+Si vous utilisez Databricks aujourd'hui, vous y êtes déjà ou vous y migrez. L'ancien Hive metastore est en voie de disparition, et chaque nouvelle fonctionnalité de Databricks suppose Unity Catalog en dessous.
+
+La question n'est plus de savoir s'il faut l'adopter. Elle est de savoir si la conception de vos catalogues aura encore du sens après trois ans de nouvelles équipes, de nouvelles données et d'un ou deux audits.
+
+Dans les programmes industriels et de défense sur lesquels j'ai travaillé, la technologie était rarement la partie difficile. Ce qui l'était : s'accorder sur qui possède quelles données, comment les environnements sont séparés et de quelles preuves l'équipe sécurité a besoin.
+
+## Ce que gouverne réellement Unity Catalog dans Databricks
+
+Tout se trouve sous un **metastore**, le conteneur de premier niveau. En dessous, les actifs de données et d'IA utilisent un espace de noms à trois niveaux : `catalog.schema.object`. Une requête sur `prod_finance.gl.journal_lines` nomme le catalogue, le schéma et la table.
+
+Les objets sur lesquels vous attribuez des autorisations s'appellent des securable objects. Selon la [documentation d'Unity Catalog](https://docs.databricks.com/aws/en/data-governance/unity-catalog/), ils se répartissent en deux groupes :
+
+1. **Les actifs dans l'espace de noms :** tables, vues, volumes (stockage de fichiers gouverné), fonctions, modèles et services.
+2. **Les objets au niveau du metastore :** storage credentials, external locations, connexions (vers des bases de données externes) et partages.
+
+Deux de ces objets au niveau du metastore méritent une explication simple, car ils décident de l'endroit où vos données résident physiquement.
+
+Un **storage credential** encapsule une identité cloud, comme un rôle IAM ou une identité managée, capable d'atteindre un compte de stockage ou un bucket. Une **external location** associe un chemin de stockage à un credential. Ensemble, ils permettent à Unity Catalog de lire et d'écrire dans le stockage cloud sans remettre de clés aux utilisateurs.
+
+Vient ensuite la distinction entre tables managées et externes. Avec les tables managées, Unity Catalog gouverne la table et gère ses fichiers. Avec les tables externes, il ne gouverne que l'accès.
+
+Databricks recommande désormais les tables managées pour toutes les nouvelles données, et réserve les tables externes principalement aux mises à niveau depuis Hive. Je suis d'accord. Que d'autres outils écrivent dans les mêmes chemins est généralement une raison de corriger le pipeline, pas de garder la table externe pour toujours.
+
+Une contrainte façonne tout : vous ne pouvez avoir qu'un seul metastore par région cloud. Vous ne réglez pas l'isolation en multipliant les metastores. Vous la réglez avec les catalogues.
+
+## Contrôles d'accès : droits, filtres de lignes, masques de colonnes et ABAC
+
+Les autorisations Unity Catalog sont des GRANT SQL standard qui s'héritent vers le bas. Un droit sur un catalogue s'applique à chaque schéma et à chaque table qu'il contient. Un utilisateur a besoin de `USE CATALOG` et `USE SCHEMA` pour atteindre une table, puis de `SELECT` pour la lire.
+
+```sql
+GRANT USE CATALOG ON CATALOG prod_finance TO `finance-analysts`;
+GRANT USE SCHEMA ON SCHEMA prod_finance.gl TO `finance-analysts`;
+GRANT SELECT ON SCHEMA prod_finance.gl TO `finance-analysts`;
+```
+
+Les droits répondent à la question « ce groupe peut-il lire cette table ». Les données réglementées exigent des réponses plus fines, et c'est là qu'interviennent les autres contrôles.
+
+Le tableau ci-dessous résume les principaux contrôles d'accès et leur statut en octobre 2026.
+
+| Contrôle | Ce qu'il fait | Statut (octobre 2026) |
+|---|---|---|
+| Droits et propriété | Privilèges au niveau de l'objet, hérités du catalogue au schéma puis à l'objet | Disponibilité générale |
+| Filtres de lignes et masques de colonnes au niveau de la table | Une fonction SQL rattachée à une table masque des lignes ou des valeurs | Disponibilité générale |
+| Politiques ABAC de filtre de lignes et de masque de colonnes | Une seule politique, définie au niveau du catalogue, du schéma ou de la table, s'applique à chaque objet portant un governed tag | GA depuis le 28 avril 2026 |
+| Governed tags | Tags au niveau du compte, avec des clés et des valeurs contrôlées et une maîtrise de qui peut les attribuer | GA depuis le 2 avril 2026 |
+| Classification des données | Analyse les tables et signale les données sensibles comme les données personnelles | GA depuis le 20 avril 2026 ; classificateurs personnalisés en Beta |
+| Politiques ABAC DENY et politiques au niveau du metastore | Refus explicites qui priment sur les droits ; politiques à l'échelle du metastore | Beta |
+| ABAC multi-moteurs | Les moteurs externes lisent les tables managées protégées par ABAC, avec des politiques appliquées par le calcul serverless de Databricks | GA depuis le 1er octobre 2026 |
+
+Les dates proviennent des [notes de version Databricks d'avril 2026](https://docs.databricks.com/aws/en/release-notes/product/2026/april) et de celles d'octobre 2026.
+
+L'ABAC (contrôle d'accès basé sur les attributs) est le changement qui compte le plus pour les grands environnements. Au lieu d'écrire un masque par table, vous taguez les colonnes, par exemple `classification = export_controlled`, et vous écrivez une seule politique qui masque chaque colonne taguée pour toute personne extérieure à un groupe nommé.
+
+Les nouvelles tables sont protégées dès qu'elles sont taguées. La classification des données peut proposer les tags.
+
+Vérifiez d'abord le calcul. Les tables sécurisées par ABAC exigent du calcul serverless ou Databricks Runtime 16.4 ou supérieur. Les clusters plus anciens ne peuvent pas les lire du tout.
+
+Je signalerais tôt deux pièges. Des politiques contradictoires sur la même colonne pour le même utilisateur bloquent la requête avec une erreur.
+
+Et si l'identité d'exécution d'un pipeline tombe sous un masque, les données actualisées peuvent être stockées masquées. Exemptez délibérément les identités de service, et documentez pourquoi.
+
+## Lignage, audit et partage
+
+Le lignage est capturé automatiquement, jusqu'au niveau de la colonne, pour les requêtes exécutées via Databricks SQL et les DataFrames Spark dans tout espace de travail rattaché au metastore. Il couvre les notebooks, les jobs, les pipelines et les tableaux de bord. Le lignage de colonnes est perdu quand le code référence les tables par chemin de stockage, une raison de plus d'abandonner l'accès par chemin.
+
+Les preuves d'audit proviennent des tables système. `system.access.audit` contient les événements d'audit et reste étiquetée Public Preview dans la [documentation des tables système](https://docs.databricks.com/aws/en/admin/system-tables/).
+
+Les tables de lignage et de facturation se trouvent à côté, avec 365 jours de conservation gratuite. Par défaut, seuls les administrateurs du compte et du metastore voient les tables système, donc décidez tôt qui obtient l'accès en lecture et si vous copiez les données d'audit dans votre SIEM pour une conservation plus longue.
+
+Le partage a changé de nom cette année. Databricks a [annoncé OpenSharing le 10 juin 2026](https://www.databricks.com/company/newsroom/press-releases/databricks-announces-opensharing) comme la version suivante du protocole Delta Sharing, désormais hébergée par la Linux Foundation et étendue aux actifs d'IA et aux clients Iceberg.
+
+Vous verrez encore « Delta Sharing » dans les documents et contrats plus anciens. Un partage est un objet Unity Catalog, et le partage Databricks-to-Databricks est aussi la façon de déplacer des données entre metastores régionaux.
+
+Pour les environnements mixtes, les tables Apache Iceberg managées et étrangères sont passées en disponibilité générale le 21 mai 2026. Les tables étrangères sont lues via Lakehouse Federation depuis des catalogues comme AWS Glue ou Snowflake Horizon. Des moteurs comme Spark, Flink et Trino peuvent utiliser le point de terminaison Iceberg REST catalog d'Unity Catalog.
+
+Il existe aussi un Unity Catalog open source sous l'égide de la LF AI & Data Foundation, mais c'est un projet au stade sandbox, pas le service managé. Ne bâtissez pas de plan de sortie dessus sans l'avoir testé.
+
+## Une conception de gouvernance qui fonctionne
+
+Les catalogues sont la principale unité d'isolation. Les [bonnes pratiques Unity Catalog](https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices) de Databricks indiquent que les catalogues correspondent généralement à un environnement, une équipe, une unité métier ou une combinaison de ces éléments. La plupart des conceptions réelles sont une combinaison.
+
+<compare-split title="Deux façons de découper les catalogues" left-label="Un catalogue par environnement" left-points="Catalogues dev, test et prod, schémas par domaine|Simple à rattacher chaque catalogue à son espace de travail|La propriété devient floue quand les domaines grossissent dans un même catalogue|Convient aux petites équipes et aux premiers déploiements" right-label="Un catalogue par domaine et par environnement" right-points="prod_finance, prod_quality, dev_finance et ainsi de suite|Chaque groupe de domaine possède ses propres catalogues|Responsabilités claires et périmètre d'audit plus net|Plus de catalogues à nommer, rattacher et autoriser"></compare-split>
+
+Par défaut, je choisirais domaine plus environnement pour toute entreprise comptant plus d'une poignée d'équipes data. Cela exige plus de discipline de nommage au départ. Cela évite, deux ans plus tard, la dispute sur qui possède la table que tout le monde interroge mais que personne ne maintient.
+
+Le reste de la conception tient en quatre règles :
+
+1. **Les groupes viennent de votre fournisseur d'identité.** Provisionnez les utilisateurs et les groupes dans le compte Databricks via la gestion automatique des identités, ou via SCIM si votre fournisseur ne la prend pas en charge. Définissez les groupes dans Microsoft Entra ID, Okta ou équivalent, pas dans Databricks. Quand quelqu'un part, l'accès disparaît avec son compte d'annuaire.
+2. **Les groupes possèdent les objets de production.** La recommandation de Databricks lui-même est d'attribuer la propriété des catalogues et schémas de production à des groupes, jamais à des individus. Un propriétaire peut accorder des accès, donc une personne propriétaire est une exception permanente.
+3. **Rattachez les catalogues aux espaces de travail.** Un catalogue de production rattaché uniquement aux espaces de travail de production ne peut pas être interrogé depuis une sandbox, quels que soient les droits.
+4. **Classifiez avant d'accorder.** Mettez-vous d'accord sur un vocabulaire de tags court (sensibilité, données personnelles, contrôle des exportations, système source) sous forme de governed tags, et écrivez les politiques ABAC à partir de lui.
+
+Dans l'industrie, j'ai organisé les catalogues par système d'usine, c'est-à-dire par domaine OT et système source, pas par site. Les données OT des historiens, du MES et des capteurs se trouvent dans leurs propres catalogues, détenus par l'équipe data des opérations ou de l'ingénierie. Les données IT de l'ERP (SAP, Oracle ou Microsoft Dynamics 365), de la qualité et de la supply chain se trouvent dans d'autres.
+
+Les données préparées et croisées pour les analystes vivent dans un troisième ensemble. La frontière OT/IT devient visible dans le catalogue lui-même. Si l'extraction ERP fait partie du périmètre, mes notes sur [les raisons de l'échec des migrations de données SAP](/fr/why-sap-data-migration-fails-and-how-to-fix-it/) s'appliquent aussi aux flux de données ERP.
+
+## L'angle défense : moindre privilège, séparation et preuves
+
+Dans les programmes de défense, attendez-vous à ce que l'équipe sécurité pose quatre questions. Qui peut voir les données soumises au contrôle des exportations ? Comment sont-elles séparées de tout le reste ?
+
+Où sont-elles stockées ? Pouvez-vous prouver tout cela pour n'importe quel jour de l'année écoulée ?
+
+Unity Catalog répond à la plupart d'entre elles, si vous concevez pour cela :
+
+1. **Moindre privilège.** Aucun droit au niveau du metastore ou du catalogue pour des groupes larges. Accordez au niveau du schéma à des groupes nommés, et utilisez des masques ABAC pour les colonnes taguées comme contrôlées. N'utilisez les politiques DENY qu'une fois sorties de la Beta et acceptées par vos autorités d'homologation.
+2. **Séparation.** Des catalogues distincts pour les données contrôlées, avec leur propre emplacement de stockage managé, rattachés à des espaces de travail dédiés. Databricks recommande le stockage managé au niveau du catalogue comme principale unité d'isolation, ce qui convient bien ici.
+3. **Résidence.** Un metastore par région signifie que les données restent dans la région de leur stockage, sauf si quelqu'un les partage. Traitez chaque partage OpenSharing et chaque lien interrégional comme une décision de résidence soumise à approbation.
+4. **Preuves d'audit.** Le lignage plus `system.access.audit`, exportés vers votre SIEM, vous indiquent qui a accédé à quoi et où cela est allé. Gardez en tête que la table d'audit est encore en Public Preview. Dans mes missions défense, les équipes sécurité voulaient que les journaux d'audit soient copiés dans leur propre SIEM, pas seulement laissés dans les tables système Databricks. Intégrez ce flux au plan dès le départ.
+
+Unity Catalog ne décide pas de ce qui relève des données classifiées ou contrôlées ITAR, et il ne remplace pas l'homologation. Certaines charges de travail de défense ne peuvent pas du tout tourner dans une région de cloud commercial.
+
+La conception des catalogues aide tout de même : elle trace une ligne claire entre ce qui peut aller sur la plateforme et ce qui ne le peut pas. Si vous rédigez la couche de politiques qui se situe au-dessus de la plateforme, mon [guide sur le cadre de gouvernance de l'IA](/fr/ai-governance-framework-guide-building-a-responsible-ai-plan/) couvre le volet rôles et approbations.
+
+## Une séquence de déploiement pratique
+
+Voici l'ordre que je suivrais pour une entreprise qui quitte le Hive metastore, ou qui part de zéro.
+
+1. **Fixer le modèle de catalogues et la convention de nommage.** Domaine plus environnement, écrit noir sur blanc, validé par les propriétaires des données. Si vous le changez plus tard, vous renommez tout.
+2. **Connecter le fournisseur d'identité.** Provisionnement au niveau du compte, groupes définis dans l'annuaire, SCIM au niveau de l'espace de travail désactivé pour les espaces de travail Unity Catalog.
+3. **Configurer les storage credentials et les external locations.** Détenus par un groupe plateforme. Personne d'autre n'obtient `CREATE EXTERNAL LOCATION`.
+4. **Créer les catalogues avec stockage managé et rattachement aux espaces de travail.** Catalogues de production détenus par des groupes dès le premier jour.
+5. **Définir les governed tags et activer la classification des données.** Examinez ses résultats avant d'écrire des politiques dessus.
+6. **Écrire les politiques ABAC pour les colonnes sensibles.** Testez avec de vrais utilisateurs sur chaque type de calcul que vous utilisez, y compris tout cluster encore en dessous de Runtime 16.4.
+7. **Migrer depuis le Hive metastore.** Databricks [recommande désormais de fédérer d'abord le Hive metastore](https://docs.databricks.com/aws/en/data-governance/unity-catalog/migrate), puis de mettre à niveau les tables sur place. UCX aide pour les grands environnements, mais c'est un projet Databricks Labs, maintenu par la communauté plutôt que pris en charge officiellement. Prévoyez-le.
+8. **Activer l'export d'audit et la revue du lignage.** Accordez l'accès en lecture aux tables système, mettez en place le flux SIEM et convenez de qui examine quoi.
+9. **Désactiver l'accès au Hive metastore** une fois tout migré, pour que personne ne continue discrètement à construire sur l'ancien chemin.
+
+## Les erreurs à éviter
+
+1. **Accorder des droits à des individus.** Cela fonctionne une semaine. Ensuite, personne ne sait dire qui a accès à quoi.
+2. **Un catalogue géant avec des schémas par équipe.** La propriété et le périmètre d'audit deviennent flous, et vous le reconstruisez plus tard.
+3. **Laisser des tables externes « pour l'instant ».** Vous perdez les fonctionnalités des tables managées et gardez deux propriétaires pour chaque fichier.
+4. **Tester les politiques sur un seul type de cluster.** L'ABAC se comporte différemment selon le calcul ; les anciens runtimes échouent purement et simplement.
+5. **Traiter l'audit comme une phase ultérieure.** L'auditeur posera des questions sur la période précédant son activation.
+
+## Par où commencer
+
+Si vous en êtes au début, écrivez le modèle de catalogues et le vocabulaire de tags sur une page avant que quiconque ne crée un catalogue. Si vous êtes en pleine migration, lancez l'évaluation, listez chaque table encore externe ou encore sur le Hive metastore, et donnez à chacune un propriétaire et une date.
+
+Pour la vue d'ensemble, commencez par [à quoi sert Databricks](/fr/what-is-databricks-used-for/), et regardez [la tarification de Databricks](/fr/databricks-pricing-explained/) avant de dimensionner le calcul serverless pour l'ABAC. Si vous comparez des plateformes, mon [comparatif Snowflake vs Databricks](/fr/snowflake-vs-databricks/) couvre la gouvernance des deux côtés. J'aide les organisations de l'industrie et de la défense à faire ces choix de conception ; si un second avis peut vous être utile, [réservez un appel](/fr/contact-noel-erp-support/).
+
+## Questions fréquentes
+
+<details>
+<summary>Qu'est-ce qu'Unity Catalog dans Databricks ?</summary>
+
+Unity Catalog est la couche de gouvernance de Databricks. Il fournit un seul endroit pour gérer l'accès aux tables, vues, volumes de fichiers, fonctions et modèles d'IA, capture automatiquement le lignage et enregistre les accès dans des tables système d'audit. Les actifs sont adressés sous la forme catalog.schema.object, sous un metastore unique par région.
+
+</details>
+
+<details>
+<summary>L'ABAC de Databricks est-il en disponibilité générale ?</summary>
+
+Oui. Les politiques de contrôle d'accès basé sur les attributs pour les filtres de lignes et les masques de colonnes sont passées en disponibilité générale le 28 avril 2026, et les governed tags et la classification des données sont aussi passés en GA en avril 2026. Les politiques DENY, les politiques au niveau du metastore et les classificateurs personnalisés étaient encore en Beta en octobre 2026.
+
+</details>
+
+<details>
+<summary>Delta Sharing et OpenSharing, est-ce la même chose ?</summary>
+
+Oui. Databricks a annoncé OpenSharing en juin 2026 comme l'évolution suivante du protocole Delta Sharing, désormais hébergée par la Linux Foundation et étendue aux actifs d'IA et aux clients Iceberg. La documentation Databricks décrit maintenant le partage sous le nom OpenSharing.
+
+</details>
+
+<details>
+<summary>Faut-il utiliser des tables managées ou externes dans Unity Catalog ?</summary>
+
+Des tables managées pour toutes les nouvelles données. Databricks les recommande parce qu'Unity Catalog gère alors les fichiers, la maintenance et les fonctionnalités de performance. Ne conservez des tables externes que là où un autre système doit posséder les fichiers, ou pendant une mise à niveau depuis le Hive metastore, et prévoyez de les convertir.
+
+</details>
+
+<details>
+<summary>Comment migrer du Hive metastore vers Unity Catalog ?</summary>
+
+Databricks recommande de fédérer d'abord le Hive metastore en tant que catalogue étranger, puis de mettre à niveau les tables sur place sans déplacer les données. Pour les grands environnements, les outils UCX de Databricks Labs évaluent le niveau de préparation et migrent groupes, autorisations et tables, mais UCX est maintenu par la communauté plutôt que pris en charge officiellement.
+
+</details>
+
+<details>
+<summary>Faut-il organiser les catalogues par environnement ou par domaine métier ?</summary>
+
+Pour la plupart des entreprises, les deux : un catalogue par domaine et par environnement, comme prod_finance et dev_finance. Cela donne à chaque groupe de domaine une propriété claire et un périmètre d'audit net. Les petites équipes peuvent commencer avec un catalogue par environnement et des schémas par domaine.
+
+</details>

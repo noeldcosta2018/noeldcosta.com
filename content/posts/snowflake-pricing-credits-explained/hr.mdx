@@ -1,0 +1,223 @@
+---
+title: "Cijene Snowflakea: krediti, izdanja i troškovi"
+h1: "Cijene Snowflakea: krediti, izdanja i troškovi"
+slug: "snowflake-pricing-credits-explained"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/snowflake-pricing-credits-explained.webp"
+heroAlt: "Noel D'Costa pokraj financijskog stola s nadzornom pločom troškova i ispisanim računima"
+category: "data-and-ai"
+tags: ["snowflake", "data-platform-cost"]
+author: "Noel D'Costa"
+metaTitle: "Cijene Snowflakea: krediti, izdanja i stvarni troškovi"
+metaDescription: "Cijene Snowflakea jasno objašnjene: cijena kredita po izdanju i regiji, krediti skladišta po satu, pohrana, AI i serverless troškovi te kako smanjiti potrošnju."
+primaryKeyword: "Snowflake cijene"
+excerpt: "Snowflake naplaćuje compute u kreditima, pohranu po terabajtu i premještanje podataka po terabajtu. Evo koliko što stoji po cjeničkoj cijeni, gdje računi rastu a da nitko ne primijeti i koje kontrole uvodim prije go-livea."
+experienceSource: "Noel's first-person experience with Snowflake on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts and prices checked against official Snowflake documentation and the Snowflake Service Consumption Table effective 9 October 2026, checked October 2026."
+keyTakeaways:
+  - "Compute je račun. Kredit po cjeniku stoji od $2,00 do $9,75 na zahtjev, ovisno o izdanju, cloudu i regiji"
+  - "Veličina skladišta udvostručuje stopu kredita na svakom koraku: X-Small troši 1 kredit na sat, 4X-Large troši 128"
+  - "Pohrana po cjeniku stoji oko $23 po komprimiranom TB mjesečno u američkim regijama i rijetko je stavka koja iznenadi CFO-a"
+  - "Serverless funkcionalnosti, cloud services iznad kvote od 10 % i Cortex AI krediti nalaze se izvan proračuna za skladišta"
+  - "Ugovori o kapacitetu snižavaju cijenu platformskih kredita, ali taj se popust ne primjenjuje na AI kredite"
+  - "Auto-suspend, resource monitors, proračune i označavanje postavite prije prvog produkcijskog učitavanja, a ne nakon prvog računa"
+pullQuote: "Snowflake rijetko postane skup zbog cijene po kreditu. Postane skup zato što nitko ne posjeduje skladišta."
+mentions:
+  - "Snowflake"
+  - "Snowflake Cortex"
+  - "Snowpark Container Services"
+  - "Snowpipe"
+  - "Query Acceleration Service"
+  - "Search Optimization Service"
+  - "Virtual Private Snowflake"
+  - "Amazon Web Services"
+  - "Microsoft Azure"
+  - "Google Cloud"
+originalUrl: "https://noeldcosta.com/snowflake-pricing-credits-explained/"
+canonicalUrl: "https://noeldcosta.com/hr/snowflake-pricing-credits-explained/"
+locale: "hr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Cijene Snowflakea temelje se na korištenju: compute plaćate u kreditima, pohranu po terabajtu mjesečno, a podatke koji se premještaju izvan regije posebno. Kredit po cjeniku stoji od $2,00 do $3,25 u izdanju Standard i od $4,00 do $6,50 u izdanju Business Critical, ovisno o cloudu i regiji (cjenička cijena, provjereno u listopadu 2026.).
+
+Taj osnovni broj govori Vam vrlo malo. Ono što plaćate ovisi o tome koliko su velika Vaša skladišta, koliko dugo rade, koje su serverless funkcionalnosti uključene i prati li to itko.
+
+U programima u proizvodnji i obrani na kojima sam radio, cijena po kreditu nikada nije bila problem. Problemi su bili skladišta ostavljena uključena, serverless funkcionalnosti koje nitko nije predvidio u proračunu i ugovor dimenzioniran napamet. Ovaj vodič pokriva jedinice, cjeničke stope, skrivene pokretače troškova i kontrole koje bih uveo prvog dana.
+
+## Kako funkcioniraju Snowflake krediti
+
+Snowflake sada ima dvije jedinice naplate. Platformski krediti plaćaju virtualna skladišta, Snowpark Container Services, serverless funkcionalnosti i cloud services.
+
+AI krediti plaćaju Cortex AI funkcionalnosti. Kada stariji ugovor kaže „krediti”, misli na platformske kredite.
+
+Virtualno skladište (virtual warehouse) imenovani je blok computea. Odaberete veličinu, a veličina određuje stopu kredita. Svaki korak naviše udvostručuje stopu.
+
+Skladište koje radi naplaćuje se po sekundi, uz minimum od 60 sekundi pri svakom pokretanju ili nastavku rada. Suspendirano skladište ne stoji ništa.
+
+Tablica u nastavku preuzeta je iz Snowflakeove [dokumentacije o skladištima](https://docs.snowflake.com/en/user-guide/warehouses-overview) i Service Consumption Tablea koja vrijedi od 9. listopada 2026.
+
+| Veličina | Krediti na sat (standardno, Gen1) | Krediti na sat (Gen2, AWS) |
+|---|---|---|
+| X-Small | 1 | 1,35 |
+| Small | 2 | 2,7 |
+| Medium | 4 | 5,4 |
+| Large | 8 | 10,8 |
+| X-Large | 16 | 21,6 |
+| 2X-Large | 32 | 43,2 |
+| 3X-Large | 64 | 86,4 |
+| 4X-Large | 128 | 172,8 |
+| 5X-Large | 256 | nije dostupno |
+| 6X-Large | 512 | nije dostupno |
+
+Gen2 skladišta stoje više po satu (1,25 puta na Azureu, 1,35 puta na AWS-u i GCP-u) jer rade brže. Hoće li na kraju biti jeftinija ovisi o Vašem radnom opterećenju, pa testirajte prije prelaska. Gen2 nije dostupan u svakoj regiji i nije zadana opcija.
+
+Dvije druge vrste skladišta imaju vlastite minimume. Interactive skladišta po cjeniku imaju niže stope po satu (0,6 kredita na sat za X-Small), ali naplaćuju najmanje 60 minuta pri svakom pokretanju. Snowpark-optimised skladišta za Python i ML rad zahtjevan za memoriju troše od 1 do 6 kredita na sat u manjim veličinama, ovisno o opciji memorije.
+
+Multi-cluster skladišta množe stopu brojem klastera koji rade. Skladište veličine Medium kojem su dopuštena tri klastera može trošiti do 12 kredita na sat. Multi-cluster je funkcionalnost izdanja Enterprise.
+
+## Izdanja i cijena po kreditu
+
+Izdanje koje odaberete određuje cijenu svakog kredita koji potrošite, pa je to najveća pojedinačna poluga u ugovoru. Rasponi u nastavku preuzeti su iz Tablice 2(a) [Snowflake Service Consumption Tablea](https://www.snowflake.com/legal-files/CreditConsumptionTable.pdf), cjenička cijena na zahtjev po platformskom kreditu, provjereno u listopadu 2026.
+
+| Izdanje | Što dodaje | Cjenička cijena po kreditu na zahtjev | AWS US East (N. Virginia) |
+|---|---|---|---|
+| Standard | Temeljna platforma, Snowpark, dijeljenje podataka, Time Travel | $2,00 do $3,25 | $2,00 |
+| Enterprise | Multi-cluster skladišta, detaljnije kontrole upravljanja, dulji Time Travel, Query Acceleration | $3,00 do $4,90 | $3,00 |
+| Business Critical | Tri-Secret Secure, privatna povezanost, failover i failback | $4,00 do $6,50 | $4,00 |
+| Virtual Private Snowflake (VPS) | Sve iz izdanja Business Critical, u okruženju izoliranom od drugih računa | $6,00 do $9,75, plus godišnja naknada za implementaciju | $6,00 |
+
+Najjeftinije regije su glavne američke regije. Najskuplje su mjesta poput Züricha, Switzerland North, Hong Konga i Dammama. Za kupca iz GCC-a ili Europe izbor regije može pomaknuti račun za 30 % ili više prije nego što napišete ijedan upit.
+
+Za obranu je to još važnije. U regijama američke vlade iz tablice (uključujući AWS US Gov West 1, DoD regiju i FedRAMP High Plus regije) izdanja Standard i Enterprise nisu ponuđena. Business Critical počinje od $4,80 do $5,60 po kreditu.
+
+Ako Vaš program ima ograničenja suverenosti ili kontrole izvoza, od početka planirajte proračun za Business Critical. Izdanju Standard nedostaju kontrole šifriranja i privatne povezanosti o kojima će pitati sigurnosni pregled u obrani. Sam nisam implementirao Snowflake u državnoj regiji ni u regiji GCC-a, pa ove regionalne iznose tretirajte kao smjernice prema cjeniku i sa Snowflakeom potvrdite koje su usluge aktivne u Vašoj ciljnoj regiji.
+
+Za većinu proizvođača počeo bih s izdanjem Enterprise. Multi-cluster skladišta i Query Acceleration sprječavaju da izvještavanje na kraju mjeseca čeka u redu iza tima za podatkovnu znanost.
+
+## Pohrana, prijenos podataka i ostale stavke
+
+**Pohrana** se naplaćuje prema mjesečnom prosjeku komprimiranih podataka. Na zahtjev po cjeniku stoji $23 po TB mjesečno u glavnim američkim regijama, $24,50 u Frankfurtu i $39 u AWS US Gov West 1. Ugovori o kapacitetu s većim godišnjim obvezama spuštaju je na $13,80 po TB na najvišoj razini u US East.
+
+**Prijenos podataka** besplatan je unutar istog clouda i regije. Premještanje podataka van se plaća. Iz AWS US East po cjeniku stoji $20 po TB prema drugoj AWS regiji i $90 po TB prema drugom cloudu ili internetu.
+
+Državne regije naplaćuju više. Ako se Vaš ERP nalazi na Azureu, a Snowflake na AWS-u, svaki izvoz koji iz Snowflakea ide natrag u Azure nosi tu međucloudnu stopu. Moj vodič o tome [kako ERP podatke dovesti u Snowflake](/hr/erp-data-into-snowflake/) pokriva gdje smjestiti račun.
+
+**Cloud services** sloj je koji obrađuje prijave, kompilaciju upita i metapodatke. Naplaćuje se po 4,4 kredita po satu korištenja, ali samo dio iznad 10 % kredita skladišta tog dana.
+
+Većina računa nikada ne vidi taj trošak. Računi koji izvode ogroman broj sitnih upita ili iz BI alata neprestano provjeravaju metapodatke ga vide.
+
+**Serverless funkcionalnosti** izvode se na computeu kojim upravlja Snowflake, po jedan kredit po satu computea pomnožen s multiplikatorom funkcionalnosti. Ništa se ne pojavljuje na popisu Vaših skladišta, i zato iznenađuju ljude. Iz Tablice 5 tablice potrošnje:
+
+1. Snowpipe: 0,0037 kredita po učitanom GB.
+2. Automatic clustering: 2 puta compute, plus cloud services.
+3. Search Optimization Service: 2 puta compute, plus cloud services.
+4. Održavanje materijaliziranih pogleda: 2 puta compute, plus cloud services.
+5. Serverless tasks: 0,9 puta compute, plus cloud services.
+6. Query Acceleration: 1 puta compute, naplata po sekundi kada se koristi.
+
+Clustering i search optimization na tablici koja se brzo mijenja mogu tiho stajati više od skladišta koja nad njom postavljaju upite. Svaku od njih pregledam prije go-livea.
+
+## Cortex AI i Snowpark Container Services
+
+**Cortex AI** naplaćuje se u AI kreditima, zasebnoj jedinici. Na zahtjev AI kredit po cjeniku stoji $2,00 (globalno) ili $2,20 (regionalno). Popust na platformske kredite ne primjenjuje se na AI kredite.
+
+Cortex funkcije naplaćuju se po milijunu tokena, pri čemu ulaz i izlaz često imaju različite cijene. U tablici potrošnje llama3.3-70b stoji 0,36 AI kredita po milijunu tokena u oba smjera, a mistral-large2 1,00 za ulaz i 3,00 za izlaz. Cortex Analyst naplaćuje 67 platformskih kredita na 1.000 poruka, a Cortex Search 6,3 AI kredita po GB indeksiranih podataka mjesečno.
+
+Ako Cortex izvodite u isključivo regionalnom načinu radi rezidentnosti podataka, očekujte višu stopu. [Dokumentacija o međuregionalnom inferencingu](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cross-region-inference) objašnjava opcije usmjeravanja.
+
+Za obranu je regionalna obrada obično jedina prihvatljiva postavka. Moj tekst o [Snowflake Cortex AI i Snowflake Intelligence](/hr/snowflake-cortex-ai-snowflake-intelligence/) pokriva što te funkcionalnosti rade.
+
+**Snowpark Container Services** pokreće Vaše vlastite kontejnere na compute poolovima. Svaka vrsta čvora ima stopu kredita. Najmanji čvorovi opće namjene po cjeniku stoje znatno ispod 0,1 kredita na sat, a GPU čvorovi od oko 0,5 do više od 20.
+
+Čvorovi naplaćuju minimum od pet minuta pri svakom pokretanju. GPU pool ostavljen uključen preko vikenda najskuplja je pogreška koje se mogu sjetiti na ovoj platformi.
+
+## Ilustrativni izračun: jedno skladište, dvije navike
+
+Ovaj je primjer samo ilustrativan. Koristi cjeničke stope iz tablice potrošnje za listopad 2026.: izdanje Enterprise, AWS US East, $3,00 po kreditu, pohrana po $23 po TB.
+
+Skladište veličine Medium troši 4 kredita na sat. Ako se koristi deset sati dnevno tijekom 22 radna dana, to je 880 kredita, odnosno $2.640 mjesečno. Isto skladište s isključenim auto-suspendom radi 720 sati mjesečno.
+
+To je 2.880 kredita, odnosno $8.640. Isti upiti, isti korisnici, više nego trostruko veći račun.
+
+Dodajte sada 20 TB komprimirane pohrane: $460 mjesečno. Pohrana je stvaran novac, ali na platformama na kojima sam radio rijetko je bila stavka koja zabrinjava CFO-a. To su neaktivni compute i serverless funkcionalnosti koje nitko ne prati.
+
+Poslovni popusti i obveze kapaciteta promijenit će ove brojke. Oblik se neće promijeniti.
+
+## Na zahtjev nasuprot ugovorima o kapacitetu
+
+Snowflake prodaje na dva načina. **Na zahtjev** znači da plaćate cjeničku cijenu mjesečno unatrag, bez obveze. **Kapacitet** znači da se obvezujete na godišnju potrošnju i dobivate popust na platformske kredite, utvrđen u Vašoj narudžbenici.
+
+Kapacitet se može koristiti na svim Vašim računima. Pohrana postaje jeftinija kako raste godišnja vrijednost Vašeg ugovora. AI krediti imaju vlastite razine.
+
+Moje pravilo: oko tri mjeseca radite na zahtjev ili uz malu obvezu. Zatim ugovor dimenzionirajte na temelju podataka iz `ACCOUNT_USAGE`, a ne iz dobavljačeve radne knjige za dimenzioniranje. Ta tri mjeseca pokazuju Vam i kako se model potrošnje ponaša na Vašim vlastitim radnim opterećenjima.
+
+Prevelika obveza je novac potrošen koristili ga ili ne. Pažljivo pročitajte uvjete prijenosa neiskorištenog iznosa. Ista disciplina vrijedi za svaki ugovor o poslovnom softveru, što pokrivam u svojoj [studiji slučaja o pregovorima o ERP ugovoru](/hr/erp-implementation-contract-negotiation-cost-review-cfo/).
+
+## Kontrole koje postavljam prije go-livea
+
+Snowflake Vam daje dobre alate. [Dokumentacija o kontroli troškova](https://docs.snowflake.com/en/user-guide/cost-controlling) ih objašnjava. Funkcioniraju samo ako ih netko konfigurira prije prvog produkcijskog učitavanja.
+
+1. **Auto-suspend na svakom skladištu.** Uključen je prema zadanim postavkama. Provjerite da ga nitko nije isključio. Vrlo kratke postavke na neujednačenim radnim opterećenjima mogu stajati više, jer svaki nastavak rada naplaćuje minimum od 60 sekundi.
+2. **Dimenzionirajte prema radnom opterećenju.** Zasebna skladišta za ELT, BI i podatkovnu znanost. Počnite s malim i povećavajte samo kada povijest upita pokaže prelijevanje (spilling) ili čekanje u redu.
+3. **Multi-cluster s ograničenjima.** Postavite razuman maksimalni broj klastera. Koristite politiku skaliranja Economy gdje je određeno čekanje u redu prihvatljivo.
+4. **Resource monitors.** Prate kredite skladišta i mogu suspendirati skladište na određenom pragu. Ne pokrivaju serverless funkcionalnosti.
+5. **Proračuni.** Mjesečna ograničenja potrošnje s upozorenjima koja pokrivaju i serverless funkcionalnosti. Koristite prilagođene proračune po odjelu.
+6. **Query Acceleration s faktorom skaliranja.** Korisno za neujednačena skeniranja, ali ga ograničite. Zadani faktor skaliranja dopušta da doda do osam puta više od vlastite stope skladišta.
+7. **Označavanje.** Oznake objekata na skladištima i korisnicima, oznake upita za zajedničke aplikacije. Bez njih nitko ne može reći koji je pogon, program ili funkcija potrošila koliko.
+8. **Tjedni pregled `ACCOUNT_USAGE`.** `WAREHOUSE_METERING_HISTORY` za kredite skladišta, `QUERY_ATTRIBUTION_HISTORY` za trošak po upitu, `TAG_REFERENCES` za povezivanje s vlasnicima. Imajte na umu da trošak po upitu ne uključuje vrijeme mirovanja, pohranu, serverless i AI.
+
+Probno razdoblje dobar je način da to naučite prije obveze. Snowflake trenutačno nudi probno razdoblje od 30 dana s $400 besplatnih kredita.
+
+AI funkcionalnosti onemogućene su dok ne dodate karticu. Odaberite cloud, regiju i izdanje koje biste stvarno kupili, jer se kasnije ne mogu promijeniti.
+
+## Što učiniti sljedeće
+
+Prije potpisivanja na jednoj stranici imajte tri broja: kredite mjesečno po radnom opterećenju, cijenu izdanja i regije te serverless i AI kao zasebne stavke. Ako Vam to dobavljač ili SI ne mogu dati, procjena je nagađanje. Ako još birate platformu, moja [usporedba Snowflake vs Databricks](/hr/snowflake-vs-databricks/) i [vodič kroz cijene Databricksa](/hr/databricks-pricing-explained/) koriste istu perspektivu.
+
+Pomažem organizacijama dimenzionirati ugovore za podatkovne platforme i postaviti upravljanje troškovima prije go-livea. Ako Vam je to korisno, [javite se](/hr/contact-noel-erp-support/).
+
+## Često postavljana pitanja
+
+<details>
+<summary>Koliko stoji Snowflake kredit?</summary>
+
+Na zahtjev platformski kredit po cjeniku stoji od $2,00 do $3,25 u izdanju Standard, od $3,00 do $4,90 u izdanju Enterprise, od $4,00 do $6,50 u izdanju Business Critical i od $6,00 do $9,75 u Virtual Private Snowflakeu, ovisno o cloudu i regiji (cjenička cijena, provjereno u listopadu 2026.). U AWS US East iznosi su $2, $3, $4 i $6. Ugovori o kapacitetu na te stope primjenjuju ispregovarani popust.
+
+</details>
+
+<details>
+<summary>Naplaćuje li se Snowflake po sekundi?</summary>
+
+Naplaćuje. Standardna virtualna skladišta naplaćuju se po sekundi uz minimum od 60 sekundi pri svakom pokretanju ili nastavku rada. Interactive skladišta imaju minimum od 60 minuta, a čvorovi Snowpark Container Servicesa minimum od pet minuta. Suspendirana skladišta ne stoje ništa.
+
+</details>
+
+<details>
+<summary>Koliko stoji Snowflake pohrana po TB?</summary>
+
+Pohrana na zahtjev po cjeniku stoji $23 po TB mjesečno u glavnim američkim regijama, a više u nekim regijama, kao što je $24,50 u Frankfurtu i $39 u AWS US Gov West 1. Naplaćuje se prema komprimiranoj veličini. Ugovori o kapacitetu snižavaju stopu kako raste godišnja vrijednost Vašeg ugovora.
+
+</details>
+
+<details>
+<summary>Ima li Snowflake besplatno probno razdoblje?</summary>
+
+Ima. Snowflake nudi probno razdoblje od 30 dana s $400 besplatnih kredita. Probno razdoblje završava kada prođe 30 dana ili kada se krediti potroše, što god nastupi prije. AI funkcionalnosti onemogućene su dok ne dodate kreditnu karticu, a cloud, regija i izdanje koje odaberete kasnije se ne mogu promijeniti.
+
+</details>
+
+<details>
+<summary>Što je Snowflake prilagodba od 10 % za cloud services?</summary>
+
+Korištenje cloud servicesa besplatno je do 10 % kredita skladišta tog dana. Naplaćuje se samo korištenje iznad te granice. Serverless funkcionalnosti i korištenje Snowpark Container Servicesa ne ulaze u tu kvotu.
+
+</details>
+
+<details>
+<summary>Zašto je moj Snowflake račun veći od očekivanog?</summary>
+
+Uobičajeni uzroci su skladišta koja se nikada ne suspendiraju, predimenzionirana skladišta, multi-cluster bez gornje granice i serverless funkcionalnosti kao što su automatic clustering, search optimization i materijalizirani pogledi. Korištenje Cortex AI-ja i prijenos podataka između cloudova također se zbrajaju. Postavite upit nad `WAREHOUSE_METERING_HISTORY` i pogledima serverless korištenja kako biste pronašli izvor, a zatim postavite proračune i resource monitors.
+
+</details>

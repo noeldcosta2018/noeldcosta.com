@@ -1,0 +1,230 @@
+---
+title: "Unity Catalog in Databricks: governance goed ingericht"
+h1: "Unity Catalog in Databricks: governance goed ingericht"
+slug: "databricks-unity-catalog-data-governance"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/databricks-unity-catalog-data-governance.webp"
+heroAlt: "Helder wit gangpad in een datacenter met serverracks en een beveiligde toegangsdeur"
+category: "data-and-ai"
+tags: ["databricks", "data-governance", "defence", "manufacturing"]
+author: "Noel D'Costa"
+metaTitle: "Unity Catalog in Databricks: zo richt u datagovernance in"
+metaDescription: "Wat Unity Catalog in Databricks is, hoe hiërarchie, grants, ABAC, lineage en audit werken, en een praktische uitrolvolgorde voor gereguleerde ondernemingen."
+primaryKeyword: "unity catalog databricks"
+excerpt: "Unity Catalog is de governancelaag voor alles in Databricks: één plek om toegang te regelen, lineage bij te houden en aan te tonen wie wat heeft aangeraakt. Zo werkt het, en zo ontwerpt u het zodat het in jaar drie nog klopt."
+experienceSource: "Noel's first-person experience with Databricks on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts checked against official Databricks documentation and release notes, October 2026."
+keyTakeaways:
+  - "Unity Catalog beheert tabellen, views, volumes, functies en modellen via één naamruimte met drie niveaus: catalog.schema.object"
+  - "U krijgt één metastore per cloudregio, dus de echte governancebeslissingen zitten in het catalogusontwerp"
+  - "ABAC-policies, governed tags en dataclassificatie werden in april 2026 algemeen beschikbaar; DENY-policies zijn nog Beta"
+  - "Groepen komen uit uw identity provider en zijn eigenaar van elke productiecatalogus. Ken nooit rechten toe aan individuen"
+  - "Delta Sharing heet nu OpenSharing (juni 2026); managed en foreign Iceberg-tabellen werden GA in mei 2026"
+  - "Zet audit- en lineagebewijs vanaf dag één aan. Het achteraf inbouwen vlak voor een audit is pijnlijk"
+pullQuote: "De meeste problemen met Unity Catalog zijn problemen met naamgeving en eigenaarschap die iemand met rechten probeerde op te lossen."
+mentions:
+  - "Databricks"
+  - "Unity Catalog"
+  - "OpenSharing"
+  - "Delta Sharing"
+  - "Apache Iceberg"
+  - "UCX"
+  - "Hive metastore"
+  - "Lakehouse Federation"
+  - "Microsoft Entra ID"
+  - "SAP"
+  - "Oracle"
+  - "Microsoft Dynamics 365"
+originalUrl: "https://noeldcosta.com/databricks-unity-catalog-data-governance/"
+canonicalUrl: "https://noeldcosta.com/nl/databricks-unity-catalog-data-governance/"
+locale: "nl"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Unity Catalog is de governancelaag in Databricks. Het bepaalt wie elke tabel, view, bestandsvolume, functie en elk AI-model kan zien en wijzigen, legt de lineage daartussen vast en logt toegang, zodat u het aan een auditor kunt aantonen.
+
+Draait u vandaag Databricks, dan zit u er al op of migreert u ernaartoe. De oude Hive metastore is op zijn retour, en elke nieuwere functie van Databricks gaat uit van Unity Catalog eronder.
+
+De vraag is niet meer of u het invoert. De vraag is of uw catalogusontwerp nog klopt na drie jaar nieuwe teams, nieuwe data en een audit of twee.
+
+In de programma's in de maakindustrie en defensie waaraan ik heb gewerkt, was de technologie zelden het moeilijke deel. Overeenstemming over wie eigenaar is van welke data, hoe omgevingen gescheiden zijn en welk bewijs het securityteam nodig heeft, dat was het wel.
+
+## Wat Unity Catalog in Databricks echt beheert
+
+Alles valt onder een **metastore**, de container op het hoogste niveau. Daaronder gebruiken data- en AI-assets een naamruimte met drie niveaus: `catalog.schema.object`. Een query op `prod_finance.gl.journal_lines` noemt de catalogus, het schema en de tabel.
+
+De objecten waarop u rechten toekent, heten securable objects. Volgens de [documentatie van Unity Catalog](https://docs.databricks.com/aws/en/data-governance/unity-catalog/) vallen ze in twee groepen:
+
+1. **Assets in de naamruimte:** tabellen, views, volumes (beheerde bestandsopslag), functies, modellen en services.
+2. **Objecten op metastoreniveau:** storage credentials, external locations, connections (naar externe databases) en shares.
+
+Twee van die objecten op metastoreniveau verdienen een eenvoudige uitleg, omdat ze bepalen waar uw data fysiek staat.
+
+Een **storage credential** omvat een cloudidentiteit, zoals een IAM-rol of een managed identity, die een opslagaccount of bucket kan bereiken. Een **external location** koppelt een opslagpad aan een credential. Samen laten ze Unity Catalog cloudopslag lezen en schrijven zonder dat gebruikers sleutels krijgen.
+
+Dan managed tegenover external. Bij managed tables beheert Unity Catalog de tabel en de bestanden ervan. Bij external tables beheert het alleen de toegang.
+
+Databricks raadt nu managed tables aan voor alle nieuwe data, en houdt external tables vooral voor Hive-upgrades. Daar ben ik het mee eens. Andere tools die naar dezelfde paden schrijven, zijn meestal een reden om de pipeline te repareren, niet om de tabel voor altijd external te houden.
+
+Eén beperking bepaalt alles: u kunt maar één metastore per cloudregio hebben. Isolatie lost u niet op met meer metastores. U lost het op met catalogi.
+
+## Toegangscontrole: grants, row filters, column masks en ABAC
+
+Rechten in Unity Catalog zijn standaard SQL-grants die naar beneden overerven. Een grant op een catalogus geldt voor elk schema en elke tabel daarin. Een gebruiker heeft `USE CATALOG` en `USE SCHEMA` nodig om een tabel te bereiken, en daarna `SELECT` om hem te lezen.
+
+```sql
+GRANT USE CATALOG ON CATALOG prod_finance TO `finance-analysts`;
+GRANT USE SCHEMA ON SCHEMA prod_finance.gl TO `finance-analysts`;
+GRANT SELECT ON SCHEMA prod_finance.gl TO `finance-analysts`;
+```
+
+Grants beantwoorden de vraag "mag deze groep deze tabel lezen". Gereguleerde data vraagt om fijnere antwoorden, en daar komen de andere maatregelen in beeld.
+
+De tabel hieronder vat de belangrijkste toegangsmaatregelen en hun status per oktober 2026 samen.
+
+| Maatregel | Wat het doet | Status (oktober 2026) |
+|---|---|---|
+| Grants en eigenaarschap | Rechten op objectniveau, overgeërfd van catalogus naar schema naar object | Algemeen beschikbaar |
+| Row filters en column masks op tabelniveau | Een SQL-functie op één tabel verbergt rijen of maskeert waarden | Algemeen beschikbaar |
+| ABAC-policies voor row filters en column masks | Eén policy, gedefinieerd op catalogus-, schema- of tabelniveau, geldt voor elk object met een governed tag | GA sinds 28 april 2026 |
+| Governed tags | Tags op accountniveau met gecontroleerde sleutels, waarden en wie ze mag toekennen | GA sinds 2 april 2026 |
+| Dataclassificatie | Scant tabellen en markeert gevoelige data zoals persoonsgegevens | GA sinds 20 april 2026; eigen classifiers Beta |
+| ABAC DENY-policies en policies op metastoreniveau | Expliciete weigeringen die grants overrulen; policies op metastoreniveau | Beta |
+| Cross-engine ABAC | Externe engines lezen managed tables met ABAC-beveiliging, waarbij Databricks serverless compute de policies afdwingt | GA sinds 1 oktober 2026 |
+
+De datums komen uit de [release notes van Databricks van april 2026](https://docs.databricks.com/aws/en/release-notes/product/2026/april) en die van oktober 2026.
+
+ABAC (attribute-based access control) is de verandering die voor grote omgevingen het meest uitmaakt. In plaats van per tabel een mask te schrijven, tagt u kolommen, bijvoorbeeld `classification = export_controlled`, en schrijft u één policy die elke getagde kolom maskeert voor iedereen buiten een benoemde groep.
+
+Nieuwe tabellen zijn beschermd zodra ze getagd zijn. Dataclassificatie kan de tags voorstellen.
+
+Controleer eerst de compute. Tabellen met ABAC-beveiliging vereisen serverless compute of Databricks Runtime 16.4 of hoger. Oudere clusters kunnen ze helemaal niet lezen.
+
+Twee valkuilen zou ik vroeg benoemen. Conflicterende policies op dezelfde kolom voor dezelfde gebruiker blokkeren de query met een foutmelding.
+
+En als de run-as-identiteit van een pipeline onder een mask valt, kan ververste data gemaskeerd worden opgeslagen. Zonder service-identiteiten bewust uit, en documenteer waarom.
+
+## Lineage, audit en delen
+
+Lineage wordt automatisch vastgelegd, tot op kolomniveau, voor queries via Databricks SQL en Spark DataFrames in elke workspace die aan de metastore is gekoppeld. Het omvat notebooks, jobs, pipelines en dashboards. Kolomlineage gaat verloren als code tabellen via een opslagpad aanspreekt, nog een reden om toegang via paden uit te faseren.
+
+Auditbewijs komt uit system tables. `system.access.audit` bevat auditgebeurtenissen en staat in de [documentatie over system tables](https://docs.databricks.com/aws/en/admin/system-tables/) nog als Public Preview.
+
+Lineage- en billingtabellen staan ernaast, met 365 dagen gratis bewaartermijn. Standaard zien alleen account- en metastorebeheerders de system tables, dus bepaal vroeg wie leestoegang krijgt en of u de auditdata naar uw SIEM kopieert voor langere bewaring.
+
+Delen kreeg dit jaar een nieuwe naam. Databricks [kondigde OpenSharing aan op 10 juni 2026](https://www.databricks.com/company/newsroom/press-releases/databricks-announces-opensharing) als de volgende versie van het Delta Sharing-protocol, nu ondergebracht bij de Linux Foundation en uitgebreid naar AI-assets en Iceberg-clients.
+
+In oudere documentatie en contracten ziet u nog "Delta Sharing". Een share is een object in Unity Catalog, en delen van Databricks naar Databricks is ook hoe u data tussen regionale metastores verplaatst.
+
+Voor gemengde omgevingen werden managed en foreign Apache Iceberg-tabellen op 21 mei 2026 algemeen beschikbaar. Foreign tables worden gelezen via Lakehouse Federation uit catalogi zoals AWS Glue of Snowflake Horizon. Engines zoals Spark, Flink en Trino kunnen het Iceberg REST catalog-endpoint van Unity Catalog gebruiken.
+
+Er is ook een open-source Unity Catalog onder de LF AI & Data Foundation, maar dat is een project in sandboxfase, niet de beheerde dienst. Bouw er geen exitplan op zonder te testen.
+
+## Een governanceontwerp dat werkt
+
+Catalogi zijn de belangrijkste eenheid van isolatie. De [best practices voor Unity Catalog](https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices) van Databricks zeggen dat catalogi meestal overeenkomen met een omgeving, een team, een bedrijfsonderdeel of een combinatie. De meeste echte ontwerpen zijn een combinatie.
+
+<compare-split title="Twee manieren om catalogi in te delen" left-label="Catalogus per omgeving" left-points="dev-, test- en prod-catalogi, schema's per domein|Eenvoudig om elke catalogus aan zijn workspace te koppelen|Eigenaarschap vervaagt naarmate domeinen binnen één catalogus groeien|Past bij kleinere teams en vroege uitrol" right-label="Catalogus per domein en omgeving" right-points="prod_finance, prod_quality, dev_finance enzovoort|Elke domeingroep is eigenaar van zijn eigen catalogi|Duidelijke verantwoordelijkheid en een schonere auditscope|Meer catalogi om te benoemen, te koppelen en rechten op te geven"></compare-split>
+
+Voor elk bedrijf met meer dan een handvol datateams kies ik standaard voor domein plus omgeving. Het vraagt vooraf meer discipline in naamgeving. Het voorkomt twee jaar later de discussie over wie eigenaar is van de tabel die iedereen bevraagt maar niemand onderhoudt.
+
+De rest van het ontwerp komt neer op vier regels:
+
+1. **Groepen komen uit uw identity provider.** Provisioneer gebruikers en groepen in het Databricks-account via automatisch identiteitsbeheer, of via SCIM als uw provider dat niet ondersteunt. Definieer groepen in Microsoft Entra ID, Okta of een vergelijkbare dienst, niet in Databricks. Als iemand vertrekt, verdwijnt de toegang met het directoryaccount.
+2. **Groepen zijn eigenaar van productieobjecten.** De eigen richtlijn van Databricks is om eigenaarschap van productiecatalogi en -schema's aan groepen toe te kennen, nooit aan individuen. Een eigenaar kan toegang verlenen, dus een persoon als eigenaar is een permanente uitzondering.
+3. **Koppel catalogi aan workspaces.** Een productiecatalogus die alleen aan productieworkspaces is gekoppeld, kan niet vanuit een sandbox worden bevraagd, wat de grants ook zeggen.
+4. **Classificeer voordat u rechten toekent.** Spreek een korte tagwoordenlijst af (gevoeligheid, persoonsgegevens, exportcontrole, bronsysteem) als governed tags, en schrijf ABAC-policies daartegen.
+
+In de maakindustrie heb ik catalogi ingedeeld per fabriekssysteem, het OT- en bronsysteemdomein, niet per fabriek. OT-data uit historians, MES en sensoren staat in eigen catalogi, met het operations- of engineeringdatateam als eigenaar. IT-data uit het ERP (SAP, Oracle of Microsoft Dynamics 365), kwaliteit en supply chain staat in andere.
+
+Gecureerde, gekoppelde data voor analisten staat in een derde set. De grens tussen OT en IT wordt zo zichtbaar in de catalogus zelf. Valt ERP-extractie binnen de scope, dan gelden mijn aantekeningen over [waarom SAP-datamigratie mislukt](/nl/why-sap-data-migration-fails-and-how-to-fix-it/) ook voor ERP-datafeeds.
+
+## De invalshoek van defensie: least privilege, scheiding en bewijs
+
+In defensieprogramma's kunt u vier vragen van het securityteam verwachten. Wie kan data onder exportcontrole zien? Hoe is die gescheiden van al het andere?
+
+Waar staat ze opgeslagen? Kunt u dat allemaal aantonen voor elke dag van het afgelopen jaar?
+
+Unity Catalog beantwoordt de meeste daarvan, als u erop ontwerpt:
+
+1. **Least privilege.** Geen grants op metastore- of catalogusniveau aan brede groepen. Ken rechten toe op schemaniveau aan benoemde groepen, en gebruik ABAC-masks voor kolommen die als gecontroleerd zijn getagd. Gebruik DENY-policies pas als ze uit Beta zijn en uw accreditatie-instanties ze accepteren.
+2. **Scheiding.** Aparte catalogi voor gecontroleerde data, met een eigen managed opslaglocatie, gekoppeld aan toegewijde workspaces. Databricks raadt managed opslag op catalogusniveau aan als belangrijkste isolatie-eenheid, wat hier goed bij past.
+3. **Residentie.** Eén metastore per regio betekent dat data in de regio van de opslag blijft, tenzij iemand haar deelt. Behandel elke OpenSharing-share en elke koppeling tussen regio's als een residentiebeslissing die goedkeuring nodig heeft.
+4. **Auditbewijs.** Lineage plus `system.access.audit`, geëxporteerd naar uw SIEM, laat zien wie wat heeft geraadpleegd en waar het naartoe ging. Houd er rekening mee dat de audittabel nog Public Preview is. In mijn defensiewerk wilden de securityteams de auditlogs gekopieerd hebben naar hun eigen SIEM, niet alleen achtergelaten in de system tables van Databricks. Neem die feed vanaf het begin in het plan op.
+
+Unity Catalog bepaalt niet wat als gerubriceerde of ITAR-gecontroleerde data telt, en het vervangt geen accreditatie. Sommige defensieworkloads kunnen helemaal niet in een commerciële cloudregio draaien.
+
+Ook daar helpt het catalogusontwerp: het trekt een duidelijke grens tussen wat naar het platform mag en wat niet. Schrijft u de beleidslaag boven het platform, dan behandelt mijn [gids voor een AI-governanceframework](/nl/ai-governance-framework-guide-building-a-responsible-ai-plan/) de kant van rollen en goedkeuringen.
+
+## Een praktische uitrolvolgorde
+
+Dit is de volgorde die ik zou aanhouden voor een bedrijf dat van de Hive metastore overstapt of opnieuw begint.
+
+1. **Spreek het catalogusmodel en de naamgevingsconventie af.** Domein plus omgeving, op papier, goedgekeurd door de data-eigenaren. Verandert u het later, dan hernoemt u alles.
+2. **Koppel de identity provider.** Provisioning op accountniveau, groepen gedefinieerd in de directory, SCIM op workspaceniveau uitgeschakeld voor Unity Catalog-workspaces.
+3. **Richt storage credentials en external locations in.** Eigendom van een platformgroep. Niemand anders krijgt `CREATE EXTERNAL LOCATION`.
+4. **Maak catalogi aan met managed opslag en workspacekoppelingen.** Productiecatalogi zijn vanaf dag één eigendom van groepen.
+5. **Definieer governed tags en zet dataclassificatie aan.** Beoordeel de bevindingen voordat u er policies op schrijft.
+6. **Schrijf ABAC-policies voor gevoelige kolommen.** Test met echte gebruikers op elk computetype dat u draait, inclusief clusters die nog onder Runtime 16.4 zitten.
+7. **Migreer van de Hive metastore.** Databricks [raadt nu aan de Hive metastore eerst te federeren](https://docs.databricks.com/aws/en/data-governance/unity-catalog/migrate) en daarna tabellen ter plekke te upgraden. UCX helpt bij grote omgevingen, maar is een project van Databricks Labs, onderhouden door de community en niet officieel ondersteund. Plan daarop.
+8. **Zet auditexport en lineagereview aan.** Geef leestoegang tot system tables, richt de SIEM-feed in en spreek af wie wat beoordeelt.
+9. **Schakel toegang tot de Hive metastore uit** zodra alles gemigreerd is, zodat niemand stilletjes op het oude pad doorbouwt.
+
+## Fouten die u moet vermijden
+
+1. **Rechten toekennen aan individuen.** Het werkt een week. Daarna kan niemand meer zeggen wie toegang heeft tot wat.
+2. **Eén gigantische catalogus met schema's per team.** Eigenaarschap en auditscope vervagen, en u bouwt het later opnieuw.
+3. **Tabellen "voorlopig" external laten.** U verliest de functies van managed tables en houdt twee eigenaren voor elk bestand.
+4. **Policies testen op één clustertype.** ABAC gedraagt zich per compute anders; oude runtimes falen volledig.
+5. **Audit als latere fase behandelen.** De auditor vraagt naar de periode voordat u het aanzette.
+
+## Waar u begint
+
+Bent u vroeg, schrijf dan het catalogusmodel en de tagwoordenlijst op één pagina voordat iemand een catalogus aanmaakt. Zit u midden in een migratie, voer dan de assessment uit, maak een lijst van elke tabel die nog external is of nog op de Hive metastore staat, en geef elke tabel een eigenaar en een datum.
+
+Voor het bredere beeld begint u met [waarvoor Databricks wordt gebruikt](/nl/what-is-databricks-used-for/), en kijk naar [de prijzen van Databricks](/nl/databricks-pricing-explained/) voordat u serverless compute voor ABAC dimensioneert. Weegt u platforms af, dan behandelt mijn [vergelijking Snowflake vs Databricks](/nl/snowflake-vs-databricks/) governance aan beide kanten. Ik help organisaties in de maakindustrie en defensie bij deze ontwerpkeuzes; helpt een second opinion, [plan dan een gesprek](/nl/contact-noel-erp-support/).
+
+## Veelgestelde vragen
+
+<details>
+<summary>Wat is Unity Catalog in Databricks?</summary>
+
+Unity Catalog is de governancelaag van Databricks. Het biedt één plek om toegang te beheren tot tabellen, views, bestandsvolumes, functies en AI-modellen, legt lineage automatisch vast en registreert toegang in audit system tables. Assets worden aangesproken als catalog.schema.object onder één metastore per regio.
+
+</details>
+
+<details>
+<summary>Is ABAC in Databricks algemeen beschikbaar?</summary>
+
+Ja. Policies voor attribute-based access control voor row filters en column masks werden op 28 april 2026 algemeen beschikbaar, en governed tags en dataclassificatie werden in april 2026 ook GA. DENY-policies, policies op metastoreniveau en eigen classifiers waren per oktober 2026 nog Beta.
+
+</details>
+
+<details>
+<summary>Is Delta Sharing hetzelfde als OpenSharing?</summary>
+
+Ja. Databricks kondigde OpenSharing in juni 2026 aan als de volgende stap in het Delta Sharing-protocol, nu ondergebracht bij de Linux Foundation en uitgebreid naar AI-assets en Iceberg-clients. De documentatie van Databricks beschrijft delen nu onder de naam OpenSharing.
+
+</details>
+
+<details>
+<summary>Moet ik managed of external tables gebruiken in Unity Catalog?</summary>
+
+Managed tables voor alle nieuwe data. Databricks raadt ze aan omdat Unity Catalog dan de bestanden, het onderhoud en de prestatiefuncties beheert. Houd external tables alleen waar een ander systeem eigenaar van de bestanden moet zijn of tijdens een upgrade van de Hive metastore, en plan de conversie.
+
+</details>
+
+<details>
+<summary>Hoe migreer ik van de Hive metastore naar Unity Catalog?</summary>
+
+Databricks raadt aan de Hive metastore eerst als foreign catalog te federeren en daarna tabellen ter plekke te upgraden zonder data te verplaatsen. Voor grote omgevingen beoordelen de UCX-tools van Databricks Labs de gereedheid en migreren ze groepen, rechten en tabellen, maar UCX wordt door de community onderhouden en niet officieel ondersteund.
+
+</details>
+
+<details>
+<summary>Moeten catalogi per omgeving of per bedrijfsdomein worden ingedeeld?</summary>
+
+Voor de meeste ondernemingen allebei: één catalogus per domein per omgeving, zoals prod_finance en dev_finance. Dat geeft elke domeingroep duidelijk eigenaarschap en een schone auditscope. Kleinere teams kunnen beginnen met één catalogus per omgeving en schema's per domein.
+
+</details>

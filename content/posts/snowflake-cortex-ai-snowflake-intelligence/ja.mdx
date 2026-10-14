@@ -1,0 +1,216 @@
+---
+title: "Snowflake Cortex AIとSnowflake Intelligenceの解説"
+h1: "Snowflake Cortex AIとSnowflake Intelligenceの解説"
+slug: "snowflake-cortex-ai-snowflake-intelligence"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/snowflake-cortex-ai-snowflake-intelligence.webp"
+heroAlt: "センサーを取り付けた機械と、設備の健全性ダッシュボードを表示したタブレットがある工場の保全エリア"
+category: "data-and-ai"
+tags: ["snowflake", "enterprise-ai"]
+author: "Noel D'Costa"
+metaTitle: "Snowflake Cortex AIとSnowflake Intelligenceのガイド"
+metaDescription: "Snowflake Cortex AIを解説。AI関数、Cortex Analyst、Search、Agents、Snowflake Intelligence（現CoWork）を、定価、リスク、パイロット計画とともにまとめました。"
+primaryKeyword: "Snowflake Cortex AI"
+excerpt: "Snowflake Cortex AIは、自社のSnowflakeアカウントの中で動くAIサービス群です。各部分が何をするのか、定価でいくらかかるのか、リスクがどこにあるのか、そして製造業や防衛分野で最初のパイロットをどう進めるかを解説します。"
+experienceSource: "Noel's first-person experience with Snowflake on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts and prices checked against official Snowflake documentation, October 2026."
+keyTakeaways:
+  - "Snowflake Cortex AIはサービス群です。AIのSQL関数、Cortex Analyst、Cortex Search、Cortex Agents、そしてCoWorkアプリで構成されます"
+  - "Snowflake Intelligenceは2025年11月4日にGAになり、2026年6月にSnowflake CoWorkに改称されました"
+  - "回答の質を決めるのは、選んだモデルではなくセマンティックビューです"
+  - "リージョン間推論はデータ所在地の判断です。リージョンに固定すると、AI Creditあたり$2.00ではなく$2.20かかります"
+  - "AI CreditsはPlatform Creditsとは別に請求され、キャパシティの割引は適用されません"
+  - "ガバナンスの効いた質問セットを1つ、文書セットを1つ用意し、ベースラインと比較して測定することから始めてください"
+pullQuote: "モデルは最も安く変えられる部分です。回答の成否が決まるのはセマンティック層です。"
+mentions:
+  - "Snowflake Cortex AI"
+  - "Snowflake Intelligence"
+  - "Snowflake CoWork"
+  - "Cortex Analyst"
+  - "Cortex Search"
+  - "Cortex Agents"
+  - "Semantic views"
+  - "Snowflake-managed MCP server"
+  - "AI_EXTRACT"
+  - "Document AI"
+originalUrl: "https://noeldcosta.com/snowflake-cortex-ai-snowflake-intelligence/"
+canonicalUrl: "https://noeldcosta.com/ja/snowflake-cortex-ai-snowflake-intelligence/"
+locale: "ja"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Snowflake Cortex AIは、自社のSnowflakeアカウントの中で動くAIサービス群です。大規模言語モデルを呼び出すSQL関数、テーブルへの質問に答えるCortex Analyst、文書を対象とするCortex Searchが含まれます。それらをCortex Agentsが統合し、その上にあるチャットアプリが、現在はSnowflake CoWorkに改称されたSnowflake Intelligenceです。
+
+魅力はシンプルです。データは、すでに運用しているのと同じアカウント、ロール、ポリシーのもとにとどまります。リスクもまたシンプルです。
+
+簡単に有効にでき、簡単にお金を使えてしまいます。その下にあるデータが適切にモデル化されていなければ、自信満々の誤った回答を返します。
+
+私が関わってきた製造業と防衛分野のプログラムでは、問いは決して「SnowflakeでAIができるか」ではありませんでした。「その回答を信頼できるか、そして誰が何を見たかを証明できるか」でした。このガイドは、その議論のために書いています。
+
+## Snowflake Cortex AIに実際に含まれるもの
+
+この分野の製品名は目まぐるしく変わってきました。重要な変更が2つあります。Snowflakeは[2025年11月4日にSnowflake Intelligenceの一般提供を発表](https://www.snowflake.com/en/news/press-releases/snowflake-intelligence-brings-agentic-AI-to-the-enterprise/)し、同時にCortex AgentsとSnowflake管理のMCPサーバーも一般提供になりました。
+
+その後、2026年6月のSummitで[製品名をSnowflake CoWorkに変更](https://www.snowflake.com/en/news/press-releases/snowflake-cowork-powers-the-agentic-enterprise-as-the-personal-agent-for-knowledge-workers-to-work-smarter/)しました。一部のSQLの権限とオブジェクト名には、まだ古い名前が使われています。
+
+Document AIはなくなりました。Snowflakeは[2026年3月16日にDocument AIのインターフェースを廃止](https://docs.snowflake.com/en/release-notes/bcr-bundles/un-bundled/bcr-2156)し、文書からの抽出を`AI_EXTRACT`関数に移しました。SIの提案にまだDocument AIのモデル構築が書かれているなら、その提案は古くなっています。
+
+2026年10月時点の構成を、Snowflakeのドキュメントに基づく提供状況と課金の基準とともに示します。
+
+| 構成要素 | 何をするか | 提供状況 | 課金の基準 |
+|---|---|---|---|
+| Cortex AI Functions | `AI_COMPLETE`、`AI_CLASSIFY`、`AI_FILTER`、`AI_AGG`、`AI_EXTRACT`、`AI_PARSE_DOCUMENT`、`AI_REDACT`などのSQL関数 | GA、一部の関数はプレビュー | 100万トークンあたりのAI Credits、解析はページあたり |
+| Cortex Analyst | ビジネス上の質問を、セマンティックビューに対するSQLに変換する | 利用可能。2026年8月からSnowflakeはCortex Agents経由での呼び出しを推奨し、REST APIも引き続きサポート | APIではメッセージあたり、Agents経由ではトークンあたり |
+| Cortex Search | 検索に使う、テキストに対するキーワードとベクトルのハイブリッド検索 | 2024年10月からGA | インデックス1GBあたり月額のAI Credits、加えて更新用のウェアハウス |
+| Cortex Agents | タスクを計画し、Analyst、Search、カスタムツール、MCPコネクタを呼び出す | 2025年11月からGA | オーケストレーションのトークン、加えて各ツール自体のコスト |
+| Snowflake CoWork（旧Snowflake Intelligence） | Cortex Agentsの上に構築された、業務ユーザー向けのチャットアプリ | 2025年11月からGA。2026年6月に発表されたいくつかの機能はプレビューまたは「近日提供」と表示 | トークン、加えてツールとウェアハウスのコスト |
+| Snowflake管理のMCPサーバー | エージェント、Analyst、Search、SQLを外部のAIクライアントに公開する | 2025年11月からGA | 基盤となるツールのコスト |
+
+モデルは、Anthropic、OpenAI、Google、Meta、Mistral AIなどから提供され、埋め込みと抽出にはSnowflake独自のArcticモデルもあります。どのモデルを呼び出せるかは、リージョンとリージョン間の設定によって決まります。これは防衛分野の顧客が最も気にする判断なので、後ほど詳しく扱います。
+
+## 回答が正しいかどうかはセマンティックビューで決まる
+
+Cortex Analystは、テーブルを読んで推測するわけではありません。読むのはセマンティックビューです。ビジネス上のエンティティ、メジャー、結合、同義語に名前を付けた、スキーマレベルのオブジェクトです。
+
+SQLを書くためにモデルに送られるのは、そのメタデータだけです。その後、SQLは呼び出し元のロールのもとで自社のウェアハウスで実行されます。
+
+ですから、売上、スクラップ率、納期遵守率についてのSnowflake CoWorkの回答の質は、すべてそのセマンティックビューにかかっています。私の経験では、本当の仕事はここにあります。
+
+難しかったのはデータのきれいさではなく、セマンティック層で指標の定義に合意することでした。「納期遵守」を、営業、サプライチェーン、財務のすべてが受け入れる形で一度だけ定義するには、どんなモデルの設定よりも多くの会議が必要です。
+
+役立つ機能が2つあります。検証済みクエリを使うと、正しいとわかっている質問とそのSQLを保存でき、モデルに実例を与えられます。Snowflakeではそれに対して評価を実行することもでき、デモの印象ではなく、精度の数字が得られます。
+
+古い方法であるステージ上のYAMLのセマンティックモデルファイルも、まだ使えます。新しい作業では避けてください。Snowflake自身のドキュメントはセマンティックビューを推奨しており、ステージにアクセスできる人なら誰でもYAMLのモデルを使えてしまうため、ガバナンスの抜けになります。
+
+ERPのデータがまだきれいに取り込まれてモデル化されていないなら、そこから始めてください。その段階は、私の[SAP、Oracle、Dynamics 365のデータをSnowflakeに取り込む](/ja/erp-data-into-snowflake/)ガイドで扱っています。
+
+## ガバナンス、データ所在地、そしてMCPの問題
+
+Snowflake Cortex AIを支持する最も強い論拠はガバナンスです。Cortex Analyst、Cortex Agents、CoWorkは、既存のロールベースのアクセス制御、行アクセスポリシー、マスキングを尊重します。
+
+モデルへのアクセス自体も、現在はロールへの権限付与で制御されます。古いアカウント全体のモデル許可リストのパラメーターは、2026年中に廃止される予定です。
+
+承認する前に確認しておくべき細かな点があります。
+
+1. **Cortex Searchは所有者の権限で動く。** 検索サービスのUSAGEを持つ人は誰でも、所有するロールがインデックス化したすべてのものから結果を見られます。1つの大きなインデックスではなく、利用者ごとに別々のサービスを構築してください。
+2. **エージェントは呼び出し元の既定のロールを使う。** ユーザーが範囲の広い既定のロールを持っていれば、エージェントもその範囲を引き継ぎます。まずロールを整理してください。
+3. **リージョン間推論ではプロンプトが移動する。** `CORTEX_ENABLED_CROSS_REGION`パラメーターは、推論をホームリージョンの外で実行できるかどうかを制御します。Snowflakeによると、データはホームリージョンに保存されたままで、プロンプトが他の場所に保持されることはありませんが、ペイロードは移動します。一部の新しい組織では、既定値が`ANY_REGION`になっています。[リージョン間推論のドキュメント](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cross-region-inference)は、データ所在地の要件があるなら明示的に設定するよう推奨しています。
+4. **MCPサーバーはエージェントを迂回できる。** Snowflakeは、ガバナンスの効いた質問にはCortex Agentを唯一のツールとして公開するよう助言しています。同じサーバーで生のSQLの実行を公開すると、外部のクライアントがエージェントの統制を迂回できてしまいます。
+
+防衛分野では、3点目が議論の中心です。パラメーターを`DISABLED`またはリージョンの値に設定すれば、推論は境界の内側にとどまりますが、使えるモデルが絞られ、クレジットあたりのコストも上がります。Snowflakeの米国政府向けリージョンでは、リクエストは同じコンプライアンスの境界の中にとどまります。
+
+そのMCPのドキュメントには、MCPサーバーについての正式なFedRAMPの評価はまだ完了していないとも書かれています。機密データはこのどれにも載せるべきではありません。パイロットは非機密で輸出管理の対象外のデータにとどめ、輸出管理の責任者にその境界を書面で合意してもらってください。
+
+ポリシーの面は、私の[AIガバナンスフレームワークのガイド](/ja/ai-governance-framework-guide-building-a-responsible-ai-plan/)で扱っています。
+
+## Snowflake Cortex AIのコスト
+
+AI機能はAI Creditsで課金され、ウェアハウスに支払うPlatform Creditsとは別です。[SnowflakeのAIの料金ページ](https://docs.snowflake.com/en/user-guide/snowflake-cortex/pricing)によると、AI Creditはオンデマンドで、グローバルのルーティングでは$2.00、推論を自社のリージョンに制限するかリージョン間のルーティングを無効にすると$2.20です。
+
+AI Creditの価格はエディションにかかわらず同じです。Platform Creditのキャパシティの割引は適用されません。
+
+以下の料金は、2026年10月9日発効のSnowflake Service Consumption Tableによる定価で、2026年10月に確認しました。エンタープライズ契約、AI Creditのキャパシティの段階、新しいモデルのリリースによって、数字は変わります。
+
+| 項目 | 定価 |
+|---|---|
+| AI Credit、グローバルのルーティング / リージョンのルーティング | $2.00 / $2.20 |
+| llama3.3-70bでの`AI_COMPLETE`（入力 / 出力） | 100万トークンあたり0.432 / 0.432 AI Credits |
+| openai-gpt-4.1での`AI_COMPLETE`（入力 / 出力） | 100万トークンあたり1.20 / 4.80 AI Credits |
+| claude-sonnet-4-5での`AI_COMPLETE`（入力 / 出力） | 100万トークンあたり1.80 / 9.00 AI Credits |
+| `AI_CLASSIFY`または`AI_FILTER` | 100万トークンあたり1.62 AI Credits |
+| `AI_EXTRACT`（arctic-extract） | 100万トークンあたり5.55 AI Credits |
+| `AI_PARSE_DOCUMENT`、レイアウトモード | 1,000ページあたり3.66 AI Credits |
+| Cortex Searchのサービング | インデックス化したデータ1GBあたり月6.3 AI Credits |
+| REST API経由のCortex Analyst | 1,000メッセージあたり67 Platform Credits |
+
+モデル間の差は大きいです。出力トークンでは、claude-sonnet-4-5のコストはllama3.3-70bの約20倍です。10年分の保全メモの分類を間違ったモデルで実行すれば、AIの予算は1週間で吹き飛びます。
+
+人がはまるコストの罠が3つあります。複数ターンの会話では、ターンごとに履歴全体を再処理するため、長いチャットほど質問あたりのコストが上がります。
+
+エージェントのコストは積み重なります。オーケストレーションのトークン、次に各ツール、そしてSQLを実行するウェアハウスです。プロビジョニングされたスループットを予約すると、キャンセルできず、使っても使わなくても請求されます。
+
+管理策はあります。リソースの予算、ユーザーごとのクォータ、エージェントのオーケストレーションの予算を使ってください。`CORTEX_FUNCTIONS_QUERY_USAGE_HISTORY`、`CORTEX_AGENT_USAGE_HISTORY`、`SNOWFLAKE_COWORK_USAGE_HISTORY`などの使用状況のビューを監視してください。
+
+すべてのバッチジョブは、まずサンプルでテストしてください。プラットフォームの面は、私の[Snowflakeの料金とクレジットのガイド](/ja/snowflake-pricing-credits-explained/)で扱っています。
+
+## 最初に受け入れておくべき制限とリスク
+
+Snowflake自身のドキュメントは、この点で率直です。Cortex Analystが答えるのは、SQLで答えられる質問です。
+
+「なぜ利益率が下がったのか」のような自由な推論はせず、以前のクエリの結果を再利用することもできません。Snowflakeは、エージェントの回答と引用の正確さは保証されないとも警告しています。
+
+私の判断はこうです。意思決定に使われるAIの回答はすべて、名前の付いた人が署名する下書きとして扱ってください。誤った数字が契約書や監査の文書に紛れ込みかねない防衛分野では、これがさらに重要です。
+
+もう1つのリスクはロックインです。セマンティックビュー、エージェント、検索サービスはSnowflakeのオブジェクトです。
+
+プロンプトと評価セットは持ち運べますが、配管は持ち運べません。プラットフォームをまだ選定中なら、私の[SnowflakeとDatabricksの比較](/ja/snowflake-vs-databricks/)でそのトレードオフを整理しています。
+
+## 製造業や防衛分野での最初のパイロット
+
+どちらの分野でも、私が最初に選ぶユースケースは同じ形です。1つのチームのための、構造化された質問セット1つと文書セット1つです。
+
+製造業なら、最初のパイロットは保全と品質のアシスタントにします。ERPとMESからの作業指図、停止時間、スクラップ、不適合のデータの上にセマンティックビューを置きます。
+
+保全手順書と完了した品質報告書の上にCortex Searchのサービスを置きます。保全計画担当者が「前四半期に計画外の停止時間が最も多かったラインはどれで、前回は何がわかったか」と質問すると、数字と関連する報告書が返ってきます。
+
+防衛分野では、非機密のプログラムのサプライヤー品質について同じパターンが使えます。ERPからの納入と品質の指標に、サプライヤーの是正処置の文書を加えます。機密資料と輸出管理の対象資料は、完全に範囲外にしてください。
+
+<stepper title="90日間のCortex AIパイロット" steps="範囲の決定|モデル化|構築|テスト|判断" bodies="チームを一つ、実際の質問を20〜30件、文書セットを一つ選びます。何よりも先に、リージョン間のパラメーターとロールを設定します。|セマンティックビューを構築し、上位の質問について検証済みクエリを書きます。指標の定義をビジネス上の責任者と合意します。|利用者ごとにCortex Searchのサービスを作り、Cortex Agentを一つ作ります。予算とユーザーごとのクォータは初日に設定します。|質問セットに対して評価を実行します。ユーザーが回答を評価します。同じ回答を得るのに今どれだけ時間がかかるかと比較します。|拡大するか、データを直すか、中止するか。どれを選んだか、その理由とともに書き残します。"></stepper>
+
+4つのことを測定し、始める前にベースラインを記録してください。
+
+1. **回答の精度。** 検証済みの質問セットに対して、ビジネス上の責任者が採点します。
+2. **回答までの時間。** 現在の経路（通常はアナリストへの依頼かレポート探し）と比較します。
+3. **回答した質問あたりのコスト。** ウェアハウスの時間を含め、使用状況のビューから算出します。
+4. **アクセスの例外。** ロール上届くべきでないデータをユーザーが見てしまったケースです。目標はゼロです。
+
+## どこから始めるか
+
+何かを買う前に、現在の`CORTEX_ENABLED_CROSS_REGION`の設定を確認し、範囲の広い既定のロールを持つ人を一覧にし、オペレーション担当役員が毎月尋ねる20の質問を選んでください。その1ページのまとめのほうが、どんなベンダーのデモよりも準備状況を教えてくれます。
+
+パイロットの範囲、データ所在地の設定、SIの提案についてセカンドオピニオンが必要なら、私はこうした判断を支援しています。[こちらからご連絡ください](/ja/contact-noel-erp-support/)。Databricksで相当するものについては、私の[Databricks GenieとAgent Bricks](/ja/databricks-genie-agent-bricks/)の記事をご覧ください。
+
+## よくある質問
+
+<details>
+<summary>Snowflake Cortex AIとは何ですか？</summary>
+
+Snowflake Cortex AIは、自社のSnowflakeアカウントの中で動くSnowflakeのAIサービス群です。大規模言語モデルを呼び出すAIのSQL関数、テーブルへの質問に答えるCortex Analyst、文書を対象とするCortex Searchが含まれます。Cortex Agentsがツールを統合し、Snowflake CoWorkアプリが業務ユーザーに提供されます。
+
+</details>
+
+<details>
+<summary>Snowflake IntelligenceとSnowflake CoWorkは同じものですか？</summary>
+
+はい。Snowflake Intelligenceは2025年11月4日に一般提供になり、2026年6月のSnowflake SummitでSnowflake CoWorkに改称されました。一部のSQLの権限と既定のオブジェクト名には、まだSnowflake Intelligenceの名前が使われています。
+
+</details>
+
+<details>
+<summary>Snowflake CortexはデータをSnowflakeの外に送りますか？</summary>
+
+モデルはSnowflakeのサービス境界の中で動き、保存されたデータはアカウントのホームリージョンにとどまります。リージョン間推論を有効にすると、プロンプトと回答は別のリージョンで処理されることがありますが、そこに保持されることはありません。データ所在地の規則があるなら、CORTEX_ENABLED_CROSS_REGIONパラメーターを明示的に設定してください。
+
+</details>
+
+<details>
+<summary>Snowflake Cortex AIの費用はいくらですか？</summary>
+
+Cortexの機能の大半はAI Creditsで課金され、グローバルのルーティングでは1クレジット$2.00、リージョンのルーティングでは$2.20です（定価、2026年10月に確認）。料金はモデルと機能によって異なり、100万トークンあたり1クレジット未満から数クレジットまでです。REST API経由のCortex Analystは、1,000メッセージあたり67 Platform Creditsが課金されます。エンタープライズ契約によってこれらの数字は変わります。
+
+</details>
+
+<details>
+<summary>Snowflakeのセマンティックビューとは何ですか？</summary>
+
+セマンティックビューは、ビジネス上のエンティティ、メジャー、関係、同義語を記述する、スキーマレベルのSnowflakeのオブジェクトです。Cortex AnalystとCortex Agentsは、それを使って質問を正確なSQLに変換します。古いYAMLのセマンティックモデルファイルに代わるもので、回答の質を左右する主な要因です。
+
+</details>
+
+<details>
+<summary>Snowflake Document AIに代わるものは何ですか？</summary>
+
+AI_EXTRACT関数です。Snowflakeは2026年3月16日にDocument AIのインターフェースとそのPREDICTメソッドを廃止しました。AI_EXTRACTは、1回のSQLの呼び出しで文書からエンティティ、リスト、表を取り出し、トークンに基づいて課金されます。
+
+</details>

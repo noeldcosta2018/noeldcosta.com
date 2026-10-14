@@ -1,0 +1,230 @@
+---
+title: "Databricks Unity Catalog: 거버넌스를 제대로 설정하는 법"
+h1: "Databricks Unity Catalog: 거버넌스를 제대로 설정하는 법"
+slug: "databricks-unity-catalog-data-governance"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/databricks-unity-catalog-data-governance.webp"
+heroAlt: "서버 랙과 보안 출입문이 있는 밝은 흰색 데이터 센터 통로"
+category: "data-and-ai"
+tags: ["databricks", "data-governance", "defence", "manufacturing"]
+author: "Noel D'Costa"
+metaTitle: "Databricks Unity Catalog: 데이터 거버넌스 설정 방법"
+metaDescription: "Databricks Unity Catalog란 무엇인지, 계층 구조, 권한 부여, ABAC, 계보, 감사가 어떻게 작동하는지, 그리고 규제 산업 기업을 위한 실무적인 도입 순서를 설명합니다."
+primaryKeyword: "Databricks Unity Catalog"
+excerpt: "Unity Catalog는 Databricks의 모든 것을 관리하는 거버넌스 계층입니다. 접근을 통제하고, 계보를 추적하고, 누가 무엇을 건드렸는지 증명하는 단일 지점입니다. 작동 방식과, 3년 차에도 말이 되도록 설계하는 방법을 설명합니다."
+experienceSource: "Noel's first-person experience with Databricks on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts checked against official Databricks documentation and release notes, October 2026."
+keyTakeaways:
+  - "Unity Catalog는 테이블, 뷰, 볼륨, 함수, 모델을 catalog.schema.object라는 하나의 3단계 네임스페이스로 관리합니다"
+  - "클라우드 리전당 메타스토어는 하나이므로, 실제 거버넌스 결정은 카탈로그 설계에서 이루어집니다"
+  - "ABAC 정책, 거버넌스 태그, 데이터 분류는 2026년 4월에 정식 제공(GA)되었습니다. DENY 정책은 아직 Beta입니다"
+  - "그룹은 ID 공급자에서 가져오며 모든 운영 카탈로그를 소유합니다. 개인에게는 절대 권한을 부여하지 마십시오"
+  - "Delta Sharing은 이제 OpenSharing이라고 부릅니다(2026년 6월). 관리형 및 외부 Iceberg 테이블은 2026년 5월에 GA가 되었습니다"
+  - "감사와 계보 증거는 첫날부터 켜십시오. 감사 직전에 소급 적용하는 것은 고통스럽습니다"
+pullQuote: "Unity Catalog 문제 대부분은 누군가가 권한으로 해결하려 한 명명과 소유권의 문제입니다."
+mentions:
+  - "Databricks"
+  - "Unity Catalog"
+  - "OpenSharing"
+  - "Delta Sharing"
+  - "Apache Iceberg"
+  - "UCX"
+  - "Hive metastore"
+  - "Lakehouse Federation"
+  - "Microsoft Entra ID"
+  - "SAP"
+  - "Oracle"
+  - "Microsoft Dynamics 365"
+originalUrl: "https://noeldcosta.com/databricks-unity-catalog-data-governance/"
+canonicalUrl: "https://noeldcosta.com/ko/databricks-unity-catalog-data-governance/"
+locale: "ko"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Unity Catalog는 Databricks의 거버넌스 계층입니다. 모든 테이블, 뷰, 파일 볼륨, 함수, AI 모델을 누가 보고 바꿀 수 있는지 통제하고, 그 사이의 계보를 기록하며, 감사인에게 증명할 수 있도록 접근을 로그로 남깁니다.
+
+지금 Databricks를 운영하고 있다면 이미 Unity Catalog를 쓰고 있거나 전환 중일 것입니다. 기존 Hive 메타스토어는 퇴장하는 중이며, Databricks의 새 기능은 모두 그 아래에 Unity Catalog가 있다고 전제합니다.
+
+이제 질문은 도입할지 말지가 아닙니다. 3년 동안 새 팀과 새 데이터, 그리고 한두 번의 감사를 겪은 뒤에도 카탈로그 설계가 여전히 말이 되느냐입니다.
+
+제가 참여한 제조와 방위 산업 프로그램에서 기술이 어려운 부분인 경우는 드물었습니다. 어려운 것은 어떤 데이터를 누가 소유하는지, 환경을 어떻게 분리하는지, 보안 팀이 어떤 증거를 요구하는지에 합의하는 일이었습니다.
+
+## Databricks Unity Catalog가 실제로 관리하는 것
+
+모든 것은 최상위 컨테이너인 **메타스토어** 아래에 있습니다. 그 아래에서 데이터와 AI 자산은 `catalog.schema.object`라는 3단계 네임스페이스를 사용합니다. `prod_finance.gl.journal_lines`에 대한 쿼리는 카탈로그, 스키마, 테이블을 지정합니다.
+
+권한을 부여하는 대상 객체를 보안 객체(securable object)라고 부릅니다. [Unity Catalog 문서](https://docs.databricks.com/aws/en/data-governance/unity-catalog/)에 따르면 두 그룹으로 나뉩니다.
+
+1. **네임스페이스 자산:** 테이블, 뷰, 볼륨(거버넌스가 적용된 파일 스토리지), 함수, 모델, 서비스.
+2. **메타스토어 수준 객체:** 스토리지 자격 증명, 외부 위치, 연결(외부 데이터베이스와의), 공유.
+
+이 중 메타스토어 수준 객체 두 가지는 쉽게 설명해 둘 필요가 있습니다. 데이터가 물리적으로 어디에 있는지를 결정하기 때문입니다.
+
+**스토리지 자격 증명**은 스토리지 계정이나 버킷에 접근할 수 있는 클라우드 ID(IAM 역할이나 관리 ID 등)를 감쌉니다. **외부 위치**는 스토리지 경로와 자격 증명을 짝짓습니다. 이 둘이 함께 있으면 Unity Catalog가 사용자에게 키를 넘기지 않고도 클라우드 스토리지를 읽고 쓸 수 있습니다.
+
+다음은 관리형과 외부형입니다. 관리형 테이블에서는 Unity Catalog가 테이블을 관리하고 그 파일도 관리합니다. 외부 테이블에서는 접근만 관리합니다.
+
+Databricks는 이제 모든 신규 데이터에 관리형 테이블을 권장하며, 외부 테이블은 주로 Hive 업그레이드용으로 남겨 둡니다. 저도 동의합니다. 다른 도구가 같은 경로에 쓰고 있다면, 그것은 보통 테이블을 영원히 외부형으로 둘 이유가 아니라 파이프라인을 고쳐야 할 이유입니다.
+
+모든 것을 좌우하는 제약이 하나 있습니다. 클라우드 리전당 메타스토어는 하나만 둘 수 있습니다. 격리를 메타스토어를 늘려서 해결할 수는 없습니다. 카탈로그로 해결합니다.
+
+## 접근 통제: 권한 부여, 행 필터, 열 마스크, ABAC
+
+Unity Catalog 권한은 아래로 상속되는 표준 SQL 권한 부여입니다. 카탈로그에 대한 권한은 그 안의 모든 스키마와 테이블에 적용됩니다. 사용자가 테이블에 도달하려면 `USE CATALOG`와 `USE SCHEMA`가 필요하고, 읽으려면 `SELECT`가 필요합니다.
+
+```sql
+GRANT USE CATALOG ON CATALOG prod_finance TO `finance-analysts`;
+GRANT USE SCHEMA ON SCHEMA prod_finance.gl TO `finance-analysts`;
+GRANT SELECT ON SCHEMA prod_finance.gl TO `finance-analysts`;
+```
+
+권한 부여는 "이 그룹이 이 테이블을 읽을 수 있는가"에 답합니다. 규제 대상 데이터에는 더 세밀한 답이 필요하며, 여기서 다른 통제가 등장합니다.
+
+아래 표는 주요 접근 통제와 2026년 10월 기준 상태를 요약합니다.
+
+| 통제 | 하는 일 | 상태(2026년 10월) |
+|---|---|---|
+| 권한 부여와 소유권 | 카탈로그에서 스키마, 객체로 상속되는 객체 수준 권한 | 정식 제공 |
+| 테이블 수준 행 필터와 열 마스크 | 한 테이블에 연결된 SQL 함수가 행을 숨기거나 값을 마스킹 | 정식 제공 |
+| ABAC 행 필터 및 열 마스크 정책 | 카탈로그, 스키마, 테이블 수준에서 정의한 정책 하나가 거버넌스 태그가 붙은 모든 객체에 적용 | 2026년 4월 28일부터 GA |
+| 거버넌스 태그 | 키, 값, 지정 권한자를 통제하는 계정 수준 태그 | 2026년 4월 2일부터 GA |
+| 데이터 분류 | 테이블을 스캔해 PII 같은 민감 데이터를 표시 | 2026년 4월 20일부터 GA, 사용자 지정 분류기는 Beta |
+| ABAC DENY 정책과 메타스토어 수준 정책 | 권한 부여보다 우선하는 명시적 거부, 메타스토어 범위의 정책 | Beta |
+| 엔진 간 ABAC | 외부 엔진이 ABAC로 보호된 관리형 테이블을 읽고, 정책은 Databricks 서버리스 컴퓨트가 적용 | 2026년 10월 1일부터 GA |
+
+날짜는 [Databricks 2026년 4월 릴리스 노트](https://docs.databricks.com/aws/en/release-notes/product/2026/april)와 2026년 10월 노트에서 가져왔습니다.
+
+ABAC(속성 기반 접근 통제)는 대규모 환경에 가장 중요한 변화입니다. 테이블마다 마스크를 작성하는 대신 열에 `classification = export_controlled` 같은 태그를 붙이고, 지정된 그룹 밖의 모든 사람에게 태그가 붙은 모든 열을 마스킹하는 정책 하나를 작성합니다.
+
+새 테이블은 태그가 붙는 즉시 보호됩니다. 데이터 분류 기능이 태그를 제안해 줄 수 있습니다.
+
+먼저 컴퓨트를 확인하십시오. ABAC로 보호된 테이블에는 서버리스 컴퓨트나 Databricks Runtime 16.4 이상이 필요합니다. 그보다 오래된 클러스터는 아예 읽을 수 없습니다.
+
+일찍 짚어 두고 싶은 함정이 두 가지 있습니다. 같은 사용자에게 같은 열에 상충하는 정책이 적용되면 쿼리가 오류로 차단됩니다.
+
+그리고 파이프라인의 실행 ID가 마스크 대상에 포함되면, 새로 고친 데이터가 마스킹된 채로 저장될 수 있습니다. 서비스 ID는 의도적으로 예외 처리하고 그 이유를 문서화하십시오.
+
+## 계보, 감사, 공유
+
+계보는 메타스토어에 연결된 모든 워크스페이스에서 Databricks SQL과 Spark DataFrame으로 실행된 쿼리에 대해 열 수준까지 자동으로 수집됩니다. 노트북, 작업, 파이프라인, 대시보드를 포괄합니다. 코드가 스토리지 경로로 테이블을 참조하면 열 계보가 사라지므로, 경로 기반 접근을 없애야 할 이유가 하나 더 생깁니다.
+
+감사 증거는 시스템 테이블에서 나옵니다. `system.access.audit`에는 감사 이벤트가 담기며, [시스템 테이블 문서](https://docs.databricks.com/aws/en/admin/system-tables/)에는 아직 Public Preview로 표시되어 있습니다.
+
+계보 테이블과 청구 테이블이 그 옆에 있으며, 365일 동안 무료로 보존됩니다. 기본적으로 시스템 테이블은 계정 관리자와 메타스토어 관리자만 볼 수 있으므로, 누가 읽기 권한을 받을지, 더 오래 보존하기 위해 감사 데이터를 SIEM으로 복사할지 일찍 정하십시오.
+
+공유 기능은 올해 이름이 바뀌었습니다. Databricks는 [2026년 6월 10일에 OpenSharing을 발표](https://www.databricks.com/company/newsroom/press-releases/databricks-announces-opensharing)했습니다. Delta Sharing 프로토콜의 다음 버전으로, 이제 Linux Foundation이 호스팅하며 AI 자산과 Iceberg 클라이언트까지 확장되었습니다.
+
+예전 문서와 계약서에는 여전히 "Delta Sharing"이라는 이름이 보일 것입니다. 공유는 Unity Catalog 객체이며, Databricks 간 공유는 리전별 메타스토어 사이에서 데이터를 옮기는 방법이기도 합니다.
+
+혼합 환경을 위해, 관리형 및 외부 Apache Iceberg 테이블이 2026년 5월 21일에 정식 제공되었습니다. 외부 테이블은 AWS Glue나 Snowflake Horizon 같은 카탈로그에서 Lakehouse Federation을 통해 읽습니다. Spark, Flink, Trino 같은 엔진은 Unity Catalog의 Iceberg REST 카탈로그 엔드포인트를 사용할 수 있습니다.
+
+LF AI & Data Foundation 산하에 오픈소스 Unity Catalog도 있지만, 이는 샌드박스 단계 프로젝트이지 관리형 서비스가 아닙니다. 테스트 없이 이를 바탕으로 출구 계획을 세우지 마십시오.
+
+## 효과가 있는 거버넌스 설계
+
+카탈로그가 격리의 기본 단위입니다. Databricks의 [Unity Catalog 모범 사례](https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices)에 따르면 카탈로그는 보통 환경, 팀, 사업부, 또는 그 조합에 대응합니다. 실제 설계 대부분은 조합입니다.
+
+<compare-split title="카탈로그를 나누는 두 가지 방법" left-label="환경별 카탈로그" left-points="dev, test, prod 카탈로그, 도메인별 스키마|각 카탈로그를 해당 워크스페이스에 바인딩하기 쉬움|한 카탈로그 안에서 도메인이 늘면 소유권이 흐려짐|소규모 팀과 초기 도입에 적합" right-label="도메인 및 환경별 카탈로그" right-points="prod_finance, prod_quality, dev_finance 등|각 도메인 그룹이 자기 카탈로그를 소유|명확한 책임과 더 깔끔한 감사 범위|이름 짓고, 바인딩하고, 권한 줄 카탈로그가 늘어남"></compare-split>
+
+데이터 팀이 몇 개를 넘는 회사라면 저는 기본적으로 도메인과 환경의 조합을 택하겠습니다. 처음에는 더 많은 명명 규율이 필요합니다. 대신 2년 뒤 모두가 쿼리하지만 아무도 관리하지 않는 테이블의 주인이 누구냐는 논쟁을 피할 수 있습니다.
+
+나머지 설계는 네 가지 규칙으로 정리됩니다.
+
+1. **그룹은 ID 공급자에서 가져옵니다.** 자동 ID 관리를 통해, 공급자가 지원하지 않으면 SCIM으로 사용자와 그룹을 Databricks 계정에 프로비저닝하십시오. 그룹은 Databricks가 아니라 Microsoft Entra ID, Okta 또는 이에 상응하는 도구에서 정의하십시오. 누군가 퇴사하면 디렉터리 계정과 함께 접근 권한도 사라집니다.
+2. **운영 객체는 그룹이 소유합니다.** Databricks 자체 가이드도 운영 카탈로그와 스키마의 소유권을 개인이 아닌 그룹에 부여하라고 합니다. 소유자는 접근 권한을 부여할 수 있으므로, 개인 소유자는 상시 예외가 됩니다.
+3. **카탈로그를 워크스페이스에 바인딩합니다.** 운영 워크스페이스에만 바인딩된 운영 카탈로그는 권한 부여가 어떻게 되어 있든 샌드박스에서 쿼리할 수 없습니다.
+4. **권한을 주기 전에 분류합니다.** 짧은 태그 어휘(민감도, 개인 데이터, 수출 통제, 소스 시스템)를 거버넌스 태그로 합의하고, 그에 맞춰 ABAC 정책을 작성하십시오.
+
+제조 업무에서 저는 카탈로그를 공장별이 아니라 공장 시스템, 즉 OT와 소스 시스템 도메인별로 구성했습니다. 히스토리안, MES, 센서에서 온 OT 데이터는 운영 또는 엔지니어링 데이터 팀이 소유하는 별도 카탈로그에 둡니다. ERP(SAP, Oracle, Microsoft Dynamics 365), 품질, 공급망에서 온 IT 데이터는 다른 카탈로그에 둡니다.
+
+분석가를 위해 정제하고 결합한 데이터는 세 번째 묶음에 둡니다. OT/IT 경계가 카탈로그 자체에서 보이게 됩니다. ERP 추출이 범위에 포함된다면 [SAP 데이터 마이그레이션이 실패하는 이유](/ko/why-sap-data-migration-fails-and-how-to-fix-it/)에 관한 제 글이 ERP 데이터 피드에도 적용됩니다.
+
+## 방위 산업 관점: 최소 권한, 분리, 증거
+
+방위 산업 프로그램에서는 보안 팀이 네 가지를 물을 것으로 예상하십시오. 수출 통제 데이터를 누가 볼 수 있습니까? 그 데이터는 다른 모든 것과 어떻게 분리되어 있습니까?
+
+어디에 저장되어 있습니까? 지난 1년 중 어느 날에 대해서든 그 모든 것을 증명할 수 있습니까?
+
+Unity Catalog는 이를 고려해 설계한다면 대부분에 답할 수 있습니다.
+
+1. **최소 권한.** 메타스토어나 카탈로그 수준에서 넓은 그룹에 권한을 주지 마십시오. 스키마 수준에서 지정된 그룹에 권한을 주고, 통제 대상으로 태그된 열에는 ABAC 마스크를 쓰십시오. DENY 정책은 Beta를 벗어나고 인증 기관이 받아들인 뒤에만 쓰십시오.
+2. **분리.** 통제 대상 데이터는 자체 관리형 스토리지 위치를 가진 별도 카탈로그에 두고, 전용 워크스페이스에 바인딩하십시오. Databricks는 카탈로그 수준 관리형 스토리지를 주요 격리 단위로 권장하며, 이 용도에 잘 맞습니다.
+3. **레지던시.** 리전당 메타스토어가 하나이므로, 누군가 공유하지 않는 한 데이터는 스토리지가 있는 리전에 머뭅니다. 모든 OpenSharing 공유와 모든 리전 간 연결을 승인이 필요한 레지던시 결정으로 취급하십시오.
+4. **감사 증거.** 계보와 `system.access.audit`를 SIEM으로 내보내면 누가 무엇에 접근했고 그 데이터가 어디로 갔는지 알 수 있습니다. 감사 테이블이 아직 Public Preview라는 점을 기억하십시오. 제 방위 산업 업무에서 보안 팀은 감사 로그를 Databricks 시스템 테이블에만 두지 않고 자체 SIEM으로 복사하기를 원했습니다. 그 피드는 처음부터 계획에 넣으십시오.
+
+Unity Catalog는 무엇이 기밀 데이터나 ITAR 통제 데이터에 해당하는지 결정하지 않으며, 인증을 대신하지도 않습니다. 일부 방위 산업 워크로드는 상용 클라우드 리전에서 아예 실행할 수 없습니다.
+
+그래도 카탈로그 설계는 도움이 됩니다. 플랫폼으로 가도 되는 것과 안 되는 것 사이에 분명한 선을 긋기 때문입니다. 플랫폼 위의 정책 계층을 작성하고 있다면 제 [AI 거버넌스 프레임워크 가이드](/ko/ai-governance-framework-guide-building-a-responsible-ai-plan/)에서 역할과 승인 측면을 다룹니다.
+
+## 실무적인 도입 순서
+
+Hive 메타스토어에서 옮겨 오거나 새로 시작하는 회사라면 저는 이 순서를 따르겠습니다.
+
+1. **카탈로그 모델과 명명 규칙에 합의합니다.** 도메인과 환경의 조합으로, 문서로 작성하고 데이터 소유자의 승인을 받으십시오. 나중에 바꾸면 모든 것의 이름을 바꿔야 합니다.
+2. **ID 공급자를 연결합니다.** 계정 수준 프로비저닝, 디렉터리에서 정의한 그룹, 그리고 Unity Catalog 워크스페이스에서는 워크스페이스 수준 SCIM을 끕니다.
+3. **스토리지 자격 증명과 외부 위치를 설정합니다.** 플랫폼 그룹이 소유합니다. 다른 누구에게도 `CREATE EXTERNAL LOCATION`을 주지 않습니다.
+4. **관리형 스토리지와 워크스페이스 바인딩을 갖춘 카탈로그를 만듭니다.** 운영 카탈로그는 첫날부터 그룹이 소유합니다.
+5. **거버넌스 태그를 정의하고 데이터 분류를 켭니다.** 그 결과를 바탕으로 정책을 작성하기 전에 결과를 검토하십시오.
+6. **민감한 열에 대한 ABAC 정책을 작성합니다.** 운영 중인 모든 컴퓨트 유형에서 실제 사용자로 테스트하십시오. 아직 Runtime 16.4 미만인 클러스터도 포함합니다.
+7. **Hive 메타스토어에서 마이그레이션합니다.** Databricks는 이제 [Hive 메타스토어를 먼저 페더레이션](https://docs.databricks.com/aws/en/data-governance/unity-catalog/migrate)한 뒤 테이블을 제자리에서 업그레이드하라고 권장합니다. UCX는 대규모 환경에 도움이 되지만 Databricks Labs 프로젝트로, 공식 지원이 아니라 커뮤니티가 유지 관리합니다. 이를 감안해 계획하십시오.
+8. **감사 내보내기와 계보 검토를 켭니다.** 시스템 테이블에 대한 읽기 권한을 부여하고, SIEM 피드를 구성하고, 누가 무엇을 검토할지 합의하십시오.
+9. **모든 것을 마이그레이션한 뒤 Hive 메타스토어 접근을 비활성화합니다.** 그래야 아무도 조용히 예전 경로 위에 무언가를 쌓지 않습니다.
+
+## 피해야 할 실수
+
+1. **개인에게 권한 부여.** 일주일은 됩니다. 그 뒤에는 누가 무엇에 접근할 수 있는지 아무도 답하지 못합니다.
+2. **팀별 스키마를 둔 거대한 카탈로그 하나.** 소유권과 감사 범위가 흐려지고, 나중에 다시 만들게 됩니다.
+3. **"일단은" 테이블을 외부형으로 두기.** 관리형 테이블 기능을 잃고, 모든 파일에 소유자가 둘이 됩니다.
+4. **한 가지 클러스터 유형에서만 정책 테스트.** ABAC는 컴퓨트에 따라 다르게 작동하며, 오래된 런타임에서는 아예 실패합니다.
+5. **감사를 나중 단계로 미루기.** 감사인은 감사를 활성화하기 전 기간에 대해 물을 것입니다.
+
+## 어디서부터 시작할까요
+
+초기 단계라면 누군가 카탈로그를 만들기 전에 카탈로그 모델과 태그 어휘를 한 페이지로 정리하십시오. 마이그레이션 중이라면 평가를 실행하고, 아직 외부형이거나 Hive 메타스토어에 있는 테이블을 모두 나열한 뒤, 각각에 소유자와 날짜를 정하십시오.
+
+더 넓은 그림은 [Databricks는 어디에 쓰이는지](/ko/what-is-databricks-used-for/)부터 시작하시고, ABAC를 위한 서버리스 컴퓨트 규모를 정하기 전에 [Databricks 가격](/ko/databricks-pricing-explained/)을 확인하십시오. 플랫폼을 비교하고 있다면 제 [Snowflake vs Databricks 비교](/ko/snowflake-vs-databricks/)에서 양쪽의 거버넌스를 다룹니다. 저는 제조와 방위 산업 조직이 이런 설계 결정을 내리도록 돕고 있습니다. 제2의 의견이 도움이 된다면 [상담을 예약](/ko/contact-noel-erp-support/)하십시오.
+
+## 자주 묻는 질문
+
+<details>
+<summary>Databricks의 Unity Catalog란 무엇입니까?</summary>
+
+Unity Catalog는 Databricks의 거버넌스 계층입니다. 테이블, 뷰, 파일 볼륨, 함수, AI 모델에 대한 접근을 한곳에서 관리하고, 계보를 자동으로 수집하며, 접근 기록을 감사 시스템 테이블에 남깁니다. 자산은 리전당 하나의 메타스토어 아래에서 catalog.schema.object 형식으로 지정됩니다.
+
+</details>
+
+<details>
+<summary>Databricks의 ABAC는 정식 제공되고 있습니까?</summary>
+
+네. 행 필터와 열 마스크를 위한 속성 기반 접근 통제 정책은 2026년 4월 28일에 정식 제공되었으며, 거버넌스 태그와 데이터 분류도 2026년 4월에 GA가 되었습니다. DENY 정책, 메타스토어 수준 정책, 사용자 지정 분류기는 2026년 10월 기준 아직 Beta였습니다.
+
+</details>
+
+<details>
+<summary>Delta Sharing과 OpenSharing은 같은 것입니까?</summary>
+
+네. Databricks는 2026년 6월에 Delta Sharing 프로토콜의 다음 진화로 OpenSharing을 발표했습니다. 이제 Linux Foundation이 호스팅하며 AI 자산과 Iceberg 클라이언트까지 확장되었습니다. Databricks 문서는 이제 공유 기능을 OpenSharing이라는 이름으로 설명합니다.
+
+</details>
+
+<details>
+<summary>Unity Catalog에서 관리형 테이블과 외부 테이블 중 무엇을 써야 합니까?</summary>
+
+모든 신규 데이터에는 관리형 테이블을 쓰십시오. Databricks가 이를 권장하는 이유는 그래야 Unity Catalog가 파일, 유지 관리, 성능 기능을 관리하기 때문입니다. 외부 테이블은 다른 시스템이 파일을 소유해야 하는 경우나 Hive 메타스토어 업그레이드 중에만 두고, 전환 계획을 세우십시오.
+
+</details>
+
+<details>
+<summary>Hive 메타스토어에서 Unity Catalog로 어떻게 마이그레이션합니까?</summary>
+
+Databricks는 먼저 Hive 메타스토어를 외부 카탈로그로 페더레이션한 뒤, 데이터를 옮기지 않고 테이블을 제자리에서 업그레이드하라고 권장합니다. 대규모 환경에서는 Databricks Labs의 UCX 도구가 준비 상태를 평가하고 그룹, 권한, 테이블을 마이그레이션하지만, UCX는 공식 지원이 아니라 커뮤니티가 유지 관리합니다.
+
+</details>
+
+<details>
+<summary>카탈로그는 환경별로 구성해야 합니까, 비즈니스 도메인별로 구성해야 합니까?</summary>
+
+대부분의 기업에는 둘 다입니다. prod_finance, dev_finance처럼 도메인별, 환경별로 카탈로그를 하나씩 둡니다. 그러면 각 도메인 그룹에 명확한 소유권과 깔끔한 감사 범위가 생깁니다. 소규모 팀은 환경별 카탈로그 하나와 도메인별 스키마로 시작할 수 있습니다.
+
+</details>

@@ -1,0 +1,224 @@
+---
+title: "Databricks Genie y Agent Bricks: IA sobre datos empresariales"
+h1: "Databricks Genie y Agent Bricks: IA sobre datos empresariales"
+slug: "databricks-genie-agent-bricks"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/databricks-genie-agent-bricks.webp"
+heroAlt: "Banco de un laboratorio de calidad de fábrica con piezas de precisión y una tableta que muestra una pantalla de preguntas y respuestas"
+category: "data-and-ai"
+tags: ["databricks", "enterprise-ai"]
+author: "Noel D'Costa"
+metaTitle: "Databricks Genie y Agent Bricks: guía honesta para 2026"
+metaDescription: "Databricks Genie y Agent Bricks explicados: qué responden bien los Genie Agents, dónde fallan, nombres y estado actuales, costos y un plan piloto para sus datos."
+primaryKeyword: "Databricks Genie"
+excerpt: "Databricks Genie permite a los usuarios de negocio hacer preguntas a datos gobernados en lenguaje natural, y Agent Bricks es donde los desarrolladores construyen agentes por encima. Le explico qué hace cada uno hoy, qué hace que las respuestas sean precisas, dónde falla y cómo hacer un primer piloto en fabricación o defensa."
+experienceSource: "Noel's first-person experience with Databricks on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts and prices checked against official Databricks documentation and release notes, October 2026."
+keyTakeaways:
+  - "Genie es ahora una familia: Genie One para usuarios de negocio, Genie Agents (antes Genie spaces) para dominios curados y Genie Code para desarrolladores"
+  - "La precisión viene de la curación: metric views, SQL de ejemplo, funciones SQL e instrucciones claras, no solo del modelo"
+  - "Cada respuesta se ejecuta como el usuario final bajo los permisos de Unity Catalog, y eso es lo que hace que Genie sea utilizable en entornos regulados"
+  - "Agent Bricks es ahora la plataforma de desarrollo para agentes personalizados; Knowledge Assistant y Supervisor Agent ya no se recomiendan para desarrollos nuevos"
+  - "El uso de LLM de Genie es gratuito hasta el 31 de enero de 2027, pero el cómputo del SQL warehouse se factura aparte y los service principals pagan desde el primer día"
+  - "Empiece con un dominio acotado, un conjunto de preguntas de referencia y un responsable con nombre para cada métrica"
+pullQuote: "Genie es tan bueno como el trabajo semántico que usted pone delante de él."
+mentions:
+  - "Databricks Genie"
+  - "Genie One"
+  - "Genie Agents"
+  - "Genie Code"
+  - "Agent Bricks"
+  - "Unity Catalog"
+  - "Unity Gateway"
+  - "Metric views"
+  - "MLflow"
+  - "Model Context Protocol"
+  - "Databricks on AWS GovCloud"
+originalUrl: "https://noeldcosta.com/databricks-genie-agent-bricks/"
+canonicalUrl: "https://noeldcosta.com/es/databricks-genie-agent-bricks/"
+locale: "es"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Databricks Genie permite a los usuarios de negocio hacer preguntas a los datos gobernados de la empresa en lenguaje natural y recibir SQL, una tabla de resultados y un gráfico. Funciona bien cuando un equipo de datos ha curado un dominio acotado con métricas definidas, y mal cuando se apunta a tablas brutas y se le deja adivinar.
+
+Agent Bricks es la otra mitad. Es donde los desarrolladores construyen, despliegan y evalúan agentes de IA personalizados que pueden llamar a Genie, a documentos, a funciones y a herramientas externas.
+
+He trabajado con Databricks en programas de plataformas de datos en fabricación y defensa. Mi opinión es sencilla. La capa de IA ya es lo bastante buena para ponerla delante de planificadores, ingenieros de calidad y equipos de finanzas.
+
+Lo difícil es el trabajo semántico y de gobierno que hay debajo, y preparar a los usuarios de negocio para usarla. Ahí debería ir la mayor parte del esfuerzo del piloto.
+
+## Qué es Databricks Genie a finales de 2026
+
+Databricks renombró casi toda la familia Genie en 2026, así que los artículos antiguos le confundirán. La experiencia para usuarios de negocio que antes se llamaba Databricks One pasó a ser Genie One en junio de 2026.
+
+Los Genie spaces pasaron a ser Genie Agents en julio de 2026. Databricks Assistant ahora es Genie Code.
+
+La tabla muestra qué hace cada pieza y su estado a octubre de 2026.
+
+| Producto | Qué hace | Quién lo usa | Estado (octubre de 2026) |
+|---|---|---|---|
+| Genie One | Una interfaz de chat única sobre dashboards, Genie Agents y aplicaciones; también apps para iOS y Android | Usuarios de negocio | Chat en GA desde junio de 2026; app móvil en Public Preview |
+| Genie Agents (antes Genie spaces) | Un chat curado y específico de un dominio sobre hasta 50 tablas, vistas o metric views | Los analistas lo construyen, los usuarios de negocio preguntan | Agent mode en GA desde julio de 2026; varios complementos en Beta |
+| Genie Code (antes Databricks Assistant) | Asistente de código y datos para notebooks, pipelines y dashboards | Ingenieros, analistas | Pago por uso desde el 8 de julio de 2026 |
+| Conversation API | Integra Genie Agents en aplicaciones, chatbots y otros agentes | Desarrolladores | APIs de agent mode y recuperación de visualizaciones en GA desde agosto de 2026 |
+| Conectores MCP proporcionados por Databricks | Permiten a Genie One y Genie Code usar herramientas externas mediante Model Context Protocol | Administradores, desarrolladores | GA desde septiembre de 2026; acciones de escritura en Beta |
+
+Un Genie Agent selecciona los metadatos, las instrucciones, el SQL de ejemplo y el historial de chat relevantes, y después genera SQL. Ese SQL se ejecuta en un SQL warehouse Pro o serverless y siempre es de solo lectura.
+
+El punto de gobierno que más importa: según la [documentación de configuración de Genie Agents](https://docs.databricks.com/aws/en/genie-agents/set-up), el acceso a los datos siempre se evalúa con los permisos de Unity Catalog de cada usuario final. Un usuario que pregunta por datos que no puede ver recibe una respuesta vacía.
+
+Los filtros de filas y las máscaras de columnas se aplican. Las credenciales del warehouse del autor van integradas para que los usuarios puedan ejecutar consultas, pero no amplían el acceso a datos de nadie.
+
+## Qué hace que Databricks Genie sea preciso y dónde falla
+
+El modelo no es la palanca de la precisión. La curación sí. La [guía de ajuste de calidad de Genie Agents](https://docs.databricks.com/aws/en/genie-agents/tune-quality) recomienda definir la lógica de negocio como expresiones SQL, porque dan resultados más consistentes que las instrucciones en texto.
+
+Por orden de impacto, según lo que he visto:
+
+1. **Metric views.** Unity Catalog Business Semantics, con las metric views como núcleo, pasó a GA en abril de 2026. Usted define «rendimiento a la primera» o «entrega a tiempo» una sola vez, con etiquetas y sinónimos, y los Genie Agents pueden construirse directamente encima. Si la métrica está definida, Genie no tiene que deducirla.
+2. **Consultas SQL de ejemplo.** Empareje una pregunta real con el SQL que la responde, centrándose en la lógica propia de su empresa: cómo se calcula el costo del desperdicio, qué plantas consolidan en qué región.
+3. **Funciones SQL como activos de confianza.** Las funciones de Unity Catalog contienen lógica que una consulta estática no puede contener. Cuando Genie usa una consulta parametrizada o una función, la respuesta se marca como verificada. Los usuarios necesitan `EXECUTE` sobre esas funciones.
+4. **El almacén de conocimiento.** Descripciones, sinónimos, relaciones de join y columnas ocultas. Ocultar columnas técnicas duplicadas ayuda más de lo que se espera.
+5. **Instrucciones generales.** Texto para el contexto que se aplica en todas partes y no encaja en ningún otro sitio. Manténgalo breve y sin contradicciones.
+
+Hay límites estrictos. 50 tablas, vistas o metric views por agente.
+
+100 instrucciones, donde cada consulta de ejemplo y cada función SQL cuenta como una. 200 fragmentos para joins y expresiones SQL.
+
+Yo trato esos límites como una guía de diseño. Un Genie Agent que cubra «toda la fabricación» decepcionará. Uno que cubra «notificaciones de calidad y desperdicio de dos plantas» puede ser muy bueno.
+
+### Dónde falla Genie
+
+Esta es la parte que se saltan las demos de los proveedores.
+
+1. **Términos de negocio sin definir.** Pregunte «¿cuál fue nuestro margen el último trimestre?» sobre tablas brutas del ERP y Genie elegirá una definición. Puede que no sea la de finanzas. Si los datos de SAP, Oracle o Dynamics 365 llegan sin una capa de métricas gobernada, espere cifras plausibles que no cuadran.
+2. **Datos maestros desordenados.** Números de material duplicados, códigos de planta incoherentes y descripciones de defectos en texto libre producen respuestas erróneas dichas con seguridad. Genie amplifica la calidad de lo que recibe.
+3. **Preguntas ambiguas.** «¿Qué línea es la peor?» ¿La peor en qué? Una buena curación y unas preguntas de ejemplo orientan a los usuarios. Nada elimina la necesidad de que sean precisos.
+4. **Idioma.** La documentación indica que los prompts se envuelven en inglés, así que las respuestas pueden volver en inglés aunque los usuarios escriban en otro idioma. Pruébelo antes de desplegarlo en plantas que no trabajan en inglés.
+5. **Acción, no análisis.** El SQL generado es de solo lectura. Es una fortaleza para el control. También significa que Genie le dice a un planificador de mantenimiento qué activos están vencidos; no crea la orden de trabajo.
+
+## Agent Bricks, MCP y Unity Gateway
+
+Agent Bricks también ha cambiado de forma. La [descripción general de Agent Bricks](https://docs.databricks.com/aws/en/agents/concepts/) lo presenta ahora como la plataforma de desarrollo de agentes de Databricks para quienes escriben código.
+
+Usted aporta su propio framework y modelo, genera la estructura con la Agent Bricks CLI y despliega en Agent Runtime sobre Databricks Apps. El material más antiguo llama a esta capa Mosaic AI Agent Framework, y algunas etiquetas de Mosaic AI siguen apareciendo en la documentación.
+
+Hay dos cosas que los compradores deben saber. Knowledge Assistant y Supervisor Agent, los constructores declarativos anteriores, ya «no se recomiendan para agentes nuevos», y la Supervisor API está obsoleta.
+
+Databricks dirige a los usuarios low-code a los Genie Agents y a los desarrolladores a la CLI. Si un integrador le propone un diseño basado en cualquiera de los dos, pregunte por qué.
+
+Para la extracción desde documentos, la vía recomendada son las AI Functions, que clasifican, extraen, resumen y analizan documentos desde SQL. Para un fabricante, eso cubre certificados de proveedores, informes de inspección y registros de mantenimiento.
+
+La evaluación se hace con MLflow gestionado: trazas de cada paso del agente, jueces LLM integrados como el de corrección, evaluadores personalizados y la opinión de expertos. Los mismos evaluadores pueden supervisar una muestra del tráfico de producción.
+
+[Unity Gateway](https://docs.databricks.com/aws/en/unity-gateway/) (las URL todavía dicen ai-gateway) es el plano de control. Le da límites de uso para los servicios de modelos y MCP, políticas de servicio para guardarraíles, enmascaramiento de datos personales (PII), seguimiento del uso en tablas de sistema, registro de solicitudes y respuestas en tablas de Unity Catalog y alternativas entre modelos. Los servidores MCP proporcionados por Databricks y los registrados usan los permisos de Unity Catalog, así que un agente que llama al servidor MCP de Genie One sigue limitado por lo que el usuario puede ver.
+
+## Elegir un primer caso de uso en fabricación y defensa
+
+En fabricación, yo empezaría con preguntas de calidad y mantenimiento sobre datos que ya gobierna. Desperdicio y retrabajo por línea, turno y material. Notificaciones de calidad abiertas por proveedor.
+
+Tiempo medio entre fallos de los activos críticos, a partir de los datos de mantenimiento de planta del ERP unidos a resúmenes del historiador o del MES. Estas preguntas tienen responsables claros y usuarios que hoy esperan días a un analista.
+
+Evite la previsión de demanda o el costo de servicio en un primer piloto. Las definiciones están en disputa y los datos abarcan demasiados sistemas.
+
+En defensa, el caso de uso importa menos que los controles. Elija algo no clasificado, auditable y sensible a los permisos: disponibilidad de repuestos, estado de los hitos de contrato o desempeño de entrega de proveedores. El objetivo del piloto es demostrar que los filtros de filas, las máscaras de columnas y las marcas de control de exportaciones se comportan correctamente ante preguntas en lenguaje natural.
+
+Revise pronto el despliegue. Las [notas de versión de AWS GovCloud](https://docs.databricks.com/aws/en/release-notes/gov-cloud/2026) muestran Genie y Genie Agents en GA allí desde enero de 2026 y Genie One desde el 22 de enero de 2026, en GovCloud y GovCloud DoD. Unity Gateway llegó a GovCloud en Public Preview en septiembre de 2026, sin presupuestos, inference tables ni políticas de servicio.
+
+Agent mode fuera de América, Europa, Australia, Nueva Zelanda y Japón necesita activar el procesamiento entre geografías (cross-Geo). Para un programa sensible a la soberanía en el Golfo o en Asia, eso es una decisión de política, no una casilla.
+
+## Un plan piloto en diez pasos
+
+Esta es la secuencia que yo seguiría. Si los datos ya están gobernados en Unity Catalog, la mayor parte del tiempo se va en los pasos 3 a 7. En los pilotos de lenguaje natural en los que he trabajado, lo que salió mal fue la incorporación de los usuarios.
+
+Los usuarios de negocio no se habían incorporado bien, así que no estaban preparados, y esa carencia explica en gran parte por qué la capa semántica y el trabajo del piloto llevaron unos dos meses. Incorpore a sus usuarios a la vez que construye, no después.
+
+1. **Elija un dominio y un patrocinador.** Un jefe de calidad de planta o un responsable de logística, no «el negocio».
+2. **Escriba de 50 a 100 preguntas reales** de las personas que lo van a usar. Serán su conjunto de referencia.
+3. **Asigne un dueño y una definición a cada métrica.** Finanzas u operaciones aprueba la definición antes de que se convierta en una metric view.
+4. **Construya metric views y tablas curadas.** Manténgase muy por debajo del límite de 50 tablas.
+5. **Añada SQL de ejemplo, funciones y sinónimos** para las preguntas que fallan la primera vez.
+6. **Pruebe los permisos como usuarios reales.** Inicie sesión como un usuario restringido y haga preguntas diseñadas para filtrar datos. Registre los resultados.
+7. **Ejecute el conjunto de referencia y registre la precisión** antes de que ningún usuario lo vea.
+8. **Libérelo a entre 10 y 20 usuarios** con un circuito de retroalimentación y un data steward con nombre que revise cada semana las respuestas con pulgar abajo.
+9. **Configure presupuestos y alertas** antes de que crezca el uso.
+10. **Decida en una fecha fija:** ampliar, corregir o parar, según los criterios acordados en el paso 1.
+
+Las personas siguen en el circuito durante todo el proceso. Un data steward es dueño de la curación.
+
+Quien use una respuesta para una cifra financiera, una decisión de seguridad o un compromiso contractual la contrasta con el informe de origen hasta que el conjunto de referencia demuestre que es fiable. Para cualquier agente que escriba en un sistema, una persona aprueba la acción.
+
+## Gobierno, costos y qué medir
+
+Ahora mismo Genie es barato de probar. Según la [documentación de presupuestos de Genie](https://docs.databricks.com/aws/en/genie/budgets), el uso de LLM de Genie One y Genie Agents es gratuito hasta el 31 de enero de 2027. Los service principals quedan excluidos y se les factura todo el uso, lo que importa si integra Genie mediante la API.
+
+El cómputo del SQL warehouse se factura aparte y es el verdadero costo de operación. Genie Code es de pago por uso desde el 8 de julio de 2026, con una asignación gratuita de 150 DBUs por usuario al mes.
+
+La página de precios de Databricks sitúa 150 DBUs en $10.50 en US East (precio de lista, verificado en octubre de 2026). Las regiones varían, y los descuentos y compromisos empresariales cambian la cifra.
+
+Los presupuestos pueden fijar umbrales compartidos y por usuario, pero el bloqueo es aproximado, así que un presupuesto no es un tope estricto. Concílielo con `system.billing.usage`. Mi [guía de precios de Databricks](/es/databricks-pricing-explained/) trata el dimensionamiento de warehouses.
+
+Qué medir:
+
+| Medida | Por qué importa | Objetivo que acordar antes del go-live |
+|---|---|---|
+| Precisión sobre el conjunto de referencia | Muestra si la curación funciona | Un umbral por dominio, aprobado por el dueño de la métrica |
+| Proporción de respuestas verificadas | Las respuestas basadas en SQL de confianza son más seguras | En aumento semana a semana |
+| Tasa de pulgar abajo y tiempo de corrección | Indica si la gestión de datos funciona | Revisada cada semana |
+| Resultados de las pruebas de permisos | Demuestran que los controles resisten | Cero filtraciones |
+| Solicitudes a analistas evitadas | El caso de negocio | Línea base medida antes del piloto |
+| Costo del warehouse por usuario activo | Costo real de operación | Dentro del presupuesto |
+
+Aquí el gobierno es la base. Si Unity Catalog todavía no está implantado, empiece por ahí; mi [guía de Unity Catalog y gobierno de datos](/es/databricks-unity-catalog-data-governance/) y mi [guía del marco de gobierno de la IA](/es/ai-governance-framework-guide-building-a-responsible-ai-plan/) cubren el trabajo previo.
+
+## Por dónde empezar
+
+Tome un dominio, escriba las 50 preguntas que sus usuarios hacen de verdad y compruebe cuántas pueden responder sus datos actuales con métricas definidas. Ese ejercicio le dice más sobre la preparación para Genie que cualquier demo. Si también está valorando la alternativa, compárelo con [Snowflake Cortex AI y Snowflake Intelligence](/es/snowflake-cortex-ai-snowflake-intelligence/).
+
+Ayudo a las organizaciones a tomar estas decisiones y a definir el alcance de los pilotos. Si quiere una segunda opinión, [reserve una llamada](/es/contact-noel-erp-support/).
+
+## Preguntas frecuentes
+
+<details>
+<summary>¿Qué es Databricks Genie?</summary>
+
+Databricks Genie es una familia de herramientas de IA que responden preguntas en lenguaje natural usando datos gobernados en Databricks. Genie One es la interfaz para usuarios de negocio, los Genie Agents son chats curados y específicos de un dominio (antes Genie spaces) y Genie Code es el asistente para desarrolladores y analistas. Las respuestas se generan como SQL de solo lectura y respetan los permisos de Unity Catalog de cada usuario.
+
+</details>
+
+<details>
+<summary>¿Qué diferencia hay entre Genie spaces y Genie Agents?</summary>
+
+Ninguna funcional. Databricks renombró los Genie spaces como Genie Agents en julio de 2026 y dijo que las capacidades no cambiaban. Los artículos antiguos, el material de formación y las publicaciones de la comunidad siguen usando «Genie spaces».
+
+</details>
+
+<details>
+<summary>¿Cuánto cuesta Databricks Genie?</summary>
+
+El uso de LLM de Genie One y Genie Agents es gratuito para los usuarios hasta el 31 de enero de 2027. A los service principals se les factura, y el cómputo del SQL warehouse se factura aparte. Genie Code es de pago por uso por encima de una asignación mensual gratuita.
+
+</details>
+
+<details>
+<summary>¿Databricks Genie es lo bastante preciso para informes financieros u operativos?</summary>
+
+Puede serlo, dentro de un dominio curado con metric views, SQL de ejemplo y funciones de confianza, medido contra un conjunto de preguntas de referencia. Apuntado a tablas brutas, producirá respuestas plausibles que quizá no coincidan con sus definiciones. Trátelo como no verificado para decisiones financieras o de seguridad hasta que el conjunto de referencia demuestre lo contrario.
+
+</details>
+
+<details>
+<summary>¿Para qué se usa Databricks Agent Bricks?</summary>
+
+Para construir, desplegar y gobernar agentes de IA personalizados con su propio framework y modelo. Incluye la Agent Bricks CLI, Agent Runtime, memoria gestionada y evaluación con MLflow. Knowledge Assistant y Supervisor Agent ya no se recomiendan para agentes nuevos.
+
+</details>
+
+<details>
+<summary>¿Databricks admite MCP?</summary>
+
+Sí. Databricks ofrece servidores MCP gestionados, entre ellos Genie One y Databricks SQL, y usted puede registrar servidores externos o construir los suyos en Databricks Apps. El acceso se gobierna mediante los permisos de Unity Catalog y Unity Gateway.
+
+</details>

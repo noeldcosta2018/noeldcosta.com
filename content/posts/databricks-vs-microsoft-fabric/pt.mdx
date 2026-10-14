@@ -1,0 +1,230 @@
+---
+title: "Databricks vs Microsoft Fabric: um guia de decisão"
+h1: "Databricks vs Microsoft Fabric: um guia de decisão"
+slug: "databricks-vs-microsoft-fabric"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/databricks-vs-microsoft-fabric.webp"
+heroAlt: "Noel D'Costa em um escritório iluminado ao lado de uma sala de reunião de vidro com um esboço de arquitetura de dados no quadro branco"
+category: "data-and-ai"
+tags: ["databricks", "microsoft-fabric", "data-platform-cost"]
+author: "Noel D'Costa"
+metaTitle: "Databricks vs Microsoft Fabric: qual usar e quando ambos"
+metaDescription: "Databricks vs Microsoft Fabric para empresas Microsoft: arquitetura, preços de tabela, Power BI, governança, IA e nuvem de governo, com regras de decisão."
+primaryKeyword: "Databricks vs Microsoft Fabric"
+excerpt: "O Fabric é o caminho mais rápido para uma empresa Microsoft cujo principal produto é o Power BI. O Databricks é a plataforma mais forte para engenharia e ML. Muitas organizações acabam usando os dois, e essa pode ser a resposta certa se você desenhar isso de propósito."
+experienceSource: "Noel's first-person experience with Databricks on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts and prices checked against official Microsoft Learn, Azure pricing and Databricks documentation, October 2026."
+keyTakeaways:
+  - "O Fabric é uma capacidade que você compra e compartilha. O Databricks é consumo medido por carga de trabalho. Essa diferença explica a maioria das surpresas de custo."
+  - "Escolha o Fabric quando o Power BI for o principal consumidor e a equipe pensar primeiro em SQL e Power BI."
+  - "Escolha o Databricks quando engenharia pesada, streaming, ML ou multinuvem importarem mais que a conveniência do BI."
+  - "Usar os dois é comum e funciona: Azure Databricks para engenharia, Fabric para Power BI via mirroring e Direct Lake."
+  - "O mirroring não leva as permissões do Unity Catalog para o Fabric. Planeje dois modelos de segurança ou uma passagem de responsabilidade bem definida."
+  - "Nas nuvens de governo dos EUA as duas plataformas têm lacunas reais hoje. Verifique as listas de funcionalidades antes de desenhar qualquer coisa."
+pullQuote: "Raramente é a plataforma que falha. O que falha é o modelo operacional entre duas plataformas."
+mentions:
+  - "Databricks"
+  - "Azure Databricks"
+  - "Microsoft Fabric"
+  - "OneLake"
+  - "Unity Catalog"
+  - "Power BI"
+  - "Direct Lake"
+  - "Microsoft Purview"
+  - "Genie"
+  - "Agent Bricks"
+  - "Copilot in Fabric"
+  - "Azure Government"
+originalUrl: "https://noeldcosta.com/databricks-vs-microsoft-fabric/"
+canonicalUrl: "https://noeldcosta.com/pt/databricks-vs-microsoft-fabric/"
+locale: "pt"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+A escolha entre Databricks e Microsoft Fabric se resume a quem consome os dados. Se a maior parte termina no Power BI e sua equipe pensa em SQL, o Fabric costuma ser a escolha mais rápida e mais simples. Se seus problemas difíceis são engenharia, streaming, machine learning ou mais de uma nuvem, o Databricks é a plataforma mais forte.
+
+Para muitas organizações centradas em Microsoft, a resposta honesta é: as duas. O Azure Databricks faz a engenharia pesada.
+
+O Fabric e o Power BI atendem o negócio. Isso funciona, mas só se você desenhar a costura entre os dois de propósito.
+
+Nos programas de indústria e defesa em que trabalhei, a decisão raramente depende de listas de funcionalidades. Ela depende do modelo de custo, das competências, das fronteiras de segurança e de onde os dados podem ficar.
+
+## Como as duas plataformas são construídas
+
+As duas são lakehouses sobre formatos de tabela abertos. Elas diferem em quem é dono do armazenamento e em como você paga pela computação.
+
+O **Microsoft Fabric** é uma plataforma SaaS. Tudo vai para o OneLake, um lake lógico por tenant, com tabelas armazenadas em formato Delta. Lakehouse, warehouse, pipelines, Real-Time Intelligence e Power BI usam todos uma única capacidade compartilhada.
+
+Os shortcuts apontam para dados em outros repositórios sem copiá-los. O mirroring traz bancos de dados e catálogos externos.
+
+O **Databricks** roda na sua conta de nuvem (no Azure como Azure Databricks, um serviço próprio da Microsoft). Seus dados ficam no seu próprio armazenamento, governados pelo Unity Catalog. A computação são clusters, SQL warehouses ou serverless, medida por carga de trabalho em Databricks Units (DBUs).
+
+Em abertura, a distância diminuiu. O OneLake virtualiza os metadados, de modo que uma tabela Delta pode ser lida como Iceberg e uma tabela Iceberg pode ser lida como Delta. Há limites reais: apenas Parquet, saída em Iceberg V2, e equality deletes quebram a conversão.
+
+As tabelas Iceberg gerenciadas pelo Unity Catalog estão disponíveis para uso geral, com motores externos lendo e gravando pela Iceberg REST Catalog API do Unity Catalog. Nenhuma das plataformas prende seus dados em um formato proprietário. As duas prendem seus pipelines, seu modelo de segurança e suas competências, e é aí que o custo de troca realmente está.
+
+A ponte entre as duas é o que mais importa para uma empresa Microsoft. O Fabric pode [espelhar um Unity Catalog do Azure Databricks](https://learn.microsoft.com/en-us/fabric/mirroring/azure-databricks) como um item de catálogo, já disponível para uso geral. Só os metadados são espelhados.
+
+Os dados são lidos no lugar, por meio de shortcuts. Um detalhe: as permissões do Unity Catalog não são levadas junto. O Fabric aplica o seu próprio modelo de permissões.
+
+## Preços de Databricks vs Fabric: capacidade versus consumo
+
+O **Fabric** vende capacidade em F-SKUs, de F2 a F8192, medida em capacity units (CUs). O Azure cobra por segundo, sem compromisso, ou você reserva por um ano. No East US, o preço de tabela no pagamento conforme o uso é $0.18 por CU-hora.
+
+Isso coloca um F64 em cerca de $11.52 por hora, aproximadamente $8,400 por mês se ficar ligado o tempo todo. A Microsoft diz que uma reserva economiza cerca de 41% frente ao pagamento conforme o uso.
+
+O armazenamento hot do OneLake tem preço de tabela de $0.026 por GB por mês. Veja a [página de preços do Microsoft Fabric](https://azure.microsoft.com/en-us/pricing/details/microsoft-fabric/).
+
+O F64 também é um limiar de licenciamento. Segundo a [documentação de licenciamento do Fabric](https://learn.microsoft.com/en-us/fabric/enterprise/licenses), abaixo do F64 cada pessoa que visualiza conteúdo do Power BI precisa de uma licença Pro ou Premium Per User.
+
+No F64 e acima, visualizadores com licença gratuita e função de viewer podem ler relatórios. Para algumas centenas de leitores de relatórios, só isso pode decidir o SKU.
+
+O **Azure Databricks** cobra DBUs por tipo de carga de trabalho, mais as máquinas virtuais do Azure por baixo na computação clássica. As tarifas serverless já incluem a computação.
+
+Os preços de tabela Premium no East US estão abaixo. Veja a [página de preços do Azure Databricks](https://azure.microsoft.com/en-us/pricing/details/databricks/).
+
+1. Jobs compute: $0.30 por DBU-hora.
+2. All-purpose compute (notebooks interativos): $0.55 por DBU-hora.
+3. SQL Pro: $0.55 por DBU-hora. Serverless SQL: $0.70 por DBU-hora.
+4. Serverless jobs: $0.45 por DBU-hora. Computação interativa serverless: $0.95 por DBU-hora.
+
+Todos os valores são preços de tabela, verificados em outubro de 2026, para o East US. Outras regiões têm preços diferentes.
+
+Contratos corporativos, compromissos de compra antecipada com o Databricks e reservas do Azure mudam o número real. Meu [guia de preços do Databricks](/pt/databricks-pricing-explained/) aprofunda o tema das DBUs.
+
+O que isso significa na prática:
+
+1. **O Fabric é previsível, mas compartilhado.** Um job Spark pesado pode estrangular os relatórios do Power BI na mesma capacidade. Alguém precisa gerenciar a capacidade como um servidor compartilhado.
+2. **O Databricks é granular, mas vaza.** Cada carga de trabalho custa exatamente o que usa. Clusters esquecidos ligados, warehouses superdimensionados e all-purpose compute usado para jobs agendados são os vazamentos de sempre.
+3. **Compare o custo total em cargas de trabalho reais.** Precifique seus dez principais pipelines e sua hora de relatórios mais movimentada nas duas plataformas. Uma planilha de preços de tabela não prova nada.
+
+## Comparação lado a lado
+
+A tabela cobre os pontos que costumam decidir a questão para uma organização centrada em Microsoft.
+
+| Critério | Microsoft Fabric | Databricks (Azure Databricks) |
+|---|---|---|
+| Modelo de entrega | SaaS, um OneLake para todo o tenant | Plataforma na sua conta e no seu armazenamento de nuvem |
+| Preços | Capacidade em F-SKU, pagamento conforme o uso ou reservada | DBUs por carga de trabalho, mais VMs na computação clássica |
+| Profundidade em engenharia de dados | Boa para SQL, pipelines, Dataflows e notebooks Spark | Maior: ajuste de Spark, streaming, pipelines declarativos, CI/CD |
+| ML e GenAI | Copilot in Fabric, Fabric data agents (GA), modelos e experimentos de ML | Model serving, MLflow, Genie, Agent Bricks |
+| Power BI | Nativo; Direct Lake sobre o OneLake | Via mirroring para o Fabric, ou DirectQuery e Import |
+| Governança | Permissões do Fabric, OneLake security, Purview, rótulos de confidencialidade | Unity Catalog; o Purview pode escaneá-lo |
+| Multinuvem | Somente Azure | Azure, AWS e Google Cloud |
+| Perfil de competências | Equipes de Power BI, SQL e dados Microsoft | Engenheiros de dados, Python e Spark, engenheiros de ML |
+
+**Power BI e Direct Lake.** O Direct Lake permite que um modelo semântico do Power BI leia tabelas Delta no OneLake direto para a memória, sem refresh de importação. É o motivo mais forte para usar o Fabric.
+
+Ele exige uma capacidade Fabric, e os limites de tabela sobem com o SKU. Um catálogo espelhado do Azure Databricks é uma fonte suportada pelo Direct Lake, então tabelas gold construídas no Databricks podem alimentar relatórios Direct Lake.
+
+**ML e GenAI.** Os Fabric data agents, que respondem perguntas em linguagem natural sobre dados do OneLake, estão disponíveis para uso geral. Algumas integrações, como consumi-los a partir do Microsoft 365 Copilot, ainda estão em preview. O Copilot in Fabric precisa de uma capacidade paga F2 ou maior e consome essa capacidade.
+
+No Databricks, o Genie permite que usuários de negócio consultem tabelas governadas em linguagem natural. O Agent Bricks é a plataforma para construir e implantar agentes personalizados em código.
+
+O Databricks agora lista o Knowledge Assistant e o Supervisor Agent como legados e direciona novos trabalhos low-code para os Genie Agents. Meu [artigo sobre Genie e Agent Bricks](/pt/databricks-genie-agent-bricks/) trata disso em detalhe.
+
+**Governança.** O Unity Catalog é o plano de controle único mais maduro para tabelas, modelos, linhagem e acesso granular entre workspaces e nuvens. A governança do Fabric está melhorando rápido.
+
+Em um ambiente Microsoft, o Purview muitas vezes já é o catálogo corporativo, e ele consegue escanear metadados e linhagem do Unity Catalog. Meu [guia de governança com Unity Catalog](/pt/databricks-unity-catalog-data-governance/) cobre o lado do Databricks.
+
+## O padrão "usar os dois", com honestidade
+
+A maioria das organizações centradas em Microsoft que eu vejo não escolhe uma só. Elas usam o Azure Databricks para ingestão, engenharia e ML e depois expõem tabelas curadas ao Fabric para o Power BI. Com o mirroring de catálogo e o Direct Lake, esse padrão hoje é bem suportado.
+
+Ele funciona quando três coisas são verdadeiras:
+
+1. **Uma plataforma é dona de cada camada.** O Databricks é dono do bronze ao gold. O Fabric é dono dos modelos semânticos e dos relatórios. Ninguém reconstrói a mesma tabela nas duas.
+2. **A segurança é desenhada duas vezes, de uma só vez.** O mirroring não copia as permissões do Unity Catalog. Decida quem é dono das regras de nível de linha e de coluna no Fabric e documente o mapeamento.
+3. **Alguém é dono da conta das duas.** DBUs e capacidade ficam em linhas de custo diferentes. Sem um dono único, cada equipe otimiza a sua plataforma e o total sobe.
+
+Ele falha quando o Fabric vira, às escondidas, uma segunda plataforma de engenharia, e você acaba com duas camadas gold que não batem. Onde vi o "usar os dois" dar errado, o problema se resumiu a duas coisas: a integração entre as plataformas não estava certa, e ninguém sabia qual plataforma era dona dos dados. Prefiro definir a regra no primeiro dia a desembaraçar isso depois.
+
+Para dados de ERP (SAP, Oracle ou Microsoft Dynamics 365), a mesma lógica vale. Carregue e modele uma vez, em um só lugar. Minhas notas sobre [modernização de ERP e clean core](/pt/erp-modernization-2025-cloud-ai-clean-core/) explicam por que o lado do ERP importa tanto quanto a plataforma.
+
+## Considerações para defesa e indústria
+
+**Indústria.** Os dados de fábrica são o teste de estresse. Feeds de historiadores e de MES, streams de sensores em alta frequência, registros de qualidade e manutenção cruzados com o ERP. O Real-Time Intelligence do Fabric (eventstreams e eventhouses) atende bem a dashboards operacionais.
+
+Para engenharia de streaming em larga escala, pipelines de features para manutenção preditiva e ML sobre dados de sensores, eu uso o Databricks. Streaming e machine learning sobre dados de sensores e de máquinas é onde ele se justifica no meu trabalho.
+
+**Defesa.** Soberania e separação vêm primeiro. Ambientes classificados e não classificados ficam separados. Dados sob controle de exportação (ITAR como categoria) exigem controle de acesso e auditoria rigorosos.
+
+Os programas duram décadas. Aqui, verifique a disponibilidade antes de desenhar qualquer coisa, porque as nuvens de governo ficam atrás do Azure comercial.
+
+1. **Fabric no GCC High.** Segundo o [Microsoft Learn](https://learn.microsoft.com/en-us/fabric/enterprise/us-government-community-cloud-high), verificado em outubro de 2026, o Fabric roda em US Gov Virginia e US Gov Texas. As cargas de trabalho centrais estão disponíveis, incluindo lakehouse, warehouse, pipelines e Power BI com Direct Lake. Chaves gerenciadas pelo cliente, a maioria das fontes de mirroring, Private Link de workspace e Copilot para Power BI não são suportados. A autorização FedRAMP High para o GCC High ainda está em avaliação.
+2. **Azure Databricks no Azure Government.** Segundo a [lista regional de funcionalidades do Azure Databricks](https://learn.microsoft.com/en-us/azure/databricks/resources/feature-region-support), atualizada em 1 de outubro de 2026, as regiões US Gov não suportam Databricks SQL nem Unity Catalog. Também não têm serverless nem os recursos de IA mais novos. O Databricks anunciou planos de levar a plataforma completa ao Azure Government. Confirme o que está ativo na sua região no dia em que decidir.
+
+Fora dos EUA, vale a mesma disciplina. Verifique as tabelas regionais para a região exata do Azure à qual você está vinculado. Vários recursos serverless e de IA do Databricks exigem processamento entre geografias em algumas regiões, o que pode inviabilizar o uso com dados soberanos.
+
+## Regras de decisão: Fabric, Databricks ou os dois
+
+**Escolha o Fabric quando:**
+
+1. O Power BI for o principal consumidor e você quiser Direct Lake.
+2. Sua equipe for de SQL, Power BI e Microsoft em primeiro lugar, com pouca profundidade em Spark.
+3. Você quiser uma única conta de capacidade e operação SaaS, não engenharia de plataforma.
+4. Você tiver centenas de visualizadores de relatórios e o licenciamento do F64 fizer as contas fecharem.
+
+**Escolha o Databricks quando:**
+
+1. Engenharia de dados, streaming ou ML forem a parte difícil, não os relatórios.
+2. Você rodar em mais de uma nuvem, ou pretender rodar.
+3. Você precisar do Unity Catalog como plano único de governança sobre muitos workspaces.
+4. Você precisar de controle de custo rigoroso por carga de trabalho e tiver as competências para gerenciá-lo.
+
+**Escolha os dois quando** você já opera bem o Azure Databricks e o negócio vive no Power BI. Espelhe o Unity Catalog no Fabric, use Direct Lake para os relatórios e deixe por escrito quem é dono de cada camada.
+
+Se você já opera uma plataforma Databricks madura, não a migre para o Fabric para economizar em BI. Para uma visão mais ampla, veja minha [comparação Snowflake vs Databricks](/pt/snowflake-vs-databricks/).
+
+## O que fazer em seguida
+
+Faça um teste de duas semanas, em condições equivalentes, com três cargas de trabalho reais: um pipeline pesado, um modelo executivo do Power BI e um caso de uso de ML ou IA. Meça o custo por execução, a latência de refresh e o esforço que sua equipe precisou. Peça aos fornecedores ou ao seu SI que precifiquem exatamente esse conjunto com as suas tarifas negociadas.
+
+Faça três perguntas a cada fornecedor: o que é GA e o que é preview na minha região, o que acontece com o custo quando o uso dobra, e como a segurança funciona na costura entre as plataformas.
+
+Se você quer uma visão independente sobre a decisão de plataforma ou sobre o desenho do teste, eu ajudo organizações exatamente nisso. Você pode [agendar uma conversa de 30 minutos](/pt/contact-noel-erp-support/).
+
+## Perguntas frequentes
+
+<details>
+<summary>O Microsoft Fabric está substituindo o Azure Databricks?</summary>
+
+Não. O Azure Databricks continua sendo um serviço próprio do Azure, e a Microsoft documenta como os dois funcionam juntos. O Fabric pode espelhar um Unity Catalog do Azure Databricks, recurso disponível para uso geral, para que o Power BI use tabelas do Databricks via Direct Lake sem copiar dados. Muitas organizações usam os dois.
+
+</details>
+
+<details>
+<summary>O Fabric é mais barato que o Databricks?</summary>
+
+Depende da combinação de cargas de trabalho. O Fabric é uma capacidade compartilhada (preço de tabela no East US de $0.18 por CU-hora, cerca de 41% menos com uma reserva de um ano). O Databricks cobra DBUs por carga de trabalho, mais VMs na computação clássica. Precifique suas próprias cargas principais nas duas plataformas.
+
+</details>
+
+<details>
+<summary>O Power BI pode usar dados do Databricks sem o Fabric?</summary>
+
+Sim. O Power BI se conecta a SQL warehouses do Databricks nos modos Import ou DirectQuery. O Direct Lake exige uma capacidade Fabric, e um catálogo espelhado do Azure Databricks é uma fonte suportada pelo Direct Lake.
+
+</details>
+
+<details>
+<summary>A segurança do Unity Catalog é levada para o Fabric?</summary>
+
+Não. Quando o Fabric espelha um catálogo do Azure Databricks, ele espelha os metadados e lê os dados por meio de shortcuts. As políticas e permissões do Unity Catalog não são espelhadas, então vale o modelo de permissões do próprio Fabric. Desenhe e documente as regras de acesso do lado do Fabric.
+
+</details>
+
+<details>
+<summary>O Microsoft Fabric está disponível no Azure Government?</summary>
+
+O Fabric roda no ambiente GCC High, em US Gov Virginia e US Gov Texas, com um conjunto de funcionalidades mais restrito que o Fabric comercial. Chaves gerenciadas pelo cliente, a maioria das fontes de mirroring e o Copilot para Power BI não são suportados, segundo o Microsoft Learn, em outubro de 2026. O FedRAMP High para o GCC High ainda está em avaliação. Verifique a lista atual antes de planejar.
+
+</details>
+
+<details>
+<summary>Qual é melhor para machine learning, Databricks ou Fabric?</summary>
+
+O Databricks tem as ferramentas de ML e GenAI mais profundas: MLflow, model serving, Genie e Agent Bricks para agentes personalizados. O Fabric cobre experimentos e modelos de ML, data agents (GA) e Copilot, e seus data agents podem ser usados a partir do Microsoft Foundry (em preview). Se ML for uma competência central e não um complemento, o Databricks costuma ser a base mais forte.
+
+</details>

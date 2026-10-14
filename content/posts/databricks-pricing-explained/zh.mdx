@@ -1,0 +1,202 @@
+---
+title: "Databricks 定价详解：DBU 与您实际支付的费用"
+h1: "Databricks 定价详解：DBU 与您实际支付的费用"
+slug: "databricks-pricing-explained"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/databricks-pricing-explained.webp"
+heroAlt: "Noel D'Costa 站在办公桌旁，桌上有云成本报告、计算器和一台显示月度支出的笔记本电脑"
+category: "data-and-ai"
+tags: ["databricks", "data-platform-cost"]
+author: "Noel D'Costa"
+metaTitle: "Databricks 定价详解：DBU、版本层级与真实成本"
+metaDescription: "写给 CFO 和 CIO 的 Databricks 定价解读：DBU 如何计费、各类计算的标价、Azure Databricks 计费方式、承诺用量折扣，以及隐藏的成本驱动因素。"
+primaryKeyword: "Databricks 价格"
+excerpt: "Databricks 按 DBU 计费，但 DBU 费率只是账单的一部分。本文说明费率如何因计算类型和版本层级而不同，云服务商还要额外收取什么，以及钱实际上从哪里漏掉。"
+experienceSource: "Noel's first-person experience with Databricks on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts and prices checked against official Databricks and Microsoft Azure documentation, October 2026."
+keyTakeaways:
+  - "Databricks 按 DBU 收费，每个 DBU 的费率取决于计算类型、版本层级和云平台"
+  - "经典计算会额外产生一份云账单，涵盖虚拟机、磁盘和网络；无服务器的 DBU 费率已包含计算"
+  - "在 all-purpose 集群上运行生产作业，同样的 DBU 成本是 jobs 计算费率的数倍"
+  - "Standard 层级已经取消：在 AWS、Azure 和 Google Cloud 上，Premium 现在是入门层级"
+  - "承诺用量合同和 Azure DBCU 预购降低的是 DBU 费率，而不是虚拟机或存储账单"
+  - "预算按标价发出告警，并不会阻止支出；真正起控制作用的是计算策略和标签"
+pullQuote: "定价页上的 DBU 费率，是您 Databricks 账单中最小的决定。哪种计算类型运行哪个工作负载，才是最大的决定。"
+mentions:
+  - "Databricks"
+  - "Azure Databricks"
+  - "Databricks Unit (DBU)"
+  - "Databricks Commit Unit (DBCU)"
+  - "Databricks SQL"
+  - "Lakeflow Jobs"
+  - "Lakeflow Spark Declarative Pipelines"
+  - "Photon"
+  - "Unity Catalog"
+  - "Databricks Model Serving"
+originalUrl: "https://noeldcosta.com/databricks-pricing-explained/"
+canonicalUrl: "https://noeldcosta.com/zh-CN/databricks-pricing-explained/"
+locale: "zh"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Databricks 定价采用按需付费，以 Databricks Units（DBU）按秒计费，标价从每 DBU 约 0.15 美元到约 1.00 美元不等，取决于计算类型、版本层级和云平台。在经典计算上，您还要为底层的虚拟机向云服务商付费；在无服务器上，这部分计算已包含在 DBU 费率中。
+
+所以，对“Databricks 要花多少钱”的坦白回答是：两份账单，有时是三份，而最终数字更多取决于您的团队如何使用平台，而不是价目表。
+
+在我参与过的制造业和国防项目中，让人意外的很少是 DBU 价格。我见过最大的浪费，是本该运行在 jobs 计算上的生产作业，却跑在昂贵的交互式费率 all-purpose 计算上。
+
+## Databricks 定价如何运作：DBU 加上云账单
+
+DBU 是 Databricks 标准化的处理单位。Databricks 将其定义为处理能力的度量，由所用的计算资源决定，在某些产品中还取决于处理的数据量。
+
+在按需付费模式下，您从不直接购买 DBU。您运行工作负载，工作负载每小时产生 DBU，您支付的是 DBU 数量乘以该计算类型的费率。
+
+决定您账单的有三点：
+
+1. **计算类型。** Jobs、all-purpose、SQL warehouses、管道、模型服务以及各自的无服务器版本都有各自的费率。同样一小时的工作，根据运行位置不同，成本可能相差三到四倍。
+2. **版本层级和云平台。** Premium 还是 Enterprise，AWS、Azure 还是 Google Cloud。区域也有影响。
+3. **基础设施模式。** 经典计算运行在您的云账户中，因此云服务商会向您收取虚拟机、托管磁盘、存储和公网 IP 的费用。无服务器运行在 Databricks 的账户中，[标价已包含底层计算](https://www.databricks.com/product/pricing/lakeflow-jobs)。
+
+存储也是单独的。您的 Delta 表存放在您自己的云对象存储中（S3、ADLS 或 Google Cloud Storage），由云服务商计费。Databricks 还以 Databricks Storage Units（DSU）为部分托管存储定价。
+
+<compare-split title="经典计算与无服务器对比" left-label="经典计算" left-points="每小时 DBU 费率较低|云服务商单独收取虚拟机、磁盘和 IP 费用|启动时间和空闲时间都要付费|由您选择实例类型并负责调优" right-label="无服务器计算" right-points="DBU 费率较高，已包含计算|计费最少一分钟，启动不收费|数据传输和网络仍可能计费|对规格的控制较少，需要通过实测真实运行来估算"></compare-split>
+
+## 按计算类型列出的 Databricks 标价
+
+以下是主要计算类型公布的标价。AWS 数字来自 [Databricks 定价页面](https://www.databricks.com/product/pricing)，区域为 US East（N. Virginia）。
+
+Azure 数字来自 [Azure Databricks 定价页面](https://azure.microsoft.com/en-us/pricing/details/databricks/)，Premium 层级，West US，因为 Azure Databricks 的价格由微软制定。标价于 2026 年 10 月核实，因云平台和区域而异。
+
+| 计算类型 | AWS Premium（美元/DBU） | AWS Enterprise（美元/DBU） | Azure Premium（美元/DBU） | 云虚拟机是否单独计费？ |
+|---|---|---|---|---|
+| Jobs 计算（经典） | 0.15 | 0.20 | 0.30 | 是 |
+| Jobs 无服务器 | 0.35 | 0.45 | 0.47（Automated Serverless） | 否，已包含 |
+| 声明式管道经典版（Core / Pro / Advanced） | 0.20 / 0.25 / 0.36 | 未列出 | 0.30 / 0.38 / 0.54 | 是 |
+| 声明式管道无服务器 | 0.35 | 未列出 | 0.47 | 否，已包含 |
+| All-purpose 计算（经典） | 0.55 | 0.65 | 0.55 | 是 |
+| 无服务器笔记本（交互式） | 0.75 | 0.95 | 1.00 | 否，已包含 |
+| SQL Classic warehouse | 0.22 | 0.22 | 0.22 | 是 |
+| SQL Pro warehouse | 0.55 | 0.55 | 0.55 | 是 |
+| SQL Serverless warehouse | 0.70 | 0.70 | 0.70 | 否，已包含 |
+| Model Serving（CPU 和 GPU） | 0.07 | 未列出 | 0.082 | 否，已包含 |
+
+有两点很突出。Jobs 计算是运行生产工作最便宜的方式，而在 AWS Premium 上，all-purpose 计算每 DBU 的成本是它的三倍多。另外，按每 DBU 看，无服务器似乎很贵，但别忘了虚拟机账单已经没有了。
+
+### 版本层级：Premium 现在是起点
+
+Databricks 已在 AWS 和 Google Cloud 上对新客户[停用 Standard 层级](https://www.databricks.com/product/pricing/platform-addons)，那里剩余的 Standard 客户已于 2025 年 10 月 1 日转为 Premium。在 Azure 上，微软的[停用通知](https://learn.microsoft.com/en-us/azure/databricks/admin/account-settings/standard-tier)要求自 2026 年 4 月 1 日起新工作区必须为 Premium，其余工作区已于 2026 年 10 月 1 日自动升级。
+
+如果您的预算模型仍然假设 Standard 费率，那它已经过时了。好处是：Premium 带来了 Unity Catalog、SQL warehouses 和无服务器，这些都是 Standard 从未有过的。
+
+关于命名：根据 Databricks 自己的脚注，Azure 上的 Premium 层级对应 AWS 和 Google Cloud 上的 Enterprise 层级。在跨云比较报价时，这一点很重要。
+
+对于受监管的环境，附加组件比层级更重要。Enhanced Security and Compliance 附加组件按标价产品支出的百分比定价（AWS 定价页上为 15%），Mission Critical 附加组件则在此基础上增加托管灾难恢复。在国防工作中，合规控制很少是可选的，我会从第一天起就把这部分加价写进商业论证，而不是等到安全审查时才发现。
+
+## Azure Databricks 计费与承诺用量折扣
+
+Azure Databricks 是微软的第一方服务。您会根据 Azure 订阅条款收到一份来自微软的账单，同时涵盖 DBU 以及集群背后的虚拟机、磁盘和存储。
+
+账单仍然分为 Databricks DBU 项目和普通的计算、存储及网络项目。微软的页面指出，无服务器工作负载在 DBU 之外还可能产生数据传输、NAT 网关和 Private Endpoint 费用。
+
+折扣有两条途径：
+
+1. **Azure Databricks 预购。** 您以一年或三年为期购买 [Databricks Commit Units（DBCU）](https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/prepay-databricks-reserved-capacity)。用量按每个工作负载的标价从额度池中扣减（一个 Premium all-purpose DBU 扣 0.55 DBCU，一个 Premium jobs DBU 扣 0.30）。微软公布的一年期折扣表从 12,500 DBCU 的 4% 到 2,000,000 DBCU 的 33%，微软称其各类方案最多可节省 37%。购买是最终的：不能取消，也不能兑换。
+2. **Databricks 承诺用量合同。** 在 AWS 和 Google Cloud 上，您直接与 Databricks 谈判。定价页面表示，承诺越大折扣越大，并且可以跨云灵活使用。具体条款不公开。
+
+两者都只对 DBU 这一项打折。虚拟机、存储和网络账单不受影响，所以要为底层的经典计算搭配云预留或节省计划。
+
+关于如何确定承诺合同或 Azure 预购的规模，我的建议是：先理解您的用例，再规划未来三年。在给合同定数字之前，先弄清楚哪些工作负载会运行，以及跑在哪种计算类型上。在不可退款的方案上过度承诺，未用完的余额就是您的损失。
+
+## 一个示意性的月度估算
+
+这是用上面 AWS Premium 标价做的示意性计算，不是客户数字。假设一个中等规模的制造业分析平台，一个月的情况如下：
+
+1. 每晚在经典 jobs 计算上运行的 ERP 和工厂数据管道：20,000 DBU × 0.15 美元 = 3,000 美元，另加这些集群的 EC2 账单。
+2. 在 SQL Serverless warehouse 上运行的 BI 仪表板：8,000 DBU × 0.70 美元 = 5,600 美元，已包含计算。
+3. 在经典 all-purpose 集群上进行的数据科学工作：6,000 DBU × 0.55 美元 = 3,300 美元，另加 EC2。
+
+按标价计算，每月 DBU 费用为 11,900 美元，尚未计入虚拟机、存储、网络和任何附加组件加价。
+
+现在把每晚的管道挪到 all-purpose 集群上，这种情况比您想象的更常见。同样的 20,000 DBU，成本从 3,000 美元变成 11,000 美元。
+
+没有任何东西跑得更快。唯一的变化是工作运行的位置。
+
+在制造业，ERP 抽取正是这个问题咬人的地方。SAP、Oracle 和 Microsoft Dynamics 365 的数据加载往往是定时、可重复、可预测的，正是 jobs 计算的定价所针对的场景。如果您正在比较的[另一个数据平台](/zh-CN/snowflake-pricing-credits-explained/)以不同的单位报价，请先在同一份工作负载清单上为两者建模，再比较费率。
+
+## 我最常见到的隐藏成本驱动因素
+
+价目表是公开的。下面这些不是。
+
+1. **空闲的 all-purpose 集群。** 经典集群在空闲时也会计收 DBU 和虚拟机费用。自动终止可以设置在 10 到 10,000 分钟之间；在大集群上设置很长的时间，就等于一笔固定开支。
+2. **生产作业跑在错误的计算上。** 定时工作跑在 all-purpose 集群而不是 jobs 计算上，平白支付交互式费率。
+3. **规格过大的 SQL warehouses。** 为了寥寥几个仪表板，配置了一个最小集群数很高的大型仓库。按您实际的并发量来定规格。
+4. **未经测量就使用 Photon。** Photon 会提高经典计算上的 DBU 费率（Databricks 列出的经典管道产生速率为 2.5 倍）。它往往完成得更快、总体成本更低，但只有测量才能针对您的工作负载证明这一点。
+5. **开发和测试环境泛滥。** 每个开发人员都有自己常开的集群。在国防项目中，涉密和非涉密数据需要分开的环境，环境成倍增加，情况更糟。
+6. **数据传输。** 跨区域或向云外移动数据，以及无服务器的专用连接，都要计费。数据驻留规定可能迫使您采用比计划中移动更多数据的架构。
+7. **附加组件加价。** 合规和灾难恢复附加组件按支出的百分比计费，所以会随上述所有项一起增长。
+
+## 真正有效的 FinOps 控制手段
+
+Databricks 提供了工具。大多数企业只打开第一个就止步了。
+
+1. **计费系统表。** [`system.billing.usage`](https://docs.databricks.com/aws/en/admin/system-tables/billing) 按工作区、集群、作业、仓库、用户和标签记录每一个 DBU。将它与 `system.billing.list_prices` 关联，即可得到按标价计算的成本。这是唯一可信的数据来源；请在它之上建立您的成本分摊。
+2. **标签。** 集群、池、作业和仓库上的自定义标签会流入用量表。在第一个工作区上线之前，先商定一套标签（成本中心、项目、环境）。
+3. **无服务器用量策略。** 它们为无服务器笔记本、作业和管道打标签，让无服务器支出可以归属。截至 2026 年 10 月处于公开预览（Public Preview）阶段。
+4. **计算策略。** 管理员可以限制推高小时价格的设置，限定每小时 DBU 上限，并制定标签规则。这是阻止泛滥而不只是报告泛滥的控制手段。
+5. **预算。** 在账户控制台中设置，最多可在四个阈值发送电子邮件告警。它们按标价计算，忽略您谈定的折扣，并且不会阻止支出（阻断只适用于 Unity Gateway 预算）。把它们当作警报，而不是刹车。
+6. **无服务器超时。** 无服务器笔记本默认有 2.5 小时的执行超时，管理员可以修改。
+
+治理和成本控制在这里是重叠的。如果您正在搭建 [Unity Catalog 与数据治理](/zh-CN/databricks-unity-catalog-data-governance/)，请把标签和目录结构放在一起设计。
+
+## 签约前我会做什么
+
+在投入预算之前，用您计划使用的真实计算类型运行两到四周有代表性的工作负载，并从计费系统表中读取结果。Databricks 自己也说，估算无服务器成本的最好方法是运行真实工作负载并加以测量。这样您就有了一个可以在 CFO 面前站得住脚的 DBU 基线，以及一个您确实会用完的承诺额度。
+
+然后向厂商和您的系统集成商问三个问题：每个工作负载会跑在哪种计算类型上，计算策略会强制执行什么，以及在您预期的支出水平下附加组件要花多少钱。如果回答含糊，估算也一样含糊。如果您还在决定平台本身，请先阅读 [Databricks 是做什么用的](/zh-CN/what-is-databricks-used-for/)或 [Snowflake 与 Databricks 对比](/zh-CN/snowflake-vs-databricks/)。
+
+我帮助企业确定这类数据平台支出的规模、进行谈判并加以治理。如果您的估算需要第二意见，请[与我联系](/zh-CN/contact-noel-erp-support/)。
+
+## 常见问题
+
+<details>
+<summary>Databricks 每月要花多少钱？</summary>
+
+没有固定月费。您按秒为工作负载消耗的 DBU 付费，标价从每 DBU 约 0.15 美元到 1.00 美元不等，取决于计算类型、版本层级和云平台；在经典计算上，还要加上云服务商的虚拟机、存储和网络费用。请实测一个试点，而不是相信一个笼统的数字。
+
+</details>
+
+<details>
+<summary>Databricks 中的 DBU 是什么？</summary>
+
+Databricks Unit 是用于计费的标准化处理能力单位。工作负载根据所用的计算每小时产生 DBU，您支付的是 DBU 数量乘以该计算类型的费率。同样一个 DBU，在 all-purpose 计算上比在 jobs 计算上更贵。
+
+</details>
+
+<details>
+<summary>Azure Databricks 的定价与 AWS 上的 Databricks 不同吗？</summary>
+
+是的。Azure Databricks 的价格由微软制定，并计入您的 Azure 账单。部分费率不同：按 2026 年 10 月的标价，经典 jobs 计算在 Azure Premium 上为每 DBU 0.30 美元，而在 AWS Premium 上为 0.15 美元。Azure 的 Premium 层级还对应 AWS 和 Google Cloud 上的 Enterprise 层级，所以要按同等条件比较。
+
+</details>
+
+<details>
+<summary>无服务器 Databricks 包含云基础设施成本吗？</summary>
+
+计算部分包含。无服务器 DBU 费率包含底层实例，启动时间也不收费。跨区域、向云外的数据传输以及专用连接仍可能计费，并且每次运行最少计费一分钟。
+
+</details>
+
+<details>
+<summary>有 Databricks 定价计算器吗？</summary>
+
+有。Databricks 在其定价页面上提供定价计算器，微软的 Azure 定价计算器涵盖 Azure Databricks。两者都基于标价。请把试点中实测的 DBU 输入进去。
+
+</details>
+
+<details>
+<summary>如何获得 Databricks 折扣？</summary>
+
+在 Azure 上，以一年或三年为期购买 Databricks Commit Units；微软列出的折扣最高达 37%。在 AWS 和 Google Cloud 上，与 Databricks 谈判承诺用量合同。两者都只对 DBU 费用打折，不涉及虚拟机、存储或网络账单。
+
+</details>

@@ -1,0 +1,230 @@
+---
+title: "Databricks 中的 Unity Catalog：把治理正确地搭建起来"
+h1: "Databricks 中的 Unity Catalog：把治理正确地搭建起来"
+slug: "databricks-unity-catalog-data-governance"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/databricks-unity-catalog-data-governance.webp"
+heroAlt: "明亮的白色数据中心通道，两侧是服务器机柜，尽头是一扇安全门禁门"
+category: "data-and-ai"
+tags: ["databricks", "data-governance", "defence", "manufacturing"]
+author: "Noel D'Costa"
+metaTitle: "Databricks Unity Catalog：如何搭建数据治理"
+metaDescription: "Databricks 中的 Unity Catalog 是什么，它的层级结构、授权、ABAC、数据血缘和审计如何运作，以及受监管企业可以照做的实际推行顺序。"
+primaryKeyword: "Databricks Unity Catalog 数据治理"
+excerpt: "Unity Catalog 是 Databricks 中一切资产的治理层：在一个地方控制访问、跟踪血缘，并证明谁接触过什么。本文说明它如何运作，以及如何设计才能到第三年依然合理。"
+experienceSource: "Noel's first-person experience with Databricks on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts checked against official Databricks documentation and release notes, October 2026."
+keyTakeaways:
+  - "Unity Catalog 通过一个三级命名空间 catalog.schema.object 治理表、视图、卷、函数和模型"
+  - "每个云区域只有一个 metastore，所以真正的治理决策都在目录（catalog）设计上"
+  - "ABAC 策略、受治理标签和数据分类已于 2026 年 4 月正式发布；DENY 策略仍处于 Beta 阶段"
+  - "用户组来自您的身份提供商，并拥有每一个生产目录。绝不要直接授权给个人"
+  - "Delta Sharing 现已更名为 OpenSharing（2026 年 6 月）；托管和外部 Iceberg 表已于 2026 年 5 月正式发布"
+  - "从第一天起就开启审计和血缘证据。等到审计前再补，会非常痛苦"
+pullQuote: "大多数 Unity Catalog 问题，其实是有人试图用权限去解决的命名和归属问题。"
+mentions:
+  - "Databricks"
+  - "Unity Catalog"
+  - "OpenSharing"
+  - "Delta Sharing"
+  - "Apache Iceberg"
+  - "UCX"
+  - "Hive metastore"
+  - "Lakehouse Federation"
+  - "Microsoft Entra ID"
+  - "SAP"
+  - "Oracle"
+  - "Microsoft Dynamics 365"
+originalUrl: "https://noeldcosta.com/databricks-unity-catalog-data-governance/"
+canonicalUrl: "https://noeldcosta.com/zh-CN/databricks-unity-catalog-data-governance/"
+locale: "zh"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Unity Catalog 是 Databricks 中的治理层。它控制谁能查看和修改每一张表、每一个视图、文件卷、函数和 AI 模型，记录它们之间的血缘，并记录访问日志，让您可以向审计人员证明这一切。
+
+如果您今天在运行 Databricks，那么您已经在用它，或者正在迁移到它。旧版 Hive metastore 正在退出，Databricks 的每一项新功能都假设底层是 Unity Catalog。
+
+问题已经不再是要不要采用它。而是在经历三年的新团队、新数据和一两次审计之后，您的目录设计是否依然合理。
+
+在我参与过的制造业和国防项目中，技术很少是难点。难点在于商定谁拥有哪些数据、环境如何隔离，以及安全团队需要什么证据。
+
+## Databricks 中的 Unity Catalog 实际治理什么
+
+一切都位于 **metastore** 之下，它是最顶层的容器。在它下面，数据和 AI 资产使用三级命名空间：`catalog.schema.object`。对 `prod_finance.gl.journal_lines` 的查询依次指明了目录、schema 和表。
+
+您可以授予权限的对象称为可保护对象（securable objects）。根据 [Unity Catalog 文档](https://docs.databricks.com/aws/en/data-governance/unity-catalog/)，它们分为两组：
+
+1. **命名空间内的资产：** 表、视图、卷（受治理的文件存储）、函数、模型和服务。
+2. **metastore 级对象：** 存储凭据、外部位置、连接（到外部数据库）和共享。
+
+其中有两个 metastore 级对象值得用大白话解释一下，因为它们决定了您的数据实际存放在哪里。
+
+**存储凭据（storage credential）** 封装了一个可以访问存储账户或存储桶的云身份，例如 IAM 角色或托管身份。**外部位置（external location）** 把一个存储路径和一个凭据配成一对。两者结合，Unity Catalog 就可以读写云存储，而无需把密钥交给用户。
+
+接下来是托管表与外部表。对于托管表，Unity Catalog 既治理表，也管理其文件。对于外部表，它只治理访问。
+
+Databricks 现在建议所有新数据都使用托管表，外部表主要保留给 Hive 升级场景。我同意。其他工具也在往同一路径写数据，这通常是应该修好管道的理由，而不是永远把表留作外部表的理由。
+
+有一个约束决定了一切：每个云区域只能有一个 metastore。您无法用更多的 metastore 来解决隔离问题。要用目录来解决。
+
+## 访问控制：授权、行过滤、列掩码和 ABAC
+
+Unity Catalog 的权限是标准的 SQL 授权，向下继承。对一个目录的授权适用于其中的每个 schema 和表。用户需要 `USE CATALOG` 和 `USE SCHEMA` 才能访问到一张表，然后需要 `SELECT` 才能读取它。
+
+```sql
+GRANT USE CATALOG ON CATALOG prod_finance TO `finance-analysts`;
+GRANT USE SCHEMA ON SCHEMA prod_finance.gl TO `finance-analysts`;
+GRANT SELECT ON SCHEMA prod_finance.gl TO `finance-analysts`;
+```
+
+授权回答的是“这个组能不能读这张表”。受监管的数据需要更细的答案，这就轮到其他控制手段出场了。
+
+下表汇总了主要的访问控制手段及其截至 2026 年 10 月的状态。
+
+| 控制手段 | 作用 | 状态（2026 年 10 月） |
+|---|---|---|
+| 授权与所有权 | 对象级权限，从目录继承到 schema 再到对象 | 已正式发布 |
+| 表级行过滤和列掩码 | 附加在单张表上的 SQL 函数，用于隐藏行或掩盖值 | 已正式发布 |
+| ABAC 行过滤和列掩码策略 | 在目录、schema 或表级定义一条策略，适用于每个带有受治理标签的对象 | 自 2026 年 4 月 28 日起正式发布 |
+| 受治理标签 | 账户级标签，键、值以及谁可以分配都受控 | 自 2026 年 4 月 2 日起正式发布 |
+| 数据分类 | 扫描表并标记 PII 等敏感数据 | 自 2026 年 4 月 20 日起正式发布；自定义分类器为 Beta |
+| ABAC DENY 策略和 metastore 级策略 | 优先于授权的显式拒绝；metastore 范围的策略 | Beta |
+| 跨引擎 ABAC | 外部引擎读取受 ABAC 保护的托管表，策略由 Databricks 无服务器计算执行 | 自 2026 年 10 月 1 日起正式发布 |
+
+日期来自 [Databricks 2026 年 4 月发布说明](https://docs.databricks.com/aws/en/release-notes/product/2026/april)和 2026 年 10 月的发布说明。
+
+ABAC（基于属性的访问控制）是对大型环境最重要的变化。您不必为每张表写一个掩码，而是给列打标签，例如 `classification = export_controlled`，然后写一条策略，对指定组以外的所有人掩盖每一个带该标签的列。
+
+新表一旦打上标签就立即受到保护。数据分类可以给出标签建议。
+
+先检查计算资源。受 ABAC 保护的表需要无服务器计算或 Databricks Runtime 16.4 及以上版本。较旧的集群根本无法读取它们。
+
+有两个陷阱我会提前指出。同一用户在同一列上存在相互冲突的策略时，查询会报错被阻止。
+
+另外，如果管道的运行身份落在某个掩码范围内，刷新后的数据可能会以被掩盖的形式存储。要有意识地豁免服务身份，并记录原因。
+
+## 血缘、审计与共享
+
+对于在挂接到该 metastore 的任何工作区中通过 Databricks SQL 和 Spark DataFrames 运行的查询，血缘会被自动捕获，细到列级。它覆盖笔记本、作业、管道和仪表板。当代码通过存储路径引用表时，列级血缘会丢失，这是淘汰基于路径的访问的又一个理由。
+
+审计证据来自系统表。`system.access.audit` 保存审计事件，在[系统表文档](https://docs.databricks.com/aws/en/admin/system-tables/)中仍标注为公开预览（Public Preview）。
+
+血缘表和计费表与它并列，免费保留 365 天。默认情况下只有账户管理员和 metastore 管理员能看到系统表，所以要尽早决定谁获得读取权限，以及是否把审计数据复制到您的 SIEM 中以便更长期地保留。
+
+共享功能今年改了名。Databricks 于 [2026 年 6 月 10 日宣布推出 OpenSharing](https://www.databricks.com/company/newsroom/press-releases/databricks-announces-opensharing)，作为 Delta Sharing 协议的下一个版本，现由 Linux 基金会托管，并扩展到 AI 资产和 Iceberg 客户端。
+
+在较早的文档和合同中，您仍会看到“Delta Sharing”。共享（share）是一个 Unity Catalog 对象，Databricks 到 Databricks 的共享也是在不同区域的 metastore 之间移动数据的方式。
+
+对于混合环境，托管和外部 Apache Iceberg 表已于 2026 年 5 月 21 日正式发布。外部表通过 Lakehouse Federation 从 AWS Glue 或 Snowflake Horizon 等目录读取。Spark、Flink 和 Trino 等引擎可以使用 Unity Catalog 的 Iceberg REST 目录端点。
+
+LF AI & Data Foundation 下还有一个开源的 Unity Catalog，但它是处于沙箱阶段的项目，不是托管服务。未经测试，不要把退出计划建立在它之上。
+
+## 行之有效的治理设计
+
+目录是主要的隔离单位。Databricks 的 [Unity Catalog 最佳实践](https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices)指出，目录通常对应一个环境、一个团队、一个业务单元或它们的组合。大多数真实的设计都是组合。
+
+<compare-split title="划分目录的两种方式" left-label="按环境划分目录" left-points="dev、test 和 prod 三个目录，按领域建 schema|每个目录很容易绑定到对应的工作区|领域在一个目录内不断增多，归属变得模糊|适合较小的团队和早期推行" right-label="按领域加环境划分目录" right-points="prod_finance、prod_quality、dev_finance 等|每个领域组拥有自己的目录|责任清晰，审计范围更干净|需要命名、绑定和授权的目录更多"></compare-split>
+
+对于任何拥有不止几个数据团队的企业，我默认采用领域加环境的方式。它需要在前期投入更多的命名纪律。但它能省掉两年后那场争论：那张人人都在查询却没人维护的表，到底归谁？
+
+其余的设计归结为四条规则：
+
+1. **用户组来自您的身份提供商。** 通过自动身份管理把用户和组配置到 Databricks 账户中；如果您的提供商不支持，就用 SCIM。在 Microsoft Entra ID、Okta 或同类系统中定义用户组，而不是在 Databricks 中。有人离职时，访问权限随其目录账户一并收回。
+2. **生产对象归用户组所有。** Databricks 自己的指导是把生产目录和 schema 的所有权分配给用户组，绝不给个人。所有者可以授予访问权限，所以让个人做所有者就是一个长期存在的例外。
+3. **把目录绑定到工作区。** 一个只绑定到生产工作区的生产目录，无论授权怎么写，都无法从沙箱中查询。
+4. **先分类，再授权。** 商定一套简短的标签词汇（敏感度、个人数据、出口管制、源系统）作为受治理标签，并基于它编写 ABAC 策略。
+
+在制造业，我按工厂系统，也就是 OT 和源系统领域来组织目录，而不是按工厂。来自历史数据库、MES 和传感器的 OT 数据放在它们自己的目录中，归运营或工程数据团队所有。来自 ERP（SAP、Oracle 或 Microsoft Dynamics 365）、质量和供应链的 IT 数据放在另外的目录中。
+
+为分析师整理、关联好的数据放在第三组目录中。OT 与 IT 的边界在目录本身就清晰可见。如果 ERP 数据抽取也在范围内，我关于 [SAP 数据迁移为什么失败](/zh-CN/why-sap-data-migration-fails-and-how-to-fix-it/)的文章同样适用于 ERP 数据源。
+
+## 国防视角：最小权限、隔离与证据
+
+在国防项目中，安全团队通常会问四个问题。谁能看到受出口管制的数据？它如何与其他一切隔开？
+
+它存放在哪里？您能否针对过去一年中的任何一天证明以上所有内容？
+
+只要在设计时考虑到，Unity Catalog 能回答其中大部分问题：
+
+1. **最小权限。** 不在 metastore 或目录级别给范围宽泛的组授权。在 schema 级别授权给指定的组，并对标记为受控的列使用 ABAC 掩码。只有在 DENY 策略脱离 Beta 并且您的认证机构接受之后，才使用它们。
+2. **隔离。** 为受控数据单独建立目录，配备各自的托管存储位置，并绑定到专用工作区。Databricks 建议以目录级托管存储作为主要的隔离单位，这非常适合这种场景。
+3. **数据驻留。** 每个区域一个 metastore，意味着除非有人共享，数据会留在其存储所在的区域。把每一次 OpenSharing 共享和每一条跨区域链接都当作需要审批的数据驻留决策。
+4. **审计证据。** 血缘加上导出到 SIEM 的 `system.access.audit`，可以告诉您谁访问了什么、数据去了哪里。请记住，审计表仍处于公开预览阶段。在我的国防工作中，安全团队希望把审计日志复制到他们自己的 SIEM 中，而不只是留在 Databricks 系统表里。从一开始就把这条数据流纳入计划。
+
+Unity Catalog 不会判定什么算涉密数据或受 ITAR 管制的数据，也不能取代认证。有些国防工作负载根本无法在商业云区域中运行。
+
+即便如此，目录设计也有帮助：它在哪些内容可以上平台、哪些不可以之间划出了一条清晰的界线。如果您正在编写平台之上的策略层，我的 [AI 治理框架指南](/zh-CN/ai-governance-framework-guide-building-a-responsible-ai-plan/)涵盖了角色和审批方面的内容。
+
+## 一个实用的推行顺序
+
+对于从 Hive metastore 迁移或从零开始的企业，我会按以下顺序推进。
+
+1. **商定目录模型和命名规范。** 领域加环境，写成文字，由数据所有者签字确认。以后再改，就得重命名所有东西。
+2. **接入身份提供商。** 账户级配置，在目录服务中定义用户组，对 Unity Catalog 工作区关闭工作区级 SCIM。
+3. **设置存储凭据和外部位置。** 归一个平台组所有。其他人都不获得 `CREATE EXTERNAL LOCATION` 权限。
+4. **创建带托管存储和工作区绑定的目录。** 生产目录从第一天起就归用户组所有。
+5. **定义受治理标签并开启数据分类。** 在基于分类结果编写策略之前，先审查这些结果。
+6. **为敏感列编写 ABAC 策略。** 在您运行的每种计算类型上用真实用户测试，包括任何仍低于 Runtime 16.4 的集群。
+7. **从 Hive metastore 迁移。** Databricks 现在[建议先对 Hive metastore 进行联邦](https://docs.databricks.com/aws/en/data-governance/unity-catalog/migrate)，再就地升级表。UCX 对大型环境有帮助，但它是 Databricks Labs 的项目，由社区维护而非官方支持。要为此做好计划。
+8. **开启审计导出和血缘审查。** 授予系统表的读取权限，建立 SIEM 数据流，并商定谁审查什么。
+9. **在全部迁移完成后禁用 Hive metastore 访问**，这样就没人会悄悄地继续在旧路径上构建。
+
+## 需要避免的错误
+
+1. **授权给个人。** 一周之内还行。之后就没人能说清谁有权访问什么。
+2. **一个巨型目录，每个团队一个 schema。** 归属和审计范围变得模糊，日后还得重建。
+3. **“暂时”把表留作外部表。** 您会失去托管表的功能，每个文件都有两个所有者。
+4. **只在一种集群类型上测试策略。** ABAC 的行为因计算类型而异；旧版运行时会直接失败。
+5. **把审计当作后续阶段。** 审计人员会问您启用审计之前那段时间的情况。
+
+## 从哪里开始
+
+如果您还在早期，在任何人创建目录之前，先把目录模型和标签词汇写在一页纸上。如果您正在迁移中，就运行评估，列出每一张仍是外部表或仍在 Hive metastore 上的表，并为每一张指定负责人和日期。
+
+要了解更全面的情况，请从 [Databricks 是做什么用的](/zh-CN/what-is-databricks-used-for/)开始，并在为 ABAC 确定无服务器计算规模之前看看 [Databricks 定价](/zh-CN/databricks-pricing-explained/)。如果您正在权衡平台，我的 [Snowflake 与 Databricks 对比](/zh-CN/snowflake-vs-databricks/)涵盖了双方的治理。我帮助制造业和国防领域的企业做出这类设计决策；如果第二意见对您有帮助，请[预约通话](/zh-CN/contact-noel-erp-support/)。
+
+## 常见问题
+
+<details>
+<summary>Databricks 中的 Unity Catalog 是什么？</summary>
+
+Unity Catalog 是 Databricks 的治理层。它提供一个统一的地方来管理对表、视图、文件卷、函数和 AI 模型的访问，自动捕获血缘，并在审计系统表中记录访问。资产在每个区域唯一的 metastore 下以 catalog.schema.object 的形式寻址。
+
+</details>
+
+<details>
+<summary>Databricks 中的 ABAC 已经正式发布了吗？</summary>
+
+是的。用于行过滤和列掩码的基于属性的访问控制策略已于 2026 年 4 月 28 日正式发布，受治理标签和数据分类也在 2026 年 4 月正式发布。截至 2026 年 10 月，DENY 策略、metastore 级策略和自定义分类器仍处于 Beta 阶段。
+
+</details>
+
+<details>
+<summary>Delta Sharing 和 OpenSharing 是一回事吗？</summary>
+
+是的。Databricks 于 2026 年 6 月宣布推出 OpenSharing，作为 Delta Sharing 协议的下一步演进，现由 Linux 基金会托管，并扩展到 AI 资产和 Iceberg 客户端。Databricks 文档现在以 OpenSharing 的名称介绍共享功能。
+
+</details>
+
+<details>
+<summary>在 Unity Catalog 中应该使用托管表还是外部表？</summary>
+
+所有新数据都用托管表。Databricks 推荐托管表，因为这样由 Unity Catalog 管理文件、维护和性能功能。只有在其他系统必须拥有这些文件，或者在 Hive metastore 升级期间，才保留外部表，并计划将其转换。
+
+</details>
+
+<details>
+<summary>如何从 Hive metastore 迁移到 Unity Catalog？</summary>
+
+Databricks 建议先把 Hive metastore 联邦为一个外部目录，然后在不移动数据的情况下就地升级表。对于大型环境，Databricks Labs 的 UCX 工具可以评估就绪程度，并迁移用户组、权限和表，但 UCX 由社区维护，并非官方支持。
+
+</details>
+
+<details>
+<summary>目录应该按环境还是按业务领域组织？</summary>
+
+对大多数企业来说，两者兼顾：每个领域每个环境一个目录，例如 prod_finance 和 dev_finance。这让每个领域组拥有清晰的所有权和干净的审计范围。较小的团队可以从每个环境一个目录、每个领域一个 schema 开始。
+
+</details>

@@ -1,0 +1,210 @@
+---
+title: "Snowflake 架构详解，以及它是做什么用的"
+h1: "Snowflake 架构详解，以及它是做什么用的"
+slug: "snowflake-architecture-explained"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/snowflake-architecture-explained.webp"
+heroAlt: "明亮的工程装配大厅全景，可见多个工作站和一台桥式起重机"
+category: "data-and-ai"
+tags: ["snowflake", "data-governance", "manufacturing"]
+author: "Noel D'Costa"
+metaTitle: "Snowflake 架构详解：分层、用途与局限"
+metaDescription: "用大白话讲清 Snowflake 架构：存储、计算与云服务，微分区、Time Travel、数据共享、Iceberg、各版本，以及它是做什么用的。"
+primaryKeyword: "Snowflake 架构"
+excerpt: "Snowflake 是一个云数据平台，把存储、计算和协调分成三个独立的层。本文说明这种架构如何运作、企业用它来做什么，以及它在哪些场景下并不合适。"
+experienceSource: "Noel's first-person experience with Snowflake on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts checked against official Snowflake documentation, October 2026."
+keyTakeaways:
+  - "Snowflake 把存储、计算（虚拟 warehouse）和云服务分开，因此每一层都可以单独扩展、单独付费"
+  - "数据存放在经过压缩的列式微分区中；元数据让查询可以跳过不需要的分区"
+  - "Time Travel、零复制克隆和安全数据共享都源于同一套元数据设计"
+  - "Iceberg 表、Horizon Catalog 和 Snowflake Postgres（2026 年 2 月正式发布）让它的范围超出了传统数据仓库"
+  - "受监管的工作通常意味着 Business Critical 或更高版本；Snowflake 无法在本地部署安装"
+  - "它不适合繁重的事务型工作负载，也不适合绝不能离开您自有数据中心的数据"
+pullQuote: "大多数 Snowflake 的成本意外，其实是没人写下来的架构决策。"
+mentions:
+  - "Snowflake"
+  - "Snowpark"
+  - "Snowflake Horizon Catalog"
+  - "Snowflake Open Catalog"
+  - "Apache Polaris"
+  - "Apache Iceberg"
+  - "Snowflake Postgres"
+  - "Snowflake Marketplace"
+  - "Tri-Secret Secure"
+  - "Amazon Web Services"
+  - "Microsoft Azure"
+  - "Google Cloud"
+originalUrl: "https://noeldcosta.com/snowflake-architecture-explained/"
+canonicalUrl: "https://noeldcosta.com/zh-CN/snowflake-architecture-explained/"
+locale: "zh"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Snowflake 架构把数据平台分成三个可以独立扩展的层：存储、计算（称为虚拟 warehouse），以及负责协调一切的云服务层。企业把 Snowflake 用作报表和分析的云数据仓库，也越来越多地用它来共享数据、运行 Python，以及在受治理的数据上构建 AI。
+
+把存储和计算分开，这一个设计选择，解释了 Snowflake 擅长的大部分事情，也解释了它的大部分成本。
+
+我在制造业和国防领域的数据平台项目中使用过 Snowflake。我经常看到一种模式：管理者为了分析能力而购买它，随后才发现，架构决策（建多少个 warehouse、选哪个版本、数据放在哪里）决定了账单和合规状况。本指南写给需要在签约前理解这些决策的 CIO、CDO 或架构师。
+
+## 一段话说清 Snowflake 是什么
+
+Snowflake 是一个完全托管的数据平台，运行在 Amazon Web Services、Microsoft Azure 和 Google Cloud 上。您不需要安装它、给它打补丁或调优索引。您加载数据，编写 SQL（或 Python），分别为存储和计算付费。
+
+Snowflake 把自己的设计描述为共享磁盘架构与无共享架构的混合：一个集中的数据存储，由多个独立的计算集群来查询。对国防买家来说，有一个事实需要尽早知道：根据 Snowflake 自己的[关键概念与架构指南](https://docs.snowflake.com/en/user-guide/intro-key-concepts)，它无法安装在本地或私有云基础设施上。
+
+## Snowflake 架构的三个层
+
+下面自下而上介绍整个技术栈。
+
+<explainer-layers title="逐层解读 Snowflake 架构" caption="存储和计算分别扩展、分别计费。云服务把它们连成一体。" layers="云服务 => 安全、访问控制、元数据、查询优化和事务|计算 => 虚拟 warehouse：运行 SQL 和 Python 的独立集群，运行期间按 credits 计费|存储 => 云对象存储中经过压缩的列式微分区，按 TB 计费" tones="accent|data|"></explainer-layers>
+
+### 存储
+
+加载数据时，Snowflake 会把数据重新组织成压缩的列式格式，存放在云对象存储中。它把每张表拆分成微分区，每个微分区包含 50 MB 到 500 MB 的未压缩数据。Snowflake 为每个微分区记录元数据，例如每一列中值的范围。
+
+巧妙之处就在于这些元数据。一个按上个月生产订单过滤的查询，会跳过所有日期范围不可能匹配的微分区。
+
+这称为剪枝（pruning），也是 Snowflake 在没有索引的情况下仍能表现良好的原因。这也意味着，在非常大的表上，数据到达的方式（按日期或工厂排序，还是随机到达）会影响成本。
+
+### 计算：虚拟 warehouse
+
+虚拟 warehouse 是运行查询和代码的计算集群。每一个都是独立的。您的财务月末报表可以在一个 warehouse 上运行，同时数据科学团队在另一个 warehouse 上运行繁重的作业，彼此互不拖慢。
+
+warehouse 按 T 恤尺码划分规格，只在运行时消耗 credits。它们可以在空闲时自动挂起。规格越大，单个繁重查询就越快。
+
+集群越多，能同时服务的用户越多，这正是多集群 warehouse 的作用：在 Enterprise 及更高版本中，warehouse 可以在查询开始排队时自动增加集群，并在负载下降时将其移除。Snowflake 明确指出，多集群有助于并发，而不能解决单个慢查询。那种情况要靠调整规格。
+
+我关于 [Snowflake credits 以及账单驱动因素](/zh-CN/snowflake-pricing-credits-explained/)的定价指南详细介绍了成本这一侧。
+
+### 云服务
+
+最上层负责身份认证、访问控制、元数据、查询优化和事务。Time Travel 和克隆主要是元数据操作，所以是这一层让它们成为可能。您很少需要去想它，这正是它的意义所在。
+
+## 由架构带来的功能
+
+那些有意思的功能并不是外挂的附加件。它们是存储和元数据设计的自然产物。
+
+1. **Time Travel。** 您可以查询、克隆或恢复数据在过去某个时间点的状态。Standard 版本保留 1 天。根据 [Time Travel 文档](https://docs.snowflake.com/en/user-guide/data-time-travel)，Enterprise 及更高版本对永久表最多可保留 90 天。
+2. **Fail-safe。** Time Travel 到期后，永久表数据会进入为期 7 天的 Fail-safe 期。只有 Snowflake 能恢复这些数据。把它当作灾难恢复，而不是由您掌控的备份。
+3. **零复制克隆。** 表、schema 或数据库的克隆在创建时不占用额外存储，因为它指向相同的微分区。您只为之后发生变化的数据付费。团队就是靠这个在几分钟内搭建起完整规模的测试环境。
+4. **安全数据共享。** 提供方与另一个 Snowflake 账户共享实时表，不复制任何数据。使用方只为查询所用的计算付费。直接共享只在一个区域内有效；跨区域共享要通过带自动履行功能的 listings 进行。
+5. **Snowflake Marketplace。** Listings 让您可以向特定合作伙伴或公开发布数据产品，包括天气或市场指数等第三方数据。
+6. **Snowpark。** 面向 Python、Java 和 Scala 的库，把处理推送到 Snowflake 内部，而不是把数据拉出来。Snowpark Container Services 可以在数据旁边运行容器化应用，已在三大云平台的商业区域正式发布。
+
+对于制造企业，安全数据共享值得做个试点。要对起点有现实的认识：我看到的大多数供应商数据交换仍然是文件传输。
+
+共享一张受治理的表更干净，而且可以撤销。从一家供应商和一个数据集开始，证明可行之后再规划更多。
+
+## Iceberg、目录、混合表和 Postgres：Snowflake 走到了哪里
+
+Snowflake 过去意味着“您的数据采用 Snowflake 的格式”。这已经变了，名称也变了。截至 2026 年 10 月的现状如下：
+
+| 能力 | 作用 | 状态（2026 年 10 月） |
+|---|---|---|
+| Apache Iceberg 表 | 以开放的 Iceberg 格式存储数据，存放在您的云存储或 Snowflake 的存储中 | 自 2024 年 6 月起正式发布；Snowflake 托管存储选项于 2026 年 6 月正式发布（商业版 AWS 和 Azure） |
+| Snowflake Horizon Catalog | 基于 Apache Polaris 构建的治理和目录；外部引擎通过 Iceberg REST API 读取 Snowflake 托管的 Iceberg 表 | 推荐新客户使用 |
+| Snowflake Open Catalog | 托管的 Apache Polaris 服务（原 Polaris Catalog） | 已正式发布，但不再对新客户开放；现有用户可以继续使用 |
+| 混合表（Unistore） | 基于行的表，可在分析旁边进行低延迟的事务型查找 | 仅在商业版 AWS 和 Azure 区域正式发布 |
+| Snowflake Postgres | Snowflake 平台内完全托管的 PostgreSQL | 自 2026 年 2 月 24 日起在 AWS 和 Azure 上正式发布 |
+
+实际结果是：Iceberg 表让 Spark、Databricks 或其他引擎可以处理 Snowflake 所查询的同一批文件，从而减少锁定。Snowflake 的 [Open Catalog 概述](https://docs.snowflake.com/en/user-guide/opencatalog/overview)现在要求新客户改用 Horizon Catalog。
+
+在有人把混合表当作业务数据库推销之前，先读一读它的限制。每个数据库的混合表数据上限为 2 TB，而且它们不支持 Fail-safe、数据共享、复制或 streams。用作应用的查找表没问题。
+
+它们不是业务数据库。如果某个应用需要在分析旁边配一个业务数据库，[Snowflake Postgres 已于 2026 年 2 月正式发布](https://docs.snowflake.com/en/release-notes/2026/other/2026-02-24-snowflake-postgres-ga)，是更名副其实的选择。
+
+## 面向受监管行业的版本与安全
+
+Snowflake 销售四个版本：Standard、Enterprise、Business Critical 和 Virtual Private Snowflake（VPS）。版本决定您能获得哪些安全功能，credit 价格也随之上升。
+
+| 功能 | Standard | Enterprise | Business Critical | VPS |
+|---|---|---|---|---|
+| Time Travel | 1 天 | 最多 90 天 | 最多 90 天 | 最多 90 天 |
+| 多集群 warehouse | 否 | 是 | 是 | 是 |
+| Tri-Secret Secure（客户管理的密钥） | 否 | 否 | 是 | 是 |
+| 专用连接（AWS PrivateLink、Azure Private Link、Google Private Service Connect） | 否 | 否 | 是 | 是 |
+| HIPAA 和 PCI DSS 支持 | 否 | 否 | 是 | 是 |
+| 专用环境，不共享硬件 | 否 | 否 | 否 | 是 |
+
+Tri-Secret Secure 把 Snowflake 的密钥与您保存在云服务商密钥管理服务中的密钥组合起来。撤销您的密钥，Snowflake 就再也无法解密您的数据。对于国防和航空航天供应商来说，这种控制比任何分析功能都重要。
+
+针对美国政府工作，Snowflake 在 AWS GovCloud 和 Azure Government 上运行 SnowGov 区域，向美国政府客户和承包商开放。Snowflake 的[支持区域页面](https://docs.snowflake.com/en/user-guide/intro-regions)列出这些区域支持 FedRAMP High、Impact Level 4 和 ITAR，其中一个 AWS 区域支持 Impact Level 5，并要求使用 Business Critical 或更高版本。请逐个区域核实功能可用性：Open Catalog、混合表以及 Snowpark Container Services 的部分功能并非在所有政府区域都可用。
+
+在我参与过的国防项目中，第一个问题从来不是“它有多快”，而是“数据放在哪里，谁能看到，我们能否向审计人员证明这一点”。在合适的区域和版本中，Snowflake 能很好地回答这个问题。
+
+对于必须留在您自己楼里的数据，它就回答不了。需要本地处理的涉密或受出口管制的工作负载需要另一个平台，而由 Snowflake 负责非涉密的那部分。
+
+## Snowflake 用来做什么，又不太适合做什么
+
+我见到的大部分用法可以归为几种模式。
+
+1. **企业报表和 BI。** 基于 ERP 数据（SAP、Oracle 或 Microsoft Dynamics 365）的财务、销售和运营报表，上层是 Power BI、Tableau 或同类工具。这仍然是核心用途。我关于[把 ERP 数据导入 Snowflake](/zh-CN/erp-data-into-snowflake/) 的指南介绍了各种抽取方案。
+2. **制造运营数据。** 我见过落地到 Snowflake 的工厂和运营数据是生产计划数据。历史数据库、MES、质量和维护数据可以与之并存，JSON 格式的半结构化传感器数据可以原生加载。
+3. **与合作伙伴共享数据。** 供应商、分销商和客户可以直接查询受治理的表。实际上，我看到的大多数供应商数据交换仍然是文件传输。
+4. **基于受治理数据的数据科学和 AI。** 通过 Snowpark 使用 Python 以及 Snowflake 的 AI 服务，我在关于 [Snowflake Cortex AI 和 Snowflake Intelligence](/zh-CN/snowflake-cortex-ai-snowflake-intelligence/) 的文章中有介绍。
+5. **收购后的整合。** 多套 ERP，一个报表层，并利用克隆搭建安全的测试环境。
+
+我会犹豫的情况：
+
+1. **高并发的事务型系统。** 混合表和 Snowflake Postgres 有帮助，但您的 ERP 和 MES 交易应该留在它们自己的数据库里。
+2. **实时设备控制。** Snowflake 适合分钟级，而不是毫秒级。把传感器数据流式导入没问题。闭合一个控制回路则不行。
+3. **严格的本地部署要求。** 不存在本地部署安装方式。
+4. **基于 Spark 的大量自定义机器学习和数据工程。** 可以做，但许多团队觉得 Databricks 更顺手。我的 [Snowflake 与 Databricks 对比](/zh-CN/snowflake-vs-databricks/)详细讨论了这一选择。
+
+### 雪花模型与星型模型：完全是另一回事
+
+搜索 Snowflake 的人常常会搜到“雪花模型”（snowflake schema）。它与这个产品毫无关系。雪花模型是一种数据建模模式，把维度表规范化拆分成子表，于是示意图像雪花一样分叉。
+
+星型模型则把每个维度保存在一张扁平的表中。这两种模型您都可以在 Snowflake 或任何其他数据仓库中构建。大多数 BI 团队偏好星型模型，因为查询更简单。
+
+## 我会从哪里开始
+
+签约之前，写下四个决定：您的合规状况需要哪个版本，用哪个云平台和区域，如何在各个 warehouse 之间划分工作负载，以及您的数据是保留 Snowflake 格式还是采用 Iceberg。请厂商和您的系统集成商按每个 warehouse 给出 credit 估算，而不是一个笼统的年度数字。大多数 Snowflake 的成本意外，其实是没人写下来的架构决策。
+
+如果 ERP 数据也在范围内，请先阅读 [SAP 数据迁移为什么失败](/zh-CN/why-sap-data-migration-fails-and-how-to-fix-it/)；同样的数据质量问题会跟着您进入任何平台。如果您希望就 Snowflake 决策获得第二意见，请[与我联系](/zh-CN/contact-noel-erp-support/)。
+
+## 常见问题
+
+<details>
+<summary>Snowflake 是做什么用的？</summary>
+
+主要用作云数据仓库，对 ERP、CRM 和运营数据等业务数据进行报表和分析。企业也用它与合作伙伴共享实时数据、通过 Snowpark 运行 Python 数据科学，以及在受治理的数据上构建 AI 应用。
+
+</details>
+
+<details>
+<summary>Snowflake 架构的三个层是什么？</summary>
+
+存储、计算和云服务。存储层把数据保存在压缩的列式微分区中。计算层由运行查询的虚拟 warehouse 组成。云服务层负责安全、元数据、查询优化和事务。存储和计算分别扩展、分别计费。
+
+</details>
+
+<details>
+<summary>Snowflake 是数据库还是数据仓库？</summary>
+
+两者都是，取决于定义。它是一个为分析型工作负载构建的 SQL 数据库，这就是它通常被称为云数据仓库的原因。有了 Iceberg 表、混合表和 Snowflake Postgres，它现在也在一定限度内覆盖了湖仓和部分事务型用例。
+
+</details>
+
+<details>
+<summary>Snowflake 可以在本地部署运行吗？</summary>
+
+不可以。Snowflake 只运行在 AWS、Microsoft Azure 和 Google Cloud 上。对于美国政府和国防工作负载，它在 AWS GovCloud 和 Azure Government 上提供 SnowGov 区域，这些区域要求使用 Business Critical 或更高版本。
+
+</details>
+
+<details>
+<summary>雪花模型和 Snowflake 公司有关系吗？</summary>
+
+没有。雪花模型是一种使用规范化维度表的数据建模模式。它比这家公司出现得更早，在任何数据仓库中都适用。
+
+</details>
+
+<details>
+<summary>受监管的企业需要哪个 Snowflake 版本？</summary>
+
+通常是 Business Critical。它增加了使用客户管理密钥的 Tri-Secret Secure、专用连接以及 HIPAA 和 PCI DSS 支持，也是政府区域的最低要求。Virtual Private Snowflake 则在此基础上提供不共享硬件的专用环境。
+
+</details>

@@ -1,0 +1,230 @@
+---
+title: "Databricks 的 Unity Catalog：把治理建置到位"
+h1: "Databricks 的 Unity Catalog：把治理建置到位"
+slug: "databricks-unity-catalog-data-governance"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/databricks-unity-catalog-data-governance.webp"
+heroAlt: "明亮潔白的資料中心走道，兩側是伺服器機架，盡頭有一道安全門禁"
+category: "data-and-ai"
+tags: ["databricks", "data-governance", "defence", "manufacturing"]
+author: "Noel D'Costa"
+metaTitle: "Databricks Unity Catalog：如何建置資料治理"
+metaDescription: "Databricks 的 Unity Catalog 是什麼？它的階層、授權、ABAC、血緣與稽核如何運作，以及受監管企業可實際採用的導入順序。"
+primaryKeyword: "Databricks Unity Catalog"
+excerpt: "Unity Catalog 是 Databricks 內所有資產的治理層：在一個地方控管存取、追蹤血緣，並證明誰動過什麼。本文說明它如何運作，以及如何設計才能到第三年仍然合理。"
+experienceSource: "Noel's first-person experience with Databricks on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts checked against official Databricks documentation and release notes, October 2026."
+keyTakeaways:
+  - "Unity Catalog 透過單一的三層命名空間 catalog.schema.object，治理資料表、檢視、volume、函式與模型"
+  - "每個雲端區域只有一個 metastore，所以真正的治理決策都落在目錄設計上"
+  - "ABAC 政策、受治理標籤與資料分類於 2026 年 4 月正式上市；DENY 政策仍為 Beta"
+  - "群組來自您的身分識別提供者，並擁有每一個正式環境目錄。絕對不要授權給個人"
+  - "Delta Sharing 現在改名為 OpenSharing（2026 年 6 月）；託管與外部 Iceberg 資料表於 2026 年 5 月正式上市"
+  - "從第一天就開啟稽核與血緣證據。等到稽核前才補做會很痛苦"
+pullQuote: "大多數 Unity Catalog 的問題，其實是有人試圖用權限去解決的命名與責任歸屬問題。"
+mentions:
+  - "Databricks"
+  - "Unity Catalog"
+  - "OpenSharing"
+  - "Delta Sharing"
+  - "Apache Iceberg"
+  - "UCX"
+  - "Hive metastore"
+  - "Lakehouse Federation"
+  - "Microsoft Entra ID"
+  - "SAP"
+  - "Oracle"
+  - "Microsoft Dynamics 365"
+originalUrl: "https://noeldcosta.com/databricks-unity-catalog-data-governance/"
+canonicalUrl: "https://noeldcosta.com/zh-TW/databricks-unity-catalog-data-governance/"
+locale: "zh-TW"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Unity Catalog 是 Databricks 的治理層。它控管誰能檢視與修改每一張資料表、檢視、檔案 volume、函式與 AI 模型，記錄它們之間的血緣，並留下存取紀錄，讓您能向稽核人員證明。
+
+如果您現在正在使用 Databricks，您不是已經在用它，就是正在移轉到它。舊有的 Hive metastore 正逐步退場，而每一項較新的 Databricks 功能都假設底層是 Unity Catalog。
+
+問題已經不是要不要採用它，而是您的目錄設計在經過三年的新團隊、新資料與一兩次稽核之後，是否仍然合理。
+
+在我參與過的製造業與國防專案中，技術很少是難的部分。難的是議定誰擁有哪些資料、環境如何隔離，以及資安團隊需要什麼證據。
+
+## Databricks 的 Unity Catalog 實際治理什麼
+
+所有東西都位於 **metastore** 之下，這是最上層的容器。往下，資料與 AI 資產使用三層命名空間：`catalog.schema.object`。對 `prod_finance.gl.journal_lines` 下的查詢，就指名了目錄、結構描述與資料表。
+
+您授予權限的對象稱為可保護物件（securable objects）。根據 [Unity Catalog 文件](https://docs.databricks.com/aws/en/data-governance/unity-catalog/)，它們分為兩類：
+
+1. **命名空間內的資產：** 資料表、檢視、volume（受治理的檔案儲存）、函式、模型與服務。
+2. **Metastore 層級的物件：** 儲存憑證、外部位置、連線（連到外部資料庫）與共享。
+
+其中兩個 metastore 層級的物件值得用白話解釋，因為它們決定了您的資料實際存放在哪裡。
+
+**儲存憑證**（storage credential）包裝了一個能存取儲存帳戶或 bucket 的雲端身分，例如 IAM 角色或受控識別。**外部位置**（external location）則把一個儲存路徑與一個憑證配對。兩者合起來，讓 Unity Catalog 能讀寫雲端儲存，而不必把金鑰交給使用者。
+
+接著是託管與外部的區別。託管資料表由 Unity Catalog 治理資料表並管理其檔案。外部資料表則只治理存取。
+
+Databricks 現在建議所有新資料都使用託管資料表，外部資料表主要保留給 Hive 升級使用。我同意。有其他工具寫入同一路徑，通常代表應該修正管線，而不是讓資料表永遠維持外部。
+
+有一個限制影響一切：每個雲端區域只能有一個 metastore。您無法靠增加 metastore 來解決隔離問題，要靠目錄來解決。
+
+## 存取控管：授權、列篩選、欄遮罩與 ABAC
+
+Unity Catalog 的權限是標準的 SQL 授權，並會向下繼承。對一個目錄的授權，適用於其中每一個結構描述與資料表。使用者需要 `USE CATALOG` 與 `USE SCHEMA` 才能觸及資料表，再需要 `SELECT` 才能讀取。
+
+```sql
+GRANT USE CATALOG ON CATALOG prod_finance TO `finance-analysts`;
+GRANT USE SCHEMA ON SCHEMA prod_finance.gl TO `finance-analysts`;
+GRANT SELECT ON SCHEMA prod_finance.gl TO `finance-analysts`;
+```
+
+授權回答的是「這個群組能不能讀這張資料表」。受監管的資料需要更細的答案，這就是其他控管機制派上用場的地方。
+
+下表摘要截至 2026 年 10 月的主要存取控管與其狀態。
+
+| 控管機制 | 作用 | 狀態（2026 年 10 月） |
+|---|---|---|
+| 授權與擁有權 | 物件層級權限，從目錄繼承到結構描述再到物件 | 正式上市 |
+| 資料表層級的列篩選與欄遮罩 | 附加在單一資料表上的 SQL 函式，用來隱藏列或遮罩值 | 正式上市 |
+| ABAC 列篩選與欄遮罩政策 | 在目錄、結構描述或資料表層級定義一條政策，適用於所有帶有受治理標籤的物件 | 自 2026 年 4 月 28 日起 GA |
+| 受治理標籤 | 帳戶層級的標籤，受控管其鍵、值以及誰可以指派 | 自 2026 年 4 月 2 日起 GA |
+| 資料分類 | 掃描資料表並標記個資等敏感資料 | 自 2026 年 4 月 20 日起 GA；自訂分類器為 Beta |
+| ABAC DENY 政策與 metastore 層級政策 | 優先於授權的明確拒絕；metastore 範圍的政策 | Beta |
+| 跨引擎 ABAC | 外部引擎讀取受 ABAC 保護的託管資料表，政策由 Databricks serverless 運算強制執行 | 自 2026 年 10 月 1 日起 GA |
+
+日期取自 [Databricks 2026 年 4 月版本資訊](https://docs.databricks.com/aws/en/release-notes/product/2026/april)與 2026 年 10 月的版本資訊。
+
+ABAC（屬性型存取控管）是對大型環境影響最大的改變。您不必為每張資料表寫一個遮罩，而是為欄位加上標籤，例如 `classification = export_controlled`，再寫一條政策，對指定群組以外的所有人遮罩每一個帶有該標籤的欄位。
+
+新資料表只要一加上標籤就受到保護。資料分類功能可以建議要加哪些標籤。
+
+先確認運算環境。受 ABAC 保護的資料表需要 serverless 運算，或 Databricks Runtime 16.4 以上版本。較舊的叢集完全無法讀取。
+
+有兩個陷阱我會及早提出。同一位使用者在同一欄位上遇到互相衝突的政策時，查詢會被錯誤擋下。
+
+另外，如果某條管線的執行身分落在遮罩範圍內，重新整理後的資料可能會以遮罩後的狀態儲存。請刻意豁免服務身分，並記錄原因。
+
+## 血緣、稽核與共享
+
+在附加到 metastore 的任何工作區中，透過 Databricks SQL 與 Spark DataFrames 執行的查詢，血緣都會自動擷取，細到欄位層級。涵蓋筆記本、作業、管線與儀表板。當程式碼以儲存路徑參照資料表時，欄位血緣會遺失，這又是一個淘汰路徑式存取的理由。
+
+稽核證據來自系統資料表。`system.access.audit` 存放稽核事件，在[系統資料表文件](https://docs.databricks.com/aws/en/admin/system-tables/)中仍標示為公開預覽（Public Preview）。
+
+血緣與計費資料表與它並列，提供 365 天的免費保留期。預設只有帳戶與 metastore 管理員看得到系統資料表，所以請及早決定誰能取得讀取權，以及是否要把稽核資料複製到您的 SIEM 以延長保留。
+
+共享功能今年改了名字。Databricks 於 [2026 年 6 月 10 日宣布 OpenSharing](https://www.databricks.com/company/newsroom/press-releases/databricks-announces-opensharing)，作為 Delta Sharing 協定的下一個版本，現由 Linux Foundation 託管，並延伸到 AI 資產與 Iceberg 用戶端。
+
+您在較舊的文件與合約中仍會看到「Delta Sharing」。共享（share）是一個 Unity Catalog 物件，而 Databricks 對 Databricks 的共享，也是在不同區域 metastore 之間搬移資料的方式。
+
+對於混合環境，託管與外部 Apache Iceberg 資料表已於 2026 年 5 月 21 日正式上市。外部資料表透過 Lakehouse Federation，從 AWS Glue 或 Snowflake Horizon 等目錄讀取。Spark、Flink 與 Trino 等引擎可以使用 Unity Catalog 的 Iceberg REST catalog 端點。
+
+LF AI & Data Foundation 底下也有一個開源版 Unity Catalog，但它是沙盒階段的專案，不是託管服務。未經測試，不要把退場計畫建立在它上面。
+
+## 行得通的治理設計
+
+目錄是主要的隔離單位。Databricks 的 [Unity Catalog 最佳實務](https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices)指出，目錄通常對應到一個環境、一個團隊、一個事業單位，或它們的組合。大多數真實的設計都是組合。
+
+<compare-split title="切分目錄的兩種方式" left-label="每個環境一個目錄" left-points="dev、test 與 prod 目錄，每個領域一個結構描述|容易把每個目錄綁定到其工作區|領域在單一目錄內成長後，擁有權會變得模糊|適合較小的團隊與早期導入" right-label="每個領域加環境一個目錄" right-points="prod_finance、prod_quality、dev_finance 等|每個領域群組擁有自己的目錄|權責清楚，稽核範圍也更乾淨|要命名、綁定與授權的目錄較多"></compare-split>
+
+只要企業的資料團隊超過寥寥幾個，我會預設採用領域加環境。一開始需要更多命名紀律。但兩年後，它能省下「大家都在查、卻沒人維護的那張資料表到底歸誰」的爭論。
+
+其餘的設計可以歸結為四條規則：
+
+1. **群組來自您的身分識別提供者。** 透過自動身分管理把使用者與群組佈建到 Databricks 帳戶；如果您的提供者不支援，則使用 SCIM。在 Microsoft Entra ID、Okta 或同類系統中定義群組，而不是在 Databricks 中。有人離職時，存取權隨其目錄帳戶一起移除。
+2. **由群組擁有正式環境物件。** Databricks 自己的建議是把正式環境目錄與結構描述的擁有權指派給群組，絕不給個人。擁有者可以授權他人存取，所以由個人擔任擁有者就是一個長期存在的例外。
+3. **把目錄綁定到工作區。** 只綁定到正式環境工作區的正式目錄，無論授權怎麼設定，都無法從沙盒查詢。
+4. **先分類，再授權。** 議定一份簡短的標籤詞彙（敏感度、個人資料、出口管制、來源系統）作為受治理標籤，並據以撰寫 ABAC 政策。
+
+在製造業，我依工廠系統（也就是 OT 與來源系統領域）來組織目錄，而不是依廠區。來自歷史資料庫、MES 與感測器的 OT 資料放在自己的目錄中，由營運或工程資料團隊擁有。來自 ERP（SAP、Oracle 或 Microsoft Dynamics 365）、品質與供應鏈的 IT 資料則放在其他目錄。
+
+供分析師使用、經過整理與結合的資料放在第三組目錄。OT 與 IT 的邊界因此在目錄本身就清楚可見。如果 ERP 資料擷取在範圍內，我關於 [SAP 資料移轉為何失敗](/zh-TW/why-sap-data-migration-fails-and-how-to-fix-it/)的筆記同樣適用於 ERP 資料源。
+
+## 國防角度：最小權限、隔離與證據
+
+在國防專案中，預期資安團隊會問四個問題。誰能看到受出口管制的資料？它如何與其他資料隔離？
+
+它存放在哪裡？您能否證明過去一年中任何一天的上述情況？
+
+只要您為此而設計，Unity Catalog 能回答大部分問題：
+
+1. **最小權限。** 不要在 metastore 或目錄層級授權給範圍廣泛的群組。在結構描述層級授權給具名群組，並對標記為受管制的欄位使用 ABAC 遮罩。DENY 政策要等到脫離 Beta、而且您的認證機構接受後才使用。
+2. **隔離。** 受管制資料使用獨立的目錄，有自己的託管儲存位置，並綁定到專用工作區。Databricks 建議以目錄層級的託管儲存作為主要隔離單位，這正好適合這種需求。
+3. **資料落地。** 每個區域一個 metastore，代表除非有人共享，資料會留在其儲存所在的區域。請把每一個 OpenSharing 共享與每一條跨區域連結，都當作需要核准的資料落地決策。
+4. **稽核證據。** 血緣加上 `system.access.audit`，匯出到您的 SIEM，就能知道誰存取了什麼、資料流向哪裡。請記得稽核資料表仍是公開預覽。在我的國防工作中，資安團隊要求把稽核日誌複製到他們自己的 SIEM，而不是只留在 Databricks 系統資料表裡。請從一開始就把這條資料流納入計畫。
+
+Unity Catalog 不會替您決定什麼算機密或受 ITAR 管制的資料，也不能取代認證。有些國防工作負載根本不能在商用雲端區域執行。
+
+目錄設計在這裡仍有幫助：它在可以進入平台與不可以進入平台的資料之間，畫出一條清楚的界線。如果您正在撰寫位於平台之上的政策層，我的 [AI 治理框架指南](/zh-TW/ai-governance-framework-guide-building-a-responsible-ai-plan/)涵蓋了角色與核准的部分。
+
+## 實際可行的導入順序
+
+這是我會為從 Hive metastore 移轉、或從零開始的企業採用的順序。
+
+1. **議定目錄模型與命名慣例。** 領域加環境，寫成文件，由資料擁有者簽核。之後再改，所有東西都要重新命名。
+2. **連接身分識別提供者。** 帳戶層級佈建、在目錄服務中定義群組，並為 Unity Catalog 工作區關閉工作區層級的 SCIM。
+3. **設定儲存憑證與外部位置。** 由平台群組擁有。其他人都不給 `CREATE EXTERNAL LOCATION`。
+4. **建立帶有託管儲存與工作區綁定的目錄。** 正式環境目錄從第一天起就由群組擁有。
+5. **定義受治理標籤並開啟資料分類。** 在依據分類結果撰寫政策之前，先審查它的發現。
+6. **為敏感欄位撰寫 ABAC 政策。** 在您使用的每一種運算類型上，以真實使用者測試，包括任何仍低於 Runtime 16.4 的叢集。
+7. **從 Hive metastore 移轉。** Databricks 現在[建議先將 Hive metastore 聯合（federate）](https://docs.databricks.com/aws/en/data-governance/unity-catalog/migrate)，再就地升級資料表。UCX 對大型環境有幫助，但它是 Databricks Labs 專案，由社群維護而非官方支援。請為此做好準備。
+8. **開啟稽核匯出與血緣審查。** 授予系統資料表的讀取權、建立 SIEM 資料流，並議定誰審查什麼。
+9. **停用 Hive metastore 存取**，在所有東西都移轉完成之後，避免有人悄悄在舊路徑上繼續建置。
+
+## 應避免的錯誤
+
+1. **授權給個人。** 一週內還行得通。之後就沒有人能回答誰能存取什麼。
+2. **一個巨大的目錄，每個團隊一個結構描述。** 擁有權與稽核範圍變得模糊，日後還得重建。
+3. **讓資料表「暫時」維持外部。** 您會失去託管資料表的功能，而每個檔案都有兩個擁有者。
+4. **只在一種叢集類型上測試政策。** ABAC 在不同運算環境下行為不同；舊版 runtime 會直接失敗。
+5. **把稽核當成後續階段。** 稽核人員會問您啟用之前那段期間的情況。
+
+## 從哪裡開始
+
+如果您還在早期，在任何人建立目錄之前，先把目錄模型與標籤詞彙寫在一頁紙上。如果您正在移轉途中，執行評估，列出每一張仍為外部或仍在 Hive metastore 上的資料表，並為每一張指定擁有者與完成日期。
+
+若要看更全面的介紹，請從 [Databricks 用來做什麼](/zh-TW/what-is-databricks-used-for/)開始，並在為 ABAC 規劃 serverless 運算規模之前，先看 [Databricks 定價](/zh-TW/databricks-pricing-explained/)。如果您正在比較平台，我的 [Snowflake vs Databricks 比較](/zh-TW/snowflake-vs-databricks/)涵蓋了兩邊的治理。我協助製造業與國防企業做這類設計決策；如果第二意見對您有幫助，[歡迎預約通話](/zh-TW/contact-noel-erp-support/)。
+
+## 常見問題
+
+<details>
+<summary>Databricks 的 Unity Catalog 是什麼？</summary>
+
+Unity Catalog 是 Databricks 的治理層。它提供單一位置來管理對資料表、檢視、檔案 volume、函式與 AI 模型的存取，自動擷取血緣，並在稽核系統資料表中記錄存取。資產以 catalog.schema.object 定址，位於每個區域唯一的 metastore 之下。
+
+</details>
+
+<details>
+<summary>Databricks 的 ABAC 已經正式上市了嗎？</summary>
+
+是的。用於列篩選與欄遮罩的屬性型存取控管政策於 2026 年 4 月 28 日正式上市，受治理標籤與資料分類也在 2026 年 4 月 GA。截至 2026 年 10 月，DENY 政策、metastore 層級政策與自訂分類器仍為 Beta。
+
+</details>
+
+<details>
+<summary>Delta Sharing 和 OpenSharing 是同一個東西嗎？</summary>
+
+是的。Databricks 於 2026 年 6 月宣布 OpenSharing，作為 Delta Sharing 協定的下一步演進，現由 Linux Foundation 託管，並延伸到 AI 資產與 Iceberg 用戶端。Databricks 文件現在以 OpenSharing 這個名稱說明共享功能。
+
+</details>
+
+<details>
+<summary>Unity Catalog 應該用託管資料表還是外部資料表？</summary>
+
+所有新資料都用託管資料表。Databricks 建議這麼做，因為這樣 Unity Catalog 會管理檔案、維護與效能功能。只有在其他系統必須擁有檔案，或在 Hive metastore 升級期間，才保留外部資料表，並規劃日後轉換。
+
+</details>
+
+<details>
+<summary>如何從 Hive metastore 移轉到 Unity Catalog？</summary>
+
+Databricks 建議先把 Hive metastore 聯合為外部目錄，再就地升級資料表而不搬移資料。對大型環境，Databricks Labs 的 UCX 工具可以評估就緒程度，並移轉群組、權限與資料表，但 UCX 由社群維護而非官方支援。
+
+</details>
+
+<details>
+<summary>目錄應該依環境還是依業務領域來組織？</summary>
+
+對大多數企業來說，兩者都要：每個領域在每個環境各一個目錄，例如 prod_finance 與 dev_finance。這讓每個領域群組都有清楚的擁有權與乾淨的稽核範圍。較小的團隊可以從每個環境一個目錄、每個領域一個結構描述開始。
+
+</details>

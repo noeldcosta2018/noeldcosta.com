@@ -1,0 +1,230 @@
+---
+title: "Databricks vs Microsoft Fabric：決策指南"
+h1: "Databricks vs Microsoft Fabric：決策指南"
+slug: "databricks-vs-microsoft-fabric"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/databricks-vs-microsoft-fabric.webp"
+heroAlt: "Noel D'Costa 站在明亮的辦公室裡，旁邊是一間玻璃會議室，白板上畫著資料架構草圖"
+category: "data-and-ai"
+tags: ["databricks", "microsoft-fabric", "data-platform-cost"]
+author: "Noel D'Costa"
+metaTitle: "Databricks vs Microsoft Fabric：選哪一個，何時兩者並用"
+metaDescription: "以 Microsoft 為主的企業如何比較 Databricks 與 Microsoft Fabric：架構、牌價、Power BI、治理、AI 與政府雲，並附上決策原則。"
+primaryKeyword: "Databricks Microsoft Fabric 比較"
+excerpt: "對以 Microsoft 為主、主要產出是 Power BI 的企業來說，Fabric 是較快的路。Databricks 則是更強的工程與 ML 平台。許多企業最後兩者並用，只要是刻意設計的，這也可以是正確答案。"
+experienceSource: "Noel's first-person experience with Databricks on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts and prices checked against official Microsoft Learn, Azure pricing and Databricks documentation, October 2026."
+keyTakeaways:
+  - "Fabric 是您購買後共用的容量；Databricks 是依工作負載計量的用量。大多數成本意外都來自這個差異。"
+  - "當 Power BI 是主要使用端，團隊以 SQL 與 Power BI 為主時，選 Fabric。"
+  - "當大量工程、串流、ML 或多雲比 BI 的便利性更重要時，選 Databricks。"
+  - "兩者並用很常見，也行得通：Azure Databricks 負責工程，Fabric 透過鏡像與 Direct Lake 負責 Power BI。"
+  - "鏡像不會把 Unity Catalog 的權限帶進 Fabric。請規劃兩套安全模型，或一個刻意設計的交接點。"
+  - "在美國政府雲中，兩個平台目前都有實質缺口。設計任何東西之前，先確認功能清單。"
+pullQuote: "出問題的很少是平台本身，而是兩個平台之間的營運模式。"
+mentions:
+  - "Databricks"
+  - "Azure Databricks"
+  - "Microsoft Fabric"
+  - "OneLake"
+  - "Unity Catalog"
+  - "Power BI"
+  - "Direct Lake"
+  - "Microsoft Purview"
+  - "Genie"
+  - "Agent Bricks"
+  - "Copilot in Fabric"
+  - "Azure Government"
+originalUrl: "https://noeldcosta.com/databricks-vs-microsoft-fabric/"
+canonicalUrl: "https://noeldcosta.com/zh-TW/databricks-vs-microsoft-fabric/"
+locale: "zh-TW"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Databricks 與 Microsoft Fabric 之間的選擇，關鍵在於誰在使用資料。如果大部分資料最後都進到 Power BI，而您的團隊習慣用 SQL 思考，Fabric 通常是更快也更簡單的選擇。如果您的難題在於工程、串流、機器學習或不只一朵雲，Databricks 是更強的平台。
+
+對許多以 Microsoft 為主的企業來說，誠實的答案是兩者都用。Azure Databricks 負責繁重的工程。
+
+Fabric 與 Power BI 服務業務端。這行得通，但前提是您刻意設計兩者之間的接縫。
+
+在我參與過的製造業與國防專案中，決策很少取決於功能清單。關鍵在於成本模式、技能、安全邊界，以及資料被允許存放在哪裡。
+
+## 兩個平台如何建構
+
+兩者都是建立在開放資料表格式上的 Lakehouse。差別在於誰擁有儲存，以及您如何為運算付費。
+
+**Microsoft Fabric** 是 SaaS 平台。所有資料都落在 OneLake，每個租用戶一個邏輯資料湖，資料表以 Delta 格式儲存。Lakehouse、warehouse、pipelines、Real-Time Intelligence 與 Power BI 全都使用同一個共用容量。
+
+Shortcuts 可以指向其他儲存中的資料而不需複製。Mirroring（鏡像）則用來帶入資料庫與外部目錄。
+
+**Databricks** 執行在您的雲端帳戶中（在 Azure 上即為 Azure Databricks，是 Microsoft 的第一方服務）。您的資料存放在您自己的儲存中，由 Unity Catalog 治理。運算方式包括叢集、SQL warehouse 或 serverless，依工作負載以 Databricks Units（DBU）計量。
+
+在開放性上，差距已經縮小。OneLake 把中繼資料虛擬化，讓 Delta 資料表可以當作 Iceberg 讀取，Iceberg 資料表也可以當作 Delta 讀取。但有實際限制：僅支援 Parquet、輸出為 Iceberg V2，而 equality deletes 會讓轉換失效。
+
+Unity Catalog 的託管 Iceberg 資料表已正式上市，外部引擎可透過 Unity Catalog 的 Iceberg REST Catalog API 讀寫。兩個平台都不會把您的資料鎖在專有格式裡。但兩者都會鎖住您的管線、安全模型與技能，這才是轉換成本真正所在。
+
+對以 Microsoft 為主的企業來說，兩者之間的橋梁最重要。Fabric 可以將 [Azure Databricks Unity Catalog 鏡像](https://learn.microsoft.com/en-us/fabric/mirroring/azure-databricks)為一個目錄項目，此功能已正式上市。只有中繼資料會被鏡像。
+
+資料則透過 shortcuts 就地讀取。有一個陷阱：Unity Catalog 的權限不會被帶過去。Fabric 套用的是它自己的權限模型。
+
+## Databricks 與 Fabric 定價：容量 vs 用量
+
+**Fabric** 以 F-SKU 銷售容量，從 F2 到 F8192，以容量單位（CU）計算。Azure 按秒計費、無需承諾，或者您也可以預留一年。在 East US，隨用隨付的牌價是每 CU 小時 $0.18。
+
+這代表一個 F64 每小時約 $11.52，如果一直開著，每月大約 $8,400。Microsoft 表示，預留方案比隨用隨付節省約 41%。
+
+OneLake 熱儲存的牌價是每 GB 每月 $0.026。請參考 [Microsoft Fabric 定價頁面](https://azure.microsoft.com/en-us/pricing/details/microsoft-fabric/)。
+
+F64 也是一個授權門檻。根據 [Fabric 授權文件](https://learn.microsoft.com/en-us/fabric/enterprise/licenses)，低於 F64 時，每位檢視 Power BI 內容的人都需要 Pro 或 Premium Per User 授權。
+
+在 F64 以上，擁有免費授權並具備檢視者角色的使用者就能閱讀報表。如果有幾百位報表讀者，光這一點就可能決定 SKU。
+
+**Azure Databricks** 依工作負載類型收取 DBU 費用，傳統運算（classic compute）還要加上底層的 Azure 虛擬機器。Serverless 費率已包含運算。
+
+以下是 East US Premium 的牌價。請參考 [Azure Databricks 定價頁面](https://azure.microsoft.com/en-us/pricing/details/databricks/)。
+
+1. Jobs compute：每 DBU 小時 $0.30。
+2. All-purpose compute（互動式筆記本）：每 DBU 小時 $0.55。
+3. SQL Pro：每 DBU 小時 $0.55。Serverless SQL：每 DBU 小時 $0.70。
+4. Serverless jobs：每 DBU 小時 $0.45。Serverless 互動式運算：每 DBU 小時 $0.95。
+
+以上皆為 East US 牌價，於 2026 年 10 月查核。其他區域價格不同。
+
+企業合約、Databricks 預購承諾與 Azure 預留方案都會改變實際數字。我的 [Databricks 定價指南](/zh-TW/databricks-pricing-explained/)會更深入說明 DBU。
+
+實務上這代表什麼：
+
+1. **Fabric 可預測，但是共用的。** 一個繁重的 Spark 作業就可能拖慢同一容量上的 Power BI 報表。必須有人像管理共用伺服器一樣管理容量。
+2. **Databricks 計費精細，但容易漏財。** 每個工作負載只為實際用量付費。叢集忘了關、warehouse 規格過大，以及用 all-purpose compute 跑排程作業，是常見的漏洞。
+3. **用真實工作負載比較總成本。** 把您前十大管線與最忙的報表時段，分別在兩個平台上估價。一張牌價試算表什麼也證明不了。
+
+## 並列比較
+
+下表涵蓋以 Microsoft 為主的企業通常會據以決定的幾個重點。
+
+| 評估項目 | Microsoft Fabric | Databricks（Azure Databricks） |
+|---|---|---|
+| 交付模式 | SaaS，整個租用戶共用一個 OneLake | 平台位於您的雲端帳戶與儲存中 |
+| 定價 | F-SKU 容量，隨用隨付或預留 | 依工作負載計 DBU，傳統運算另加 VM |
+| 資料工程深度 | SQL、pipelines、Dataflows 與 Spark 筆記本都不錯 | 更深入：Spark 調校、串流、宣告式管線、CI/CD |
+| ML 與 GenAI | Copilot in Fabric、Fabric 資料代理（GA）、ML 模型與實驗 | Model serving、MLflow、Genie、Agent Bricks |
+| Power BI | 原生；OneLake 上的 Direct Lake | 透過鏡像進入 Fabric，或使用 DirectQuery 與 Import |
+| 治理 | Fabric 權限、OneLake 安全性、Purview、敏感度標籤 | Unity Catalog；Purview 可以掃描它 |
+| 多雲 | 僅限 Azure | Azure、AWS 與 Google Cloud |
+| 技能契合 | Power BI、SQL 與 Microsoft 資料團隊 | 資料工程師、Python 與 Spark、ML 工程師 |
+
+**Power BI 與 Direct Lake。** Direct Lake 讓 Power BI 語意模型直接把 OneLake 中的 Delta 資料表讀進記憶體，不需要匯入重新整理。這是選擇 Fabric 最有力的理由。
+
+它需要 Fabric 容量，資料表上限隨 SKU 提高。鏡像過來的 Azure Databricks 目錄是受支援的 Direct Lake 來源，因此 Databricks 建好的金層資料表可以供 Direct Lake 報表使用。
+
+**ML 與 GenAI。** Fabric 資料代理可以用自然語言回答 OneLake 資料上的問題，已正式上市。部分整合，例如從 Microsoft 365 Copilot 使用它們，仍在預覽階段。Copilot in Fabric 需要 F2 以上的付費容量，並會消耗該容量。
+
+在 Databricks 上，Genie 讓業務使用者用自然語言查詢受治理的資料表。Agent Bricks 則是以程式碼建構與部署自訂代理的平台。
+
+Databricks 現在已將 Knowledge Assistant 與 Supervisor Agent 列為舊版功能，並建議新的低程式碼工作改用 Genie Agents。我的 [Genie 與 Agent Bricks 文章](/zh-TW/databricks-genie-agent-bricks/)有詳細說明。
+
+**治理。** 對於跨工作區與跨雲的資料表、模型、血緣與細緻存取控管，Unity Catalog 是更成熟的單一控制平面。Fabric 的治理能力進步很快。
+
+在 Microsoft 環境中，Purview 往往已經是企業目錄，而且它可以掃描 Unity Catalog 的中繼資料與血緣。我的 [Unity Catalog 治理指南](/zh-TW/databricks-unity-catalog-data-governance/)說明了 Databricks 這一側。
+
+## 誠實看待「兩者並用」模式
+
+我看到的多數以 Microsoft 為主的企業，並不會只選一個。它們用 Azure Databricks 做資料擷取、工程與 ML，再把整理好的資料表開放給 Fabric 供 Power BI 使用。有了目錄鏡像與 Direct Lake，這個模式現在已有完善的支援。
+
+當以下三件事成立時，它就行得通：
+
+1. **每一層只由一個平台負責。** Databricks 負責銅層到金層。Fabric 負責語意模型與報表。沒有人在兩邊重建同一張資料表。
+2. **安全性要設計兩次，但只定一次規則。** 鏡像不會複製 Unity Catalog 權限。決定在 Fabric 中由誰負責列層級與欄層級規則，並把對應關係記錄下來。
+3. **兩邊的帳單由同一個人負責。** DBU 與容量落在不同的成本科目。沒有單一負責人，每個團隊只會優化自己的平台，總成本反而上升。
+
+當 Fabric 不知不覺變成第二個工程平台，最後出現兩個互相矛盾的金層時，它就會失敗。在我看過「兩者並用」出錯的案例中，原因都是兩件事：平台之間的整合沒做好，而且沒有人知道哪個平台擁有資料。我寧可在第一天就定好規則，也不要事後再來解開。
+
+ERP 資料（SAP、Oracle 或 Microsoft Dynamics 365）也是同樣的邏輯。只在一個地方落地並建模一次。我關於 [ERP 現代化與 Clean Core](/zh-TW/erp-modernization-2025-cloud-ai-clean-core/) 的筆記說明了為什麼 ERP 這一側和平台一樣重要。
+
+## 國防與製造業的考量
+
+**製造業。** 工廠資料是壓力測試。歷史資料庫與 MES 資料源、高頻率的感測器串流，以及與 ERP 結合的品質與維護紀錄。Fabric 的 Real-Time Intelligence（eventstreams 與 eventhouses）處理營運儀表板表現不錯。
+
+對於大規模的串流工程、預測性維護的特徵管線，以及感測器資料上的 ML，我會用 Databricks。在我的工作中，感測器與機台資料上的串流與機器學習，正是它的價值所在。
+
+**國防。** 主權與隔離是第一優先。機密與非機密環境必須分開。受出口管制的資料（ITAR 這類）需要嚴格的存取控管與稽核。
+
+專案一跑就是幾十年。在這裡，設計任何東西之前都要先確認可用性，因為政府雲的進度落後於商用 Azure。
+
+1. **GCC High 中的 Fabric。** 根據 [Microsoft Learn](https://learn.microsoft.com/en-us/fabric/enterprise/us-government-community-cloud-high)（2026 年 10 月查核），Fabric 執行於 US Gov Virginia 與 US Gov Texas。核心工作負載可用，包括 lakehouse、warehouse、pipelines，以及搭配 Direct Lake 的 Power BI。客戶自管金鑰、大多數鏡像來源、工作區 Private Link 與 Copilot for Power BI 不受支援。GCC High 的 FedRAMP High 授權仍在評估中。
+2. **Azure Government 中的 Azure Databricks。** 根據 [Azure Databricks 區域功能清單](https://learn.microsoft.com/en-us/azure/databricks/resources/feature-region-support)（2026 年 10 月 1 日更新），US Gov 區域不支援 Databricks SQL 與 Unity Catalog，也沒有 serverless 與較新的 AI 功能。Databricks 已宣布計畫將完整平台帶到 Azure Government。請在您做決定的當天，確認您所在區域已上線的功能。
+
+在美國以外，也是同樣的紀律。查核您受約束的那個 Azure 區域的區域對照表。在某些區域，有幾項 Databricks serverless 與 AI 功能需要跨地理區處理，這對主權資料來說可能根本不可行。
+
+## 決策原則：Fabric、Databricks 或兩者並用
+
+**在以下情況選擇 Fabric：**
+
+1. Power BI 是主要使用端，而且您想要 Direct Lake。
+2. 您的團隊以 SQL、Power BI 與 Microsoft 為主，Spark 經驗不深。
+3. 您想要單一容量帳單與 SaaS 營運，而不是平台工程。
+4. 您有數百位報表檢視者，F64 授權讓數字划算。
+
+**在以下情況選擇 Databricks：**
+
+1. 難的是資料工程、串流或 ML，而不是報表。
+2. 您使用不只一朵雲，或預期會如此。
+3. 您需要 Unity Catalog 作為跨多個工作區的單一治理平面。
+4. 您需要依工作負載嚴格控管成本，並具備管理所需的技能。
+
+**在以下情況兩者並用：** 您已經把 Azure Databricks 運作得很好，而業務端都在 Power BI 上。把 Unity Catalog 鏡像到 Fabric，報表使用 Direct Lake，並寫下每一層由誰負責。
+
+如果您已經有一個成熟的 Databricks 平台，不要為了在 BI 上省錢而把它移轉到 Fabric。更廣的觀點請參考我的 [Snowflake vs Databricks 比較](/zh-TW/snowflake-vs-databricks/)。
+
+## 下一步該做什麼
+
+用三個真實工作負載做一次為期兩週的同條件測試：一條繁重的管線、一個主管用的 Power BI 模型、一個 ML 或 AI 使用情境。衡量每次執行的成本、重新整理延遲，以及團隊需要投入的工作量。請廠商或您的系統整合商依您談定的費率，為這一組工作負載精確估價。
+
+問每家廠商三個問題：在我的區域哪些功能是 GA、哪些是預覽；用量加倍時成本會怎樣；以及安全性如何跨越接縫運作。
+
+如果您想在平台決策或測試設計上聽取獨立意見，這正是我協助企業處理的事。您可以[預約 30 分鐘的通話](/zh-TW/contact-noel-erp-support/)。
+
+## 常見問題
+
+<details>
+<summary>Microsoft Fabric 會取代 Azure Databricks 嗎？</summary>
+
+不會。Azure Databricks 仍然是 Azure 的第一方服務，Microsoft 也有文件說明兩者如何協同運作。Fabric 可以鏡像 Azure Databricks Unity Catalog（已正式上市），讓 Power BI 透過 Direct Lake 使用 Databricks 資料表而不需複製資料。許多企業兩者並用。
+
+</details>
+
+<details>
+<summary>Fabric 比 Databricks 便宜嗎？</summary>
+
+這取決於工作負載組合。Fabric 是共用容量（East US 牌價每 CU 小時 $0.18，一年預留約便宜 41%）。Databricks 依工作負載收取 DBU，傳統運算另加 VM。請把您自己的主要工作負載在兩邊都估價。
+
+</details>
+
+<details>
+<summary>沒有 Fabric，Power BI 也能使用 Databricks 資料嗎？</summary>
+
+可以。Power BI 以 Import 或 DirectQuery 模式連接 Databricks SQL warehouse。Direct Lake 需要 Fabric 容量，而鏡像過來的 Azure Databricks 目錄是受支援的 Direct Lake 來源。
+
+</details>
+
+<details>
+<summary>Unity Catalog 的安全設定會延續到 Fabric 嗎？</summary>
+
+不會。Fabric 鏡像 Azure Databricks 目錄時，鏡像的是中繼資料，並透過 shortcuts 讀取資料。Unity Catalog 的政策與權限不會被鏡像，因此適用的是 Fabric 自己的權限模型。請在 Fabric 端設計並記錄存取規則。
+
+</details>
+
+<details>
+<summary>Azure Government 中可以使用 Microsoft Fabric 嗎？</summary>
+
+Fabric 在 GCC High 環境中執行於 US Gov Virginia 與 US Gov Texas，功能範圍比商用版 Fabric 窄。根據 Microsoft Learn（2026 年 10 月），客戶自管金鑰、大多數鏡像來源與 Copilot for Power BI 不受支援。GCC High 的 FedRAMP High 仍在評估中。規劃前請先確認最新清單。
+
+</details>
+
+<details>
+<summary>機器學習用 Databricks 還是 Fabric 比較好？</summary>
+
+Databricks 的 ML 與 GenAI 工具更深入：MLflow、model serving、Genie，以及用於自訂代理的 Agent Bricks。Fabric 涵蓋 ML 實驗與模型、資料代理（GA）與 Copilot，其資料代理也可以從 Microsoft Foundry 使用（預覽中）。如果 ML 是核心能力而不是附加功能，Databricks 通常是更強的基礎。
+
+</details>

@@ -1,0 +1,223 @@
+---
+title: "De prijzen van Snowflake uitgelegd: credits, edities en kosten"
+h1: "De prijzen van Snowflake uitgelegd: credits, edities en kosten"
+slug: "snowflake-pricing-credits-explained"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/snowflake-pricing-credits-explained.webp"
+heroAlt: "Noel D'Costa naast een financebureau met een kostendashboard en geprinte facturen"
+category: "data-and-ai"
+tags: ["snowflake", "data-platform-cost"]
+author: "Noel D'Costa"
+metaTitle: "Prijzen van Snowflake uitgelegd: credits, edities, kosten"
+metaDescription: "De prijzen van Snowflake helder uitgelegd: creditprijs per editie en regio, warehousecredits per uur, opslag, AI- en serverless kosten, en hoe u uitgaven verlaagt."
+primaryKeyword: "snowflake prijzen"
+excerpt: "Snowflake rekent compute af in credits, opslag per terabyte en dataverplaatsing per terabyte. Dit kost elk onderdeel tegen lijstprijs, hier groeien rekeningen zonder dat iemand het merkt, en deze maatregelen tref ik vóór go-live."
+experienceSource: "Noel's first-person experience with Snowflake on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts and prices checked against official Snowflake documentation and the Snowflake Service Consumption Table effective 9 October 2026, checked October 2026."
+keyTakeaways:
+  - "Compute is de rekening. Een credit kost on demand $2.00 tot $9.75 tegen lijstprijs, afhankelijk van editie, cloud en regio"
+  - "Bij elke stap in warehousegrootte verdubbelt het credittarief: X-Small verbruikt 1 credit per uur, 4X-Large verbruikt er 128"
+  - "Opslag kost tegen lijstprijs ongeveer $23 per gecomprimeerde TB per maand in Amerikaanse regio's en is zelden de regel die een CFO verrast"
+  - "Serverless functies, cloud services boven de toegestane 10% en Cortex AI-credits vallen buiten uw warehousebudget"
+  - "Capaciteitscontracten geven korting op platformcredits, maar die korting geldt niet voor AI-credits"
+  - "Stel auto-suspend, resource monitors, budgetten en tagging in vóór de eerste productieload, niet na de eerste factuur"
+pullQuote: "Snowflake wordt zelden duur door de prijs per credit. Het wordt duur omdat niemand eigenaar is van de warehouses."
+mentions:
+  - "Snowflake"
+  - "Snowflake Cortex"
+  - "Snowpark Container Services"
+  - "Snowpipe"
+  - "Query Acceleration Service"
+  - "Search Optimization Service"
+  - "Virtual Private Snowflake"
+  - "Amazon Web Services"
+  - "Microsoft Azure"
+  - "Google Cloud"
+originalUrl: "https://noeldcosta.com/snowflake-pricing-credits-explained/"
+canonicalUrl: "https://noeldcosta.com/nl/snowflake-pricing-credits-explained/"
+locale: "nl"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+De prijzen van Snowflake zijn gebaseerd op gebruik: u betaalt voor compute in credits, voor opslag per terabyte per maand en voor data die een regio verlaat. Een credit kost tegen lijstprijs $2.00 tot $3.25 in de Standard-editie en $4.00 tot $6.50 in Business Critical, afhankelijk van cloud en regio (lijstprijs, gecontroleerd in oktober 2026).
+
+Dat kopbedrag zegt heel weinig. Wat u betaalt, hangt af van hoe groot uw warehouses zijn, hoe lang ze draaien, welke serverless functies aan staan en of er iemand meekijkt.
+
+In de programma's in de maakindustrie en defensie waaraan ik heb gewerkt, was de prijs per credit nooit het probleem. De problemen waren warehouses die bleven draaien, serverless functies waarvoor niemand budget had, en een contract dat op een gok was gedimensioneerd. Deze gids behandelt de eenheden, de lijsttarieven, de verborgen kostenposten en de maatregelen die ik op dag één zou treffen.
+
+## Hoe Snowflake-credits werken
+
+Snowflake heeft nu twee factureringseenheden. Platformcredits betalen voor virtual warehouses, Snowpark Container Services, serverless functies en cloud services.
+
+AI-credits betalen voor Cortex AI-functies. Als een ouder contract "credits" zegt, bedoelt het platformcredits.
+
+Een virtual warehouse is een benoemd blok compute. U kiest een grootte, en de grootte bepaalt het credittarief. Elke stap omhoog verdubbelt het tarief.
+
+Een draaiend warehouse wordt per seconde gefactureerd, met een minimum van 60 seconden elke keer dat het start of hervat. Een gepauzeerd warehouse kost niets.
+
+De tabel hieronder komt uit de [warehousedocumentatie](https://docs.snowflake.com/en/user-guide/warehouses-overview) van Snowflake en de Service Consumption Table die geldt vanaf 9 oktober 2026.
+
+| Grootte | Credits per uur (standaard, Gen1) | Credits per uur (Gen2, AWS) |
+|---|---|---|
+| X-Small | 1 | 1.35 |
+| Small | 2 | 2.7 |
+| Medium | 4 | 5.4 |
+| Large | 8 | 10.8 |
+| X-Large | 16 | 21.6 |
+| 2X-Large | 32 | 43.2 |
+| 3X-Large | 64 | 86.4 |
+| 4X-Large | 128 | 172.8 |
+| 5X-Large | 256 | n.v.t. |
+| 6X-Large | 512 | n.v.t. |
+
+Gen2-warehouses kosten meer per uur (1.25 keer op Azure, 1.35 keer op AWS en GCP) omdat ze sneller draaien. Of ze goedkoper uitvallen, hangt af van uw workload, dus test voordat u overstapt. Gen2 is niet in elke regio beschikbaar en is niet de standaard.
+
+Twee andere typen warehouses hebben hun eigen minimum. Interactieve warehouses hebben lagere uurtarieven (0.6 credits per uur bij X-Small) maar factureren elke keer dat ze starten minstens 60 minuten. Snowpark-optimised warehouses voor geheugenintensief Python- en ML-werk kosten bij de kleinere groottes 1 tot 6 credits per uur, afhankelijk van de geheugenoptie.
+
+Multi-cluster warehouses vermenigvuldigen het tarief met het aantal draaiende clusters. Een Medium warehouse met drie toegestane clusters kan tot 12 credits per uur verbruiken. Multi-cluster is een functie van de Enterprise-editie.
+
+## Edities en de prijs per credit
+
+De editie die u kiest, bepaalt de prijs van elke credit die u verbruikt, dus het is de grootste hefboom in het contract. De bandbreedtes hieronder komen uit tabel 2(a) van de [Snowflake Service Consumption Table](https://www.snowflake.com/legal-files/CreditConsumptionTable.pdf), on-demand lijstprijs per platformcredit, gecontroleerd in oktober 2026.
+
+| Editie | Wat het toevoegt | On-demand lijstprijs per credit | AWS US East (N. Virginia) |
+|---|---|---|---|
+| Standard | Kernplatform, Snowpark, data delen, Time Travel | $2.00 tot $3.25 | $2.00 |
+| Enterprise | Multi-cluster warehouses, fijnere governancemaatregelen, langere Time Travel, Query Acceleration | $3.00 tot $4.90 | $3.00 |
+| Business Critical | Tri-Secret Secure, private connectiviteit, failover en failback | $4.00 tot $6.50 | $4.00 |
+| Virtual Private Snowflake (VPS) | Alles uit Business Critical, in een omgeving die is afgeschermd van andere accounts | $6.00 tot $9.75, plus een jaarlijkse deploymentfee | $6.00 |
+
+De goedkoopste regio's zijn de belangrijkste Amerikaanse regio's. De duurste zijn plekken als Zürich, Switzerland North, Hongkong en Dammam. Voor een koper in de GCC of Europa kan de regiokeuze de rekening 30% of meer verschuiven voordat u ook maar één query schrijft.
+
+Voor defensie weegt dit zwaarder. In de Amerikaanse overheidsregio's in de tabel (waaronder AWS US Gov West 1, de DoD-regio en de FedRAMP High Plus-regio's) worden Standard en Enterprise niet aangeboden. Business Critical begint daar bij $4.80 tot $5.60 per credit.
+
+Heeft uw programma beperkingen rond soevereiniteit of exportcontrole, budgetteer dan vanaf het begin voor Business Critical. De Standard-editie mist de versleuteling en private connectiviteit waar een securityreview in defensie naar vraagt. Ik heb Snowflake zelf niet in een overheids- of GCC-regio uitgerold, dus behandel deze regionale bedragen als richtlijn op basis van lijstprijzen en laat Snowflake bevestigen welke diensten in uw doelregio live zijn.
+
+Voor de meeste fabrikanten zou ik met Enterprise beginnen. Multi-cluster warehouses en Query Acceleration zorgen ervoor dat de maandafsluiting niet in de rij staat achter het data-scienceteam.
+
+## Opslag, dataoverdracht en de overige kostenregels
+
+**Opslag** wordt gefactureerd op het maandgemiddelde van gecomprimeerde data. On demand kost het tegen lijstprijs $23 per TB per maand in de belangrijkste Amerikaanse regio's, $24.50 in Frankfurt en $39 in AWS US Gov West 1. Capaciteitscontracten met grotere jaarlijkse commitments brengen dat omlaag, tot $13.80 per TB in de hoogste staffel in US East.
+
+**Dataoverdracht** is gratis binnen dezelfde cloud en regio. Data naar buiten verplaatsen kost geld. Vanuit AWS US East kost het tegen lijstprijs $20 per TB naar een andere AWS-regio en $90 per TB naar een andere cloud of het internet.
+
+Overheidsregio's rekenen meer. Staat uw ERP op Azure en Snowflake op AWS, dan draagt elk extract dat Snowflake terug naar Azure verlaat dat tarief tussen clouds. Mijn gids over [ERP-data in Snowflake krijgen](/nl/erp-data-into-snowflake/) behandelt waar u het account plaatst.
+
+**Cloud services** is de laag die logins, querycompilatie en metadata afhandelt. Die wordt gefactureerd tegen 4.4 credits per gebruiksuur, maar alleen het deel boven 10% van de warehousecredits van die dag.
+
+De meeste accounts zien nooit een rekening hiervoor. Accounts die enorme aantallen kleine queries draaien, of vanuit BI-tools voortdurend metadata opvragen, wel.
+
+**Serverless functies** draaien op compute die Snowflake beheert, tegen één credit per compute-uur maal een vermenigvuldigingsfactor per functie. Niets ervan verschijnt in uw lijst warehouses, en daarom verrassen ze mensen. Uit tabel 5 van de consumption table:
+
+1. Snowpipe: 0.0037 credits per geladen GB.
+2. Automatic clustering: 2 keer compute, plus cloud services.
+3. Search Optimization Service: 2 keer compute, plus cloud services.
+4. Onderhoud van materialized views: 2 keer compute, plus cloud services.
+5. Serverless tasks: 0.9 keer compute, plus cloud services.
+6. Query Acceleration: 1 keer compute, per seconde gefactureerd bij gebruik.
+
+Clustering en search optimisation op een tabel die snel verandert, kunnen ongemerkt meer kosten dan de warehouses die haar bevragen. Ik beoordeel ze allemaal vóór go-live.
+
+## Cortex AI en Snowpark Container Services
+
+**Cortex AI** rekent af in AI-credits, een aparte eenheid. On demand kost een AI-credit tegen lijstprijs $2.00 (globaal) of $2.20 (regionaal). Uw korting op platformcredits geldt niet voor AI-credits.
+
+Cortex-functies rekenen per miljoen tokens, waarbij input en output vaak anders geprijsd zijn. In de consumption table staat llama3.3-70b op 0.36 AI-credits per miljoen tokens in beide richtingen, en mistral-large2 op 1.00 voor input en 3.00 voor output. Cortex Analyst rekent 67 platformcredits per 1,000 berichten, en Cortex Search 6.3 AI-credits per GB geïndexeerde data per maand.
+
+Draait u Cortex in een modus die alleen regionaal verwerkt vanwege dataresidentie, reken dan op het hogere tarief. De [documentatie over cross-region inference](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cross-region-inference) legt de routeringsopties uit.
+
+Voor defensie is regionale verwerking meestal de enige aanvaardbare instelling. Mijn stuk over [Snowflake Cortex AI en Snowflake Intelligence](/nl/snowflake-cortex-ai-snowflake-intelligence/) behandelt wat deze functies doen.
+
+**Snowpark Container Services** draait uw eigen containers op compute pools. Elk type node heeft een credittarief. De kleinste nodes voor algemeen gebruik kosten tegen lijstprijs ruim onder 0.1 credits per uur, en GPU-nodes lopen van ongeveer 0.5 tot meer dan 20.
+
+Nodes factureren elke keer dat ze starten minimaal vijf minuten. Een GPU-pool die een weekend blijft draaien, is de duurste fout die ik op dit platform kan bedenken.
+
+## Rekenvoorbeeld: één warehouse, twee gewoonten
+
+Dit voorbeeld is alleen ter illustratie. Het gebruikt lijsttarieven uit de consumption table van oktober 2026: Enterprise-editie, AWS US East, $3.00 per credit, opslag tegen $23 per TB.
+
+Een Medium warehouse verbruikt 4 credits per uur. Tien uur per dag gebruikt op 22 werkdagen, is dat 880 credits, ofwel $2,640 per maand. Hetzelfde warehouse met auto-suspend uitgeschakeld draait 720 uur per maand.
+
+Dat is 2,880 credits, ofwel $8,640. Dezelfde queries, dezelfde gebruikers, meer dan drie keer de rekening.
+
+Tel daar 20 TB gecomprimeerde opslag bij op: $460 per maand. Opslag is echt geld, maar in de platforms waaraan ik heb gewerkt, was het zelden de regel waar een CFO wakker van lag. Inactieve compute en serverless functies waar niemand naar kijkt, zijn dat wel.
+
+Enterprisekortingen en capaciteitscommitments veranderen deze bedragen. De vorm verandert niet.
+
+## On demand vs capaciteitscontracten
+
+Snowflake verkoopt op twee manieren. **On demand** betekent dat u maandelijks achteraf lijstprijs betaalt, zonder verplichting. **Capacity** betekent dat u zich vastlegt op een jaarlijkse besteding en korting krijgt op platformcredits, vastgelegd in uw orderformulier.
+
+Capaciteit kan over al uw accounts worden ingezet. Opslag wordt goedkoper naarmate uw jaarlijkse contractwaarde groeit. AI-credits hebben hun eigen staffels.
+
+Mijn regel: draai ongeveer drie maanden on demand, of met een kleine commitment. Dimensioneer het contract daarna op basis van data uit `ACCOUNT_USAGE`, niet op basis van het sizingwerkboek van de leverancier. Die drie maanden laten u ook zien hoe het verbruiksmodel zich gedraagt op uw eigen workloads.
+
+Een te grote commitment is geld dat weg is, of u het nu gebruikt of niet. Lees de voorwaarden voor het meenemen van restsaldo zorgvuldig. Dezelfde discipline geldt voor elke deal over bedrijfssoftware, wat ik behandel in mijn [casestudy over de onderhandeling van een ERP-contract](/nl/erp-implementation-contract-negotiation-cost-review-cfo/).
+
+## De maatregelen die ik vóór go-live tref
+
+Snowflake geeft u goede tools. De [documentatie over kostenbeheersing](https://docs.snowflake.com/en/user-guide/cost-controlling) legt ze uit. Ze werken alleen als iemand ze inricht vóór de eerste productieload.
+
+1. **Auto-suspend op elk warehouse.** Het staat standaard aan. Controleer dat niemand het heeft uitgezet. Zeer korte instellingen bij grillige workloads kunnen meer kosten, omdat elke hervatting het minimum van 60 seconden factureert.
+2. **Dimensioneer per workload.** Aparte warehouses voor ELT, BI en data science. Begin klein en schaal alleen op als de querygeschiedenis spilling of wachtrijen laat zien.
+3. **Multi-cluster met grenzen.** Stel een redelijk maximum aantal clusters in. Gebruik de Economy scaling policy waar wat wachtrij acceptabel is.
+4. **Resource monitors.** Ze volgen warehousecredits en kunnen een warehouse bij een drempel pauzeren. Ze dekken geen serverless functies.
+5. **Budgetten.** Maandelijkse uitgavelimieten met waarschuwingen die serverless functies wel dekken. Gebruik eigen budgetten per afdeling.
+6. **Query Acceleration met een scale factor.** Nuttig voor scans met pieken, maar begrens het. De standaard scale factor laat het tot acht keer het eigen tarief van het warehouse toevoegen.
+7. **Tagging.** Object tags op warehouses en gebruikers, query tags voor gedeelde applicaties. Zonder die tags kan niemand zeggen welke fabriek, welk programma of welke functie wat heeft uitgegeven.
+8. **Wekelijkse review van `ACCOUNT_USAGE`.** `WAREHOUSE_METERING_HISTORY` voor warehousecredits, `QUERY_ATTRIBUTION_HISTORY` voor kosten per query, `TAG_REFERENCES` om ze aan eigenaren te koppelen. Onthoud dat kosten per query geen inactieve tijd, opslag, serverless of AI bevatten.
+
+De proefperiode is een goede manier om dit te leren voordat u zich vastlegt. Snowflake biedt momenteel een proefperiode van 30 dagen met $400 aan gratis credits.
+
+AI-functies zijn uitgeschakeld totdat u een creditcard toevoegt. Kies de cloud, regio en editie die u echt zou kopen, want die kunnen later niet worden gewijzigd.
+
+## Wat u nu doet
+
+Zorg voordat u tekent voor drie getallen op één pagina: credits per maand per workload, de prijs voor editie en regio, en serverless plus AI als aparte regels. Kan uw leverancier of SI u dat niet geven, dan is de schatting een gok. Kiest u nog een platform, dan kijken mijn [vergelijking Snowflake vs Databricks](/nl/snowflake-vs-databricks/) en mijn [gids over de prijzen van Databricks](/nl/databricks-pricing-explained/) door dezelfde bril.
+
+Ik help organisaties om contracten voor dataplatforms te dimensioneren en kostengovernance in te richten vóór go-live. Is dat nuttig, [neem dan contact op](/nl/contact-noel-erp-support/).
+
+## Veelgestelde vragen
+
+<details>
+<summary>Wat kost een Snowflake-credit?</summary>
+
+On demand kost een platformcredit tegen lijstprijs $2.00 tot $3.25 in Standard, $3.00 tot $4.90 in Enterprise, $4.00 tot $6.50 in Business Critical en $6.00 tot $9.75 in Virtual Private Snowflake, afhankelijk van cloud en regio (lijstprijs, gecontroleerd in oktober 2026). In AWS US East zijn de bedragen $2, $3, $4 en $6. Capaciteitscontracten passen een onderhandelde korting toe op deze tarieven.
+
+</details>
+
+<details>
+<summary>Wordt Snowflake per seconde gefactureerd?</summary>
+
+Ja. Standaard virtual warehouses factureren per seconde met een minimum van 60 seconden elke keer dat ze starten of hervatten. Interactieve warehouses hebben een minimum van 60 minuten, en nodes van Snowpark Container Services een minimum van vijf minuten. Gepauzeerde warehouses kosten niets.
+
+</details>
+
+<details>
+<summary>Wat kost opslag in Snowflake per TB?</summary>
+
+On-demand opslag kost tegen lijstprijs $23 per TB per maand in de belangrijkste Amerikaanse regio's, en meer in sommige regio's, zoals $24.50 in Frankfurt en $39 in AWS US Gov West 1. Er wordt gefactureerd op gecomprimeerde omvang. Capaciteitscontracten verlagen het tarief naarmate uw jaarlijkse contractwaarde groeit.
+
+</details>
+
+<details>
+<summary>Heeft Snowflake een gratis proefperiode?</summary>
+
+Ja. Snowflake biedt een proefperiode van 30 dagen met $400 aan gratis credits. De proefperiode eindigt na 30 dagen of wanneer de credits op zijn, wat het eerst komt. AI-functies zijn uitgeschakeld totdat u een creditcard toevoegt, en de gekozen cloud, regio en editie kunnen later niet worden gewijzigd.
+
+</details>
+
+<details>
+<summary>Wat is de 10%-correctie voor cloud services in Snowflake?</summary>
+
+Gebruik van cloud services is gratis tot 10% van de warehousecredits van die dag. Alleen het gebruik boven die grens wordt gefactureerd. Serverless functies en gebruik van Snowpark Container Services tellen niet mee voor die vrijstelling.
+
+</details>
+
+<details>
+<summary>Waarom is mijn Snowflake-rekening hoger dan verwacht?</summary>
+
+De gebruikelijke oorzaken zijn warehouses die nooit pauzeren, te grote warehouses, multi-cluster zonder limiet en serverless functies zoals automatic clustering, search optimisation en materialized views. Gebruik van Cortex AI en dataoverdracht tussen clouds tellen ook op. Bevraag `WAREHOUSE_METERING_HISTORY` en de views voor serverless gebruik om de bron te vinden, en stel daarna budgetten en resource monitors in.
+
+</details>

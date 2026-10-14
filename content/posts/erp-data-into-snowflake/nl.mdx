@@ -1,0 +1,203 @@
+---
+title: "ERP-data in Snowflake: SAP, Oracle en Dynamics 365"
+h1: "ERP-data in Snowflake: SAP, Oracle en Dynamics 365"
+slug: "erp-data-into-snowflake"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/erp-data-into-snowflake.webp"
+heroAlt: "Licht magazijn met hoge stellingen, pallets, een barcodescanner en een robuuste tablet"
+category: "data-and-ai"
+tags: ["snowflake", "erp-data", "manufacturing"]
+author: "Noel D'Costa"
+metaTitle: "SAP-data naar Snowflake: opties voor SAP, Oracle en D365"
+metaDescription: "Hoe u SAP-data naar Snowflake krijgt, plus Oracle en Dynamics 365: BDC zero-copy, de ODP-licentienoot, Openflow, GoldenGate, BICC en Synapse Link vergeleken."
+primaryKeyword: "sap data naar snowflake"
+excerpt: "De realistische manieren om ERP-data uit SAP, Oracle en Microsoft Dynamics 365 in 2026 in Snowflake te krijgen, de licentievalkuilen bij elk ervan, en het werk aan het datamodel dat bepaalt of het platform wordt vertrouwd."
+experienceSource: "Noel's first-person experience with Snowflake and Databricks on data platform work in manufacturing and defence, including ERP data from SAP, Oracle and Microsoft Dynamics 365 (confirmed by Noel, 11 October 2026). No client names or figures. Product facts checked against official Snowflake, SAP, Oracle and Microsoft documentation, October 2026."
+keyTakeaways:
+  - "Voor SAP is de door de leverancier ondersteunde route SAP Business Data Cloud met zero-copy delen naar Snowflake, algemeen beschikbaar sinds mei 2026"
+  - "SAP Note 3255746 stelt dat gebruik van de ODP-RFC-modules door derden niet is toegestaan. Vraag elke connectorleverancier welke interface hij gebruikt"
+  - "Oracle E-Business Suite kan log-based CDC gebruiken (Openflow of GoldenGate); Oracle Fusion Cloud ERP kan dat niet en gaat meestal via BICC-extracten"
+  - "Export to Azure Data Lake voor Dynamics 365 stopt definitief op 30 november 2026. Stap nu over op Synapse Link of Fabric link"
+  - "Extractie is de kleinere klus. Deletes, valuta's, eenheden, stamgegevens en verloren autorisaties kosten de meeste inspanning"
+pullQuote: "De connector is het makkelijke deel. Opnieuw opbouwen wat het ERP over de data wist, dat is het project."
+mentions:
+  - "Snowflake"
+  - "SAP Business Data Cloud"
+  - "SAP Snowflake"
+  - "SAP Datasphere"
+  - "SAP S/4HANA"
+  - "Snowflake Openflow"
+  - "Oracle E-Business Suite"
+  - "Oracle Fusion Cloud ERP"
+  - "Oracle GoldenGate"
+  - "Microsoft Dynamics 365 Finance and Operations"
+  - "Azure Synapse Link for Dataverse"
+  - "Microsoft Fabric"
+originalUrl: "https://noeldcosta.com/erp-data-into-snowflake/"
+canonicalUrl: "https://noeldcosta.com/nl/erp-data-into-snowflake/"
+locale: "nl"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Er zijn in 2026 drie realistische manieren om SAP-data naar Snowflake te krijgen. SAP Business Data Cloud met zero-copy delen, replicatie vanuit SAP Datasphere naar cloudopslag die Snowflake laadt, of een tool van derden die een interface gebruikt die SAP toestaat. Oracle en Microsoft Dynamics 365 lijken eenvoudiger, maar elk heeft een addertje.
+
+Oracle Fusion Cloud ERP geeft u geen database om uit te repliceren. Dynamics 365 Finance and Operations verliest over een paar weken Export to Azure Data Lake.
+
+De extractietool is de kleinere beslissing. In de programma's in de maakindustrie en defensie waaraan ik heb gewerkt, gaat de tijd zitten in wat er gebeurt nadat de data is geland. ERP-tabellen ontcijferen, deletes afhandelen, valuta's en eenheden op elkaar afstemmen, de toegangsregels opnieuw opbouwen die het ERP vroeger afdwong.
+
+Voor data uit SAP, Oracle en Dynamics 365 was de route die ik echt gebruikte middleware. Mijn advies is middleware te kiezen die een grotere stack aankan, dus meer bronsystemen dan het systeem dat nu voor u ligt, en geen connector voor één doel. Welk product u ook kiest, controleer de interface die het voor SAP gebruikt tegen de noot hieronder.
+
+## SAP-data naar Snowflake krijgen
+
+### SAP Business Data Cloud en zero-copy delen
+
+SAP en Snowflake kondigden op SAP Sapphire in mei 2026 de algemene beschikbaarheid van twee gezamenlijke aanbiedingen aan. De release note van Snowflake voor de connector is gedateerd 4 mei 2026.
+
+1. **SAP Snowflake.** Snowflake geleverd binnen SAP Business Data Cloud (BDC) als gecertificeerde SAP Solution Extension, verkocht en ondersteund door SAP en geprovisioneerd vanuit SAP for Me. Het is bedoeld voor SAP-klanten zonder Snowflake-account.
+2. **SAP BDC Connect for Snowflake.** Voor bedrijven die al Snowflake draaien. U koppelt een bestaand account met een uitnodigingslink uit SAP for Me.
+
+In beide gevallen worden SAP-dataproducten in Snowflake gekoppeld als catalog-linked databases, zonder de data te kopiëren. U kunt ze bevragen en koppelen, semantische views genereren uit de metadata van SAP voor Cortex Analyst, en Snowflake-data terug publiceren naar BDC.
+
+De [documentatie van Snowflake over de zero-copy-integratie met SAP](https://docs.snowflake.com/en/user-guide/data-integration/zero-copy/about-sap-snowflake) noemt commerciële regio's van AWS, Azure en GCP en sluit overheidsregio's uit. Voor defensiewerk kan die uitsluiting alleen al de doorslag geven.
+
+Het addertje is de scope. Zero-copy deelt BDC-dataproducten, dus u hebt een BDC-abonnement nodig en u krijgt wat SAP heeft verpakt. Leg uw rapportagebehoeften naast de dataproducten die voor uw release beschikbaar zijn, voordat u erop gaat plannen.
+
+Controleer vooral uw eigen velden en Z-tabellen. Waar die niet worden gedekt, hebt u eigen dataproducten of een tweede route nodig.
+
+### Replication flows in SAP Datasphere
+
+Replication flows in SAP Datasphere verplaatsen data uit S/4HANA, ECC en BW naar doelen buiten SAP via wat SAP premium outbound integration noemt. Dat moet in de tenant worden aangezet en gedimensioneerd. Snowflake is geen doel voor replication flows in de verbindingsmatrix van SAP.
+
+Het gebruikelijke patroon is repliceren naar cloud object storage (Amazon S3, Azure Data Lake Storage Gen2 of Google Cloud Storage) en van daaruit laden in Snowflake. U betaalt voor Datasphere-capaciteit en draait twee stappen.
+
+### De ODP-noot: lees haar voordat u een connector koopt
+
+SAP Note 3255746, "Unpermitted usage of ODP Data Replication APIs", werd voor het eerst gepubliceerd in oktober 2022. De herziening van februari 2024 gaat over de RFC-modules van de Operational Data Provisioning (ODP) Data Replication API. Ze stelt dat het gebruik daarvan vanuit applicaties van klanten of derden om SAP ABAP-bronnen te benaderen, on-premise of Cloud Private Edition, door SAP niet is toegestaan.
+
+Een update van juli 2024 verwijst klanten naar SAP Datasphere voor het repliceren van SAP-data naar tools van derden. De noot werd in april 2026 opnieuw herzien.
+
+In juni 2026 publiceerde SAP ook een kwetsbaarheidsrecord, CVE-2026-44754, voor ontbrekende identificatie van de aanroeper in dezelfde API's. Mijn lezing is dat de beperking verschuift van papier naar technische handhaving. De noot zit achter een SAP-login, dus lees de actuele versie zelf in plaats van te vertrouwen op een samenvatting van een leverancier.
+
+Veel SAP-connectors van derden zijn gebouwd op ODP via RFC. Vraag elke leverancier welke SAP-interface zijn connector gebruikt, en is dat ODP via RFC, vraag dan zijn standpunt over de noot op schrift.
+
+Snowflake Openflow, de beheerde ingestiedienst van Snowflake, heeft geen SAP-connector in de [huidige lijst connectors](https://docs.snowflake.com/en/user-guide/data-integration/openflow/connectors/about-openflow-connectors) (gecontroleerd in oktober 2026). SAP staat alleen bij de zero-copy-connectors.
+
+## Oracle: E-Business Suite en Fusion zijn verschillende problemen
+
+**Oracle E-Business Suite** draait op een Oracle-database die u zelf beheert, dus log-based change data capture (CDC) is beschikbaar. De [Openflow Connector for Oracle](https://docs.snowflake.com/en/user-guide/data-integration/openflow/connectors/oracle/about) werd in februari 2026 algemeen beschikbaar. Hij gebruikt Oracle XStream en ondersteunt Oracle Database 11g en later, on-premises, op Exadata en op virtuele machines of bare metal in OCI.
+
+Licenties vragen aandacht. U neemt een ingebedde XStream-licentie die via Snowflake wordt gefactureerd, met een commitment van 36 maanden, of u brengt uw eigen Oracle-licentie met XStream-rechten mee, zoals GoldenGate. De documentatie van Snowflake wijst erop dat Oracle voor XStream Enterprise Edition vereist.
+
+Elke gerepliceerde tabel heeft een primaire sleutel nodig, een unique constraint of index, of een gedeclareerde logische sleutel, en TRUNCATE wordt niet gerepliceerd. Controleer de sleuteldekking op de EBS-tabellen die u nodig hebt voordat u zich vastlegt.
+
+Oracle GoldenGate is de andere gevestigde route. Snowflake is een gedocumenteerd doel voor GoldenGate, met stage-and-merge in microbatches of met Snowpipe Streaming.
+
+**Oracle Fusion Cloud ERP** is SaaS. De Openflow-connector voor Oracle ondersteunt Fusion Cloud Applications uitdrukkelijk niet. De standaard extractieroute is de Business Intelligence Cloud Connector (BICC).
+
+Die schrijft gecomprimeerde CSV-bestanden met een manifest naar OCI Object Storage of de content server van Oracle, als geplande volledige of incrementele extracten. Daarna verplaatst u die bestanden naar Snowflake. BICC kan ook alleen de primaire sleutels extraheren, en zo detecteert u deletes.
+
+De FAQ van Oracle over GoldenGate zegt dat GoldenGate kan capturen uit Fusion SaaS-applicaties die in OCI draaien. Is dat voor u van belang, vraag Oracle dan wat het voor uw tenancy en licentie betekent.
+
+## Microsoft Dynamics 365: de deadline is echt
+
+Voor Dynamics 365 Finance and Operations heeft Microsoft Export to Azure Data Lake op 1 november 2024 uitgefaseerd. Het [stopt definitief op 30 november 2026](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/fin-ops/get-started/removed-deprecated-features-platform-updates), zonder verlenging. Hangt er nog een Snowflake-pipeline van af, dan is dat dit kwartaal uw eerste klus.
+
+De vervangers zijn Azure Synapse Link for Dataverse en Fabric link. Microsoft raadt Fabric link aan voor de meeste klanten, maar dat zet data in Microsoft Fabric. Voor Snowflake als doel is Synapse Link de praktische optie.
+
+Het schrijft tabellen uit Finance and Operations naar uw eigen opslagaccount in Delta Parquet-formaat, waarbij verwijderde rijen bewaard blijven en gemarkeerd worden in een veld `isDelete`. Snowflake kan Delta-bestanden in object storage lezen als alleen-lezen Iceberg-tabellen, algemeen beschikbaar sinds april 2025, of u kunt ze laden.
+
+Voor apps op Dataverse, zoals Dynamics 365 Sales en Customer Service, is de Openflow Connector for Microsoft Dataverse algemeen beschikbaar. Die doet soft deletes met een markeringskolom.
+
+De change tokens verlopen na zeven dagen inactiviteit, wat een volledige hersynchronisatie afdwingt, dus laat een planning niet verlopen. De documentatie noemt Finance and Operations niet, dus behandel dit als de route voor customer engagement, tenzij u iets anders hebt getest.
+
+## De opties in één oogopslag
+
+De routes die ik per ERP op een shortlist zou zetten, per oktober 2026:
+
+| ERP | Realistische opties | Opmerkingen |
+|---|---|---|
+| SAP S/4HANA, ECC | SAP BDC met SAP Snowflake of BDC Connect for Snowflake; Datasphere replication flows via object storage; tools van derden | Zero-copy dekt alleen BDC-dataproducten. SAP Note 3255746 beperkt ODP via RFC. Geen Openflow-connector voor SAP |
+| Oracle E-Business Suite | Openflow Connector for Oracle; Oracle GoldenGate; CDC van derden | XStream-licenties en Enterprise Edition. Sleutel vereist per tabel. TRUNCATE wordt niet gerepliceerd |
+| Oracle Fusion Cloud ERP | BICC-extracten naar object storage, daarna laden; GoldenGate (navragen bij Oracle) | Geen directe databasetoegang. De Openflow-connector voor Oracle ondersteunt Fusion niet |
+| Dynamics 365 Finance and Operations | Azure Synapse Link for Dataverse naar uw opslag, daarna Iceberg-tabellen of laden; Fabric link | Export to Azure Data Lake stopt 30 november 2026. Deletes komen binnen als gemarkeerde rijen |
+| Dynamics 365 Sales, Customer Service | Openflow Connector for Microsoft Dataverse | Soft deletes. Tokens die na zeven dagen verlopen dwingen hersynchronisatie af |
+
+## De problemen in het datamodel die niemand inprijst
+
+Elke ERP-pipeline die ik heb gezien, loopt tegen dezelfde problemen aan, welke extractieroute ook. Hier gaat het budget naartoe.
+
+1. **Complexiteit van tabellen.** ERP-tabellen zijn ontworpen voor transacties, niet voor analyse. In SAP S/4HANA vervingen het universele journaal (`ACDOCA`) en de materiaaldocumenten (`MATDOC`) veel ECC-tabellen, dus ECC-logica is niet zomaar over te zetten. EBS heeft multi-org-structuren; Dynamics heeft entiteiten die niet één op één met de tabellen overeenkomen. Budgetteer voor mensen die het bronsysteem kennen.
+2. **Change capture en deletes.** Elke route signaleert deletes anders: markeringskolommen, extracten met alleen sleutels, of helemaal niets. TRUNCATE en archiveringsruns kunnen Snowflake ongemerkt van het ERP laten afwijken. Stem aantallen records en saldi volgens een schema af, niet één keer.
+3. **Valuta en eenheden.** ERP-bedragen staan in document-, lokale en groepsvaluta, met koerstypen en boekingsdatums. Hoeveelheden hebben maateenheden met materiaalspecifieke omrekeningen. Dit opnieuw opbouwen in SQL is waar finance de getallen niet meer vertrouwt.
+4. **Stamgegevens.** Materialen, klanten, leveranciers en fabrieken verschillen per ERP en per entiteit. Draait u twee ERP's, dan is het mappen van stamgegevens een project op zich. Mijn stuk over [waarom SAP-datamigratie mislukt](/nl/why-sap-data-migration-fails-and-how-to-fix-it/) behandelt dezelfde grondoorzaken.
+5. **Autorisaties komen niet mee met de data.** Het ERP dwong beperkingen op bedrijfsnummer, fabriek en winstcentrum af. Snowflake weet daar niets van. U moet beveiliging op rij- en kolomniveau opnieuw opbouwen, en in defensie de scheiding van gecontroleerde data, voordat iemand buiten het kernteam toegang krijgt.
+
+## Een volgorde die werkt
+
+1. **Leg eerst de doelvragen vast.** Kies vijf tot tien zakelijke vragen en de rapporten die ze beantwoorden. Dat bepaalt welke tabellen u nodig hebt.
+2. **Inventariseer de bronnen.** ERP-versies, uitrol, database-editie, eigen velden, en elk bestaand extract waarvan systemen verderop afhankelijk zijn.
+3. **Regel licenties vóór tooling.** BDC-abonnement, Datasphere-capaciteit, XStream-rechten, het standpunt van elke leverancier over de ODP-noot. Vraag de antwoorden op schrift.
+4. **Kies de route per ERP**, met de tabel hierboven. Gemengde routes zijn normaal.
+5. **Bouw een ruwe laag die de bron spiegelt**, met laadtijdstempels en bewaarde markeringen voor deletes.
+6. **Bouw daarop geharmoniseerde modellen**: omrekening van valuta en eenheden, mapping van stamgegevens, fiscale kalenders.
+7. **Bouw de beveiliging opnieuw op** met row access policies en masking policies voordat u toegang openstelt.
+8. **Stem af tegen het ERP** en automatiseer de controle. De controle die moet slagen voordat finance het model vertrouwt, is een proefbalans die aansluit op het ERP. Voorraadwaarden zijn het waard om op dezelfde manier te controleren.
+9. **Draag het beheer over**: monitoring, afhandeling van schemawijzigingen en een benoemde eigenaar per pipeline.
+
+Voor kostenplanning legt de [gids over de prijzen en credits van Snowflake](/nl/snowflake-pricing-credits-explained/) in deze reeks uit wat continue replicatie met uw rekening doet.
+
+## Wat teams in de maakindustrie meestal als eerste willen
+
+De eerste verzoeken in de maakindustrie zijn voorspelbaar, en ze testen het datamodel.
+
+1. **Voorraad.** Voorraad per fabriek, veroudering en langzame lopers. Het legt problemen met maateenheden en waardering vroeg bloot.
+2. **On-time in-full (OTIF).** Vereist dat verkooporders, leveringen en bevestigde datums op één lijn liggen, en dat test uw change capture.
+3. **Productkostprijs.** Standaard tegenover werkelijke kostprijs en afwijkingen. Daarvoor moeten finance- en productiedata op elkaar aansluiten.
+4. **Kwaliteit.** Inspectieresultaten, defecten en afwijkingen, vaak gekoppeld aan machine- of historiandata buiten het ERP.
+
+Ik zou met voorraad beginnen. Het raakt stamgegevens, eenheden en waardering in één keer, en fabrieksmanagers kunnen het controleren tegen wat fysiek in het schap ligt. Kiest u het ERP zelf nog, dan behandelt mijn gids over het [beste ERP voor de maakindustrie](/nl/best-erp-for-manufacturing/) de selectiekant.
+
+Eerst platforms vergelijken? Zie [Snowflake vs Databricks](/nl/snowflake-vs-databricks/).
+
+## Waar u deze week begint
+
+Maak een lijst van elk extract dat vandaag uw ERP verlaat, de interface die het gebruikt en wie ervan afhankelijk is. Die ene lijst laat uw blootstelling zien aan de ODP-noot, de Dynamics-deadline en eventuele gaten in Fusion-extracten. Wilt u een second opinion op de route of het datamodel, dan help ik organisaties bij deze beslissingen; u kunt [een gesprek met mij inplannen](/nl/contact-noel-erp-support/).
+
+## Veelgestelde vragen
+
+<details>
+<summary>Hoe krijg ik SAP-data in Snowflake?</summary>
+
+De door SAP ondersteunde opties zijn SAP Business Data Cloud met SAP Snowflake of BDC Connect for Snowflake, die SAP-dataproducten delen zonder te kopiëren. De andere is replication flows in SAP Datasphere naar cloud object storage die Snowflake daarna laadt. Er zijn ook tools van derden, maar controleer welke SAP-interface ze gebruiken tegen SAP Note 3255746.
+
+</details>
+
+<details>
+<summary>Is SAP Snowflake algemeen beschikbaar?</summary>
+
+Ja. SAP Snowflake en SAP BDC Connect for Snowflake werden op SAP Sapphire in mei 2026 als algemeen beschikbaar aangekondigd. De documentatie van Snowflake sluit overheidsregio's uit, wat van belang is voor defensie en de publieke sector.
+
+</details>
+
+<details>
+<summary>Mogen tools van derden nog ODP gebruiken om SAP-data te extraheren?</summary>
+
+SAP Note 3255746 stelt dat gebruik van de RFC-modules van de ODP Data Replication API door klanten of derden niet is toegestaan. SAP verwijst klanten in plaats daarvan naar Datasphere. Vraag elke leverancier welke interface hij gebruikt en hoe hij met de noot omgaat. Lees de actuele noot zelf in het SAP-supportportaal.
+
+</details>
+
+<details>
+<summary>Hoe verplaats ik data uit Oracle Fusion Cloud ERP naar Snowflake?</summary>
+
+Fusion is SaaS, dus CDC-tools op databaseniveau zijn niet van toepassing, en de Openflow-connector voor Oracle van Snowflake ondersteunt het niet. De standaardroute is BICC-extracten naar object storage, gevolgd door een load in Snowflake. Extraheer primaire sleutels apart, zodat u deletes kunt detecteren.
+
+</details>
+
+<details>
+<summary>Wat vervangt Export to Data Lake voor Dynamics 365 Finance and Operations?</summary>
+
+Azure Synapse Link for Dataverse of Fabric link. Export to Azure Data Lake stopt definitief op 30 november 2026. Voor Snowflake als doel schrijft Synapse Link Delta Parquet naar uw eigen opslag, die Snowflake als Iceberg-tabellen kan lezen of kan laden.
+
+</details>

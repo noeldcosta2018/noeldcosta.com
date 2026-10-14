@@ -66,7 +66,7 @@ describe("Phase 3A localized article routing", () => {
     const params = getLocalizedArticleParams();
 
     // Every article in every published translated language (16 since 7 October 2026).
-    expect(params).toHaveLength(89 * PUBLISHED_TRANSLATED_LOCALES.length);
+    expect(params).toHaveLength(99 * PUBLISHED_TRANSLATED_LOCALES.length);
     expect(params).toContainEqual({
       locale: "es",
       slug: "best-sap-implementation-templates-activate-2024",

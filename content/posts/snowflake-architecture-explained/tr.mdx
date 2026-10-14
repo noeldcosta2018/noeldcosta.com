@@ -1,0 +1,210 @@
+---
+title: "Snowflake mimarisi nasıl çalışır ve ne için kullanılır"
+h1: "Snowflake mimarisi nasıl çalışır ve ne için kullanılır"
+slug: "snowflake-architecture-explained"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/snowflake-architecture-explained.webp"
+heroAlt: "İş istasyonları ve tavan vinci bulunan aydınlık bir mühendislik montaj salonunun geniş görünümü"
+category: "data-and-ai"
+tags: ["snowflake", "data-governance", "manufacturing"]
+author: "Noel D'Costa"
+metaTitle: "Snowflake Mimarisi: Katmanlar, Kullanımlar ve Sınırlar"
+metaDescription: "Sade dille Snowflake mimarisi: depolama, işlem gücü ve cloud services, micro-partition'lar, Time Travel, paylaşım, Iceberg, sürümler ve ne için kullanıldığı."
+primaryKeyword: "Snowflake mimarisi"
+excerpt: "Snowflake; depolamayı, işlem gücünü ve koordinasyonu üç ayrı katmanda tutan bir bulut veri platformudur. Bu mimarinin nasıl çalıştığını, şirketlerin onu ne için kullandığını ve nerede doğru seçim olmadığını anlatıyorum."
+experienceSource: "Noel's first-person experience with Snowflake on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts checked against official Snowflake documentation, October 2026."
+keyTakeaways:
+  - "Snowflake depolamayı, işlem gücünü (sanal warehouse'lar) ve cloud services'i ayırır; böylece her biri ayrı ölçeklenir ve ayrı ödenir"
+  - "Veri sıkıştırılmış, sütun tabanlı micro-partition'larda durur; meta veri, sorguların ihtiyaç duymadıklarını atlamasını sağlar"
+  - "Time Travel, sıfır kopya klonlama ve güvenli veri paylaşımı aynı meta veri tasarımından gelir"
+  - "Iceberg tabloları, Horizon Catalog ve Snowflake Postgres (Şubat 2026'da GA) onu klasik bir veri ambarının ötesine taşır"
+  - "Regülasyona tabi işler genellikle Business Critical veya üzeri sürüm demektir; Snowflake şirket içine (on-premises) kurulamaz"
+  - "Yoğun işlemsel iş yüklerine veya kendi veri merkezinizden asla çıkmaması gereken veriye uygun değildir"
+pullQuote: "Snowflake maliyet sürprizlerinin çoğu, kimsenin yazıya dökmediği mimari kararlardır."
+mentions:
+  - "Snowflake"
+  - "Snowpark"
+  - "Snowflake Horizon Catalog"
+  - "Snowflake Open Catalog"
+  - "Apache Polaris"
+  - "Apache Iceberg"
+  - "Snowflake Postgres"
+  - "Snowflake Marketplace"
+  - "Tri-Secret Secure"
+  - "Amazon Web Services"
+  - "Microsoft Azure"
+  - "Google Cloud"
+originalUrl: "https://noeldcosta.com/snowflake-architecture-explained/"
+canonicalUrl: "https://noeldcosta.com/tr/snowflake-architecture-explained/"
+locale: "tr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Snowflake mimarisi, bir veri platformunu bağımsız ölçeklenen üç katmana ayırır: depolama, işlem gücü (sanal warehouse'lar olarak adlandırılır) ve her şeyi koordine eden bir cloud services katmanı. Şirketler Snowflake'i raporlama ve analitik için bir bulut veri ambarı olarak, giderek artan şekilde de veri paylaşmak, Python çalıştırmak ve yönetişim altındaki veri üzerinde yapay zeka kurmak için bir yer olarak kullanıyor.
+
+Depolama ile işlem gücünü ayrı tutan bu tek tasarım tercihi, Snowflake'in iyi yaptığı şeylerin çoğunu ve maliyetinin büyük kısmını açıklar.
+
+Üretim ve savunma sektörlerindeki veri platformu programlarında Snowflake ile çalıştım. Sık gördüğüm bir desen var: yöneticiler onu analitik için satın alıyor, sonra mimari kararların (kaç warehouse, hangi sürüm, verinin nerede durduğu) faturayı ve uyum durumunu belirlediğini fark ediyor. Bu rehber, imzalamadan önce bu kararları anlaması gereken CIO, CDO veya mimar için.
+
+## Tek paragrafta Snowflake nedir
+
+Snowflake; Amazon Web Services, Microsoft Azure ve Google Cloud üzerinde çalışan, tamamen yönetilen bir veri platformudur. Onu kurmazsınız, yama yapmazsınız ya da indeks ayarlamazsınız. Veri yüklersiniz, SQL (veya Python) yazarsınız ve depolama ile işlem gücü için ayrı ayrı ödersiniz.
+
+Snowflake tasarımını, shared-disk ve shared-nothing mimarilerinin bir melezi olarak tanımlıyor: bağımsız işlem kümeleri tarafından sorgulanan tek bir merkezi veri deposu. Savunma alıcıları için erkenden önemli olan bir gerçek var: Snowflake'in kendi [temel kavramlar ve mimari rehberine](https://docs.snowflake.com/en/user-guide/intro-key-concepts) göre, yerel veya özel bulut altyapısına kurulamaz.
+
+## Snowflake mimarisinin üç katmanı
+
+Aşağıdan yukarıya yapı şöyle.
+
+<explainer-layers title="Katman katman Snowflake mimarisi" caption="Depolama ve işlem gücü ayrı ölçeklenir ve ayrı faturalanır. Hepsini cloud services bir arada tutar." layers="Cloud services => Güvenlik, erişim kontrolü, meta veri, sorgu optimizasyonu ve işlemler|İşlem gücü => Sanal warehouse'lar: SQL ve Python çalıştıran, çalıştıkları sürece credits ile faturalanan bağımsız kümeler|Depolama => Bulut nesne depolamasında sıkıştırılmış, sütun tabanlı micro-partition'lar, terabayt başına faturalanır" tones="accent|data|"></explainer-layers>
+
+### Depolama
+
+Veri yüklediğinizde Snowflake onu sıkıştırılmış, sütun tabanlı bir formatta yeniden düzenler ve bulut nesne depolamasında saklar. Her tabloyu, her biri 50 MB ile 500 MB arasında sıkıştırılmamış veri tutan micro-partition'lara böler. Snowflake her biri için, her sütundaki değer aralığı gibi meta veriler kaydeder.
+
+İşin akıllıca kısmı bu meta veri. Geçen ayın üretim siparişlerine göre filtrelenen bir sorgu, tarih aralığı eşleşemeyecek her micro-partition'ı atlar.
+
+Buna pruning (budama) denir ve Snowflake'in indeksler olmadan iyi performans göstermesinin nedeni budur. Bu aynı zamanda verinin geliş şeklinin (tarihe veya tesise göre sıralı ya da rastgele) çok büyük tablolarda maliyeti etkilediği anlamına gelir.
+
+### İşlem gücü: sanal warehouse'lar
+
+Sanal warehouse, sorguları ve kodu çalıştıran bir işlem kümesidir. Her biri bağımsızdır. Finansın ay sonu raporları bir warehouse'ta çalışırken veri bilimi ağır işleri başka birinde çalıştırabilir ve hiçbiri diğerini yavaşlatmaz.
+
+Warehouse'lar tişört bedenleri gibi boyutlarda gelir ve yalnızca çalışırken credit tüketir. Boşta kaldıklarında otomatik olarak askıya alınabilirler. Daha büyük boyutlar, tek tek ağır sorguları hızlandırır.
+
+Daha fazla küme aynı anda daha fazla kullanıcıyı karşılar; multi-cluster warehouse'ların yaptığı da budur: Enterprise sürümü ve üzerinde bir warehouse, sorgular kuyruğa girmeye başladığında otomatik olarak küme ekleyebilir, yük düştüğünde de bunları kaldırabilir. Snowflake, multi-cluster'ın tek bir yavaş sorguya değil, eşzamanlılığa yardımcı olduğunu açıkça belirtiyor. Tek yavaş sorgu için boyutu büyütürsünüz.
+
+[Snowflake credits ve faturayı belirleyen etkenler](/tr/snowflake-pricing-credits-explained/) üzerine fiyatlandırma rehberim maliyet tarafını ayrıntılı ele alıyor.
+
+### Cloud services
+
+En üst katman kimlik doğrulamayı, erişim kontrolünü, meta veriyi, sorgu optimizasyonunu ve işlemleri yönetir. Time Travel ve klonlama çoğunlukla meta veri işlemleridir, bu yüzden onları bu katman mümkün kılar. Onu nadiren düşünürsünüz; amaç da zaten bu.
+
+## Mimariden gelen özellikler
+
+İlginç özellikler sonradan eklenmiş parçalar değil. Depolama ve meta veri tasarımından doğal olarak çıkıyorlar.
+
+1. **Time Travel.** Veriyi geçmişteki bir anda olduğu haliyle sorgulayabilir, klonlayabilir veya geri yükleyebilirsiniz. Standard sürüm 1 gün tutar. Enterprise ve üzeri, [Time Travel dokümantasyonunda](https://docs.snowflake.com/en/user-guide/data-time-travel) belirtildiği gibi kalıcı tablolar için 90 güne kadar tutabilir.
+2. **Fail-safe.** Time Travel süresi dolduktan sonra kalıcı tablo verisi 7 günlük bir Fail-safe dönemine geçer. Onu yalnızca Snowflake kurtarabilir. Bunu kontrol ettiğiniz bir yedek olarak değil, felaket kurtarma olarak görün.
+3. **Sıfır kopya klonlama (zero-copy cloning).** Bir tablonun, şemanın veya veritabanının klonu oluşturulduğunda ek depolama kullanmaz, çünkü aynı micro-partition'lara işaret eder. Yalnızca sonradan değişen veri için ödersiniz. Ekipler tam boyutlu test ortamlarını dakikalar içinde böyle kurar.
+4. **Güvenli veri paylaşımı.** Bir sağlayıcı canlı tabloları başka bir Snowflake hesabıyla paylaşır ve hiçbir veri kopyalanmaz. Tüketici yalnızca sorgulamak için kullandığı işlem gücü için öder. Doğrudan paylaşımlar tek bir bölge içinde çalışır; bölgeler arası paylaşım, otomatik karşılamalı (auto-fulfilment) listeler üzerinden gider.
+5. **Snowflake Marketplace.** Listeler, veri ürünlerini belirli iş ortaklarına veya herkese açık olarak yayımlamanızı sağlar; hava durumu veya piyasa endeksleri gibi üçüncü taraf veriler dahil.
+6. **Snowpark.** Veriyi dışarı çekmek yerine işlemeyi Snowflake'in içine iten Python, Java ve Scala kütüphaneleri. Container'lı uygulamaları verinin yanında çalıştıran Snowpark Container Services, üç bulutta da ticari bölgelerde genel kullanımda.
+
+Bir üretici için güvenli veri paylaşımı pilot yapmaya değer. Başlangıç noktası konusunda gerçekçi olun: gördüğüm tedarikçi veri alışverişinin çoğu hâlâ dosya transferi.
+
+Yönetişim altındaki bir tabloyu paylaşmak daha temizdir ve paylaşımı geri alabilirsiniz. Tek bir tedarikçi ve tek bir veri setiyle başlayın ve daha fazlasını planlamadan önce bunu kanıtlayın.
+
+## Iceberg, kataloglar, hybrid tables ve Postgres: Snowflake nereye gitti
+
+Snowflake eskiden "verileriniz Snowflake'in formatında" demekti. Bu değişti, adlar da değişti. Ekim 2026 itibarıyla güncel durum:
+
+| Yetenek | Ne yapar | Durum (Ekim 2026) |
+|---|---|---|
+| Apache Iceberg tabloları | Açık Iceberg formatında, sizin bulut depolamanızda veya Snowflake'inkinde saklanan veri | Haziran 2024'ten beri GA; Snowflake tarafından yönetilen depolama seçeneği Haziran 2026'da GA (ticari AWS ve Azure) |
+| Snowflake Horizon Catalog | Apache Polaris üzerine kurulu yönetişim ve katalog; harici motorlar Snowflake tarafından yönetilen Iceberg tablolarını Iceberg REST API üzerinden okur | Yeni müşteriler için önerilen |
+| Snowflake Open Catalog | Yönetilen Apache Polaris hizmeti (eski adıyla Polaris Catalog) | GA, ama yeni müşterilere kapalı; mevcut kullanıcılar devam edebilir |
+| Hybrid tables (Unistore) | Analitiğin yanında düşük gecikmeli işlemsel sorgular için satır tabanlı tablolar | Yalnızca ticari AWS ve Azure bölgelerinde GA |
+| Snowflake Postgres | Snowflake platformu içinde tamamen yönetilen PostgreSQL | 24 Şubat 2026'dan beri AWS ve Azure'da GA |
+
+Pratik sonuç: Iceberg tabloları Spark'ın, Databricks'in veya diğer motorların Snowflake'in sorguladığı aynı dosyalar üzerinde çalışmasını sağlar; bu da bağımlılığı azaltır. Snowflake'in [Open Catalog genel bakışı](https://docs.snowflake.com/en/user-guide/opencatalog/overview) artık yeni müşterilere bunun yerine Horizon Catalog kullanmalarını söylüyor.
+
+Biri hybrid tables'ı operasyonel bir veritabanı olarak önermeden önce sınırlarını okuyun. Her veritabanı 2 TB hybrid table verisiyle sınırlıdır ve Fail-safe, veri paylaşımı, replikasyon veya stream'leri desteklemezler. Bir uygulama arama tablosu için uygundurlar.
+
+Operasyonel bir veritabanı değildirler. Bir uygulamanın analitiğinin yanında operasyonel bir veritabanına ihtiyacı varsa, [Snowflake Postgres Şubat 2026'da genel kullanıma sunuldu](https://docs.snowflake.com/en/release-notes/2026/other/2026-02-24-snowflake-postgres-ga) ve daha dürüst bir seçimdir.
+
+## Regülasyona tabi sektörler için sürümler ve güvenlik
+
+Snowflake dört sürüm satıyor: Standard, Enterprise, Business Critical ve Virtual Private Snowflake (VPS). Hangi güvenlik özelliklerini alacağınızı sürüm belirler ve credit fiyatı onunla birlikte yükselir.
+
+| Özellik | Standard | Enterprise | Business Critical | VPS |
+|---|---|---|---|---|
+| Time Travel | 1 gün | 90 güne kadar | 90 güne kadar | 90 güne kadar |
+| Multi-cluster warehouse'lar | Hayır | Evet | Evet | Evet |
+| Tri-Secret Secure (müşteri tarafından yönetilen anahtar) | Hayır | Hayır | Evet | Evet |
+| Özel bağlantı (AWS PrivateLink, Azure Private Link, Google Private Service Connect) | Hayır | Hayır | Evet | Evet |
+| HIPAA ve PCI DSS desteği | Hayır | Hayır | Evet | Evet |
+| Özel ortam, paylaşılan donanım yok | Hayır | Hayır | Hayır | Evet |
+
+Tri-Secret Secure, bir Snowflake anahtarını bulut sağlayıcınızın anahtar yönetim hizmetinde tuttuğunuz bir anahtarla birleştirir. Anahtarınızı iptal ederseniz Snowflake verilerinizin şifresini artık çözemez. Savunma ve havacılık tedarikçileri için bu kontrol, herhangi bir analitik özellikten daha önemlidir.
+
+ABD kamu işleri için Snowflake, AWS GovCloud ve Azure Government üzerinde ABD kamu müşterilerine ve yüklenicilerine açık SnowGov bölgeleri işletiyor. Snowflake'in [desteklenen bölgeler sayfası](https://docs.snowflake.com/en/user-guide/intro-regions), bu bölgelerde FedRAMP High, Impact Level 4 ve ITAR desteğini, bir AWS bölgesinde Impact Level 5'i listeliyor ve Business Critical veya üzeri sürüm şart koşuyor. Özellik erişilebilirliğini bölge bölge kontrol edin: Open Catalog, hybrid tables ve Snowpark Container Services'in bazı kısımları tüm kamu bölgelerinde mevcut değil.
+
+Çalıştığım savunma programlarında ilk soru hiçbir zaman "ne kadar hızlı" olmadı. İlk soru "veri nerede duruyor, kim görebiliyor ve bunu bir denetçiye kanıtlayabilir miyiz" oldu. Doğru bölge ve sürümde Snowflake buna iyi yanıt veriyor.
+
+Kendi binanızda kalması gereken veri için ise yanıt veremez. Şirket içinde işleme gerektiren gizli veya ihracat kontrolüne tabi iş yükleri farklı bir platforma ihtiyaç duyar; gizli olmayan ortamı Snowflake üstlenir.
+
+## Snowflake ne için kullanılır, neye ideal değildir
+
+Gördüklerimin çoğu birkaç desene giriyor.
+
+1. **Kurumsal raporlama ve BI.** ERP verisinden (SAP, Oracle veya Microsoft Dynamics 365) finans, satış ve operasyon raporlaması; üzerinde Power BI, Tableau veya benzeri bir araç. Bu hâlâ temel kullanım. [ERP verisini Snowflake'e taşıma](/tr/erp-data-into-snowflake/) rehberim çıkarım seçeneklerini ele alıyor.
+2. **Üretim operasyon verisi.** Snowflake'e indirildiğini gördüğüm tesis ve operasyon verisi, üretim planlama verisi. Historian, MES, kalite ve bakım verisi onun yanında durabilir ve JSON formatındaki yarı yapılandırılmış sensör verisi yerel olarak yüklenir.
+3. **İş ortaklarıyla veri paylaşımı.** Tedarikçiler, distribütörler ve müşteriler yönetişim altındaki tabloları doğrudan sorgulayabilir. Pratikte gördüğüm tedarikçi alışverişinin çoğu hâlâ dosya transferi.
+4. **Yönetişim altındaki veri üzerinde veri bilimi ve yapay zeka.** Snowpark üzerinden Python ve Snowflake'in yapay zeka hizmetleri; [Snowflake Cortex AI ve Snowflake Intelligence](/tr/snowflake-cortex-ai-snowflake-intelligence/) yazımda ele alınıyor.
+5. **Satın almalardan sonra konsolidasyon.** Birkaç ERP, tek bir raporlama katmanı; güvenli test ortamları için klonlama.
+
+Tereddüt edeceğim yerler:
+
+1. **Yüksek hacimli işlemsel sistemler.** Hybrid tables ve Snowflake Postgres yardımcı olur, ama ERP ve MES işlemleriniz kendi veritabanlarına aittir.
+2. **Gerçek zamanlı makine kontrolü.** Snowflake milisaniyelere değil, dakikalara uygundur. Sensör verisini akış olarak içeri almak sorun değil. Bir kontrol döngüsünü kapatmak ise öyle değil.
+3. **Katı şirket içi gereksinimler.** Şirket içi kurulum diye bir şey yok.
+4. **Spark'ta yoğun özel makine öğrenmesi ve veri mühendisliği.** Yapılabilir, ama birçok ekip Databricks'i daha doğal buluyor. [Snowflake ve Databricks karşılaştırmam](/tr/snowflake-vs-databricks/) bu seçimi ele alıyor.
+
+### Snowflake şeması ve yıldız şeması: farklı bir konu
+
+Snowflake'i arayanlar çoğu zaman "snowflake schema"ya (kar tanesi şeması) denk geliyor. Bunun ürünle hiçbir ilgisi yok. Kar tanesi şeması, boyut tablolarının alt tablolara normalize edildiği bir veri modelleme desenidir; bu yüzden diyagram bir kar tanesi gibi dallanır.
+
+Yıldız şeması (star schema) her boyutu tek bir düz tabloda tutar. İki modeli de Snowflake'te ya da başka herhangi bir veri ambarında kurabilirsiniz. Çoğu BI ekibi daha basit sorgular için yıldız şemalarını tercih eder.
+
+## Nereden başlardım
+
+İmzalamadan önce dört kararı yazıya dökün: uyum durumunuz için hangi sürüme ihtiyacınız var, hangi bulut ve bölge, iş yüklerini warehouse'lara nasıl böleceksiniz ve veriniz Snowflake'in formatında mı yoksa Iceberg'de mi kalacak. Tedarikçiden ve sistem entegratörünüzden tek bir yıllık rakam değil, warehouse başına credit tahmini göstermelerini isteyin. Snowflake maliyet sürprizlerinin çoğu, kimsenin yazıya dökmediği mimari kararlardır.
+
+ERP verisi kapsamdaysa, önce [SAP veri taşıma projelerinin neden başarısız olduğunu](/tr/why-sap-data-migration-fails-and-how-to-fix-it/) okuyun; aynı veri kalitesi sorunları sizi her platformda takip eder. Bir Snowflake kararı hakkında ikinci bir görüş isterseniz [benimle iletişime geçin](/tr/contact-noel-erp-support/).
+
+## Sıkça sorulan sorular
+
+<details>
+<summary>Snowflake ne için kullanılır?</summary>
+
+Esas olarak ERP, CRM ve operasyon verisi gibi iş verileri üzerinde raporlama ve analitik için bir bulut veri ambarı olarak. Şirketler onu ayrıca iş ortaklarıyla canlı veri paylaşmak, Snowpark üzerinden Python ile veri bilimi çalıştırmak ve yönetişim altındaki veri üzerinde yapay zeka uygulamaları kurmak için de kullanır.
+
+</details>
+
+<details>
+<summary>Snowflake mimarisinin üç katmanı nelerdir?</summary>
+
+Depolama, işlem gücü ve cloud services. Depolama veriyi sıkıştırılmış, sütun tabanlı micro-partition'larda tutar. İşlem gücü, sorguları çalıştıran sanal warehouse'lardan oluşur. Cloud services güvenliği, meta veriyi, sorgu optimizasyonunu ve işlemleri yönetir. Depolama ve işlem gücü ayrı ölçeklenir ve ayrı faturalanır.
+
+</details>
+
+<details>
+<summary>Snowflake bir veritabanı mı, veri ambarı mı?</summary>
+
+Tanıma göre ikisi de. Analitik iş yükleri için kurulmuş bir SQL veritabanıdır; bu yüzden genellikle bulut veri ambarı olarak adlandırılır. Iceberg tabloları, hybrid tables ve Snowflake Postgres ile artık sınırlar dahilinde lakehouse ve bazı işlemsel kullanım senaryolarını da kapsıyor.
+
+</details>
+
+<details>
+<summary>Snowflake şirket içinde (on-premises) çalışabilir mi?</summary>
+
+Hayır. Snowflake yalnızca AWS, Microsoft Azure ve Google Cloud üzerinde çalışır. ABD kamu ve savunma iş yükleri için AWS GovCloud ve Azure Government üzerinde, Business Critical veya üzeri sürüm gerektiren SnowGov bölgeleri sunar.
+
+</details>
+
+<details>
+<summary>Snowflake şeması, Snowflake şirketiyle ilgili mi?</summary>
+
+Hayır. Snowflake şeması (kar tanesi şeması), normalize edilmiş boyut tablolarına sahip bir veri modelleme desenidir. Şirketten daha eskidir ve her veri ambarında çalışır.
+
+</details>
+
+<details>
+<summary>Regülasyona tabi şirketlerin hangi Snowflake sürümüne ihtiyacı var?</summary>
+
+Genellikle Business Critical. Müşteri tarafından yönetilen anahtarla Tri-Secret Secure, özel bağlantı ve HIPAA ile PCI DSS desteği ekler ve kamu bölgeleri için asgari sürümdür. Virtual Private Snowflake, paylaşılan donanım olmayan özel bir ortam ekler.
+
+</details>

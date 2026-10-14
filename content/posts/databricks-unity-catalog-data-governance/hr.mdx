@@ -1,0 +1,230 @@
+---
+title: "Unity Catalog u Databricksu: pravilno postavljeno upravljanje"
+h1: "Unity Catalog u Databricksu: pravilno postavljeno upravljanje"
+slug: "databricks-unity-catalog-data-governance"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/databricks-unity-catalog-data-governance.webp"
+heroAlt: "Svijetli bijeli prolaz podatkovnog centra s poslužiteljskim ormarima i zaštićenim pristupnim vratima"
+category: "data-and-ai"
+tags: ["databricks", "data-governance", "defence", "manufacturing"]
+author: "Noel D'Costa"
+metaTitle: "Unity Catalog u Databricksu: kako postaviti upravljanje"
+metaDescription: "Što je Unity Catalog u Databricksu, kako rade hijerarhija, dozvole, ABAC, lineage i revizija te praktičan redoslijed uvođenja za regulirana poduzeća."
+primaryKeyword: "Unity Catalog Databricks"
+excerpt: "Unity Catalog je sloj upravljanja za sve u Databricksu: jedno mjesto za kontrolu pristupa, praćenje podrijetla podataka i dokaz tko je što dirao. Evo kako funkcionira i kako ga dizajnirati da i u trećoj godini ima smisla."
+experienceSource: "Noel's first-person experience with Databricks on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts checked against official Databricks documentation and release notes, October 2026."
+keyTakeaways:
+  - "Unity Catalog upravlja tablicama, pogledima, volumenima, funkcijama i modelima kroz jedan prostor imena na tri razine: catalog.schema.object"
+  - "Dobivate jedan metastore po cloud regiji, pa se stvarne odluke o upravljanju donose u dizajnu kataloga"
+  - "ABAC pravila, upravljane oznake i klasifikacija podataka postali su općenito dostupni u travnju 2026.; DENY pravila još su u Beta fazi"
+  - "Grupe dolaze iz Vašeg pružatelja identiteta i posjeduju svaki produkcijski katalog. Nikada ne dodjeljujte dozvole pojedincima"
+  - "Delta Sharing sada se zove OpenSharing (lipanj 2026.); upravljane i strane Iceberg tablice postale su GA u svibnju 2026."
+  - "Dokaze o reviziji i lineageu uključite od prvog dana. Naknadno uvođenje pred reviziju je bolno"
+pullQuote: "Većina problema s Unity Catalogom zapravo su problemi imenovanja i vlasništva koje je netko pokušao riješiti dozvolama."
+mentions:
+  - "Databricks"
+  - "Unity Catalog"
+  - "OpenSharing"
+  - "Delta Sharing"
+  - "Apache Iceberg"
+  - "UCX"
+  - "Hive metastore"
+  - "Lakehouse Federation"
+  - "Microsoft Entra ID"
+  - "SAP"
+  - "Oracle"
+  - "Microsoft Dynamics 365"
+originalUrl: "https://noeldcosta.com/databricks-unity-catalog-data-governance/"
+canonicalUrl: "https://noeldcosta.com/hr/databricks-unity-catalog-data-governance/"
+locale: "hr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Unity Catalog je sloj upravljanja u Databricksu. Kontrolira tko smije vidjeti i mijenjati svaku tablicu, pogled, volumen datoteka, funkciju i AI model, bilježi podrijetlo podataka (lineage) između njih i zapisuje pristupe kako biste to mogli dokazati revizoru.
+
+Ako danas koristite Databricks, već ste na njemu ili prelazite na njega. Naslijeđeni Hive metastore odlazi u povijest, a svaka novija Databricks funkcionalnost pretpostavlja Unity Catalog ispod sebe.
+
+Pitanje više nije hoćete li ga uvesti. Pitanje je hoće li dizajn Vašeg kataloga i dalje imati smisla nakon tri godine novih timova, novih podataka i jedne ili dvije revizije.
+
+U programima u proizvodnji i obrani na kojima sam radio, tehnologija je rijetko bila teški dio. Teški dio bio je dogovoriti tko posjeduje koje podatke, kako su okruženja odvojena i koje dokaze treba sigurnosni tim.
+
+## Čime Unity Catalog u Databricksu zapravo upravlja
+
+Sve se nalazi ispod **metastorea**, spremnika najviše razine. Ispod njega podatkovna i AI imovina koristi prostor imena na tri razine: `catalog.schema.object`. Upit nad `prod_finance.gl.journal_lines` imenuje katalog, shemu i tablicu.
+
+Objekti na koje dodjeljujete dozvole zovu se securable objects. Prema [dokumentaciji Unity Cataloga](https://docs.databricks.com/aws/en/data-governance/unity-catalog/), dijele se u dvije skupine:
+
+1. **Imovina unutar prostora imena:** tablice, pogledi, volumeni (upravljana pohrana datoteka), funkcije, modeli i servisi.
+2. **Objekti na razini metastorea:** storage credentials, external locations, connections (prema vanjskim bazama podataka) i shares.
+
+Dva od tih objekata na razini metastorea zaslužuju jednostavno objašnjenje, jer određuju gdje Vaši podaci fizički žive.
+
+**Storage credential** obuhvaća cloud identitet, kao što je IAM uloga ili upravljani identitet, koji može pristupiti računu za pohranu ili bucketu. **External location** spaja putanju pohrane s credentialom. Zajedno omogućuju Unity Catalogu da čita i piše u cloud pohranu bez predavanja ključeva korisnicima.
+
+Zatim upravljane nasuprot vanjskim tablicama. Kod upravljanih tablica Unity Catalog upravlja tablicom i njezinim datotekama. Kod vanjskih tablica upravlja samo pristupom.
+
+Databricks sada preporučuje upravljane tablice za sve nove podatke, a vanjske zadržava uglavnom za nadogradnje s Hivea. Slažem se. To što drugi alati pišu na iste putanje obično je razlog da se popravi cjevovod, a ne da tablica zauvijek ostane vanjska.
+
+Jedno ograničenje oblikuje sve: možete imati samo jedan metastore po cloud regiji. Izolaciju ne možete riješiti s više metastorea. Rješavate je katalozima.
+
+## Kontrole pristupa: dozvole, filtri redaka, maske stupaca i ABAC
+
+Dozvole u Unity Catalogu standardne su SQL dozvole koje se nasljeđuju prema dolje. Dozvola na katalogu vrijedi za svaku shemu i tablicu unutar njega. Korisniku trebaju `USE CATALOG` i `USE SCHEMA` da bi došao do tablice, a zatim `SELECT` da bi je čitao.
+
+```sql
+GRANT USE CATALOG ON CATALOG prod_finance TO `finance-analysts`;
+GRANT USE SCHEMA ON SCHEMA prod_finance.gl TO `finance-analysts`;
+GRANT SELECT ON SCHEMA prod_finance.gl TO `finance-analysts`;
+```
+
+Dozvole odgovaraju na pitanje „smije li ova grupa čitati ovu tablicu”. Regulirani podaci trebaju preciznije odgovore, i tu nastupaju ostale kontrole.
+
+Tablica u nastavku sažima glavne kontrole pristupa i njihov status u listopadu 2026.
+
+| Kontrola | Što radi | Status (listopad 2026.) |
+|---|---|---|
+| Dozvole i vlasništvo | Ovlasti na razini objekta, nasljeđuju se od kataloga preko sheme do objekta | Općenito dostupno |
+| Filtri redaka i maske stupaca na razini tablice | SQL funkcija pridružena jednoj tablici skriva retke ili maskira vrijednosti | Općenito dostupno |
+| ABAC pravila za filtre redaka i maske stupaca | Jedno pravilo, definirano na razini kataloga, sheme ili tablice, vrijedi za svaki objekt s upravljanom oznakom | GA od 28. travnja 2026. |
+| Upravljane oznake | Oznake na razini računa s kontroliranim ključevima, vrijednostima i time tko ih smije dodijeliti | GA od 2. travnja 2026. |
+| Klasifikacija podataka | Skenira tablice i označava osjetljive podatke kao što su osobni podaci (PII) | GA od 20. travnja 2026.; prilagođeni klasifikatori Beta |
+| ABAC DENY pravila i pravila na razini metastorea | Izričite zabrane koje nadjačavaju dozvole; pravila na razini metastorea | Beta |
+| ABAC za vanjske engineove | Vanjski engineovi čitaju upravljane tablice zaštićene ABAC-om, a pravila provodi Databricks serverless compute | GA od 1. listopada 2026. |
+
+Datumi su preuzeti iz [Databricksovih bilješki o izdanju za travanj 2026.](https://docs.databricks.com/aws/en/release-notes/product/2026/april) i bilješki za listopad 2026.
+
+ABAC (kontrola pristupa temeljena na atributima) promjena je koja je najvažnija za velika okruženja. Umjesto da pišete masku za svaku tablicu, označite stupce, recimo `classification = export_controlled`, i napišete jedno pravilo koje maskira svaki označeni stupac za sve izvan imenovane grupe.
+
+Nove tablice zaštićene su čim su označene. Klasifikacija podataka može predložiti oznake.
+
+Najprije provjerite compute. Tablice zaštićene ABAC-om trebaju serverless compute ili Databricks Runtime 16.4 ili noviji. Stariji klasteri ih uopće ne mogu čitati.
+
+Dvije zamke na koje bih rano upozorio. Proturječna pravila na istom stupcu za istog korisnika blokiraju upit greškom.
+
+A ako identitet pod kojim se cjevovod izvodi potpada pod masku, osvježeni podaci mogu se pohraniti maskirani. Servisne identitete izuzmite namjerno i dokumentirajte zašto.
+
+## Lineage, revizija i dijeljenje
+
+Lineage se bilježi automatski, sve do razine stupca, za upite pokrenute kroz Databricks SQL i Spark DataFrames u bilo kojem radnom prostoru povezanom s metastoreom. Pokriva bilježnice, poslove, cjevovode i nadzorne ploče. Lineage stupaca gubi se kada kod referencira tablice putanjom pohrane, što je još jedan razlog za ukidanje pristupa temeljenog na putanjama.
+
+Revizijski dokazi dolaze iz sistemskih tablica. `system.access.audit` sadrži revizijske događaje i u [dokumentaciji sistemskih tablica](https://docs.databricks.com/aws/en/admin/system-tables/) još je označena kao Public Preview.
+
+Uz nju se nalaze tablice za lineage i naplatu, s besplatnim čuvanjem od 365 dana. Sistemske tablice prema zadanim postavkama vide samo administratori računa i metastorea, pa rano odlučite tko dobiva pristup za čitanje i kopirate li revizijske podatke u svoj SIEM radi duljeg čuvanja.
+
+Dijeljenje je ove godine promijenilo ime. Databricks je [10. lipnja 2026. najavio OpenSharing](https://www.databricks.com/company/newsroom/press-releases/databricks-announces-opensharing) kao sljedeću verziju protokola Delta Sharing, koji sada vodi Linux Foundation i koji je proširen na AI imovinu i Iceberg klijente.
+
+„Delta Sharing” ćete i dalje viđati u starijoj dokumentaciji i ugovorima. Share je objekt Unity Cataloga, a dijeljenje Databricks-to-Databricks ujedno je način premještanja podataka između regionalnih metastorea.
+
+Za mješovita okruženja upravljane i strane Apache Iceberg tablice postale su općenito dostupne 21. svibnja 2026. Strane tablice čitaju se putem Lakehouse Federationa iz kataloga kao što su AWS Glue ili Snowflake Horizon. Engineovi kao što su Spark, Flink i Trino mogu koristiti Iceberg REST catalog endpoint Unity Cataloga.
+
+Postoji i Unity Catalog otvorenog koda pod LF AI & Data Foundationom, ali to je projekt u sandbox fazi, a ne upravljana usluga. Ne gradite izlaznu strategiju na njemu bez testiranja.
+
+## Dizajn upravljanja koji funkcionira
+
+Katalozi su glavna jedinica izolacije. Databricksove [najbolje prakse za Unity Catalog](https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices) navode da katalozi obično odgovaraju okruženju, timu, poslovnoj jedinici ili njihovoj kombinaciji. Većina stvarnih dizajna je kombinacija.
+
+<compare-split title="Dva načina podjele kataloga" left-label="Katalog po okruženju" left-points="Katalozi dev, test i prod, sheme po domeni|Jednostavno je vezati svaki katalog uz njegov radni prostor|Vlasništvo se zamagljuje kako domene rastu unutar jednog kataloga|Odgovara manjim timovima i ranim uvođenjima" right-label="Katalog po domeni i okruženju" right-points="prod_finance, prod_quality, dev_finance i tako dalje|Svaka domenska grupa posjeduje svoje kataloge|Jasna odgovornost i čišći opseg revizije|Više kataloga za imenovanje, vezivanje i dodjelu dozvola"></compare-split>
+
+Za svaku tvrtku s više od nekoliko podatkovnih timova zadano bih odabrao domenu plus okruženje. Na početku traži više discipline u imenovanju. Dvije godine kasnije štedi raspravu o tome tko posjeduje tablicu koju svi koriste, a nitko ne održava.
+
+Ostatak dizajna svodi se na četiri pravila:
+
+1. **Grupe dolaze iz Vašeg pružatelja identiteta.** Korisnike i grupe uvedite u Databricks račun putem automatskog upravljanja identitetima ili putem SCIM-a ako ga Vaš pružatelj ne podržava. Grupe definirajte u Microsoft Entra ID-u, Okti ili sličnom alatu, a ne u Databricksu. Kada netko ode, pristup odlazi s njegovim računom u imeniku.
+2. **Grupe posjeduju produkcijske objekte.** Databricksova vlastita smjernica je da se vlasništvo nad produkcijskim katalozima i shemama dodijeli grupama, nikada pojedincima. Vlasnik može dodjeljivati pristup, pa je osoba kao vlasnik trajna iznimka.
+3. **Vežite kataloge uz radne prostore.** Produkcijski katalog vezan samo uz produkcijske radne prostore ne može se upitavati iz sandboxa, bez obzira na to što kažu dozvole.
+4. **Klasificirajte prije dodjele dozvola.** Dogovorite kratak rječnik oznaka (osjetljivost, osobni podaci, kontrola izvoza, izvorni sustav) kao upravljane oznake i na temelju njega pišite ABAC pravila.
+
+U proizvodnji sam kataloge organizirao prema tvorničkom sustavu, odnosno domeni OT-a i izvornih sustava, a ne prema pogonu. OT podaci iz historiana, MES-a i senzora nalaze se u vlastitim katalozima, u vlasništvu operativnog ili inženjerskog podatkovnog tima. IT podaci iz ERP-a (SAP, Oracle ili Microsoft Dynamics 365), kvalitete i lanca opskrbe nalaze se u drugima.
+
+Pripremljeni, spojeni podaci za analitičare žive u trećem skupu. Granica između OT-a i IT-a postaje vidljiva u samom katalogu. Ako je izvoz iz ERP-a u opsegu, moje bilješke o tome [zašto migracija SAP podataka propada](/hr/why-sap-data-migration-fails-and-how-to-fix-it/) vrijede i za ERP podatkovne feedove.
+
+## Obrambeni kut: najmanje ovlasti, odvajanje i dokazi
+
+U obrambenim programima očekujte da će sigurnosni tim postaviti četiri pitanja. Tko može vidjeti podatke pod kontrolom izvoza? Kako su odvojeni od svega ostalog?
+
+Gdje su pohranjeni? Možete li sve to dokazati za bilo koji dan u protekloj godini?
+
+Unity Catalog odgovara na većinu njih ako ga za to dizajnirate:
+
+1. **Najmanje ovlasti.** Nema dozvola na razini metastorea ili kataloga za široke grupe. Dodjeljujte na razini sheme imenovanim grupama i koristite ABAC maske za stupce označene kao kontrolirane. DENY pravila koristite tek kada izađu iz Beta faze i kada ih Vaša akreditacijska tijela prihvate.
+2. **Odvajanje.** Zasebni katalozi za kontrolirane podatke, s vlastitom lokacijom upravljane pohrane, vezani uz namjenske radne prostore. Databricks preporučuje upravljanu pohranu na razini kataloga kao glavnu jedinicu izolacije, što ovome dobro odgovara.
+3. **Rezidentnost.** Jedan metastore po regiji znači da podaci ostaju u regiji svoje pohrane, osim ako ih netko ne podijeli. Svaki OpenSharing share i svaku međuregionalnu vezu tretirajte kao odluku o rezidentnosti koja zahtijeva odobrenje.
+4. **Revizijski dokazi.** Lineage plus `system.access.audit`, izvezeni u Vaš SIEM, pokazuju tko je čemu pristupio i kamo su podaci otišli. Imajte na umu da je revizijska tablica još u fazi Public Preview. Na mom radu u obrani sigurnosni timovi htjeli su da se revizijski zapisi kopiraju u njihov vlastiti SIEM, a ne da samo ostanu u Databricks sistemskim tablicama. Taj feed uključite u plan od početka.
+
+Unity Catalog ne odlučuje što se smatra klasificiranim podacima ili podacima pod kontrolom ITAR-a i ne zamjenjuje akreditaciju. Neka obrambena radna opterećenja uopće se ne mogu izvoditi u komercijalnoj cloud regiji.
+
+Dizajn kataloga i tu pomaže: povlači jasnu crtu između onoga što smije na platformu i onoga što ne smije. Ako pišete sloj pravila iznad platforme, moj [vodič kroz okvir za upravljanje AI-jem](/hr/ai-governance-framework-guide-building-a-responsible-ai-plan/) pokriva stranu uloga i odobrenja.
+
+## Praktičan redoslijed uvođenja
+
+Ovo je redoslijed koji bih slijedio za tvrtku koja prelazi s Hive metastorea ili počinje ispočetka.
+
+1. **Dogovorite model kataloga i konvenciju imenovanja.** Domena plus okruženje, zapisano i potpisano od strane vlasnika podataka. Promijenite li to kasnije, preimenujete sve.
+2. **Povežite pružatelja identiteta.** Provisioning na razini računa, grupe definirane u imeniku, SCIM na razini radnog prostora isključen za radne prostore s Unity Catalogom.
+3. **Postavite storage credentials i external locations.** U vlasništvu platformske grupe. Nitko drugi ne dobiva `CREATE EXTERNAL LOCATION`.
+4. **Izradite kataloge s upravljanom pohranom i vezama uz radne prostore.** Produkcijski katalozi u vlasništvu grupa od prvog dana.
+5. **Definirajte upravljane oznake i uključite klasifikaciju podataka.** Pregledajte njezine nalaze prije nego što na njima napišete pravila.
+6. **Napišite ABAC pravila za osjetljive stupce.** Testirajte sa stvarnim korisnicima na svakoj vrsti computea koju koristite, uključujući svaki klaster koji je još ispod Runtimea 16.4.
+7. **Migrirajte s Hive metastorea.** Databricks sada [preporučuje najprije federirati Hive metastore](https://docs.databricks.com/aws/en/data-governance/unity-catalog/migrate), a zatim nadograditi tablice na mjestu. UCX pomaže kod velikih okruženja, ali je to projekt Databricks Labsa koji održava zajednica, a ne službeno podržan alat. Planirajte s tim na umu.
+8. **Uključite izvoz revizijskih podataka i pregled lineagea.** Dodijelite pristup za čitanje sistemskih tablica, postavite SIEM feed i dogovorite tko što pregledava.
+9. **Onemogućite pristup Hive metastoreu** kada je sve migrirano, kako nitko ne bi tiho gradio na staroj putanji.
+
+## Pogreške koje treba izbjeći
+
+1. **Dodjela dozvola pojedincima.** Funkcionira tjedan dana. Nakon toga nitko ne može odgovoriti tko ima pristup čemu.
+2. **Jedan golemi katalog sa shemama po timu.** Vlasništvo i opseg revizije se zamagljuju, a kasnije sve gradite iznova.
+3. **Ostavljanje tablica vanjskima „za sada”.** Gubite funkcionalnosti upravljanih tablica i zadržavate dva vlasnika za svaku datoteku.
+4. **Testiranje pravila na jednoj vrsti klastera.** ABAC se ponaša različito ovisno o computeu; stari runtimeovi odmah zakažu.
+5. **Tretiranje revizije kao kasnije faze.** Revizor će pitati o razdoblju prije nego što ste je uključili.
+
+## Odakle početi
+
+Ako ste na početku, napišite model kataloga i rječnik oznaka na jednoj stranici prije nego što itko izradi katalog. Ako ste usred migracije, provedite procjenu, popišite svaku tablicu koja je još vanjska ili još na Hive metastoreu i svakoj dodijelite vlasnika i datum.
+
+Za širu sliku počnite s tekstom o tome [čemu služi Databricks](/hr/what-is-databricks-used-for/) i pogledajte [cijene Databricksa](/hr/databricks-pricing-explained/) prije nego što dimenzionirate serverless compute za ABAC. Ako odmjeravate platforme, moja [usporedba Snowflake vs Databricks](/hr/snowflake-vs-databricks/) pokriva upravljanje na obje strane. Pomažem organizacijama u proizvodnji i obrani donositi ove odluke o dizajnu; ako bi Vam pomoglo drugo mišljenje, [rezervirajte razgovor](/hr/contact-noel-erp-support/).
+
+## Često postavljana pitanja
+
+<details>
+<summary>Što je Unity Catalog u Databricksu?</summary>
+
+Unity Catalog je sloj upravljanja za Databricks. Pruža jedno mjesto za upravljanje pristupom tablicama, pogledima, volumenima datoteka, funkcijama i AI modelima, automatski bilježi lineage i zapisuje pristupe u revizijske sistemske tablice. Imovini se pristupa kao catalog.schema.object pod jednim metastoreom po regiji.
+
+</details>
+
+<details>
+<summary>Je li ABAC u Databricksu općenito dostupan?</summary>
+
+Jest. Pravila kontrole pristupa temeljene na atributima za filtre redaka i maske stupaca postala su općenito dostupna 28. travnja 2026., a upravljane oznake i klasifikacija podataka također su postale GA u travnju 2026. DENY pravila, pravila na razini metastorea i prilagođeni klasifikatori u listopadu 2026. još su bili u Beta fazi.
+
+</details>
+
+<details>
+<summary>Je li Delta Sharing isto što i OpenSharing?</summary>
+
+Jest. Databricks je u lipnju 2026. najavio OpenSharing kao sljedeći razvojni korak protokola Delta Sharing, koji sada vodi Linux Foundation i koji je proširen na AI imovinu i Iceberg klijente. Databricksova dokumentacija sada opisuje dijeljenje pod imenom OpenSharing.
+
+</details>
+
+<details>
+<summary>Trebam li u Unity Catalogu koristiti upravljane ili vanjske tablice?</summary>
+
+Upravljane tablice za sve nove podatke. Databricks ih preporučuje jer tada Unity Catalog upravlja datotekama, održavanjem i funkcionalnostima za performanse. Vanjske tablice zadržite samo ondje gdje drugi sustav mora posjedovati datoteke ili tijekom nadogradnje s Hive metastorea i planirajte njihovu konverziju.
+
+</details>
+
+<details>
+<summary>Kako migrirati s Hive metastorea na Unity Catalog?</summary>
+
+Databricks preporučuje najprije federirati Hive metastore kao strani katalog, a zatim nadograditi tablice na mjestu bez premještanja podataka. Za velika okruženja UCX alati iz Databricks Labsa procjenjuju spremnost i migriraju grupe, dozvole i tablice, ali UCX održava zajednica i nije službeno podržan.
+
+</details>
+
+<details>
+<summary>Trebaju li katalozi biti organizirani po okruženju ili po poslovnoj domeni?</summary>
+
+Za većinu poduzeća oboje: jedan katalog po domeni po okruženju, kao što su prod_finance i dev_finance. To svakoj domenskoj grupi daje jasno vlasništvo i čist opseg revizije. Manji timovi mogu početi s jednim katalogom po okruženju i shemama po domeni.
+
+</details>

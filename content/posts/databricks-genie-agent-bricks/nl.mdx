@@ -1,0 +1,224 @@
+---
+title: "Databricks Genie en Agent Bricks: AI op bedrijfsdata"
+h1: "Databricks Genie en Agent Bricks: AI op bedrijfsdata"
+slug: "databricks-genie-agent-bricks"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/databricks-genie-agent-bricks.webp"
+heroAlt: "Werkbank in een kwaliteitslab van een fabriek met precisieonderdelen en een tablet met een vraag-en-antwoordscherm"
+category: "data-and-ai"
+tags: ["databricks", "enterprise-ai"]
+author: "Noel D'Costa"
+metaTitle: "Databricks Genie en Agent Bricks: eerlijke gids voor 2026"
+metaDescription: "Databricks Genie en Agent Bricks uitgelegd: wat Genie Agents goed beantwoorden, waar ze falen, actuele namen en status, kosten en een pilotplan voor uw data."
+primaryKeyword: "databricks genie"
+excerpt: "Met Databricks Genie stellen zakelijke gebruikers vragen in gewone taal over beheerde data, en in Agent Bricks bouwen ontwikkelaars daar agents op. Dit doet elk vandaag, dit maakt antwoorden nauwkeurig, hier gaat het mis, en zo draait u een eerste pilot in de maakindustrie of defensie."
+experienceSource: "Noel's first-person experience with Databricks on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts and prices checked against official Databricks documentation and release notes, October 2026."
+keyTakeaways:
+  - "Genie is nu een familie: Genie One voor zakelijke gebruikers, Genie Agents (voorheen Genie spaces) voor gecureerde domeinen, Genie Code voor ontwikkelaars"
+  - "Nauwkeurigheid komt uit curatie: metric views, voorbeeld-SQL, SQL-functies en heldere instructies, niet uit het model alleen"
+  - "Elk antwoord draait als de eindgebruiker onder de rechten van Unity Catalog, en dat maakt Genie bruikbaar in gereguleerde omgevingen"
+  - "Agent Bricks is nu het ontwikkelaarsplatform voor eigen agents; Knowledge Assistant en Supervisor Agent worden niet meer aangeraden voor nieuwe bouw"
+  - "LLM-gebruik van Genie is gratis tot 31 januari 2027, maar compute van de SQL warehouse wordt apart gefactureerd en service principals betalen vanaf dag één"
+  - "Begin met één smal domein, een set benchmarkvragen en een benoemde eigenaar voor elke metric"
+pullQuote: "Genie is maar zo goed als het semantische werk dat u ervoor doet."
+mentions:
+  - "Databricks Genie"
+  - "Genie One"
+  - "Genie Agents"
+  - "Genie Code"
+  - "Agent Bricks"
+  - "Unity Catalog"
+  - "Unity Gateway"
+  - "Metric views"
+  - "MLflow"
+  - "Model Context Protocol"
+  - "Databricks on AWS GovCloud"
+originalUrl: "https://noeldcosta.com/databricks-genie-agent-bricks/"
+canonicalUrl: "https://noeldcosta.com/nl/databricks-genie-agent-bricks/"
+locale: "nl"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Met Databricks Genie stellen zakelijke gebruikers in gewone taal vragen over beheerde bedrijfsdata en krijgen ze SQL, een resultaattabel en een grafiek terug. Het werkt goed als een datateam een smal domein met gedefinieerde metrics heeft gecureerd, en slecht als het op ruwe tabellen wordt losgelaten en moet gokken.
+
+Agent Bricks is de andere helft. Daar bouwen, implementeren en evalueren ontwikkelaars eigen AI-agents die Genie, documenten, functies en externe tools kunnen aanroepen.
+
+Ik heb met Databricks gewerkt in dataplatformprogramma's in de maakindustrie en defensie. Mijn oordeel is eenvoudig. De AI-laag is nu goed genoeg om voor planners, kwaliteitsingenieurs en financeteams te zetten.
+
+Het moeilijke deel is het semantische en governancewerk eronder, en zakelijke gebruikers klaarmaken om het te gebruiken. Daar hoort de meeste pilotinspanning naartoe te gaan.
+
+## Wat Databricks Genie eind 2026 is
+
+Databricks heeft in 2026 het grootste deel van de Genie-familie hernoemd, dus oudere artikelen zullen u in verwarring brengen. De gebruikerservaring voor de business die eerder Databricks One heette, werd in juni 2026 Genie One.
+
+Genie spaces werden in juli 2026 Genie Agents. Databricks Assistant heet nu Genie Code.
+
+De tabel hieronder laat zien wat elk onderdeel doet en wat de status per oktober 2026 is.
+
+| Product | Wat het doet | Wie het gebruikt | Status (oktober 2026) |
+|---|---|---|---|
+| Genie One | Eén chatinterface over dashboards, Genie Agents en apps; ook apps voor iOS en Android | Zakelijke gebruikers | Chat GA sinds juni 2026; mobiele app in Public Preview |
+| Genie Agents (voorheen Genie spaces) | Een gecureerde, domeinspecifieke chat over maximaal 50 tabellen, views of metric views | Analisten bouwen, zakelijke gebruikers vragen | Agent mode GA sinds juli 2026; diverse add-ons in Beta |
+| Genie Code (voorheen Databricks Assistant) | Code- en data-assistent voor notebooks, pipelines en dashboards | Engineers, analisten | Pay-as-you-go sinds 8 juli 2026 |
+| Conversation API | Integreert Genie Agents in apps, chatbots en andere agents | Ontwikkelaars | API's voor agent mode en het ophalen van visualisaties GA sinds augustus 2026 |
+| MCP-connectors van Databricks | Laat Genie One en Genie Code externe tools gebruiken via Model Context Protocol | Beheerders, ontwikkelaars | GA sinds september 2026; schrijfacties in Beta |
+
+Een Genie Agent selecteert relevante metadata, instructies, voorbeeld-SQL en chatgeschiedenis, en genereert dan SQL. Die SQL draait op een Pro- of serverless SQL warehouse en is altijd alleen-lezen.
+
+Het governancepunt dat het meest telt: volgens de [documentatie voor het inrichten van een Genie Agent](https://docs.databricks.com/aws/en/genie-agents/set-up) wordt datatoegang altijd beoordeeld met de eigen Unity Catalog-rechten van elke eindgebruiker. Een gebruiker die vraagt naar data die hij niet mag zien, krijgt een leeg antwoord.
+
+Row filters en column masks zijn van toepassing. De warehousegegevens van de auteur zijn ingebed zodat gebruikers queries kunnen draaien, maar ze verruimen niemands datatoegang.
+
+## Wat Databricks Genie nauwkeurig maakt, en waar het faalt
+
+Het model is niet de hefboom voor nauwkeurigheid. Curatie is dat wel. De [handleiding voor kwaliteitstuning van Genie Agents](https://docs.databricks.com/aws/en/genie-agents/tune-quality) raadt aan bedrijfslogica als SQL-expressies te definiëren, omdat die consistentere resultaten geven dan tekstinstructies.
+
+Op volgorde van impact, op basis van wat ik heb gezien:
+
+1. **Metric views.** Unity Catalog Business Semantics, met metric views als kern, werd in april 2026 GA. U definieert "first-pass yield" of "leverbetrouwbaarheid" één keer, met labels en synoniemen, en Genie Agents kunnen er direct op worden gebouwd. Is de metric gedefinieerd, dan hoeft Genie hem niet af te leiden.
+2. **Voorbeeldqueries in SQL.** Koppel een echte vraag aan de SQL die hem beantwoordt, gericht op logica die uniek is voor u: hoe uitvalkosten worden berekend, welke fabrieken onder welke regio vallen.
+3. **SQL-functies als vertrouwde assets.** Unity Catalog-functies bevatten logica die een statische query niet aankan. Als Genie een geparametriseerde query of functie gebruikt, wordt het antwoord als geverifieerd gemarkeerd. Gebruikers hebben `EXECUTE` op die functies nodig.
+4. **De knowledge store.** Beschrijvingen, synoniemen, joinrelaties en verborgen kolommen. Dubbele technische kolommen verbergen helpt meer dan men verwacht.
+5. **Algemene instructies.** Tekst voor context die overal geldt en nergens anders past. Houd het kort en vrij van tegenstrijdigheden.
+
+Er zijn harde grenzen. 50 tabellen, views of metric views per agent.
+
+100 instructies, waarbij elke voorbeeldquery en SQL-functie als één telt. 200 snippets voor joins en SQL-expressies.
+
+Ik behandel die grenzen als ontwerprichtlijn. Een Genie Agent voor "de hele productie" valt tegen. Een voor "kwaliteitsmeldingen en uitval voor twee fabrieken" kan heel goed zijn.
+
+### Waar Genie faalt
+
+Dit is het deel dat leveranciersdemo's overslaan.
+
+1. **Ongedefinieerde bedrijfstermen.** Vraag "wat was onze marge vorig kwartaal" op ruwe ERP-tabellen en Genie kiest een definitie. Dat is misschien niet de definitie van finance. Komt data uit SAP, Oracle of Dynamics 365 binnen zonder beheerde metriclaag, verwacht dan plausibele getallen die niet aansluiten.
+2. **Rommelige stamgegevens.** Dubbele materiaalnummers, inconsistente fabriekscodes en vrije tekst in defectomschrijvingen leveren zelfverzekerde foute antwoorden op. Genie versterkt de kwaliteit van wat het krijgt.
+3. **Dubbelzinnige vragen.** "Welke lijn is het slechtst?" Het slechtst waarin? Goede curatie en voorbeeldvragen sturen gebruikers. Niets neemt de noodzaak weg dat ze specifiek zijn.
+4. **Taal.** De documentatie vermeldt dat prompts in het Engels worden verpakt, dus antwoorden kunnen in het Engels terugkomen, ook als gebruikers in een andere taal schrijven. Test dit voordat u uitrolt naar niet-Engelstalige fabrieken.
+5. **Actie, geen inzicht.** Gegenereerde SQL is alleen-lezen. Voor controle is dat een kracht. Het betekent ook dat Genie een onderhoudsplanner vertelt welke assets achterlopen; het maakt de werkorder niet aan.
+
+## Agent Bricks, MCP en Unity Gateway
+
+Ook Agent Bricks is van vorm veranderd. Het [overzicht van Agent Bricks](https://docs.databricks.com/aws/en/agents/concepts/) beschrijft het nu als het agentontwikkelplatform van Databricks voor mensen die code schrijven.
+
+U brengt uw eigen framework en model mee, zet een basis op met de Agent Bricks CLI en implementeert naar Agent Runtime op Databricks Apps. Ouder materiaal noemt deze laag Mosaic AI Agent Framework, en sommige Mosaic AI-labels staan nog in de documentatie.
+
+Twee dingen moeten kopers weten. Knowledge Assistant en Supervisor Agent, de eerdere declaratieve bouwers, worden nu "niet meer aangeraden voor nieuwe agents", en de Supervisor API is deprecated.
+
+Databricks verwijst low-codegebruikers naar Genie Agents en ontwikkelaars naar de CLI. Stelt een SI een ontwerp voor dat op een van beide is gebouwd, vraag dan waarom.
+
+Voor extractie uit documenten is de aanbevolen route AI Functions, die documenten vanuit SQL classificeren, extraheren, samenvatten en parsen. Voor een fabrikant omvat dat leverancierscertificaten, inspectierapporten en onderhoudslogs.
+
+Evaluatie loopt via managed MLflow: traces van elke agentstap, ingebouwde LLM-judges zoals correctheid, eigen scorers en feedback van experts. Dezelfde scorers kunnen een steekproef van productieverkeer monitoren.
+
+[Unity Gateway](https://docs.databricks.com/aws/en/unity-gateway/) (de URL's zeggen nog ai-gateway) is het control plane. Het geeft u rate limits op model- en MCP-services, service policies voor guardrails, maskering van persoonsgegevens, gebruiksregistratie in system tables, logging van requests en responses naar Unity Catalog-tabellen, en fallbacks tussen modellen. MCP-servers die Databricks levert en die u registreert gebruiken de rechten van Unity Catalog, dus een agent die de Genie One MCP-server aanroept, blijft gebonden aan wat de gebruiker mag zien.
+
+## Een eerste use case kiezen in de maakindustrie en defensie
+
+In de maakindustrie zou ik beginnen met vragen over kwaliteit en onderhoud op data die u al beheert. Uitval en herbewerking per lijn, ploeg en materiaal. Openstaande kwaliteitsmeldingen per leverancier.
+
+Gemiddelde tijd tussen storingen voor kritieke assets, uit ERP-onderhoudsdata gekoppeld aan samenvattingen uit historians of MES. Deze vragen hebben duidelijke eigenaren, en gebruikers wachten er vandaag dagen op een analist voor.
+
+Vermijd vraagvoorspelling of cost-to-serve voor een eerste pilot. De definities zijn omstreden en de data beslaat te veel systemen.
+
+In defensie doet de use case er minder toe dan de maatregelen. Kies iets ongerubriceerds, auditeerbaars en gevoelig voor rechten: beschikbaarheid van reservedelen, de status van contractmijlpalen of de leverprestatie van leveranciers. Het doel van de pilot is aantonen dat row filters, column masks en markeringen voor exportcontrole correct werken bij vragen in natuurlijke taal.
+
+Controleer de implementatie vroeg. De [release notes voor AWS GovCloud](https://docs.databricks.com/aws/en/release-notes/gov-cloud/2026) tonen dat Genie en Genie Agents daar GA zijn sinds januari 2026 en Genie One sinds 22 januari 2026, in GovCloud en GovCloud DoD. Unity Gateway kwam in september 2026 in Public Preview naar GovCloud, zonder budgetten, inference tables of service policies.
+
+Agent mode buiten Amerika, Europa, Australië, Nieuw-Zeeland en Japan vereist dat verwerking over geografische grenzen (cross-Geo) is ingeschakeld. Voor een programma in de Golf of Azië waar soevereiniteit gevoelig ligt, is dat een beleidsbeslissing, geen vinkje.
+
+## Een pilotplan in tien stappen
+
+Dit is de volgorde die ik zou aanhouden. Als de data al in Unity Catalog wordt beheerd, gaat de meeste tijd naar stap 3 tot en met 7. In de pilots met natuurlijke taal waaraan ik heb gewerkt, ging het mis bij de onboarding.
+
+De zakelijke gebruikers waren niet goed meegenomen, dus ze waren niet voorbereid, en die kloof is grotendeels waarom het werk aan de semantische laag en de pilot ongeveer twee maanden kostte. Neem uw gebruikers mee tijdens de bouw, niet erna.
+
+1. **Kies één domein en één sponsor.** Een kwaliteitsmanager van een fabriek of een logistiek lead, niet "de business".
+2. **Schrijf 50 tot 100 echte vragen** van de mensen die het gaan gebruiken. Dit wordt uw benchmark.
+3. **Zorg dat elke metric een eigenaar en een definitie heeft.** Finance of operations keurt de definitie goed voordat die een metric view wordt.
+4. **Bouw metric views en gecureerde tabellen.** Blijf ruim onder de grens van 50 tabellen.
+5. **Voeg voorbeeld-SQL, functies en synoniemen toe** voor de vragen die de eerste keer mislukken.
+6. **Test rechten als echte gebruikers.** Log in als gebruiker met beperkte rechten en stel vragen die bedoeld zijn om data te laten lekken. Leg de resultaten vast.
+7. **Draai de benchmark en leg de nauwkeurigheid vast** voordat een gebruiker het ziet.
+8. **Geef het vrij aan 10 tot 20 gebruikers** met een feedbacklus en een benoemde data steward die wekelijks de antwoorden met een duim omlaag beoordeelt.
+9. **Stel budgetten en waarschuwingen in** voordat het gebruik groeit.
+10. **Beslis op een vaste datum:** uitbreiden, repareren of stoppen, tegen criteria die in stap 1 zijn afgesproken.
+
+Mensen blijven de hele tijd betrokken. Een data steward is eigenaar van de curatie.
+
+Wie een antwoord gebruikt voor een financieel cijfer, een veiligheidsbeslissing of een contractuele toezegging, controleert het tegen het bronrapport totdat de benchmark aantoont dat het betrouwbaar is. Voor elke agent die naar een systeem schrijft, keurt een mens de actie goed.
+
+## Governance, kosten en wat u meet
+
+Genie is op dit moment goedkoop om uit te proberen. Volgens de [documentatie over Genie-budgetten](https://docs.databricks.com/aws/en/genie/budgets) is het LLM-gebruik van Genie One en Genie Agents gratis tot en met 31 januari 2027. Service principals zijn uitgezonderd en betalen voor al het gebruik, wat ertoe doet als u Genie via de API integreert.
+
+Compute van de SQL warehouse wordt apart gefactureerd en is de echte lopende kostenpost. Genie Code is sinds 8 juli 2026 pay-as-you-go, met een gratis tegoed van 150 DBU's per gebruiker per maand.
+
+De prijspagina van Databricks zet 150 DBU's op $10.50 in US East (lijstprijs, gecontroleerd in oktober 2026). Regio's verschillen, en enterprisekortingen en commitments veranderen het bedrag.
+
+Budgetten kunnen gedeelde drempels en drempels per gebruiker instellen, maar blokkeren is bij benadering, dus een budget is geen harde limiet. Stem af tegen `system.billing.usage`. Mijn [gids over de prijzen van Databricks](/nl/databricks-pricing-explained/) behandelt het dimensioneren van warehouses.
+
+Wat u meet:
+
+| Meetpunt | Waarom het telt | Doel om vóór go-live af te spreken |
+|---|---|---|
+| Nauwkeurigheid op de benchmark | Laat zien of de curatie werkt | Een drempel per domein, goedgekeurd door de eigenaar van de metric |
+| Aandeel geverifieerde antwoorden | Antwoorden op vertrouwde SQL zijn veiliger | Week na week stijgend |
+| Aandeel duim omlaag en hersteltijd | Laat zien of stewardship werkt | Wekelijks beoordeeld |
+| Resultaten van rechtentests | Bewijst dat de maatregelen standhouden | Nul lekken |
+| Vermeden verzoeken aan analisten | De business case | Basislijn gemeten vóór de pilot |
+| Warehousekosten per actieve gebruiker | Echte lopende kosten | Binnen budget |
+
+Governance is hier het fundament. Staat Unity Catalog nog niet, begin dan daar; mijn [gids over Unity Catalog en datagovernance](/nl/databricks-unity-catalog-data-governance/) en mijn [gids voor een AI-governanceframework](/nl/ai-governance-framework-guide-building-a-responsible-ai-plan/) behandelen het voorwerk.
+
+## Waar u begint
+
+Neem één domein, schrijf de 50 vragen op die uw gebruikers echt stellen, en kijk hoeveel uw huidige data met gedefinieerde metrics kan beantwoorden. Die oefening vertelt u meer over de gereedheid voor Genie dan welke demo ook. Weegt u ook het alternatief af, vergelijk het dan met [Snowflake Cortex AI en Snowflake Intelligence](/nl/snowflake-cortex-ai-snowflake-intelligence/).
+
+Ik help organisaties deze beslissingen te nemen en pilots af te bakenen. Wilt u een tweede blik, [plan dan een gesprek](/nl/contact-noel-erp-support/).
+
+## Veelgestelde vragen
+
+<details>
+<summary>Wat is Databricks Genie?</summary>
+
+Databricks Genie is een familie AI-tools die vragen in natuurlijke taal beantwoorden met beheerde data in Databricks. Genie One is de interface voor zakelijke gebruikers, Genie Agents zijn gecureerde domeinspecifieke chats (voorheen Genie spaces), en Genie Code is de assistent voor ontwikkelaars en analisten. Antwoorden worden gegenereerd als alleen-lezen SQL en respecteren de Unity Catalog-rechten van elke gebruiker.
+
+</details>
+
+<details>
+<summary>Wat is het verschil tussen Genie spaces en Genie Agents?</summary>
+
+Functioneel niets. Databricks hernoemde Genie spaces in juli 2026 tot Genie Agents en zei dat de mogelijkheden ongewijzigd bleven. Oudere artikelen, trainingsmateriaal en communityberichten gebruiken nog "Genie spaces".
+
+</details>
+
+<details>
+<summary>Wat kost Databricks Genie?</summary>
+
+Het LLM-gebruik van Genie One en Genie Agents is gratis voor gebruikers tot en met 31 januari 2027. Service principals worden gefactureerd, en compute van de SQL warehouse wordt apart gefactureerd. Genie Code is pay-as-you-go boven een gratis maandelijks tegoed.
+
+</details>
+
+<details>
+<summary>Is Databricks Genie nauwkeurig genoeg voor financiële of operationele rapportage?</summary>
+
+Dat kan, binnen een gecureerd domein met metric views, voorbeeld-SQL en vertrouwde functies, gemeten tegen een set benchmarkvragen. Losgelaten op ruwe tabellen geeft het plausibele antwoorden die misschien niet met uw definities overeenkomen. Behandel het als ongeverifieerd voor financiële of veiligheidsbeslissingen totdat de benchmark het tegendeel bewijst.
+
+</details>
+
+<details>
+<summary>Waarvoor wordt Databricks Agent Bricks gebruikt?</summary>
+
+Voor het bouwen, implementeren en beheren van eigen AI-agents met uw eigen framework en model. Het omvat de Agent Bricks CLI, Agent Runtime, beheerd geheugen en evaluatie met MLflow. Knowledge Assistant en Supervisor Agent worden niet meer aangeraden voor nieuwe agents.
+
+</details>
+
+<details>
+<summary>Ondersteunt Databricks MCP?</summary>
+
+Ja. Databricks levert beheerde MCP-servers, waaronder Genie One en Databricks SQL, en u kunt externe servers registreren of eigen servers bouwen op Databricks Apps. Toegang wordt beheerd via de rechten van Unity Catalog en Unity Gateway.
+
+</details>

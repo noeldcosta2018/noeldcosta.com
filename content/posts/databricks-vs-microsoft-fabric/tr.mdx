@@ -1,0 +1,230 @@
+---
+title: "Databricks ve Microsoft Fabric: bir karar rehberi"
+h1: "Databricks ve Microsoft Fabric: bir karar rehberi"
+slug: "databricks-vs-microsoft-fabric"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/databricks-vs-microsoft-fabric.webp"
+heroAlt: "Noel D'Costa aydınlık bir ofiste, beyaz tahtasında veri mimarisi taslağı olan cam toplantı odasının yanında"
+category: "data-and-ai"
+tags: ["databricks", "microsoft-fabric", "data-platform-cost"]
+author: "Noel D'Costa"
+metaTitle: "Databricks mi Microsoft Fabric mi? Hangisi, Ne Zaman İkisi"
+metaDescription: "Microsoft ağırlıklı kurumlar için Databricks ve Microsoft Fabric: mimari, liste fiyatları, Power BI, yönetişim, yapay zeka, kamu bulutu ve karar kuralları."
+primaryKeyword: "Databricks vs Microsoft Fabric"
+excerpt: "Ana çıktısı Power BI olan bir Microsoft kurumu için Fabric daha hızlı yoldur. Databricks ise mühendislik ve ML açısından daha güçlü platformdur. Birçok kurum sonunda ikisini birlikte çalıştırır ve bilinçli tasarlanırsa bu doğru yanıt olabilir."
+experienceSource: "Noel's first-person experience with Databricks on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts and prices checked against official Microsoft Learn, Azure pricing and Databricks documentation, October 2026."
+keyTakeaways:
+  - "Fabric satın alıp paylaştığınız bir kapasitedir. Databricks ise iş yükü bazında ölçtüğünüz bir tüketimdir. Maliyet sürprizlerinin çoğunu bu fark belirler."
+  - "Power BI ana tüketiciyse ve ekip önce SQL ve Power BI ile çalışıyorsa Fabric'i seçin."
+  - "Yoğun mühendislik, akış verisi, ML veya çoklu bulut, BI kolaylığından daha önemliyse Databricks'i seçin."
+  - "İkisini birlikte çalıştırmak yaygın ve uygulanabilir: mühendislik için Azure Databricks, mirroring ve Direct Lake üzerinden Power BI için Fabric."
+  - "Mirroring, Unity Catalog izinlerini Fabric'e taşımaz. İki güvenlik modeli ya da bilinçli tasarlanmış tek bir devir noktası planlayın."
+  - "ABD kamu bulutlarında iki platformun da bugün gerçek eksikleri var. Herhangi bir tasarım yapmadan önce özellik listelerini kontrol edin."
+pullQuote: "Başarısız olan nadiren platformdur. Başarısız olan, iki platform arasındaki işletim modelidir."
+mentions:
+  - "Databricks"
+  - "Azure Databricks"
+  - "Microsoft Fabric"
+  - "OneLake"
+  - "Unity Catalog"
+  - "Power BI"
+  - "Direct Lake"
+  - "Microsoft Purview"
+  - "Genie"
+  - "Agent Bricks"
+  - "Copilot in Fabric"
+  - "Azure Government"
+originalUrl: "https://noeldcosta.com/databricks-vs-microsoft-fabric/"
+canonicalUrl: "https://noeldcosta.com/tr/databricks-vs-microsoft-fabric/"
+locale: "tr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Databricks ve Microsoft Fabric arasındaki seçim, veriyi kimin tükettiğine bağlıdır. Verinin çoğu Power BI'da son buluyorsa ve ekibiniz SQL ile düşünüyorsa, Fabric genellikle daha hızlı ve daha basit seçimdir. Asıl zor sorunlarınız mühendislik, akış verisi, makine öğrenmesi ya da birden fazla bulutsa, Databricks daha güçlü platformdur.
+
+Microsoft ağırlıklı birçok kurum için dürüst yanıt: ikisi birden. Ağır mühendisliği Azure Databricks yapar.
+
+İşletmeye Fabric ve Power BI hizmet eder. Bu işe yarar, ama yalnızca aralarındaki bağlantı noktasını bilinçli tasarlarsanız.
+
+Çalıştığım üretim ve savunma programlarında karar nadiren özellik listelerine dayanıyor. Maliyet modeline, yetkinliklere, güvenlik sınırlarına ve verinin nerede bulunmasına izin verildiğine dayanıyor.
+
+## İki platform nasıl kurgulanmış
+
+İkisi de açık tablo formatları üzerinde çalışan lakehouse'lardır. Farkları, depolamanın sahibinin kim olduğu ve işlem gücü için nasıl ödeme yaptığınızdadır.
+
+**Microsoft Fabric** bir SaaS platformudur. Her şey OneLake'e iner: tenant başına tek bir mantıksal göl, tablolar Delta formatında saklanır. Lakehouse, warehouse, pipelines, Real-Time Intelligence ve Power BI aynı paylaşılan kapasiteden yararlanır.
+
+Shortcuts, başka depolardaki veriyi kopyalamadan ona işaret eder. Mirroring ise veritabanlarını ve harici katalogları içeri alır.
+
+**Databricks** sizin bulut hesabınızda çalışır (Azure'da, birinci taraf bir Microsoft hizmeti olan Azure Databricks olarak). Verileriniz Unity Catalog yönetişimi altında kendi depolamanızda durur. İşlem gücü cluster'lar, SQL warehouse'lar veya serverless'tır ve iş yükü bazında Databricks Units (DBU) cinsinden ölçülür.
+
+Açıklık konusunda fark daraldı. OneLake meta veriyi sanallaştırır; böylece bir Delta tablosu Iceberg olarak, bir Iceberg tablosu da Delta olarak okunabilir. Gerçek sınırlar var: yalnızca Parquet, Iceberg V2 çıktısı ve equality delete'ler dönüşümü bozar.
+
+Unity Catalog'un yönetilen Iceberg tabloları genel kullanımdadır; harici motorlar Unity Catalog'un Iceberg REST Catalog API'si üzerinden okuma ve yazma yapabilir. İki platform da verinizi tescilli bir formata kilitlemez. İkisi de veri hatlarınızı, güvenlik modelinizi ve yetkinliklerinizi kilitler; asıl geçiş maliyeti oradadır.
+
+Bir Microsoft kurumu için en önemli şey aradaki köprüdür. Fabric, bir Azure Databricks Unity Catalog'unu katalog öğesi olarak [yansıtabilir (mirror)](https://learn.microsoft.com/en-us/fabric/mirroring/azure-databricks); bu özellik genel kullanımdadır. Yalnızca meta veri yansıtılır.
+
+Veri, shortcuts üzerinden yerinde okunur. Bir püf noktası var: Unity Catalog izinleri aktarılmaz. Fabric kendi izin modelini uygular.
+
+## Databricks ve Fabric fiyatlandırması: kapasiteye karşı tüketim
+
+**Fabric** kapasiteyi F2'den F8192'ye kadar F-SKU'lar halinde, kapasite birimleri (CU) cinsinden satar. Azure bunu taahhütsüz olarak saniye bazında faturalar ya da siz bir yıllığına rezerve edersiniz. East US'te kullandıkça öde liste fiyatı CU-saat başına $0.18'dir.
+
+Bu da bir F64'ü saatte yaklaşık $11.52'ye, sürekli açık bırakılırsa ayda kabaca $8,400'a getirir. Microsoft, rezervasyonun kullandıkça öde fiyatına göre yaklaşık %41 tasarruf sağladığını söylüyor.
+
+OneLake sıcak depolama liste fiyatı ayda GB başına $0.026'dır. [Microsoft Fabric fiyatlandırma sayfasına](https://azure.microsoft.com/en-us/pricing/details/microsoft-fabric/) bakın.
+
+F64 aynı zamanda bir lisanslama eşiğidir. [Fabric lisanslama dokümantasyonuna](https://learn.microsoft.com/en-us/fabric/enterprise/licenses) göre F64'ün altında Power BI içeriğini görüntüleyen herkesin bir Pro veya Premium Per User lisansına ihtiyacı vardır.
+
+F64 ve üzerinde, ücretsiz lisansa ve görüntüleyici rolüne sahip kullanıcılar raporları okuyabilir. Birkaç yüz rapor okuyucusu için yalnızca bu bile SKU kararını belirleyebilir.
+
+**Azure Databricks** iş yükü türüne göre DBU ücreti alır; klasik işlem gücünde buna alttaki Azure sanal makineleri eklenir. Serverless ücretlere işlem gücü dahildir.
+
+East US Premium liste fiyatları aşağıda. [Azure Databricks fiyatlandırma sayfasına](https://azure.microsoft.com/en-us/pricing/details/databricks/) bakın.
+
+1. Jobs compute: DBU-saat başına $0.30.
+2. All-purpose compute (etkileşimli notebook'lar): DBU-saat başına $0.55.
+3. SQL Pro: DBU-saat başına $0.55. Serverless SQL: DBU-saat başına $0.70.
+4. Serverless jobs: DBU-saat başına $0.45. Serverless etkileşimli işlem gücü: DBU-saat başına $0.95.
+
+Tüm rakamlar East US için, Ekim 2026'da kontrol edilmiş liste fiyatlarıdır. Diğer bölgelerde farklıdır.
+
+Kurumsal anlaşmalar, Databricks ön alım taahhütleri ve Azure rezervasyonları gerçek rakamı değiştirir. [Databricks fiyatlandırma rehberim](/tr/databricks-pricing-explained/) DBU'ları daha derinlemesine ele alıyor.
+
+Pratikte bunun anlamı:
+
+1. **Fabric öngörülebilir ama paylaşımlıdır.** Tek bir ağır Spark işi, aynı kapasitedeki Power BI raporlarını yavaşlatabilir. Birinin kapasiteyi paylaşılan bir sunucu gibi yönetmesi gerekir.
+2. **Databricks ayrıntılıdır ama sızdırır.** Her iş yükü tam olarak kullandığı kadar tutar. Açık bırakılan cluster'lar, gereğinden büyük warehouse'lar ve zamanlanmış işler için kullanılan all-purpose compute olağan sızıntılardır.
+3. **Toplam maliyeti gerçek iş yükleri üzerinde karşılaştırın.** En önemli on veri hattınızı ve en yoğun raporlama saatinizi iki platformda da fiyatlayın. Liste fiyatlarından oluşan bir tablo hiçbir şey kanıtlamaz.
+
+## Yan yana karşılaştırma
+
+Tablo, Microsoft ağırlıklı bir kurum için kararı genellikle belirleyen noktaları kapsıyor.
+
+| Kriter | Microsoft Fabric | Databricks (Azure Databricks) |
+|---|---|---|
+| Sunum modeli | SaaS, tenant genelinde tek OneLake | Bulut hesabınızda ve depolamanızda çalışan platform |
+| Fiyatlandırma | F-SKU kapasitesi, kullandıkça öde veya rezerve | İş yükü başına DBU, klasik işlem gücü için ek olarak VM'ler |
+| Veri mühendisliği derinliği | SQL, pipelines, Dataflows ve Spark notebook'ları için iyi | Daha derin: Spark ince ayarı, akış verisi, deklaratif veri hatları, CI/CD |
+| ML ve üretken yapay zeka | Copilot in Fabric, Fabric data agents (GA), ML modelleri ve deneyleri | Model serving, MLflow, Genie, Agent Bricks |
+| Power BI | Yerel; OneLake üzerinde Direct Lake | Fabric'e mirroring ile veya DirectQuery ve Import ile |
+| Yönetişim | Fabric izinleri, OneLake security, Purview, hassasiyet etiketleri | Unity Catalog; Purview tarayabilir |
+| Çoklu bulut | Yalnızca Azure | Azure, AWS ve Google Cloud |
+| Yetkinlik uyumu | Power BI, SQL ve Microsoft veri ekipleri | Veri mühendisleri, Python ve Spark, ML mühendisleri |
+
+**Power BI ve Direct Lake.** Direct Lake, bir Power BI semantik modelinin OneLake'teki Delta tablolarını import yenilemesi olmadan doğrudan belleğe okumasını sağlar. Fabric'i kullanmanın en güçlü nedeni budur.
+
+Bir Fabric kapasitesi gerektirir ve tablo sınırları SKU ile birlikte artar. Yansıtılmış bir Azure Databricks kataloğu desteklenen bir Direct Lake kaynağıdır; dolayısıyla Databricks'te kurulan gold tablolar Direct Lake raporlarını besleyebilir.
+
+**ML ve üretken yapay zeka.** OneLake verisi üzerinde sade dille sorulan soruları yanıtlayan Fabric data agents genel kullanımdadır. Bunları Microsoft 365 Copilot'tan kullanmak gibi bazı entegrasyonlar hâlâ önizlemededir. Copilot in Fabric, ücretli bir F2 veya daha büyük kapasite gerektirir ve o kapasiteyi tüketir.
+
+Databricks'te Genie, iş kullanıcılarının yönetişim altındaki tabloları sade bir dille sorgulamasını sağlar. Agent Bricks ise kodla özel ajanlar geliştirip devreye almak için kullanılan platformdur.
+
+Databricks artık Knowledge Assistant ve Supervisor Agent'ı eski (legacy) olarak listeliyor ve yeni low-code çalışmaları Genie Agents'a yönlendiriyor. [Genie ve Agent Bricks yazım](/tr/databricks-genie-agent-bricks/) bunu ayrıntılı ele alıyor.
+
+**Yönetişim.** Unity Catalog; tablolar, modeller, lineage ve workspace'ler ile bulutlar arasında ayrıntılı erişim için daha olgun, tek bir kontrol düzlemidir. Fabric yönetişimi hızla gelişiyor.
+
+Bir Microsoft ortamında Purview çoğu zaman zaten kurumsal katalogdur ve Unity Catalog meta verisini ve lineage'ı tarayabilir. [Unity Catalog yönetişim rehberim](/tr/databricks-unity-catalog-data-governance/) Databricks tarafını ele alıyor.
+
+## Dürüstçe: "ikisini birden kullan" deseni
+
+Gördüğüm Microsoft ağırlıklı kurumların çoğu birini seçmiyor. Veri alımı, mühendislik ve ML için Azure Databricks çalıştırıyor, sonra düzenlenmiş tabloları Power BI için Fabric'e açıyorlar. Katalog mirroring ve Direct Lake ile bu desen artık iyi destekleniyor.
+
+Üç koşul sağlandığında işe yarar:
+
+1. **Her katmanın tek bir sahibi platform vardır.** Bronze'dan gold'a kadar Databricks sahiptir. Semantik modellerin ve raporların sahibi Fabric'tir. Kimse aynı tabloyu iki yerde yeniden kurmaz.
+2. **Güvenlik iki kez, ama bir kerede tasarlanır.** Mirroring, Unity Catalog izinlerini kopyalamaz. Fabric'te satır ve sütun düzeyindeki kuralların sahibinin kim olduğuna karar verin ve eşlemeyi belgeleyin.
+3. **İki platformun faturasının da tek bir sahibi vardır.** DBU'lar ve kapasite farklı maliyet kalemlerinde durur. Tek bir sahip olmadan her ekip kendi platformunu optimize eder ve toplam artar.
+
+Fabric sessiz sedasız ikinci bir mühendislik platformuna dönüştüğünde ve birbiriyle çelişen iki gold katmanıyla kaldığınızda başarısız olur. "İkisini birden kullan" yaklaşımının ters gittiğini gördüğüm yerlerde sorun iki şeye dayanıyordu: platformlar arasındaki entegrasyon doğru değildi ve verinin sahibinin hangi platform olduğunu kimse bilmiyordu. Bunu sonradan çözmeye uğraşmaktansa kuralı ilk gün koymayı tercih ederim.
+
+ERP verisi (SAP, Oracle ya da Microsoft Dynamics 365) için de aynı mantık geçerlidir. Onu bir kez, tek bir yerde indirin ve modelleyin. [ERP modernizasyonu ve clean core](/tr/erp-modernization-2025-cloud-ai-clean-core/) üzerine notlarım, ERP tarafının neden platform kadar önemli olduğunu açıklıyor.
+
+## Savunma ve üretim için dikkat edilecekler
+
+**Üretim.** Asıl stres testi tesis verisidir. Historian ve MES akışları, yüksek frekanslı sensör akışları, ERP ile birleştirilen kalite ve bakım kayıtları. Fabric'in Real-Time Intelligence özelliği (eventstreams ve eventhouses) operasyonel dashboard'ları iyi yönetir.
+
+Büyük ölçekli akış mühendisliği, kestirimci bakım için özellik (feature) hatları ve sensör verisi üzerinde ML için Databricks kullanıyorum. Sensör ve makine verisi üzerinde akış işleme ve makine öğrenmesi, benim çalışmalarımda Databricks'in yerini hak ettiği alandır.
+
+**Savunma.** Önce egemenlik ve ayrım gelir. Gizli ve gizli olmayan ortamlar ayrı kalır. İhracat kontrolüne tabi veriler (bir kategori olarak ITAR) sıkı erişim kontrolü ve denetim gerektirir.
+
+Programlar on yıllarca sürer. Burada herhangi bir tasarım yapmadan önce erişilebilirliği doğrulayın, çünkü kamu bulutları ticari Azure'un gerisinden gelir.
+
+1. **GCC High'da Fabric.** Ekim 2026'da kontrol edilen [Microsoft Learn](https://learn.microsoft.com/en-us/fabric/enterprise/us-government-community-cloud-high) bilgisine göre Fabric, US Gov Virginia ve US Gov Texas bölgelerinde çalışıyor. Lakehouse, warehouse, pipelines ve Direct Lake ile Power BI dahil temel iş yükleri mevcut. Müşteri tarafından yönetilen anahtarlar, mirroring kaynaklarının çoğu, workspace Private Link ve Copilot for Power BI desteklenmiyor. GCC High için FedRAMP High yetkilendirmesi hâlâ değerlendirme aşamasında.
+2. **Azure Government'ta Azure Databricks.** 1 Ekim 2026'da güncellenen [Azure Databricks bölgesel özellik listesine](https://learn.microsoft.com/en-us/azure/databricks/resources/feature-region-support) göre US Gov bölgeleri Databricks SQL'i veya Unity Catalog'u desteklemiyor. Serverless ve yeni yapay zeka özellikleri de bu bölgelerde yok. Databricks, tam platformu Azure Government'a getirme planlarını duyurdu. Karar verdiğiniz gün bölgenizde neyin canlı olduğunu teyit edin.
+
+ABD dışında da aynı disiplin geçerlidir. Bağlı olduğunuz Azure bölgesi için bölgesel tabloları tek tek kontrol edin. Bazı Databricks serverless ve yapay zeka özellikleri, bazı bölgelerde coğrafyalar arası işleme gerektirir; bu da egemen veri için baştan kabul edilemez olabilir.
+
+## Karar kuralları: Fabric, Databricks ya da ikisi
+
+**Şu durumlarda Fabric'i seçin:**
+
+1. Power BI ana tüketiciyse ve Direct Lake istiyorsanız.
+2. Ekibiniz SQL, Power BI ve Microsoft odaklıysa ve Spark derinliği azsa.
+3. Platform mühendisliği yerine tek bir kapasite faturası ve SaaS operasyonu istiyorsanız.
+4. Yüzlerce rapor görüntüleyiciniz varsa ve F64 lisanslaması rakamları tutturuyorsa.
+
+**Şu durumlarda Databricks'i seçin:**
+
+1. Zor kısım raporlama değil de veri mühendisliği, akış verisi veya ML ise.
+2. Birden fazla bulutta çalışıyorsanız ya da çalışmayı bekliyorsanız.
+3. Birçok workspace genelinde tek bir yönetişim düzlemi olarak Unity Catalog'a ihtiyacınız varsa.
+4. İş yükü bazında sıkı maliyet kontrolüne ihtiyacınız varsa ve bunu yönetecek yetkinliğiniz varsa.
+
+**İkisini birden seçin:** Azure Databricks'i zaten iyi çalıştırıyorsanız ve işletme Power BI'da yaşıyorsa. Unity Catalog'u Fabric'e yansıtın, raporlar için Direct Lake kullanın ve her katmanın sahibini yazılı hale getirin.
+
+Olgun bir Databricks platformunu zaten çalıştırıyorsanız, BI'dan tasarruf etmek için onu Fabric'e taşımayın. Daha geniş bir bakış için [Snowflake ve Databricks karşılaştırmama](/tr/snowflake-vs-databricks/) bakın.
+
+## Sırada ne var
+
+Üç gerçek iş yükü üzerinde iki haftalık, birebir karşılaştırmalı bir test yapın: bir ağır veri hattı, bir yönetici Power BI modeli, bir ML ya da yapay zeka kullanım senaryosu. Çalıştırma başına maliyeti, yenileme gecikmesini ve ekibinizin harcadığı eforu ölçün. Tedarikçilerden veya entegratörünüzden (SI) tam olarak bu seti, pazarlıkla elde ettiğiniz fiyatlarla fiyatlamalarını isteyin.
+
+Her tedarikçiye üç soru sorun: bölgemde ne GA, ne önizlemede; kullanım iki katına çıktığında maliyete ne olur; ve iki platformun birleştiği noktada güvenlik nasıl işler.
+
+Platform kararı ya da test tasarımı hakkında bağımsız bir görüş istiyorsanız, kurumlara tam olarak bu konuda yardımcı oluyorum. [30 dakikalık bir görüşme ayarlayabilirsiniz](/tr/contact-noel-erp-support/).
+
+## Sıkça sorulan sorular
+
+<details>
+<summary>Microsoft Fabric, Azure Databricks'in yerini mi alıyor?</summary>
+
+Hayır. Azure Databricks birinci taraf bir Azure hizmeti olmaya devam ediyor ve Microsoft ikisinin birlikte nasıl çalıştığını belgeliyor. Fabric, bir Azure Databricks Unity Catalog'unu yansıtabilir (genel kullanımda); böylece Power BI, veri kopyalamadan Direct Lake üzerinden Databricks tablolarını kullanabilir. Birçok kurum ikisini birlikte çalıştırıyor.
+
+</details>
+
+<details>
+<summary>Fabric, Databricks'ten daha mı ucuz?</summary>
+
+İş yükü karışımına bağlı. Fabric paylaşılan bir kapasitedir (East US liste fiyatı CU-saat başına $0.18, bir yıllık rezervasyonla yaklaşık %41 daha az). Databricks iş yükü başına DBU ücreti alır, klasik işlem gücü için buna VM'ler eklenir. Kendi önemli iş yüklerinizi iki platformda da fiyatlayın.
+
+</details>
+
+<details>
+<summary>Power BI, Fabric olmadan Databricks verisini kullanabilir mi?</summary>
+
+Evet. Power BI, Databricks SQL warehouse'larına Import veya DirectQuery modunda bağlanır. Direct Lake bir Fabric kapasitesi gerektirir ve yansıtılmış bir Azure Databricks kataloğu desteklenen bir Direct Lake kaynağıdır.
+
+</details>
+
+<details>
+<summary>Unity Catalog güvenliği Fabric'e taşınır mı?</summary>
+
+Hayır. Fabric bir Azure Databricks kataloğunu yansıttığında meta veriyi yansıtır ve veriyi shortcuts üzerinden okur. Unity Catalog politikaları ve izinleri yansıtılmaz, bu yüzden Fabric'in kendi izin modeli geçerli olur. Erişim kurallarını Fabric tarafında tasarlayın ve belgeleyin.
+
+</details>
+
+<details>
+<summary>Microsoft Fabric, Azure Government'ta kullanılabilir mi?</summary>
+
+Fabric, GCC High ortamında US Gov Virginia ve US Gov Texas bölgelerinde, ticari Fabric'e göre daha dar bir özellik setiyle çalışıyor. Ekim 2026 itibarıyla Microsoft Learn'e göre müşteri tarafından yönetilen anahtarlar, mirroring kaynaklarının çoğu ve Copilot for Power BI desteklenmiyor. GCC High için FedRAMP High hâlâ değerlendirme aşamasında. Planlamadan önce güncel listeyi kontrol edin.
+
+</details>
+
+<details>
+<summary>Makine öğrenmesi için hangisi daha iyi, Databricks mi Fabric mi?</summary>
+
+Databricks daha derin ML ve üretken yapay zeka araçlarına sahip: MLflow, model serving, Genie ve özel ajanlar için Agent Bricks. Fabric ise ML deneylerini ve modellerini, data agents'ı (GA) ve Copilot'u kapsar; data agents Microsoft Foundry üzerinden de kullanılabilir (önizlemede). ML bir eklenti değil de temel bir yetkinlikse, Databricks genellikle daha güçlü bir temeldir.
+
+</details>

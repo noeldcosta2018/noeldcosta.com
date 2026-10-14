@@ -1,0 +1,210 @@
+---
+title: "De architectuur van Snowflake uitgelegd, en waarvoor het wordt gebruikt"
+h1: "De architectuur van Snowflake uitgelegd, en waarvoor het wordt gebruikt"
+slug: "snowflake-architecture-explained"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/snowflake-architecture-explained.webp"
+heroAlt: "Breed beeld van een lichte assemblagehal met werkplekken en een bovenloopkraan"
+category: "data-and-ai"
+tags: ["snowflake", "data-governance", "manufacturing"]
+author: "Noel D'Costa"
+metaTitle: "Architectuur van Snowflake: lagen, gebruik en grenzen"
+metaDescription: "De architectuur van Snowflake helder uitgelegd: opslag, compute en cloud services, micro-partities, Time Travel, delen, Iceberg, edities en waarvoor het dient."
+primaryKeyword: "snowflake architectuur"
+excerpt: "Snowflake is een clouddataplatform dat opslag, compute en coördinatie in drie aparte lagen houdt. Zo werkt die architectuur, hiervoor gebruiken bedrijven het, en hier past het niet."
+experienceSource: "Noel's first-person experience with Snowflake on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts checked against official Snowflake documentation, October 2026."
+keyTakeaways:
+  - "Snowflake scheidt opslag, compute (virtual warehouses) en cloud services, zodat elk apart kan schalen en apart wordt betaald"
+  - "Data staat in gecomprimeerde, kolomgeoriënteerde micro-partities; dankzij metadata slaan queries de partities over die ze niet nodig hebben"
+  - "Time Travel, zero-copy cloning en secure data sharing komen allemaal voort uit hetzelfde metadataontwerp"
+  - "Iceberg-tabellen, Horizon Catalog en Snowflake Postgres (GA februari 2026) maken het breder dan een klassiek warehouse"
+  - "Gereguleerd werk betekent meestal de Business Critical-editie of hoger; Snowflake kan niet on-premises worden geïnstalleerd"
+  - "Het past niet bij zware transactionele workloads of bij data die uw eigen datacenter nooit mag verlaten"
+pullQuote: "De meeste kostenverrassingen bij Snowflake zijn architectuurbeslissingen die niemand heeft opgeschreven."
+mentions:
+  - "Snowflake"
+  - "Snowpark"
+  - "Snowflake Horizon Catalog"
+  - "Snowflake Open Catalog"
+  - "Apache Polaris"
+  - "Apache Iceberg"
+  - "Snowflake Postgres"
+  - "Snowflake Marketplace"
+  - "Tri-Secret Secure"
+  - "Amazon Web Services"
+  - "Microsoft Azure"
+  - "Google Cloud"
+originalUrl: "https://noeldcosta.com/snowflake-architecture-explained/"
+canonicalUrl: "https://noeldcosta.com/nl/snowflake-architecture-explained/"
+locale: "nl"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+De architectuur van Snowflake verdeelt een dataplatform in drie lagen die onafhankelijk schalen: opslag, compute (virtual warehouses genoemd) en een laag cloud services die alles coördineert. Bedrijven gebruiken Snowflake als clouddatawarehouse voor rapportage en analytics, en steeds vaker als plek om data te delen, Python te draaien en AI te bouwen op beheerde data.
+
+Die ene ontwerpkeuze, opslag en compute gescheiden houden, verklaart het meeste van wat Snowflake goed doet en het meeste van wat het kost.
+
+Ik heb met Snowflake gewerkt in dataplatformprogramma's in de maakindustrie en defensie. Een patroon dat ik vaak zie: bestuurders kopen het voor de analytics en ontdekken daarna dat de architectuurbeslissingen (hoeveel warehouses, welke editie, waar de data staat) de rekening en de compliancepositie bepalen. Deze gids is voor de CIO, CDO of architect die die beslissingen moet begrijpen voordat hij tekent.
+
+## Wat is Snowflake, in één alinea
+
+Snowflake is een volledig beheerd dataplatform dat draait op Amazon Web Services, Microsoft Azure en Google Cloud. U installeert het niet, u patcht het niet en u tunet geen indexen. U laadt data, schrijft SQL (of Python) en betaalt apart voor opslag en compute.
+
+Snowflake beschrijft zijn ontwerp als een hybride van shared-disk- en shared-nothing-architecturen: één centrale dataopslag, bevraagd door onafhankelijke computeclusters. Eén feit telt vroeg voor kopers in defensie: volgens Snowflakes eigen [gids over kernbegrippen en architectuur](https://docs.snowflake.com/en/user-guide/intro-key-concepts) kan het niet op lokale of private cloudinfrastructuur worden geïnstalleerd.
+
+## De drie lagen van de Snowflake-architectuur
+
+Hier is de stack, van onder naar boven.
+
+<explainer-layers title="De architectuur van Snowflake, laag voor laag" caption="Opslag en compute schalen en factureren apart. Cloud services houdt het samen." layers="Cloud services => Beveiliging, toegangscontrole, metadata, queryoptimalisatie en transacties|Compute => Virtual warehouses: onafhankelijke clusters die SQL en Python draaien, gefactureerd in credits zolang ze draaien|Opslag => Gecomprimeerde, kolomgeoriënteerde micro-partities in cloud object storage, gefactureerd per terabyte" tones="accent|data|"></explainer-layers>
+
+### Opslag
+
+Als u data laadt, organiseert Snowflake die opnieuw in een gecomprimeerd, kolomgeoriënteerd formaat en slaat ze op in cloud object storage. Het splitst elke tabel in micro-partities, die elk tussen 50 MB en 500 MB ongecomprimeerde data bevatten. Snowflake legt voor elke partitie metadata vast, zoals het bereik van waarden in elke kolom.
+
+Die metadata is het slimme deel. Een query die filtert op de productieorders van vorige maand, slaat elke micro-partitie over waarvan het datumbereik niet kan overeenkomen.
+
+Dit heet pruning, en het is de reden dat Snowflake goed presteert zonder indexen. Het betekent ook dat de manier waarop data binnenkomt (gesorteerd op datum of fabriek, of willekeurig) de kosten beïnvloedt bij zeer grote tabellen.
+
+### Compute: virtual warehouses
+
+Een virtual warehouse is een computecluster dat queries en code draait. Elk ervan is onafhankelijk. Uw financiële rapporten voor de maandafsluiting kunnen op het ene warehouse draaien terwijl data science zware jobs op een ander draait, en geen van beide vertraagt de ander.
+
+Warehouses zijn er in T-shirtmaten en verbruiken alleen credits zolang ze draaien. Ze kunnen automatisch pauzeren als ze inactief zijn. Grotere maten maken afzonderlijke zware queries sneller.
+
+Meer clusters bedienen meer gebruikers tegelijk, en dat is wat multi-cluster warehouses doen: vanaf de Enterprise-editie kan een warehouse automatisch clusters toevoegen als queries in de rij beginnen te staan, en ze weer verwijderen als de belasting daalt. Snowflake zegt uitdrukkelijk dat multi-cluster helpt bij gelijktijdigheid, niet bij één trage query. Daarvoor kiest u een grotere maat.
+
+Mijn gids over [Snowflake-credits en wat de rekening bepaalt](/nl/snowflake-pricing-credits-explained/) behandelt de kostenkant in detail.
+
+### Cloud services
+
+De bovenste laag regelt authenticatie, toegangscontrole, metadata, queryoptimalisatie en transacties. Time Travel en cloning zijn grotendeels metadatabewerkingen, dus deze laag maakt ze mogelijk. U denkt er zelden aan, en dat is precies de bedoeling.
+
+## Functies die uit de architectuur voortkomen
+
+De interessante functies zijn geen aanbouwsels. Ze volgen uit het ontwerp van opslag en metadata.
+
+1. **Time Travel.** U kunt data bevragen, klonen of herstellen zoals die op een moment in het verleden was. De Standard-editie bewaart 1 dag. Enterprise en hoger kunnen voor permanente tabellen tot 90 dagen bewaren, zoals beschreven in de [documentatie over Time Travel](https://docs.snowflake.com/en/user-guide/data-time-travel).
+2. **Fail-safe.** Nadat Time Travel is verlopen, gaat de data van permanente tabellen een Fail-safe-periode van 7 dagen in. Alleen Snowflake kan die herstellen. Behandel het als disaster recovery, niet als een back-up die u zelf beheert.
+3. **Zero-copy cloning.** Een kloon van een tabel, schema of database gebruikt bij het aanmaken geen extra opslag, omdat hij naar dezelfde micro-partities verwijst. U betaalt alleen voor data die daarna verandert. Zo zetten teams binnen minuten volwaardige testomgevingen op.
+4. **Secure data sharing.** Een aanbieder deelt live tabellen met een ander Snowflake-account en er wordt geen data gekopieerd. De afnemer betaalt alleen voor de compute die hij gebruikt om te bevragen. Directe shares werken binnen één regio; delen tussen regio's loopt via listings met auto-fulfilment.
+5. **Snowflake Marketplace.** Met listings publiceert u dataproducten voor specifieke partners of openbaar, inclusief data van derden zoals weergegevens of marktindices.
+6. **Snowpark.** Bibliotheken voor Python, Java en Scala die verwerking naar Snowflake brengen in plaats van data eruit te halen. Snowpark Container Services, dat gecontaineriseerde apps naast de data draait, is algemeen beschikbaar op alle drie de clouds in commerciële regio's.
+
+Voor een fabrikant is secure data sharing een pilot waard. Wees realistisch over het vertrekpunt: de meeste data-uitwisseling met leveranciers die ik zie, bestaat nog uit bestandsoverdrachten.
+
+Een beheerde tabel delen is schoner, en u kunt het intrekken. Begin met één leverancier en één dataset, en bewijs het voordat u meer plant.
+
+## Iceberg, catalogi, hybrid tables en Postgres: waar Snowflake naartoe is gegaan
+
+Snowflake betekende vroeger "uw data in het formaat van Snowflake". Dat is veranderd, en de namen ook. De huidige status, oktober 2026:
+
+| Mogelijkheid | Wat het doet | Status (oktober 2026) |
+|---|---|---|
+| Apache Iceberg-tabellen | Data opgeslagen in het open Iceberg-formaat, in uw cloudopslag of die van Snowflake | GA sinds juni 2024; optie met door Snowflake beheerde opslag GA juni 2026 (commerciële AWS en Azure) |
+| Snowflake Horizon Catalog | Governance en catalogus gebouwd op Apache Polaris; externe engines lezen door Snowflake beheerde Iceberg-tabellen via de Iceberg REST API | Aanbevolen voor nieuwe klanten |
+| Snowflake Open Catalog | Beheerde Apache Polaris-dienst (voorheen Polaris Catalog) | GA, maar gesloten voor nieuwe klanten; bestaande gebruikers kunnen doorgaan |
+| Hybrid tables (Unistore) | Rijgebaseerde tabellen voor transactionele opzoekingen met lage latentie naast analytics | GA alleen in commerciële AWS- en Azure-regio's |
+| Snowflake Postgres | Volledig beheerde PostgreSQL binnen het Snowflake-platform | GA sinds 24 februari 2026, op AWS en Azure |
+
+Het praktische gevolg: met Iceberg-tabellen kunnen Spark, Databricks of andere engines werken op dezelfde bestanden die Snowflake bevraagt, wat lock-in vermindert. Het [overzicht van Open Catalog](https://docs.snowflake.com/en/user-guide/opencatalog/overview) van Snowflake vertelt nieuwe klanten nu Horizon Catalog te gebruiken.
+
+Lees de grenzen van hybrid tables voordat iemand ze als operationele database aanprijst. Elke database is begrensd op 2 TB aan hybrid-tabeldata, en ze ondersteunen geen Fail-safe, data sharing, replicatie of streams. Voor een opzoektabel van een applicatie zijn ze prima.
+
+Een operationele database zijn ze niet. Heeft een applicatie er een nodig naast haar analytics, dan [werd Snowflake Postgres algemeen beschikbaar](https://docs.snowflake.com/en/release-notes/2026/other/2026-02-24-snowflake-postgres-ga) in februari 2026, en dat past eerlijker.
+
+## Edities en beveiliging voor gereguleerde sectoren
+
+Snowflake verkoopt vier edities: Standard, Enterprise, Business Critical en Virtual Private Snowflake (VPS). De editie bepaalt welke beveiligingsfuncties u krijgt, en de creditprijs stijgt mee.
+
+| Functie | Standard | Enterprise | Business Critical | VPS |
+|---|---|---|---|---|
+| Time Travel | 1 dag | Tot 90 dagen | Tot 90 dagen | Tot 90 dagen |
+| Multi-cluster warehouses | Nee | Ja | Ja | Ja |
+| Tri-Secret Secure (sleutel beheerd door de klant) | Nee | Nee | Ja | Ja |
+| Private connectiviteit (AWS PrivateLink, Azure Private Link, Google Private Service Connect) | Nee | Nee | Ja | Ja |
+| Ondersteuning voor HIPAA en PCI DSS | Nee | Nee | Ja | Ja |
+| Toegewijde omgeving, geen gedeelde hardware | Nee | Nee | Nee | Ja |
+
+Tri-Secret Secure combineert een sleutel van Snowflake met een sleutel die u zelf beheert in de key management service van uw cloudprovider. Trekt u uw sleutel in, dan kan Snowflake uw data niet meer ontsleutelen. Voor leveranciers in defensie en luchtvaart weegt die controle zwaarder dan welke analyticsfunctie ook.
+
+Voor werk voor de Amerikaanse overheid draait Snowflake SnowGov-regio's op AWS GovCloud en Azure Government, open voor Amerikaanse overheidsklanten en hun contractanten. De [pagina met ondersteunde regio's](https://docs.snowflake.com/en/user-guide/intro-regions) van Snowflake vermeldt ondersteuning voor FedRAMP High, Impact Level 4 en ITAR in die regio's, Impact Level 5 in één AWS-regio, en vereist de Business Critical-editie of hoger. Controleer de beschikbaarheid van functies per regio: Open Catalog, hybrid tables en delen van Snowpark Container Services zijn niet in alle overheidsregio's beschikbaar.
+
+In de defensieprogramma's waaraan ik heb gewerkt, is de eerste vraag nooit "hoe snel is het". De vraag is "waar staat de data, wie kan haar zien, en kunnen we dat aan een auditor aantonen". In de juiste regio en editie beantwoordt Snowflake dat goed.
+
+Voor data die in uw eigen gebouw moet blijven, kan het dat niet. Gerubriceerde workloads of workloads onder exportcontrole die on-premises verwerking vereisen, hebben een ander platform nodig, met Snowflake voor de ongerubriceerde omgeving.
+
+## Waarvoor Snowflake wordt gebruikt, en waarvoor het minder geschikt is
+
+Het meeste wat ik zie, valt in een paar patronen.
+
+1. **Rapportage en BI voor de onderneming.** Rapportage voor finance, sales en operations uit ERP-data (SAP, Oracle of Microsoft Dynamics 365), met Power BI, Tableau of iets vergelijkbaars erbovenop. Dit is nog steeds het kerngebruik. Mijn gids over [ERP-data in Snowflake krijgen](/nl/erp-data-into-snowflake/) behandelt de extractieopties.
+2. **Operationele data in de maakindustrie.** De fabrieks- en operationele data die ik in Snowflake heb zien landen, is productieplanningsdata. Data uit historians, MES, kwaliteit en onderhoud kan ernaast staan, en semi-gestructureerde sensordata in JSON laadt native.
+3. **Data delen met partners.** Leveranciers, distributeurs en klanten kunnen beheerde tabellen rechtstreeks bevragen. In de praktijk bestaat de meeste uitwisseling met leveranciers die ik zie nog uit bestandsoverdrachten.
+4. **Data science en AI op beheerde data.** Python via Snowpark en de AI-diensten van Snowflake, behandeld in mijn stuk over [Snowflake Cortex AI en Snowflake Intelligence](/nl/snowflake-cortex-ai-snowflake-intelligence/).
+5. **Consolidatie na overnames.** Meerdere ERP's, één rapportagelaag, met cloning voor veilige testomgevingen.
+
+Waar ik zou aarzelen:
+
+1. **Transactionele systemen met hoog volume.** Hybrid tables en Snowflake Postgres helpen, maar uw ERP- en MES-transacties horen in hun eigen databases.
+2. **Realtime machinebesturing.** Snowflake past bij minuten, niet bij milliseconden. Sensordata binnenstromen is prima. Een regelkring sluiten niet.
+3. **Strikte on-premises-eisen.** Er bestaat geen on-premises-installatie.
+4. **Zware eigen machine learning en data engineering in Spark.** Het kan, maar veel teams vinden Databricks natuurlijker. Mijn [vergelijking Snowflake vs Databricks](/nl/snowflake-vs-databricks/) loopt die keuze door.
+
+### Snowflake-schema vs sterschema: iets anders
+
+Wie naar Snowflake zoekt, komt vaak uit bij het "snowflake-schema". Dat heeft niets met het product te maken. Een snowflake-schema is een patroon voor datamodellering waarbij dimensietabellen genormaliseerd worden in subtabellen, zodat het diagram vertakt als een sneeuwvlok.
+
+Een sterschema houdt elke dimensie in één platte tabel. U kunt beide modellen in Snowflake bouwen, of in elk ander warehouse. De meeste BI-teams geven de voorkeur aan sterschema's vanwege eenvoudigere queries.
+
+## Waar ik zou beginnen
+
+Leg voordat u tekent vier beslissingen vast: welke editie u nodig hebt voor uw compliancepositie, welke cloud en regio, hoe u workloads over warehouses verdeelt, en of uw data in het formaat van Snowflake blijft of in Iceberg. Vraag de leverancier en uw systeemintegrator om de creditschatting per warehouse te tonen, niet één jaarbedrag. De meeste kostenverrassingen bij Snowflake zijn architectuurbeslissingen die niemand heeft opgeschreven.
+
+Valt ERP-data binnen de scope, lees dan eerst [waarom SAP-datamigratie mislukt](/nl/why-sap-data-migration-fails-and-how-to-fix-it/); dezelfde datakwaliteitsproblemen volgen u naar elk platform. Wilt u een second opinion op een beslissing over Snowflake, [neem dan contact op](/nl/contact-noel-erp-support/).
+
+## Veelgestelde vragen
+
+<details>
+<summary>Waarvoor wordt Snowflake gebruikt?</summary>
+
+Vooral als clouddatawarehouse voor rapportage en analytics op bedrijfsdata zoals ERP-, CRM- en operationele data. Bedrijven gebruiken het ook om live data met partners te delen, data science in Python te draaien via Snowpark en AI-toepassingen te bouwen op beheerde data.
+
+</details>
+
+<details>
+<summary>Wat zijn de drie lagen van de Snowflake-architectuur?</summary>
+
+Opslag, compute en cloud services. Opslag bewaart data in gecomprimeerde, kolomgeoriënteerde micro-partities. Compute bestaat uit virtual warehouses die queries draaien. Cloud services regelt beveiliging, metadata, queryoptimalisatie en transacties. Opslag en compute schalen en factureren apart.
+
+</details>
+
+<details>
+<summary>Is Snowflake een database of een datawarehouse?</summary>
+
+Allebei, afhankelijk van de definitie. Het is een SQL-database gebouwd voor analytische workloads, en daarom heet het meestal een clouddatawarehouse. Met Iceberg-tabellen, hybrid tables en Snowflake Postgres dekt het nu ook lakehouse- en sommige transactionele use cases, binnen grenzen.
+
+</details>
+
+<details>
+<summary>Kan Snowflake on-premises draaien?</summary>
+
+Nee. Snowflake draait alleen op AWS, Microsoft Azure en Google Cloud. Voor workloads van de Amerikaanse overheid en defensie biedt het SnowGov-regio's op AWS GovCloud en Azure Government, waarvoor de Business Critical-editie of hoger vereist is.
+
+</details>
+
+<details>
+<summary>Heeft het snowflake-schema iets te maken met het bedrijf Snowflake?</summary>
+
+Nee. Een snowflake-schema is een patroon voor datamodellering met genormaliseerde dimensietabellen. Het is ouder dan het bedrijf en werkt in elk warehouse.
+
+</details>
+
+<details>
+<summary>Welke Snowflake-editie hebben gereguleerde bedrijven nodig?</summary>
+
+Meestal Business Critical. Die voegt Tri-Secret Secure met een door de klant beheerde sleutel toe, private connectiviteit en ondersteuning voor HIPAA en PCI DSS, en het is het minimum voor overheidsregio's. Virtual Private Snowflake voegt een toegewijde omgeving zonder gedeelde hardware toe.
+
+</details>

@@ -1,0 +1,216 @@
+---
+title: "Snowflake Cortex AI 与 Snowflake Intelligence 详解"
+h1: "Snowflake Cortex AI 与 Snowflake Intelligence 详解"
+slug: "snowflake-cortex-ai-snowflake-intelligence"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/snowflake-cortex-ai-snowflake-intelligence.webp"
+heroAlt: "工厂维修区里一台装有传感器的设备，旁边的平板电脑显示着设备健康状况仪表板"
+category: "data-and-ai"
+tags: ["snowflake", "enterprise-ai"]
+author: "Noel D'Costa"
+metaTitle: "Snowflake Cortex AI 与 Snowflake Intelligence 指南"
+metaDescription: "详解 Snowflake Cortex AI：AI 函数、Cortex Analyst、Search、Agents 和 Snowflake Intelligence（现名 CoWork），附标价、风险和试点计划。"
+primaryKeyword: "Snowflake Cortex AI"
+excerpt: "Snowflake Cortex AI 是在您的 Snowflake 账户内运行的一组 AI 服务。本文说明每个部分的作用、按标价要花多少钱、风险在哪里，以及如何在制造业或国防领域开展第一个试点。"
+experienceSource: "Noel's first-person experience with Snowflake on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts and prices checked against official Snowflake documentation, October 2026."
+keyTakeaways:
+  - "Snowflake Cortex AI 是一个服务家族：AI SQL 函数、Cortex Analyst、Cortex Search、Cortex Agents 以及 CoWork 应用"
+  - "Snowflake Intelligence 于 2025 年 11 月 4 日正式发布，并于 2026 年 6 月更名为 Snowflake CoWork"
+  - "答案质量取决于语义视图，而不是您选择的模型"
+  - "跨区域推理是一项数据驻留决策；限定在某个区域，每个 AI Credit 的价格是 2.20 美元而不是 2.00 美元"
+  - "AI Credits 与平台 Credits 分开计费，容量折扣不适用于 AI Credits"
+  - "从一套受治理的问题集和一套文档开始，并对照基线进行衡量"
+pullQuote: "模型是最便宜、最容易更换的部分。答案的成败取决于语义层。"
+mentions:
+  - "Snowflake Cortex AI"
+  - "Snowflake Intelligence"
+  - "Snowflake CoWork"
+  - "Cortex Analyst"
+  - "Cortex Search"
+  - "Cortex Agents"
+  - "Semantic views"
+  - "Snowflake-managed MCP server"
+  - "AI_EXTRACT"
+  - "Document AI"
+originalUrl: "https://noeldcosta.com/snowflake-cortex-ai-snowflake-intelligence/"
+canonicalUrl: "https://noeldcosta.com/zh-CN/snowflake-cortex-ai-snowflake-intelligence/"
+locale: "zh"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Snowflake Cortex AI 是在您的 Snowflake 账户内运行的一组 AI 服务。它包括调用大语言模型的 SQL 函数、针对表提问的 Cortex Analyst，以及针对文档的 Cortex Search。Cortex Agents 负责编排它们，而 Snowflake Intelligence（现已更名为 Snowflake CoWork）是位于最上层的聊天应用。
+
+它的吸引力很简单。您的数据仍然处在您已在使用的同一套账户、角色和策略之下。风险也很简单。
+
+它很容易开启，也很容易花钱。如果底层数据没有建模好，它会给出自信满满的错误答案。
+
+在我参与过的制造业和国防项目中，问题从来都不是“Snowflake 能不能做 AI？”，而是“我们能否信任答案，能否证明谁看到了什么？”本指南正是为这样的对话而写。
+
+## Snowflake Cortex AI 实际包含什么
+
+这个领域的产品名称变化很快。有两个变化很重要。Snowflake 于 [2025 年 11 月 4 日宣布 Snowflake Intelligence 正式发布](https://www.snowflake.com/en/news/press-releases/snowflake-intelligence-brings-agentic-AI-to-the-enterprise/)，同时发布的还有 Cortex Agents 和 Snowflake 托管的 MCP 服务器。
+
+随后在 2026 年 6 月的 Summit 上，它[把该产品更名为 Snowflake CoWork](https://www.snowflake.com/en/news/press-releases/snowflake-cowork-powers-the-agentic-enterprise-as-the-personal-agent-for-knowledge-workers-to-work-smarter/)。一些 SQL 权限和对象名称仍在使用旧名称。
+
+Document AI 已经退场。Snowflake 于 [2026 年 3 月 16 日停用了 Document AI 界面](https://docs.snowflake.com/en/release-notes/bcr-bundles/un-bundled/bcr-2156)，并把文档抽取转移到 `AI_EXTRACT` 函数。如果系统集成商的方案中仍然提到构建 Document AI 模型，那它已经过时了。
+
+以下是截至 2026 年 10 月的技术栈，状态和计费依据来自 Snowflake 的文档。
+
+| 组件 | 作用 | 状态 | 计费依据 |
+|---|---|---|---|
+| Cortex AI Functions | `AI_COMPLETE`、`AI_CLASSIFY`、`AI_FILTER`、`AI_AGG`、`AI_EXTRACT`、`AI_PARSE_DOCUMENT`、`AI_REDACT` 等 SQL 函数 | 已正式发布，部分函数处于预览 | 按每百万 token 计 AI Credits，解析则按页计 |
+| Cortex Analyst | 基于语义视图把业务问题转换成 SQL | 可用；自 2026 年 8 月起 Snowflake 建议通过 Cortex Agents 调用它，REST API 仍受支持 | 通过 API 按消息计费，通过 Agents 按 token 计费 |
+| Cortex Search | 针对文本的关键词与向量混合搜索，用于检索 | 自 2024 年 10 月起正式发布 | 按索引每 GB 每月计 AI Credits，另加刷新所用的 warehouse |
+| Cortex Agents | 规划任务并调用 Analyst、Search、自定义工具和 MCP 连接器 | 自 2025 年 11 月起正式发布 | 编排 token 加上各工具自身的成本 |
+| Snowflake CoWork（原 Snowflake Intelligence） | 面向业务用户的聊天应用，基于 Cortex Agents 构建 | 自 2025 年 11 月起正式发布；2026 年 6 月宣布的若干功能标注为预览或“即将推出” | Token，另加工具和 warehouse 成本 |
+| Snowflake 托管的 MCP 服务器 | 向外部 AI 客户端开放智能体、Analyst、Search 和 SQL | 自 2025 年 11 月起正式发布 | 底层工具的成本 |
+
+模型来自 Anthropic、OpenAI、Google、Meta、Mistral AI 等厂商，另有 Snowflake 自己用于嵌入和抽取的 Arctic 模型。您能调用哪些模型，取决于您的区域和跨区域设置。下面会详细说明，因为这是国防客户最关心的决策。
+
+## 语义视图决定答案是否正确
+
+Cortex Analyst 不会读取您的表然后去猜。它读取的是语义视图：一个 schema 级对象，定义了您的业务实体、度量、关联和同义词。
+
+只有这些元数据会被发送给模型来编写 SQL。然后，SQL 以调用者的角色在您的 warehouse 中运行。
+
+因此，Snowflake CoWork 关于收入、报废率或准时交付的每一个答案，其质量都取决于这个语义视图。根据我的经验，真正的工作就在这里。
+
+难点在于在语义层中商定指标定义，而不是数据的干净程度。把“准时交付”定义一次，并让销售、供应链和财务都接受，需要开的会比任何模型配置都多。
+
+有两个功能可以帮忙。经过验证的查询（verified queries）让您可以保存一个已知正确的问题及其 SQL，这样模型就有了现成的示例。Snowflake 还允许您针对它们运行评估，从而得到一个准确率数字，而不是演示留下的印象。
+
+较早的方法，即放在 stage 上的 YAML 语义模型文件，仍然可以用。新工作要避免使用它。Snowflake 自己的文档推荐语义视图，而且任何能访问该 stage 的人都可以使用 YAML 模型，这是一个治理漏洞。
+
+如果您的 ERP 数据还没有干净地落地和建模，请从那里开始。我关于[把 SAP、Oracle 和 Dynamics 365 数据导入 Snowflake](/zh-CN/erp-data-into-snowflake/) 的指南介绍了这一步。
+
+## 治理、数据驻留与 MCP 问题
+
+支持 Snowflake Cortex AI 最有力的论据是治理。Cortex Analyst、Cortex Agents 和 CoWork 都遵守您现有的基于角色的访问控制、行访问策略和掩码。
+
+模型访问本身现在由角色授权控制。较早的账户级模型允许列表参数将在 2026 年内停用。
+
+在任何人签字确认之前，有一些细节值得检查。
+
+1. **Cortex Search 以所有者权限运行。** 任何对某个搜索服务拥有 USAGE 权限的人，都能看到所属角色索引过的所有内容的结果。按受众分别构建服务，而不是建一个大索引。
+2. **智能体使用调用者的默认角色。** 如果用户的默认角色权限很宽，智能体也会继承这种宽度。先整理好角色。
+3. **跨区域推理会移动提示。** `CORTEX_ENABLED_CROSS_REGION` 参数控制推理能否在您的主区域之外运行。Snowflake 表示，数据仍存储在主区域，提示也不会在其他地方持久保存，但请求内容确实会传出去。一些较新的组织默认设置为 `ANY_REGION`。[跨区域推理文档](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cross-region-inference)建议，如果您有数据驻留要求，就显式设置它。
+4. **MCP 服务器可能绕过您的智能体。** Snowflake 建议，把 Cortex Agent 作为受治理问题的唯一工具对外开放。如果在同一个服务器上开放原始 SQL 执行，外部客户端就可以绕开智能体的控制。
+
+对于国防领域，第 3 点就是要谈的核心。把该参数设置为 `DISABLED` 或某个区域值，可以让推理留在您的边界之内，但这会缩小可用模型的范围，并且每个 credit 的成本更高。Snowflake 的美国政府区域会把请求保持在同一合规边界之内。
+
+其 MCP 文档还说明，尚未完成对 MCP 服务器的正式 FedRAMP 评估。涉密数据在这一切中都没有立足之地。试点只使用非涉密、不受出口管制的数据，并请您的出口管制负责人以书面形式确认边界。
+
+我的 [AI 治理框架指南](/zh-CN/ai-governance-framework-guide-building-a-responsible-ai-plan/)涵盖了政策这一侧。
+
+## Snowflake Cortex AI 要花多少钱
+
+AI 功能以 AI Credits 计费，它与支付 warehouse 费用的平台 Credits 是分开的。根据 [Snowflake 的 AI 定价页面](https://docs.snowflake.com/en/user-guide/snowflake-cortex/pricing)，按需情况下，一个 AI Credit 在全球路由时为 2.00 美元，在把推理限制在您的区域或禁用跨区域路由时为 2.20 美元。
+
+AI Credit 的价格在各版本之间相同。您的平台 Credit 容量折扣不适用于它。
+
+以下费率是 2026 年 10 月 9 日生效的 Snowflake Service Consumption Table 中的标价，于 2026 年 10 月核实。企业协议、AI Credit 容量分档以及新模型的发布都会改变这些数字。
+
+| 项目 | 标价费率 |
+|---|---|
+| AI Credit，全球路由 / 区域路由 | 2.00 美元 / 2.20 美元 |
+| `AI_COMPLETE` 使用 llama3.3-70b（输入 / 输出） | 每百万 token 0.432 / 0.432 个 AI Credit |
+| `AI_COMPLETE` 使用 openai-gpt-4.1（输入 / 输出） | 每百万 token 1.20 / 4.80 个 AI Credit |
+| `AI_COMPLETE` 使用 claude-sonnet-4-5（输入 / 输出） | 每百万 token 1.80 / 9.00 个 AI Credit |
+| `AI_CLASSIFY` 或 `AI_FILTER` | 每百万 token 1.62 个 AI Credit |
+| `AI_EXTRACT`（arctic-extract） | 每百万 token 5.55 个 AI Credit |
+| `AI_PARSE_DOCUMENT`，版面模式 | 每 1,000 页 3.66 个 AI Credit |
+| Cortex Search 服务 | 按索引数据每 GB 每月 6.3 个 AI Credit |
+| 通过 REST API 使用 Cortex Analyst | 每 1,000 条消息 67 个平台 Credit |
+
+模型之间的价差很大。按输出 token 计算，claude-sonnet-4-5 的成本约为 llama3.3-70b 的 20 倍。用错模型对十年的维护记录做一次分类，AI 预算就可能在一周之内被烧光。
+
+有三个成本陷阱常常让人中招。多轮对话在每一轮都会重新处理完整的历史，所以对话越长，每个问题的成本越高。
+
+智能体的成本是叠加的：编排 token，然后是每个工具，再然后是运行 SQL 的 warehouse。预配吞吐量一旦预留就不可取消，用不用都要计费。
+
+控制手段是存在的。对智能体使用资源预算、每用户配额和编排预算。监控用量视图，例如 `CORTEX_FUNCTIONS_QUERY_USAGE_HISTORY`、`CORTEX_AGENT_USAGE_HISTORY` 和 `SNOWFLAKE_COWORK_USAGE_HISTORY`。
+
+每个批处理作业都先在样本上测试。我的 [Snowflake 定价与 credits 指南](/zh-CN/snowflake-pricing-credits-explained/)涵盖了平台这一侧。
+
+## 需要预先接受的限制和风险
+
+在这一点上，Snowflake 自己的文档很坦诚。Cortex Analyst 回答的是 SQL 能回答的问题。
+
+它不做“利润率为什么下降？”这类开放式推理，也无法复用之前查询的结果。Snowflake 还提醒，智能体的回复和引用并不保证准确。
+
+我的判断是：把每一个用于决策的 AI 答案都当作草稿，由一位指定的人签字确认。这在国防领域更加重要，因为一个错误的数字可能最终写进合同或审计文件。
+
+锁定是另一个风险。语义视图、智能体和搜索服务都是 Snowflake 对象。
+
+您的提示和评估集可以迁移；底层的管道连接不行。如果您还在选择平台，我的 [Snowflake 与 Databricks 对比](/zh-CN/snowflake-vs-databricks/)阐述了这种取舍。
+
+## 在制造业或国防领域的第一个试点
+
+在这两个行业中，我会选择的第一个用例形态相同：为一个团队准备一套结构化问题集和一套文档。
+
+在制造业，我会把第一个试点做成维护与质量助手。在来自 ERP 和 MES 的工单、停机、报废和不合格数据之上建立一个语义视图。
+
+在维护规程和已关闭的质量报告之上建立一个 Cortex Search 服务。维护计划员问“上季度哪些产线的非计划停机最多，我们上次发现了什么？”，就能得到数字以及相关报告。
+
+在国防领域，同样的模式适用于非涉密项目的供应商质量：来自 ERP 的交付和质量指标，加上供应商纠正措施文件。把涉密和受出口管制的材料完全排除在范围之外。
+
+<stepper title="一个为期 90 天的 Cortex AI 试点" steps="确定范围|建模|构建|测试|决策" bodies="选一个团队、20 到 30 个真实问题和一套文档。在做任何事之前，先设置好跨区域参数和角色。|构建语义视图，并为最重要的问题编写经过验证的查询。与业务负责人商定指标定义。|按受众创建 Cortex Search 服务和一个 Cortex Agent。第一天就设置预算和每用户配额。|针对问题集运行评估。由用户为答案打分。与目前得到同样答案所需的时间做比较。|扩大规模、修复数据，或者停止。把选择及其原因写下来。"></stepper>
+
+衡量四件事，并在开始之前记录基线。
+
+1. **答案准确率**，以经过验证的问题集为准，由业务负责人打分。
+2. **获得答案的时间**，与当前途径相比，通常是向分析师提需求或四处找报表。
+3. **每个已回答问题的成本**，来自用量视图，包括 warehouse 时间。
+4. **访问例外**：任何用户看到了其角色本不应触及的数据的情况。目标是零。
+
+## 从哪里开始
+
+在购买任何东西之前，先查出您当前的 `CORTEX_ENABLED_CROSS_REGION` 设置，列出哪些人拥有范围宽泛的默认角色，并挑出您的运营总监每个月都会问的 20 个问题。这一页简报比任何厂商演示都更能说明您的准备程度。
+
+如果您希望就试点范围、数据驻留设置或系统集成商的方案获得第二意见，我帮助企业做这类决策。您可以[在这里联系我](/zh-CN/contact-noel-erp-support/)。如需了解 Databricks 的对应产品，请参阅我关于 [Databricks Genie 与 Agent Bricks](/zh-CN/databricks-genie-agent-bricks/) 的文章。
+
+## 常见问题
+
+<details>
+<summary>Snowflake Cortex AI 是什么？</summary>
+
+Snowflake Cortex AI 是 Snowflake 的 AI 服务家族，在您的 Snowflake 账户内运行。它包括调用大语言模型的 AI SQL 函数、针对表提问的 Cortex Analyst，以及针对文档的 Cortex Search。Cortex Agents 负责编排这些工具，Snowflake CoWork 应用则服务于业务用户。
+
+</details>
+
+<details>
+<summary>Snowflake Intelligence 和 Snowflake CoWork 是同一个东西吗？</summary>
+
+是的。Snowflake Intelligence 于 2025 年 11 月 4 日正式发布，并在 2026 年 6 月的 Snowflake Summit 上更名为 Snowflake CoWork。一些 SQL 权限和默认对象名称仍在使用 Snowflake Intelligence 这个名称。
+
+</details>
+
+<details>
+<summary>Snowflake Cortex 会把我的数据发送到 Snowflake 之外吗？</summary>
+
+模型在 Snowflake 的服务边界内运行，您存储的数据留在账户的主区域。启用跨区域推理后，提示和回复可能在另一个区域处理，但不会在那里持久保存。如果您有数据驻留规定，请显式设置 CORTEX_ENABLED_CROSS_REGION 参数。
+
+</details>
+
+<details>
+<summary>Snowflake Cortex AI 要花多少钱？</summary>
+
+大多数 Cortex 功能以 AI Credits 计费，全球路由时每个 2.00 美元，区域路由时每个 2.20 美元，标价于 2026 年 10 月核实。费率因模型和功能而异，从每百万 token 不到一个 credit 到数个 credit 不等。通过 REST API 使用 Cortex Analyst，每 1,000 条消息收取 67 个平台 Credit。企业协议会改变这些数字。
+
+</details>
+
+<details>
+<summary>Snowflake 语义视图是什么？</summary>
+
+语义视图是 schema 级的 Snowflake 对象，用于描述业务实体、度量、关系和同义词。Cortex Analyst 和 Cortex Agents 用它们把问题转换成准确的 SQL。它们取代了较早的 YAML 语义模型文件，是影响答案质量的主要因素。
+
+</details>
+
+<details>
+<summary>什么取代了 Snowflake Document AI？</summary>
+
+AI_EXTRACT 函数。Snowflake 于 2026 年 3 月 16 日停用了 Document AI 界面及其 PREDICT 方法。AI_EXTRACT 通过一次 SQL 调用从文档中提取实体、列表和表格，按 token 计费。
+
+</details>

@@ -1,0 +1,230 @@
+---
+title: "Databricks'te Unity Catalog: yönetişimi doğru kurmak"
+h1: "Databricks'te Unity Catalog: yönetişimi doğru kurmak"
+slug: "databricks-unity-catalog-data-governance"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/databricks-unity-catalog-data-governance.webp"
+heroAlt: "Sunucu kabinleri ve güvenli giriş kapısı bulunan aydınlık, beyaz bir veri merkezi koridoru"
+category: "data-and-ai"
+tags: ["databricks", "data-governance", "defence", "manufacturing"]
+author: "Noel D'Costa"
+metaTitle: "Databricks Unity Catalog: Veri Yönetişimi Nasıl Kurulur"
+metaDescription: "Databricks'te Unity Catalog nedir; hiyerarşi, yetkiler, ABAC, lineage ve denetim nasıl işler ve regülasyona tabi kurumlar için pratik bir devreye alma sırası."
+primaryKeyword: "Databricks Unity Catalog"
+excerpt: "Unity Catalog, Databricks'teki her şeyin yönetişim katmanıdır: erişimi kontrol etmek, lineage'ı izlemek ve neye kimin dokunduğunu kanıtlamak için tek bir yer. Nasıl çalıştığını ve üçüncü yılda da anlamlı olacak şekilde nasıl tasarlanacağını anlatıyorum."
+experienceSource: "Noel's first-person experience with Databricks on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts checked against official Databricks documentation and release notes, October 2026."
+keyTakeaways:
+  - "Unity Catalog; tabloları, view'ları, volume'ları, fonksiyonları ve modelleri tek bir üç seviyeli ad alanıyla yönetir: catalog.schema.object"
+  - "Bulut bölgesi başına bir metastore alırsınız, bu yüzden asıl yönetişim kararları katalog tasarımında verilir"
+  - "ABAC politikaları, governed tags ve veri sınıflandırması Nisan 2026'da genel kullanıma sunuldu; DENY politikaları hâlâ Beta"
+  - "Gruplar kimlik sağlayıcınızdan gelir ve her üretim kataloğunun sahibidir. Asla bireylere yetki vermeyin"
+  - "Delta Sharing'in adı artık OpenSharing (Haziran 2026); yönetilen ve harici Iceberg tabloları Mayıs 2026'da GA oldu"
+  - "Denetim ve lineage kanıtını ilk günden açın. Bir denetimden önce bunu sonradan eklemek zahmetlidir"
+pullQuote: "Unity Catalog sorunlarının çoğu, birinin izinlerle çözmeye çalıştığı adlandırma ve sahiplik sorunlarıdır."
+mentions:
+  - "Databricks"
+  - "Unity Catalog"
+  - "OpenSharing"
+  - "Delta Sharing"
+  - "Apache Iceberg"
+  - "UCX"
+  - "Hive metastore"
+  - "Lakehouse Federation"
+  - "Microsoft Entra ID"
+  - "SAP"
+  - "Oracle"
+  - "Microsoft Dynamics 365"
+originalUrl: "https://noeldcosta.com/databricks-unity-catalog-data-governance/"
+canonicalUrl: "https://noeldcosta.com/tr/databricks-unity-catalog-data-governance/"
+locale: "tr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Unity Catalog, Databricks'teki yönetişim katmanıdır. Her tabloyu, view'ı, dosya volume'unu, fonksiyonu ve yapay zeka modelini kimin görebileceğini ve değiştirebileceğini kontrol eder, bunlar arasındaki lineage'ı kaydeder ve erişimleri loglar; böylece bunu bir denetçiye kanıtlayabilirsiniz.
+
+Bugün Databricks kullanıyorsanız, zaten Unity Catalog üzerindesiniz ya da ona geçiyorsunuz. Eski Hive metastore çıkış yolunda ve Databricks'in her yeni özelliği altta Unity Catalog olduğunu varsayıyor.
+
+Artık soru onu benimseyip benimsememek değil. Soru, katalog tasarımınızın üç yıl boyunca gelecek yeni ekiplerden, yeni verilerden ve bir iki denetimden sonra hâlâ anlamlı olup olmayacağı.
+
+Çalıştığım üretim ve savunma programlarında teknoloji nadiren zor kısımdı. Zor kısım; hangi verinin sahibinin kim olduğu, ortamların nasıl ayrılacağı ve güvenlik ekibinin hangi kanıta ihtiyaç duyduğu konusunda anlaşmaktı.
+
+## Databricks'te Unity Catalog gerçekte neyi yönetir
+
+Her şey en üst seviye kapsayıcı olan bir **metastore** altında durur. Onun altında veri ve yapay zeka varlıkları üç seviyeli bir ad alanı kullanır: `catalog.schema.object`. `prod_finance.gl.journal_lines` üzerindeki bir sorgu kataloğu, şemayı ve tabloyu adlandırır.
+
+İzin verdiğiniz nesnelere securable object (güvenli nesne) denir. [Unity Catalog dokümantasyonuna](https://docs.databricks.com/aws/en/data-governance/unity-catalog/) göre iki gruba ayrılırlar:
+
+1. **Ad alanındaki varlıklar:** tablolar, view'lar, volume'lar (yönetişim altındaki dosya depolama), fonksiyonlar, modeller ve servisler.
+2. **Metastore seviyesindeki nesneler:** storage credentials, external locations, connections (harici veritabanlarına) ve shares.
+
+Bu metastore seviyesindeki nesnelerden ikisi sade bir açıklamayı hak ediyor, çünkü verinizin fiziksel olarak nerede duracağına onlar karar veriyor.
+
+Bir **storage credential**, bir depolama hesabına veya bucket'a erişebilen IAM rolü ya da managed identity gibi bir bulut kimliğini sarmalar. Bir **external location** ise bir depolama yolunu bir credential ile eşleştirir. Birlikte, Unity Catalog'un kullanıcılara anahtar vermeden bulut depolamayı okumasını ve yazmasını sağlarlar.
+
+Sonra yönetilen ve harici ayrımı var. Yönetilen tablolarda Unity Catalog tabloyu yönetişim altına alır ve dosyalarını yönetir. Harici tablolarda yalnızca erişimi yönetir.
+
+Databricks artık tüm yeni veriler için yönetilen tabloları öneriyor, harici tabloları ise esas olarak Hive yükseltmeleri için tutuyor. Katılıyorum. Aynı yollara başka araçların yazması genellikle tabloyu sonsuza kadar harici tutmak için değil, veri hattını düzeltmek için bir nedendir.
+
+Her şeyi tek bir kısıt şekillendirir: bulut bölgesi başına yalnızca bir metastore'unuz olabilir. İzolasyonu daha fazla metastore ile çözemezsiniz. Kataloglarla çözersiniz.
+
+## Erişim kontrolleri: yetkiler, satır filtreleri, sütun maskeleri ve ABAC
+
+Unity Catalog izinleri, aşağıya doğru miras alınan standart SQL yetkileridir (grant). Bir katalogdaki yetki, içindeki her şemaya ve tabloya uygulanır. Bir kullanıcının bir tabloya ulaşması için `USE CATALOG` ve `USE SCHEMA`, okuması için de `SELECT` yetkisi gerekir.
+
+```sql
+GRANT USE CATALOG ON CATALOG prod_finance TO `finance-analysts`;
+GRANT USE SCHEMA ON SCHEMA prod_finance.gl TO `finance-analysts`;
+GRANT SELECT ON SCHEMA prod_finance.gl TO `finance-analysts`;
+```
+
+Yetkiler "bu grup bu tabloyu okuyabilir mi" sorusunu yanıtlar. Regülasyona tabi veri daha ince yanıtlar ister; diğer kontroller burada devreye girer.
+
+Aşağıdaki tablo, ana erişim kontrollerini ve Ekim 2026 itibarıyla durumlarını özetliyor.
+
+| Kontrol | Ne yapar | Durum (Ekim 2026) |
+|---|---|---|
+| Yetkiler ve sahiplik | Katalogdan şemaya ve nesneye miras alınan nesne seviyesinde ayrıcalıklar | Genel kullanımda |
+| Tablo seviyesinde satır filtreleri ve sütun maskeleri | Bir tabloya bağlanan SQL fonksiyonu satırları gizler veya değerleri maskeler | Genel kullanımda |
+| ABAC satır filtresi ve sütun maskesi politikaları | Katalog, şema veya tablo seviyesinde tanımlanan tek bir politika, governed tag taşıyan her nesneye uygulanır | 28 Nisan 2026'dan beri GA |
+| Governed tags | Anahtarları, değerleri ve kimin atayabileceği kontrol edilen hesap seviyesinde etiketler | 2 Nisan 2026'dan beri GA |
+| Veri sınıflandırması | Tabloları tarar ve PII gibi hassas verileri işaretler | 20 Nisan 2026'dan beri GA; özel sınıflandırıcılar Beta |
+| ABAC DENY politikaları ve metastore seviyesinde politikalar | Yetkileri geçersiz kılan açık reddetmeler; metastore kapsamında politikalar | Beta |
+| Motorlar arası ABAC | Harici motorlar ABAC korumalı yönetilen tabloları okur, politikaları Databricks serverless işlem gücü uygular | 1 Ekim 2026'dan beri GA |
+
+Tarihler [Databricks Nisan 2026 sürüm notlarından](https://docs.databricks.com/aws/en/release-notes/product/2026/april) ve Ekim 2026 notlarından alındı.
+
+ABAC (attribute-based access control, öznitelik tabanlı erişim kontrolü), büyük ortamlar için en önemli değişikliktir. Her tablo için ayrı bir maske yazmak yerine sütunları etiketlersiniz, örneğin `classification = export_controlled`, ve belirli bir grubun dışındaki herkes için etiketli her sütunu maskeleyen tek bir politika yazarsınız.
+
+Yeni tablolar etiketlendikleri anda korunur. Etiketleri veri sınıflandırması önerebilir.
+
+Önce işlem gücünü kontrol edin. ABAC ile korunan tablolar serverless işlem gücü ya da Databricks Runtime 16.4 veya üzeri gerektirir. Eski cluster'lar bunları hiç okuyamaz.
+
+Erkenden işaret edeceğim iki tuzak var. Aynı kullanıcı için aynı sütunda çelişen politikalar, sorguyu bir hatayla engeller.
+
+Bir de bir veri hattının run-as kimliği bir maskenin kapsamına girerse, yenilenen veri maskelenmiş olarak saklanabilir. Servis kimliklerini bilinçli olarak muaf tutun ve nedenini belgeleyin.
+
+## Lineage, denetim ve paylaşım
+
+Lineage, metastore'a bağlı herhangi bir workspace'te Databricks SQL ve Spark DataFrames üzerinden çalışan sorgular için sütun seviyesine kadar otomatik olarak yakalanır. Notebook'ları, işleri, veri hatlarını ve dashboard'ları kapsar. Kod tablolara depolama yoluyla referans verdiğinde sütun lineage'ı kaybolur; yol tabanlı erişimi emekliye ayırmak için bir neden daha.
+
+Denetim kanıtı sistem tablolarından gelir. `system.access.audit` denetim olaylarını tutar ve [sistem tabloları dokümantasyonunda](https://docs.databricks.com/aws/en/admin/system-tables/) hâlâ Public Preview olarak etiketli.
+
+Lineage ve faturalama tabloları da onun yanında durur ve 365 gün ücretsiz saklama sunar. Varsayılan olarak sistem tablolarını yalnızca hesap ve metastore yöneticileri görür; bu yüzden kimin okuma erişimi alacağına ve daha uzun saklama için denetim verisini SIEM'inize kopyalayıp kopyalamayacağınıza erkenden karar verin.
+
+Paylaşımın adı bu yıl değişti. Databricks, [10 Haziran 2026'da OpenSharing'i duyurdu](https://www.databricks.com/company/newsroom/press-releases/databricks-announces-opensharing): Delta Sharing protokolünün bir sonraki sürümü, artık Linux Foundation bünyesinde barındırılıyor ve yapay zeka varlıklarına ve Iceberg istemcilerine genişletildi.
+
+Eski dokümanlarda ve sözleşmelerde hâlâ "Delta Sharing" göreceksiniz. Bir share, bir Unity Catalog nesnesidir ve Databricks'ten Databricks'e paylaşım aynı zamanda bölgesel metastore'lar arasında veri taşımanın yoludur.
+
+Karma ortamlar için yönetilen ve harici (foreign) Apache Iceberg tabloları 21 Mayıs 2026'da genel kullanıma sunuldu. Harici tablolar, AWS Glue veya Snowflake Horizon gibi kataloglardan Lakehouse Federation üzerinden okunur. Spark, Flink ve Trino gibi motorlar Unity Catalog'un Iceberg REST catalog uç noktasını kullanabilir.
+
+LF AI & Data Foundation bünyesinde açık kaynaklı bir Unity Catalog da var, ama bu yönetilen hizmet değil, sandbox aşamasında bir proje. Test etmeden bunun üzerine bir çıkış planı kurmayın.
+
+## İşe yarayan yönetişim tasarımı
+
+Kataloglar ana izolasyon birimidir. Databricks'in [Unity Catalog en iyi uygulamaları](https://docs.databricks.com/aws/en/data-governance/unity-catalog/best-practices), katalogların genellikle bir ortama, bir ekibe, bir iş birimine veya bunların bir kombinasyonuna karşılık geldiğini söylüyor. Gerçek tasarımların çoğu bir kombinasyondur.
+
+<compare-split title="Katalogları bölmenin iki yolu" left-label="Ortam başına katalog" left-points="dev, test ve prod katalogları, alan başına şemalar|Her kataloğu kendi workspace'ine bağlamak basit|Bir katalog içinde alanlar büyüdükçe sahiplik bulanıklaşır|Küçük ekiplere ve ilk devreye almalara uyar" right-label="Alan ve ortam başına katalog" right-points="prod_finance, prod_quality, dev_finance ve benzerleri|Her alan grubu kendi kataloglarının sahibidir|Net hesap verebilirlik ve daha temiz denetim kapsamı|Adlandırılacak, bağlanacak ve yetki verilecek daha fazla katalog"></compare-split>
+
+Birkaç veri ekibinden fazlasına sahip her şirket için varsayılan olarak alan artı ortam seçerdim. Başta daha fazla adlandırma disiplini ister. Ama iki yıl sonra herkesin sorguladığı ama kimsenin bakımını yapmadığı tablonun sahibinin kim olduğu tartışmasını önler.
+
+Tasarımın geri kalanı dört kurala dayanır:
+
+1. **Gruplar kimlik sağlayıcınızdan gelir.** Kullanıcıları ve grupları Databricks hesabına otomatik kimlik yönetimiyle, sağlayıcınız bunu desteklemiyorsa SCIM ile sağlayın. Grupları Databricks'te değil, Microsoft Entra ID'de, Okta'da veya muadilinde tanımlayın. Biri ayrıldığında erişimi de dizin hesabıyla birlikte gider.
+2. **Üretim nesnelerinin sahibi gruplardır.** Databricks'in kendi yönergesi, üretim kataloglarının ve şemalarının sahipliğini bireylere değil, her zaman gruplara vermektir. Sahip erişim verebilir, bu yüzden sahip olarak bir kişi, kalıcı bir istisnadır.
+3. **Katalogları workspace'lere bağlayın.** Yalnızca üretim workspace'lerine bağlı bir üretim kataloğu, yetkiler ne derse desin bir sandbox'tan sorgulanamaz.
+4. **Yetki vermeden önce sınıflandırın.** Kısa bir etiket sözlüğü (hassasiyet, kişisel veri, ihracat kontrolü, kaynak sistem) üzerinde governed tags olarak anlaşın ve ABAC politikalarını buna göre yazın.
+
+Üretimde katalogları tesise göre değil, fabrika sistemine, yani OT ve kaynak sistem alanına göre düzenledim. Historian'lardan, MES'ten ve sensörlerden gelen OT verisi, operasyon veya mühendislik veri ekibinin sahip olduğu kendi kataloglarında durur. ERP'den (SAP, Oracle veya Microsoft Dynamics 365), kaliteden ve tedarik zincirinden gelen IT verisi başka kataloglarda durur.
+
+Analistler için düzenlenmiş, birleştirilmiş veri üçüncü bir sette yaşar. OT/IT sınırı katalogun kendisinde görünür hale gelir. ERP çıkarımı kapsamdaysa, [SAP veri taşıma projelerinin neden başarısız olduğu](/tr/why-sap-data-migration-fails-and-how-to-fix-it/) üzerine notlarım ERP veri akışları için de geçerli.
+
+## Savunma açısı: en az ayrıcalık, ayrım ve kanıt
+
+Savunma programlarında güvenlik ekibinin dört soru sormasını bekleyin. İhracat kontrolüne tabi veriyi kim görebilir? Diğer her şeyden nasıl ayrılmış?
+
+Nerede saklanıyor? Tüm bunları son bir yıldaki herhangi bir gün için kanıtlayabilir misiniz?
+
+Buna göre tasarlarsanız Unity Catalog bunların çoğunu yanıtlar:
+
+1. **En az ayrıcalık.** Metastore veya katalog seviyesinde geniş gruplara yetki yok. Şema seviyesinde belirli gruplara yetki verin ve kontrollü olarak etiketlenmiş sütunlar için ABAC maskeleri kullanın. DENY politikalarını yalnızca Beta'dan çıktıklarında ve akreditasyon yetkilileriniz kabul ettiğinde kullanın.
+2. **Ayrım.** Kontrollü veri için kendi yönetilen depolama konumuna sahip, özel workspace'lere bağlı ayrı kataloglar. Databricks, katalog seviyesinde yönetilen depolamayı ana izolasyon birimi olarak öneriyor; bu da buna çok uygun.
+3. **Veri yerleşimi.** Bölge başına bir metastore, biri paylaşmadıkça verinin depolandığı bölgede kalması demektir. Her OpenSharing paylaşımını ve her bölgeler arası bağlantıyı onay gerektiren bir veri yerleşimi kararı olarak ele alın.
+4. **Denetim kanıtı.** Lineage artı SIEM'inize aktarılan `system.access.audit`, kimin neye eriştiğini ve verinin nereye gittiğini size verir. Denetim tablosunun hâlâ Public Preview olduğunu unutmayın. Savunma işlerimde güvenlik ekipleri denetim loglarının yalnızca Databricks sistem tablolarında bırakılmasını değil, kendi SIEM'lerine kopyalanmasını istedi. Bu akışı baştan plana dahil edin.
+
+Unity Catalog neyin gizli veya ITAR kontrolüne tabi veri sayılacağına karar vermez ve akreditasyonun yerini almaz. Bazı savunma iş yükleri ticari bir bulut bölgesinde hiç çalışamaz.
+
+Katalog tasarımı orada da yardımcı olur: platforma neyin gidebileceği ile neyin gidemeyeceği arasına net bir çizgi çeker. Platformun üstünde duran politika katmanını yazıyorsanız, [yapay zeka yönetişim çerçevesi rehberim](/tr/ai-governance-framework-guide-building-a-responsible-ai-plan/) roller ve onaylar tarafını ele alıyor.
+
+## Pratik bir devreye alma sırası
+
+Hive metastore'dan geçen ya da sıfırdan başlayan bir şirket için izleyeceğim sıra bu.
+
+1. **Katalog modeli ve adlandırma kuralı üzerinde anlaşın.** Alan artı ortam; yazılı ve veri sahipleri tarafından onaylanmış. Sonradan değiştirirseniz her şeyi yeniden adlandırırsınız.
+2. **Kimlik sağlayıcıyı bağlayın.** Hesap seviyesinde sağlama, dizinde tanımlanmış gruplar, Unity Catalog workspace'leri için workspace seviyesinde SCIM kapalı.
+3. **Storage credentials ve external locations'ı kurun.** Sahibi bir platform grubu olsun. Başka kimse `CREATE EXTERNAL LOCATION` yetkisi almasın.
+4. **Yönetilen depolama ve workspace bağlantılarıyla kataloglar oluşturun.** Üretim katalogları ilk günden grupların sahipliğinde olsun.
+5. **Governed tags tanımlayın ve veri sınıflandırmasını açın.** Bulgularına göre politika yazmadan önce bulguları gözden geçirin.
+6. **Hassas sütunlar için ABAC politikaları yazın.** Çalıştırdığınız her işlem türünde, Runtime 16.4'ün altında kalan cluster'lar dahil, gerçek kullanıcılarla test edin.
+7. **Hive metastore'dan geçiş yapın.** Databricks artık [önce Hive metastore'u federe etmeyi](https://docs.databricks.com/aws/en/data-governance/unity-catalog/migrate), ardından tabloları yerinde yükseltmeyi öneriyor. UCX büyük ortamlarda yardımcı olur, ama resmi olarak desteklenen değil, topluluk tarafından sürdürülen bir Databricks Labs projesidir. Buna göre plan yapın.
+8. **Denetim aktarımını ve lineage incelemesini açın.** Sistem tablolarına okuma erişimi verin, SIEM akışını kurun ve kimin neyi inceleyeceği konusunda anlaşın.
+9. **Her şey taşındıktan sonra Hive metastore erişimini kapatın**, böylece kimse sessizce eski yol üzerine bir şey kurmasın.
+
+## Kaçınılması gereken hatalar
+
+1. **Bireylere yetki vermek.** Bir hafta işe yarar. Sonra kimin neye erişimi olduğunu kimse yanıtlayamaz.
+2. **Ekip başına şemalarla tek dev katalog.** Sahiplik ve denetim kapsamı bulanıklaşır ve sonradan yeniden kurarsınız.
+3. **Tabloları "şimdilik" harici bırakmak.** Yönetilen tablo özelliklerini kaybedersiniz ve her dosya için iki sahip tutarsınız.
+4. **Politikaları tek bir cluster türünde test etmek.** ABAC işlem gücüne göre farklı davranır; eski runtime'lar doğrudan başarısız olur.
+5. **Denetimi sonraki bir aşama olarak görmek.** Denetçi, siz denetimi açmadan önceki dönemi soracaktır.
+
+## Nereden başlamalı
+
+Henüz başındaysanız, kimse bir katalog oluşturmadan önce katalog modelini ve etiket sözlüğünü tek bir sayfaya yazın. Geçişin ortasındaysanız, değerlendirmeyi çalıştırın, hâlâ harici olan veya hâlâ Hive metastore'da duran her tabloyu listeleyin ve her birine bir sahip ve bir tarih verin.
+
+Daha geniş resim için [Databricks'in ne için kullanıldığı](/tr/what-is-databricks-used-for/) yazısıyla başlayın ve ABAC için serverless işlem gücünü boyutlandırmadan önce [Databricks fiyatlandırmasına](/tr/databricks-pricing-explained/) bakın. Platformları tartıyorsanız, [Snowflake ve Databricks karşılaştırmam](/tr/snowflake-vs-databricks/) iki taraftaki yönetişimi de ele alıyor. Üretim ve savunma sektörlerindeki kurumlara bu tasarım kararlarında yardımcı oluyorum; ikinci bir görüş işinize yarayacaksa [bir görüşme ayarlayın](/tr/contact-noel-erp-support/).
+
+## Sıkça sorulan sorular
+
+<details>
+<summary>Databricks'te Unity Catalog nedir?</summary>
+
+Unity Catalog, Databricks'in yönetişim katmanıdır. Tablolara, view'lara, dosya volume'larına, fonksiyonlara ve yapay zeka modellerine erişimi yönetmek için tek bir yer sağlar, lineage'ı otomatik olarak yakalar ve erişimleri denetim sistem tablolarına kaydeder. Varlıklar, bölge başına tek bir metastore altında catalog.schema.object olarak adreslenir.
+
+</details>
+
+<details>
+<summary>Databricks'te ABAC genel kullanımda mı?</summary>
+
+Evet. Satır filtreleri ve sütun maskeleri için öznitelik tabanlı erişim kontrolü politikaları 28 Nisan 2026'da genel kullanıma sunuldu; governed tags ve veri sınıflandırması da Nisan 2026'da GA oldu. DENY politikaları, metastore seviyesindeki politikalar ve özel sınıflandırıcılar Ekim 2026 itibarıyla hâlâ Beta'daydı.
+
+</details>
+
+<details>
+<summary>Delta Sharing ile OpenSharing aynı şey mi?</summary>
+
+Evet. Databricks, Haziran 2026'da OpenSharing'i Delta Sharing protokolünün bir sonraki evrimi olarak duyurdu; artık Linux Foundation bünyesinde barındırılıyor ve yapay zeka varlıklarına ve Iceberg istemcilerine genişletildi. Databricks dokümantasyonu paylaşımı artık OpenSharing adıyla anlatıyor.
+
+</details>
+
+<details>
+<summary>Unity Catalog'da yönetilen mi, harici tablolar mı kullanmalıyım?</summary>
+
+Tüm yeni veriler için yönetilen tablolar. Databricks bunları öneriyor, çünkü bu durumda dosyaları, bakımı ve performans özelliklerini Unity Catalog yönetir. Harici tabloları yalnızca dosyaların sahibinin başka bir sistem olması gereken yerlerde veya bir Hive metastore yükseltmesi sırasında tutun ve dönüştürmeyi planlayın.
+
+</details>
+
+<details>
+<summary>Hive metastore'dan Unity Catalog'a nasıl geçerim?</summary>
+
+Databricks, önce Hive metastore'u harici bir katalog olarak federe etmeyi, ardından tabloları veri taşımadan yerinde yükseltmeyi öneriyor. Büyük ortamlarda Databricks Labs'in UCX araçları hazırlığı değerlendirir ve grupları, izinleri ve tabloları taşır; ancak UCX resmi olarak desteklenmez, topluluk tarafından sürdürülür.
+
+</details>
+
+<details>
+<summary>Kataloglar ortama göre mi, iş alanına göre mi düzenlenmeli?</summary>
+
+Çoğu kurum için ikisine göre: prod_finance ve dev_finance gibi, ortam başına alan başına bir katalog. Bu, her alan grubuna net sahiplik ve temiz bir denetim kapsamı verir. Küçük ekipler ortam başına bir katalog ve alan başına şemalarla başlayabilir.
+
+</details>

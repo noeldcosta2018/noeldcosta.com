@@ -1,0 +1,202 @@
+---
+title: "Preços do Databricks explicados: DBUs e o que você realmente paga"
+h1: "Preços do Databricks explicados: DBUs e o que você realmente paga"
+slug: "databricks-pricing-explained"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/databricks-pricing-explained.webp"
+heroAlt: "Noel D'Costa ao lado de uma mesa com relatórios de custos de nuvem, uma calculadora e um laptop mostrando o gasto mensal"
+category: "data-and-ai"
+tags: ["databricks", "data-platform-cost"]
+author: "Noel D'Costa"
+metaTitle: "Preços do Databricks: DBUs, tiers e custos reais"
+metaDescription: "Preços do Databricks para CFOs e CIOs: como funcionam as DBUs, tarifas por tipo de computação, cobrança do Azure Databricks, descontos e custos ocultos."
+primaryKeyword: "preço Databricks"
+excerpt: "O Databricks cobra em DBUs, mas a tarifa da DBU é só uma parte da conta. Veja como as tarifas variam por tipo de computação e tier, o que o provedor de nuvem cobra por cima e por onde o dinheiro realmente vaza."
+experienceSource: "Noel's first-person experience with Databricks on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts and prices checked against official Databricks and Microsoft Azure documentation, October 2026."
+keyTakeaways:
+  - "O Databricks cobra por DBU, e a tarifa por DBU depende do tipo de computação, do tier e da nuvem"
+  - "A computação clássica gera uma conta separada da nuvem para VMs, discos e rede; as tarifas de DBU serverless já incluem a computação"
+  - "Trabalho de produção em clusters all-purpose custa várias vezes a tarifa de jobs compute pelas mesmas DBUs"
+  - "O tier Standard acabou: o Premium agora é o tier de entrada na AWS, no Azure e no Google Cloud"
+  - "Contratos de compromisso e a compra antecipada de DBCUs no Azure reduzem a tarifa da DBU, não a conta de VMs ou de armazenamento"
+  - "Os budgets alertam a preço de tabela e não interrompem o gasto; compute policies e tags fazem o controle de verdade"
+pullQuote: "A tarifa de DBU na página de preços é a menor decisão da sua conta do Databricks. Qual tipo de computação roda qual carga de trabalho é a maior."
+mentions:
+  - "Databricks"
+  - "Azure Databricks"
+  - "Databricks Unit (DBU)"
+  - "Databricks Commit Unit (DBCU)"
+  - "Databricks SQL"
+  - "Lakeflow Jobs"
+  - "Lakeflow Spark Declarative Pipelines"
+  - "Photon"
+  - "Unity Catalog"
+  - "Databricks Model Serving"
+originalUrl: "https://noeldcosta.com/databricks-pricing-explained/"
+canonicalUrl: "https://noeldcosta.com/pt/databricks-pricing-explained/"
+locale: "pt"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+O preço do Databricks é pagamento conforme o uso, cobrado por segundo em Databricks Units (DBUs), com tarifas de tabela de cerca de $0.15 a cerca de $1.00 por DBU, conforme o tipo de computação, o tier e a nuvem. Na computação clássica, você também paga ao seu provedor de nuvem pelas máquinas virtuais por baixo; no serverless, essa computação já está incluída na tarifa da DBU.
+
+Então a resposta honesta para "quanto custa o Databricks" são duas contas, às vezes três, e um número que depende muito mais de como suas equipes usam a plataforma do que da tabela de preços.
+
+Nos programas de indústria e defesa em que trabalhei, a surpresa raramente foi o preço da DBU. O maior desperdício que já vi são jobs de produção rodando em all-purpose compute, a cara tarifa interativa, quando deveriam estar em jobs compute.
+
+## Como funciona o preço do Databricks: DBUs mais a conta da nuvem
+
+Uma DBU é a unidade normalizada de processamento do Databricks. O Databricks a define como uma medida de capacidade de processamento, determinada pelos recursos de computação usados e, em alguns produtos, pelos dados processados.
+
+No pagamento conforme o uso, você nunca compra DBUs diretamente. Você roda cargas de trabalho, elas geram DBUs por hora, e você paga a quantidade de DBUs multiplicada pela tarifa daquele tipo de computação.
+
+Três coisas definem sua conta:
+
+1. **O tipo de computação.** Jobs, all-purpose, SQL warehouses, pipelines, model serving e as variantes serverless têm cada um sua tarifa. A mesma hora de trabalho pode custar três ou quatro vezes mais, dependendo de onde roda.
+2. **O tier e a nuvem.** Premium ou Enterprise, e AWS, Azure ou Google Cloud. A região também conta.
+3. **O modelo de infraestrutura.** A computação clássica roda na sua conta de nuvem, então o provedor cobra de você VMs, discos gerenciados, armazenamento e IPs públicos. O serverless roda na conta do Databricks e a [tarifa de tabela inclui a computação subjacente](https://www.databricks.com/product/pricing/lakeflow-jobs).
+
+O armazenamento também é à parte. Suas tabelas Delta ficam no seu próprio object storage na nuvem (S3, ADLS ou Google Cloud Storage) e são cobradas pelo provedor de nuvem. O Databricks também precifica parte do armazenamento gerenciado em Databricks Storage Units (DSUs).
+
+<compare-split title="Computação clássica vs serverless" left-label="Computação clássica" left-points="Tarifa de DBU por hora mais baixa|O provedor de nuvem cobra VMs, discos e IPs separadamente|Você paga pelo tempo de inicialização e pelo tempo ocioso|Você escolhe os tipos de instância e cuida do ajuste" right-label="Computação serverless" right-points="Tarifa de DBU mais alta, computação incluída|Cobrança com mínimo de um minuto, sem custo de inicialização|Transferência de dados e rede ainda podem ser cobradas|Menos controle sobre o dimensionamento, estime medindo execuções reais"></compare-split>
+
+## Preços de tabela do Databricks por tipo de computação
+
+Estas são as tarifas de tabela publicadas para os principais tipos de computação. Os valores da AWS vêm das [páginas de preços do Databricks](https://www.databricks.com/product/pricing) para US East (N. Virginia).
+
+Os valores do Azure vêm da [página de preços do Azure Databricks](https://azure.microsoft.com/en-us/pricing/details/databricks/), tier Premium, West US, porque é a Microsoft que define os preços do Azure Databricks. Preço de tabela, verificado em outubro de 2026, varia por nuvem e região.
+
+| Tipo de computação | AWS Premium ($/DBU) | AWS Enterprise ($/DBU) | Azure Premium ($/DBU) | VMs da nuvem cobradas à parte? |
+|---|---|---|---|---|
+| Jobs compute (clássico) | 0.15 | 0.20 | 0.30 | Sim |
+| Jobs serverless | 0.35 | 0.45 | 0.47 (Automated Serverless) | Não, incluídas |
+| Declarative pipelines clássicos (Core / Pro / Advanced) | 0.20 / 0.25 / 0.36 | Não listado | 0.30 / 0.38 / 0.54 | Sim |
+| Declarative pipelines serverless | 0.35 | Não listado | 0.47 | Não, incluídas |
+| All-purpose compute (clássico) | 0.55 | 0.65 | 0.55 | Sim |
+| Notebooks serverless (interativos) | 0.75 | 0.95 | 1.00 | Não, incluídas |
+| SQL Classic warehouse | 0.22 | 0.22 | 0.22 | Sim |
+| SQL Pro warehouse | 0.55 | 0.55 | 0.55 | Sim |
+| SQL Serverless warehouse | 0.70 | 0.70 | 0.70 | Não, incluídas |
+| Model Serving (CPU e GPU) | 0.07 | Não listado | 0.082 | Não, incluídas |
+
+Duas coisas saltam aos olhos. Jobs compute é a forma mais barata de rodar trabalho de produção, e all-purpose compute custa mais de três vezes por DBU na AWS Premium. E o serverless parece caro por DBU até você lembrar que a conta de VMs sumiu.
+
+### Tiers: o Premium agora é o piso
+
+O Databricks [descontinuou o tier Standard](https://www.databricks.com/product/pricing/platform-addons) para novos clientes na AWS e no Google Cloud, e os clientes Standard restantes nessas nuvens foram migrados para Premium em 1 de outubro de 2025. No Azure, o [aviso de fim de vida](https://learn.microsoft.com/en-us/azure/databricks/admin/account-settings/standard-tier) da Microsoft exigiu que novos workspaces fossem Premium a partir de 1 de abril de 2026 e atualizou automaticamente os demais em 1 de outubro de 2026.
+
+Se o seu modelo de orçamento ainda pressupõe tarifas Standard, ele está desatualizado. O lado bom: o Premium traz Unity Catalog, SQL warehouses e serverless, que o Standard nunca teve.
+
+Sobre os nomes: o tier Premium no Azure corresponde ao tier Enterprise na AWS e no Google Cloud, segundo a própria nota de rodapé do Databricks. Isso importa quando você compara propostas entre nuvens.
+
+Em ambientes regulados, os add-ons importam mais que o tier. O add-on Enhanced Security and Compliance é precificado como um percentual do gasto com produtos a preço de tabela (15% na página de preços da AWS), e o add-on Mission Critical acrescenta recuperação de desastres gerenciada por cima. Em trabalhos de defesa, onde os controles de compliance raramente são opcionais, eu colocaria esse acréscimo no business case desde o primeiro dia, em vez de descobri-lo na revisão de segurança.
+
+## Cobrança do Azure Databricks e descontos por compromisso
+
+O Azure Databricks é um serviço próprio da Microsoft. Você recebe uma única fatura da Microsoft, nos termos da sua assinatura do Azure, cobrindo tanto as DBUs quanto as VMs, discos e armazenamento por trás dos seus clusters.
+
+A fatura ainda se divide em linhas de DBU do Databricks e linhas comuns de computação, armazenamento e rede. A página da Microsoft observa que cargas serverless também podem gerar cobranças de transferência de dados, NAT gateway e Private Endpoint além da DBU.
+
+Para descontos, há dois caminhos:
+
+1. **Compra antecipada do Azure Databricks.** Você compra [Databricks Commit Units (DBCUs)](https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/prepay-databricks-reserved-capacity) por um ou três anos. O uso consome o saldo à tarifa de tabela de cada carga de trabalho (0,55 DBCU para uma DBU all-purpose Premium, 0,30 para uma DBU de jobs Premium). A tabela de 1 ano publicada pela Microsoft vai de 4% de desconto em 12.500 DBCU a 33% em 2.000.000, e a Microsoft fala em economias de até 37% nos seus planos. As compras são definitivas: sem cancelamento nem troca.
+2. **Contratos de uso comprometido com o Databricks.** Na AWS e no Google Cloud você negocia diretamente com o Databricks. A página de preços diz que compromissos maiores trazem descontos maiores e podem ser usados com flexibilidade entre nuvens. Os termos não são publicados.
+
+Os dois descontam apenas a linha de DBU. A conta de VMs, armazenamento e rede fica intocada, então combine-os com reservas ou savings plans da nuvem para a computação clássica por baixo.
+
+Meu conselho para dimensionar um contrato de compromisso ou uma compra antecipada no Azure: entenda primeiro seus casos de uso e depois planeje os próximos três anos. Saiba quais cargas de trabalho vão rodar e em qual tipo de computação antes de colocar um número no contrato. Comprometer demais em um plano não reembolsável custa a você o saldo não usado.
+
+## Uma estimativa mensal ilustrativa
+
+Esta é uma conta ilustrativa usando as tarifas de tabela da AWS Premium acima, não um número de cliente. Considere uma plataforma analítica industrial de porte médio em um mês:
+
+1. Pipelines noturnos de dados do ERP e da fábrica em jobs compute clássico: 20,000 DBUs × $0.15 = $3,000, mais a conta de EC2 desses clusters.
+2. Dashboards de BI em um SQL Serverless warehouse: 8,000 DBUs × $0.70 = $5,600, computação incluída.
+3. Ciência de dados em clusters all-purpose clássicos: 6,000 DBUs × $0.55 = $3,300, mais EC2.
+
+Isso dá $11,900 por mês em DBUs a preço de tabela, antes de VMs, armazenamento, rede e qualquer acréscimo de add-ons.
+
+Agora passe os pipelines noturnos para clusters all-purpose, o que acontece com mais frequência do que se imagina. As mesmas 20,000 DBUs custam $11,000 em vez de $3,000.
+
+Nada rodou mais rápido. A única mudança foi onde o trabalho rodou.
+
+Na indústria, é nas extrações do ERP que isso dói. As cargas de SAP, Oracle e Microsoft Dynamics 365 costumam ser agendadas, repetíveis e previsíveis, exatamente o que jobs compute foi precificado para atender. Se a [plataforma de dados com que você está comparando](/pt/snowflake-pricing-credits-explained/) é cotada em outra unidade, modele as duas sobre a mesma lista de cargas de trabalho antes de comparar tarifas.
+
+## Os custos ocultos que mais vejo
+
+A tabela de preços é publicada. Estes não são.
+
+1. **Clusters all-purpose ociosos.** Clusters clássicos cobram DBUs e VMs enquanto ficam parados. O auto-termination pode ser configurado entre 10 e 10.000 minutos; um valor longo em um cluster grande é uma cobrança fixa.
+2. **Produção na computação errada.** Trabalho agendado em clusters all-purpose em vez de jobs compute paga a tarifa interativa sem motivo.
+3. **SQL warehouses superdimensionados.** Um warehouse grande, com um número mínimo alto de clusters, para meia dúzia de dashboards. Dimensione para a concorrência que você realmente tem.
+4. **Photon sem medição.** O Photon aumenta a tarifa de DBU na computação clássica (o Databricks indica 2,5 vezes a taxa de emissão para pipelines clássicos). Muitas vezes termina mais rápido e custa menos no total, mas só a medição prova isso para a sua carga de trabalho.
+5. **Proliferação de ambientes de desenvolvimento e teste.** Cada desenvolvedor com seu próprio cluster sempre ligado. Em programas de defesa, ambientes separados para dados classificados e não classificados pioram isso, porque os ambientes se multiplicam.
+6. **Transferência de dados.** Mover dados entre regiões ou para fora da nuvem, e a conectividade privada do serverless, são cobrados. Regras de residência de dados podem forçar arquiteturas que movem mais dados do que você planejou.
+7. **Acréscimos de add-ons.** Os add-ons de compliance e de recuperação de desastres são um percentual do gasto, então crescem junto com tudo o que está acima.
+
+## Controles de FinOps que funcionam de verdade
+
+O Databricks dá as ferramentas. A maioria das organizações liga a primeira e para por aí.
+
+1. **Tabelas de sistema de faturamento.** A [`system.billing.usage`](https://docs.databricks.com/aws/en/admin/system-tables/billing) registra cada DBU por workspace, cluster, job, warehouse, usuário e tag. Faça o join com `system.billing.list_prices` para ter o custo a preço de tabela. Essa é a fonte da verdade; construa seu chargeback sobre ela.
+2. **Tags.** Tags personalizadas em clusters, pools, jobs e warehouses vão para a tabela de uso. Combine um conjunto de tags (centro de custo, projeto, ambiente) antes de o primeiro workspace entrar em produção.
+3. **Serverless usage policies.** Elas marcam notebooks, jobs e pipelines serverless com tags, para que o gasto serverless possa ser atribuído. Em Public Preview em outubro de 2026.
+4. **Compute policies.** Os administradores podem limitar as configurações que definem o preço por hora, impor um teto de DBUs por hora e criar regras para tags. Esse é o controle que impede a proliferação em vez de apenas reportá-la.
+5. **Budgets.** Configurados no console da conta, com alertas por e-mail em até quatro limites. Eles medem a preço de tabela, ignoram seu desconto negociado e não interrompem o gasto (o bloqueio vale apenas para budgets do Unity Gateway). Trate-os como um alarme, não como um freio.
+6. **Timeouts do serverless.** Os notebooks serverless têm um timeout padrão de execução de 2,5 horas, que os administradores podem alterar.
+
+Governança e controle de custos se sobrepõem aqui. Se você está configurando o [Unity Catalog e a governança de dados](/pt/databricks-unity-catalog-data-governance/), desenhe as tags e a estrutura do catálogo juntas.
+
+## O que eu faria antes de assinar
+
+Antes de comprometer orçamento, rode de duas a quatro semanas de cargas de trabalho representativas nos tipos de computação que você realmente pretende usar, e leia o resultado nas tabelas de sistema de faturamento. O próprio Databricks diz que a melhor forma de estimar o serverless é rodar cargas reais e medir. Isso dá a você uma linha de base de DBUs que você consegue defender diante de um CFO e um nível de compromisso que você vai de fato consumir.
+
+Depois faça três perguntas ao fornecedor e ao seu SI: em qual tipo de computação cada carga de trabalho vai rodar, o que as compute policies vão impor e quanto custam os add-ons no gasto esperado. Se as respostas forem vagas, a estimativa também é. Se você ainda está decidindo a plataforma em si, comece por [para que serve o Databricks](/pt/what-is-databricks-used-for/) ou pela [comparação Snowflake vs Databricks](/pt/snowflake-vs-databricks/).
+
+Eu ajudo organizações a dimensionar, negociar e governar gastos com plataformas de dados como este. Se uma segunda opinião sobre a sua estimativa ajudar, [entre em contato](/pt/contact-noel-erp-support/).
+
+## Perguntas frequentes
+
+<details>
+<summary>Quanto custa o Databricks por mês?</summary>
+
+Não há mensalidade fixa. Você paga por segundo pelas DBUs que suas cargas de trabalho consomem, a tarifas de tabela de cerca de $0.15 a $1.00 por DBU conforme o tipo de computação, o tier e a nuvem, mais as cobranças do seu provedor de nuvem por VMs, armazenamento e rede na computação clássica. Meça um piloto em vez de confiar em um número genérico.
+
+</details>
+
+<details>
+<summary>O que é uma DBU no Databricks?</summary>
+
+Uma Databricks Unit é uma unidade normalizada de capacidade de processamento usada para cobrança. As cargas de trabalho geram DBUs por hora com base na computação que usam, e você paga a quantidade de DBUs multiplicada pela tarifa daquele tipo de computação. A mesma DBU custa mais em all-purpose compute do que em jobs compute.
+
+</details>
+
+<details>
+<summary>O preço do Azure Databricks é diferente do Databricks na AWS?</summary>
+
+Sim. A Microsoft define os preços do Azure Databricks e os cobra na sua fatura do Azure. Algumas tarifas diferem: jobs compute clássico custa $0.30 por DBU no Azure Premium contra $0.15 na AWS Premium, a preço de tabela em outubro de 2026. O tier Premium do Azure também corresponde ao tier Enterprise na AWS e no Google Cloud, então compare itens equivalentes.
+
+</details>
+
+<details>
+<summary>O Databricks serverless inclui o custo da infraestrutura de nuvem?</summary>
+
+Sim, para a computação. As tarifas de DBU serverless incluem as instâncias subjacentes, e você não paga pelo tempo de inicialização. Transferência de dados entre regiões, para fora da nuvem e conectividade privada ainda podem ser cobradas, e há um mínimo de um minuto por execução.
+
+</details>
+
+<details>
+<summary>Existe uma calculadora de preços do Databricks?</summary>
+
+Sim. O Databricks publica uma calculadora de preços nas suas páginas de preços, e a calculadora de preços do Azure da Microsoft cobre o Azure Databricks. As duas trabalham com tarifas de tabela. Alimente-as com DBUs medidas em um piloto.
+
+</details>
+
+<details>
+<summary>Como conseguir desconto no Databricks?</summary>
+
+No Azure, compre Databricks Commit Units por um ou três anos; a Microsoft lista descontos de até 37%. Na AWS e no Google Cloud, negocie um contrato de uso comprometido com o Databricks. Os dois descontam apenas as cobranças de DBU, não a conta de VMs, armazenamento ou rede.
+
+</details>

@@ -1,0 +1,223 @@
+---
+title: "Snowflake-Preise erklärt: Credits, Editionen und Kosten"
+h1: "Snowflake-Preise erklärt: Credits, Editionen und Kosten"
+slug: "snowflake-pricing-credits-explained"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/snowflake-pricing-credits-explained.webp"
+heroAlt: "Noel D'Costa neben einem Finanzarbeitsplatz mit einem Kosten-Dashboard und ausgedruckten Rechnungen"
+category: "data-and-ai"
+tags: ["snowflake", "data-platform-cost"]
+author: "Noel D'Costa"
+metaTitle: "Snowflake-Preise erklärt: Credits, Editionen und Kosten"
+metaDescription: "Snowflake-Preise verständlich: Credit-Preis nach Edition und Region, Credits pro Stunde je Warehouse, Speicher, KI- und Serverless-Kosten und wie Sie Ausgaben senken."
+primaryKeyword: "Snowflake Preise"
+excerpt: "Snowflake rechnet Rechenleistung in Credits ab, Speicher pro Terabyte und Datenbewegung pro Terabyte. Hier lesen Sie, was jeder Posten zum Listenpreis kostet, wo Rechnungen unbemerkt wachsen und welche Kontrollen ich vor dem Go-live einrichte."
+experienceSource: "Noel's first-person experience with Snowflake on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts and prices checked against official Snowflake documentation and the Snowflake Service Consumption Table effective 9 October 2026, checked October 2026."
+keyTakeaways:
+  - "Die Rechenleistung ist die Rechnung. Ein Credit kostet on demand laut Liste 2,00 $ bis 9,75 $, je nach Edition, Cloud und Region"
+  - "Mit jeder Warehouse-Größe verdoppelt sich der Credit-Verbrauch: X-Small verbraucht 1 Credit pro Stunde, 4X-Large 128"
+  - "Speicher kostet laut Liste in US-Regionen etwa 23 $ pro komprimiertem TB und Monat und ist selten die Position, die einen CFO überrascht"
+  - "Serverless-Funktionen, Cloud Services oberhalb des Freibetrags von 10 % und Cortex-AI-Credits liegen außerhalb Ihres Warehouse-Budgets"
+  - "Kapazitätsverträge rabattieren Plattform-Credits, aber dieser Rabatt gilt nicht für AI Credits"
+  - "Richten Sie Auto-Suspend, Resource Monitors, Budgets und Tagging vor dem ersten Produktivladelauf ein, nicht nach der ersten Rechnung"
+pullQuote: "Snowflake wird selten wegen des Preises pro Credit teuer. Es wird teuer, weil niemand die Warehouses verantwortet."
+mentions:
+  - "Snowflake"
+  - "Snowflake Cortex"
+  - "Snowpark Container Services"
+  - "Snowpipe"
+  - "Query Acceleration Service"
+  - "Search Optimization Service"
+  - "Virtual Private Snowflake"
+  - "Amazon Web Services"
+  - "Microsoft Azure"
+  - "Google Cloud"
+originalUrl: "https://noeldcosta.com/snowflake-pricing-credits-explained/"
+canonicalUrl: "https://noeldcosta.com/de/snowflake-pricing-credits-explained/"
+locale: "de"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Snowflake rechnet nach Nutzung ab: Sie zahlen Rechenleistung in Credits, Speicher pro Terabyte und Monat und Daten, die eine Region verlassen. Ein Credit kostet laut Liste 2,00 $ bis 3,25 $ in der Standard Edition und 4,00 $ bis 6,50 $ in Business Critical, je nach Cloud und Region (Listenpreis, geprüft im Oktober 2026).
+
+Diese Schlagzeilenzahl sagt Ihnen sehr wenig. Was Sie zahlen, hängt davon ab, wie groß Ihre Warehouses sind, wie lange sie laufen, welche Serverless-Funktionen eingeschaltet sind und ob jemand hinschaut.
+
+In den Programmen in Fertigung und Verteidigung, an denen ich gearbeitet habe, war der Preis pro Credit nie das Problem. Die Probleme waren laufen gelassene Warehouses, Serverless-Funktionen, die niemand budgetiert hatte, und ein Vertrag, der auf einer Schätzung beruhte. Dieser Leitfaden behandelt die Einheiten, die Listenpreise, die versteckten Kostentreiber und die Kontrollen, die ich am ersten Tag einrichten würde.
+
+## Wie Snowflake-Credits funktionieren
+
+Snowflake hat inzwischen zwei Abrechnungseinheiten. Plattform-Credits bezahlen virtuelle Warehouses, Snowpark Container Services, Serverless-Funktionen und Cloud Services.
+
+AI Credits bezahlen die Funktionen von Cortex AI. Wenn ein älterer Vertrag von „Credits“ spricht, sind Plattform-Credits gemeint.
+
+Ein virtuelles Warehouse ist ein benannter Block Rechenleistung. Sie wählen eine Größe, und die Größe bestimmt den Credit-Verbrauch. Jede Stufe nach oben verdoppelt ihn.
+
+Ein laufendes Warehouse wird sekundengenau abgerechnet, mit mindestens 60 Sekunden bei jedem Start oder jeder Wiederaufnahme. Ein angehaltenes Warehouse kostet nichts.
+
+Die Tabelle stammt aus der [Warehouse-Dokumentation](https://docs.snowflake.com/en/user-guide/warehouses-overview) von Snowflake und der Service Consumption Table mit Gültigkeit ab 9. Oktober 2026.
+
+| Größe | Credits pro Stunde (Standard, Gen1) | Credits pro Stunde (Gen2, AWS) |
+|---|---|---|
+| X-Small | 1 | 1,35 |
+| Small | 2 | 2,7 |
+| Medium | 4 | 5,4 |
+| Large | 8 | 10,8 |
+| X-Large | 16 | 21,6 |
+| 2X-Large | 32 | 43,2 |
+| 3X-Large | 64 | 86,4 |
+| 4X-Large | 128 | 172,8 |
+| 5X-Large | 256 | n. v. |
+| 6X-Large | 512 | n. v. |
+
+Gen2-Warehouses kosten pro Stunde mehr (das 1,25-Fache auf Azure, das 1,35-Fache auf AWS und GCP), weil sie schneller laufen. Ob sie unterm Strich günstiger sind, hängt von Ihrem Workload ab, testen Sie also, bevor Sie wechseln. Gen2 ist nicht in jeder Region verfügbar und nicht der Standard.
+
+Zwei weitere Warehouse-Typen haben eigene Mindestdauern. Interactive Warehouses haben niedrigere Stundenpreise (0,6 Credits pro Stunde bei X-Small), rechnen aber bei jedem Start mindestens 60 Minuten ab. Snowpark-optimierte Warehouses für speicherintensive Python- und ML-Arbeit verbrauchen in den kleineren Größen 1 bis 6 Credits pro Stunde, je nach Speicheroption.
+
+Multi-Cluster-Warehouses multiplizieren den Verbrauch mit der Zahl der laufenden Cluster. Ein Medium-Warehouse mit bis zu drei Clustern kann bis zu 12 Credits pro Stunde verbrauchen. Multi-Cluster ist eine Funktion der Enterprise Edition.
+
+## Editionen und der Preis pro Credit
+
+Die gewählte Edition bestimmt den Preis jedes verbrauchten Credits und ist damit der größte einzelne Hebel im Vertrag. Die folgenden Spannen stammen aus Tabelle 2(a) der [Snowflake Service Consumption Table](https://www.snowflake.com/legal-files/CreditConsumptionTable.pdf), On-Demand-Listenpreis pro Plattform-Credit, geprüft im Oktober 2026.
+
+| Edition | Was sie hinzufügt | On-Demand-Listenpreis pro Credit | AWS US East (N. Virginia) |
+|---|---|---|---|
+| Standard | Kernplattform, Snowpark, Data Sharing, Time Travel | 2,00 $ bis 3,25 $ | 2,00 $ |
+| Enterprise | Multi-Cluster-Warehouses, feinere Governance-Kontrollen, längeres Time Travel, Query Acceleration | 3,00 $ bis 4,90 $ | 3,00 $ |
+| Business Critical | Tri-Secret Secure, private Konnektivität, Failover und Failback | 4,00 $ bis 6,50 $ | 4,00 $ |
+| Virtual Private Snowflake (VPS) | Alles aus Business Critical, in einer von anderen Konten isolierten Umgebung | 6,00 $ bis 9,75 $, plus eine jährliche Bereitstellungsgebühr | 6,00 $ |
+
+Die günstigsten Regionen sind die wichtigsten US-Regionen. Die teuersten sind Orte wie Zürich, Switzerland North, Hongkong und Dammam. Für einen Käufer am Golf oder in Europa kann die Wahl der Region die Rechnung um 30 % oder mehr verschieben, bevor Sie eine einzige Abfrage schreiben.
+
+Im Verteidigungsbereich zählt das noch mehr. In den US-Government-Regionen der Tabelle (darunter AWS US Gov West 1, die DoD-Region und die FedRAMP-High-Plus-Regionen) werden Standard und Enterprise nicht angeboten. Business Critical beginnt dort bei 4,80 $ bis 5,60 $ pro Credit.
+
+Wenn Ihr Programm Vorgaben zu Souveränität oder Exportkontrolle hat, budgetieren Sie von Anfang an Business Critical. Der Standard Edition fehlen die Verschlüsselungs- und Konnektivitätskontrollen, nach denen eine Sicherheitsprüfung im Verteidigungsbereich fragen wird. Ich habe Snowflake selbst nicht in einer Government- oder GCC-Region eingeführt, behandeln Sie diese regionalen Zahlen also als Orientierung zum Listenpreis und klären Sie mit Snowflake, welche Dienste in Ihrer Zielregion live sind.
+
+Für die meisten Hersteller würde ich mit Enterprise beginnen. Multi-Cluster-Warehouses und Query Acceleration verhindern, dass das Reporting zum Monatsabschluss hinter dem Data-Science-Team in der Warteschlange steht.
+
+## Speicher, Datenübertragung und die übrigen Positionen
+
+**Speicher** wird nach dem Monatsdurchschnitt der komprimierten Daten abgerechnet. On demand kostet er laut Liste 23 $ pro TB und Monat in den wichtigsten US-Regionen, 24,50 $ in Frankfurt und 39 $ in AWS US Gov West 1. Kapazitätsverträge mit höheren Jahreszusagen senken ihn, in der obersten Stufe in US East auf 13,80 $ pro TB.
+
+**Datenübertragung** ist innerhalb derselben Cloud und Region kostenlos. Daten hinauszubewegen kostet Geld. Ab AWS US East kostet das laut Liste 20 $ pro TB in eine andere AWS-Region und 90 $ pro TB in eine andere Cloud oder ins Internet.
+
+Government-Regionen berechnen mehr. Wenn Ihr ERP auf Azure läuft und Snowflake auf AWS, trägt jeder Extrakt, der Snowflake zurück nach Azure verlässt, diesen Cloud-übergreifenden Preis. Mein Leitfaden dazu, [wie ERP-Daten nach Snowflake kommen](/de/erp-data-into-snowflake/), behandelt, wo das Konto platziert werden sollte.
+
+**Cloud Services** ist die Schicht, die Anmeldungen, Abfragekompilierung und Metadaten verarbeitet. Sie wird mit 4,4 Credits pro Nutzungsstunde abgerechnet, aber nur der Teil oberhalb von 10 % der Warehouse-Credits des jeweiligen Tages.
+
+Die meisten Konten sehen nie eine Gebühr. Konten mit riesigen Mengen winziger Abfragen oder mit BI-Werkzeugen, die ständig Metadaten abfragen, schon.
+
+**Serverless-Funktionen** laufen auf von Snowflake verwalteter Rechenleistung zu einem Credit pro Compute-Stunde mal einem Funktionsfaktor. In Ihrer Warehouse-Liste taucht nichts davon auf, und deshalb überraschen sie. Aus Tabelle 5 der Consumption Table:
+
+1. Snowpipe: 0,0037 Credits pro geladenem GB.
+2. Automatic Clustering: das 2-Fache der Rechenleistung, plus Cloud Services.
+3. Search Optimization Service: das 2-Fache der Rechenleistung, plus Cloud Services.
+4. Pflege von Materialized Views: das 2-Fache der Rechenleistung, plus Cloud Services.
+5. Serverless Tasks: das 0,9-Fache der Rechenleistung, plus Cloud Services.
+6. Query Acceleration: das 1-Fache der Rechenleistung, sekundengenau abgerechnet, wenn genutzt.
+
+Clustering und Search Optimization auf einer sich schnell ändernden Tabelle können unbemerkt mehr kosten als die Warehouses, die sie abfragen. Ich prüfe jede einzelne dieser Funktionen vor dem Go-live.
+
+## Cortex AI und Snowpark Container Services
+
+**Cortex AI** wird in AI Credits abgerechnet, einer eigenen Einheit. On demand kostet ein AI Credit laut Liste 2,00 $ (global) oder 2,20 $ (regional). Ihr Rabatt auf Plattform-Credits gilt nicht für AI Credits.
+
+Cortex-Funktionen werden pro Million Tokens berechnet, wobei Eingabe und Ausgabe oft unterschiedlich bepreist sind. In der Consumption Table steht llama3.3-70b mit 0,36 AI Credits pro Million Tokens in beide Richtungen, mistral-large2 mit 1,00 für die Eingabe und 3,00 für die Ausgabe. Cortex Analyst berechnet 67 Plattform-Credits pro 1.000 Nachrichten und Cortex Search 6,3 AI Credits pro GB indexierter Daten und Monat.
+
+Wenn Sie Cortex aus Gründen der Datenresidenz in einem rein regionalen Modus betreiben, rechnen Sie mit dem höheren Preis. Die [Dokumentation zur regionsübergreifenden Inferenz](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cross-region-inference) erklärt die Routing-Optionen.
+
+Im Verteidigungsbereich ist die regionale Verarbeitung meist die einzig akzeptable Einstellung. Mein Beitrag zu [Snowflake Cortex AI und Snowflake Intelligence](/de/snowflake-cortex-ai-snowflake-intelligence/) behandelt, was diese Funktionen leisten.
+
+**Snowpark Container Services** führt Ihre eigenen Container auf Compute Pools aus. Jeder Knotentyp hat einen eigenen Credit-Satz. Die kleinsten Allzweckknoten liegen laut Liste deutlich unter 0,1 Credits pro Stunde, GPU-Knoten reichen von etwa 0,5 bis über 20.
+
+Knoten rechnen bei jedem Start mindestens fünf Minuten ab. Ein GPU-Pool, der über ein Wochenende weiterläuft, ist der teuerste Fehler, der mir auf dieser Plattform einfällt.
+
+## Beispielrechnung: ein Warehouse, zwei Gewohnheiten
+
+Dieses Beispiel dient nur der Veranschaulichung. Es nutzt Listenpreise aus der Consumption Table vom Oktober 2026: Enterprise Edition, AWS US East, 3,00 $ pro Credit, Speicher zu 23 $ pro TB.
+
+Ein Medium-Warehouse verbraucht 4 Credits pro Stunde. Zehn Stunden am Tag an 22 Arbeitstagen genutzt, sind das 880 Credits oder 2.640 $ im Monat. Dasselbe Warehouse mit ausgeschaltetem Auto-Suspend läuft 720 Stunden im Monat.
+
+Das sind 2.880 Credits oder 8.640 $. Dieselben Abfragen, dieselben Benutzer, mehr als die dreifache Rechnung.
+
+Nehmen Sie jetzt 20 TB komprimierten Speicher hinzu: 460 $ im Monat. Speicher ist echtes Geld, aber auf den Plattformen, an denen ich gearbeitet habe, war er selten die Position, die einem CFO Sorgen macht. Untätige Rechenleistung und unbeobachtete Serverless-Funktionen sind es.
+
+Unternehmensrabatte und Kapazitätszusagen verändern diese Zahlen. Das Muster nicht.
+
+## On demand oder Kapazitätsvertrag
+
+Snowflake verkauft auf zwei Arten. **On demand** bedeutet, dass Sie monatlich nachträglich zum Listenpreis zahlen, ohne Bindung. **Kapazität** bedeutet, dass Sie sich zu jährlichen Ausgaben verpflichten und einen Rabatt auf Plattform-Credits erhalten, festgelegt in Ihrem Bestellformular.
+
+Kapazität lässt sich über alle Ihre Konten hinweg nutzen. Speicher wird günstiger, je höher Ihr jährlicher Vertragswert ist. AI Credits haben eigene Staffeln.
+
+Meine Regel: Arbeiten Sie etwa drei Monate on demand oder mit einer kleinen Zusage. Dimensionieren Sie den Vertrag dann anhand der Daten aus `ACCOUNT_USAGE`, nicht anhand der Sizing-Arbeitsmappe des Anbieters. Diese drei Monate zeigen Ihnen außerdem, wie sich das Verbrauchsmodell bei Ihren eigenen Workloads verhält.
+
+Eine überdimensionierte Zusage ist ausgegebenes Geld, ob Sie es nutzen oder nicht. Lesen Sie die Bedingungen zur Übertragung ungenutzter Guthaben genau. Dieselbe Disziplin gilt für jeden Vertrag über Unternehmenssoftware, wie ich in meiner [Fallstudie zur Verhandlung von ERP-Verträgen](/de/erp-implementation-contract-negotiation-cost-review-cfo/) beschreibe.
+
+## Die Kontrollen, die ich vor dem Go-live einrichte
+
+Snowflake liefert gute Werkzeuge. Die [Dokumentation zur Kostenkontrolle](https://docs.snowflake.com/en/user-guide/cost-controlling) erklärt sie. Sie wirken nur, wenn jemand sie vor dem ersten Produktivladelauf konfiguriert.
+
+1. **Auto-Suspend auf jedem Warehouse.** Es ist standardmäßig aktiv. Prüfen Sie, dass niemand es abgeschaltet hat. Sehr kurze Einstellungen bei stoßweisen Workloads können mehr kosten, weil jede Wiederaufnahme die 60-Sekunden-Mindestdauer berechnet.
+2. **Größe je Workload anpassen.** Getrennte Warehouses für ELT, BI und Data Science. Beginnen Sie klein und vergrößern Sie nur, wenn der Abfrageverlauf Spilling oder Warteschlangen zeigt.
+3. **Multi-Cluster mit Grenzen.** Legen Sie eine vernünftige Höchstzahl an Clustern fest. Nutzen Sie die Skalierungsrichtlinie Economy, wo etwas Wartezeit akzeptabel ist.
+4. **Resource Monitors.** Sie verfolgen Warehouse-Credits und können ein Warehouse bei einem Schwellenwert anhalten. Serverless-Funktionen decken sie nicht ab.
+5. **Budgets.** Monatliche Ausgabengrenzen mit Alarmen, die Serverless-Funktionen sehr wohl abdecken. Nutzen Sie eigene Budgets pro Abteilung.
+6. **Query Acceleration mit Skalierungsfaktor.** Nützlich für sprunghafte Scans, aber deckeln Sie sie. Der Standard-Skalierungsfaktor erlaubt bis zum Achtfachen des eigenen Verbrauchs des Warehouse.
+7. **Tagging.** Objekt-Tags auf Warehouses und Benutzern, Query-Tags für gemeinsam genutzte Anwendungen. Ohne sie kann niemand sagen, welches Werk, welches Programm oder welche Funktion was ausgegeben hat.
+8. **Wöchentliche Prüfung von `ACCOUNT_USAGE`.** `WAREHOUSE_METERING_HISTORY` für Warehouse-Credits, `QUERY_ATTRIBUTION_HISTORY` für Kosten pro Abfrage, `TAG_REFERENCES`, um sie mit den Verantwortlichen zu verknüpfen. Denken Sie daran, dass die Kosten pro Abfrage Leerlauf, Speicher, Serverless und KI nicht enthalten.
+
+Die Testversion ist ein guter Weg, das vor einer Zusage zu lernen. Snowflake bietet derzeit eine 30-tägige Testversion mit 400 $ an kostenlosen Credits.
+
+KI-Funktionen bleiben deaktiviert, bis Sie eine Karte hinterlegen. Wählen Sie die Cloud, Region und Edition, die Sie tatsächlich kaufen würden, denn sie lassen sich später nicht ändern.
+
+## Was Sie als Nächstes tun sollten
+
+Bevor Sie unterschreiben, holen Sie sich drei Zahlen auf eine Seite: Credits pro Monat nach Workload, den Preis für Edition und Region sowie Serverless und KI als eigene Positionen. Wenn Ihr Anbieter oder Systemintegrator das nicht liefern kann, ist die Schätzung geraten. Wenn Sie noch eine Plattform auswählen, betrachten mein [Vergleich Snowflake vs. Databricks](/de/snowflake-vs-databricks/) und mein [Leitfaden zu den Databricks-Preisen](/de/databricks-pricing-explained/) das Thema durch dieselbe Brille.
+
+Ich helfe Unternehmen, Verträge für Datenplattformen zu dimensionieren und die Kosten-Governance vor dem Go-live aufzusetzen. Wenn das nützlich ist, [nehmen Sie Kontakt auf](/de/contact-noel-erp-support/).
+
+## Häufig gestellte Fragen
+
+<details>
+<summary>Was kostet ein Snowflake-Credit?</summary>
+
+On demand kostet ein Plattform-Credit laut Liste 2,00 $ bis 3,25 $ in der Standard Edition, 3,00 $ bis 4,90 $ in Enterprise, 4,00 $ bis 6,50 $ in Business Critical und 6,00 $ bis 9,75 $ in Virtual Private Snowflake, je nach Cloud und Region (Listenpreis, geprüft im Oktober 2026). In AWS US East sind es 2 $, 3 $, 4 $ und 6 $. Kapazitätsverträge wenden einen verhandelten Rabatt auf diese Preise an.
+
+</details>
+
+<details>
+<summary>Wird Snowflake sekundengenau abgerechnet?</summary>
+
+Ja. Standardmäßige virtuelle Warehouses rechnen sekundengenau ab, mit einer Mindestdauer von 60 Sekunden bei jedem Start oder jeder Wiederaufnahme. Interactive Warehouses haben eine Mindestdauer von 60 Minuten, Knoten von Snowpark Container Services eine von fünf Minuten. Angehaltene Warehouses kosten nichts.
+
+</details>
+
+<details>
+<summary>Was kostet Snowflake-Speicher pro TB?</summary>
+
+On-Demand-Speicher kostet laut Liste 23 $ pro TB und Monat in den wichtigsten US-Regionen und mehr in einigen Regionen, etwa 24,50 $ in Frankfurt und 39 $ in AWS US Gov West 1. Abgerechnet wird die komprimierte Größe. Kapazitätsverträge senken den Preis, je höher Ihr jährlicher Vertragswert ist.
+
+</details>
+
+<details>
+<summary>Gibt es eine kostenlose Testversion von Snowflake?</summary>
+
+Ja. Snowflake bietet eine 30-tägige Testversion mit 400 $ an kostenlosen Credits. Die Testversion endet nach 30 Tagen oder wenn die Credits aufgebraucht sind, je nachdem, was zuerst eintritt. KI-Funktionen bleiben deaktiviert, bis Sie eine Kreditkarte hinterlegen, und Cloud, Region und Edition lassen sich später nicht ändern.
+
+</details>
+
+<details>
+<summary>Was ist der 10-%-Ausgleich für Cloud Services bei Snowflake?</summary>
+
+Die Nutzung von Cloud Services ist bis zu 10 % der Warehouse-Credits des jeweiligen Tages kostenlos. Nur die Nutzung oberhalb dieser Grenze wird berechnet. Serverless-Funktionen und die Nutzung von Snowpark Container Services zählen nicht zum Freibetrag.
+
+</details>
+
+<details>
+<summary>Warum ist meine Snowflake-Rechnung höher als erwartet?</summary>
+
+Die üblichen Ursachen sind Warehouses, die nie anhalten, überdimensionierte Warehouses, Multi-Cluster ohne Obergrenze und Serverless-Funktionen wie Automatic Clustering, Search Optimization und Materialized Views. Auch die Nutzung von Cortex AI und Cloud-übergreifende Datenübertragung summieren sich. Fragen Sie `WAREHOUSE_METERING_HISTORY` und die Views zur Serverless-Nutzung ab, um die Quelle zu finden, und richten Sie dann Budgets und Resource Monitors ein.
+
+</details>

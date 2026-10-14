@@ -1,0 +1,203 @@
+---
+title: "ERP podaci u Snowflakeu: SAP, Oracle i Dynamics 365"
+h1: "ERP podaci u Snowflakeu: SAP, Oracle i Dynamics 365"
+slug: "erp-data-into-snowflake"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/erp-data-into-snowflake.webp"
+heroAlt: "Svijetlo skladište s visokim regalima, paletama, čitačem crtičnog koda i robusnim tabletom"
+category: "data-and-ai"
+tags: ["snowflake", "erp-data", "manufacturing"]
+author: "Noel D'Costa"
+metaTitle: "SAP podaci u Snowflake: opcije za SAP, Oracle i D365"
+metaDescription: "Kako prenijeti SAP podatke u Snowflake, kao i Oracle i Dynamics 365: BDC zero-copy, napomena o ODP licenciranju, Openflow, GoldenGate, BICC i Synapse Link."
+primaryKeyword: "SAP podaci u Snowflake"
+excerpt: "Realni načini za prijenos ERP podataka iz SAP-a, Oraclea i Microsoft Dynamics 365 u Snowflake u 2026., licencne zamke za svaki od njih i rad na podatkovnom modelu koji odlučuje hoće li se platformi vjerovati."
+experienceSource: "Noel's first-person experience with Snowflake and Databricks on data platform work in manufacturing and defence, including ERP data from SAP, Oracle and Microsoft Dynamics 365 (confirmed by Noel, 11 October 2026). No client names or figures. Product facts checked against official Snowflake, SAP, Oracle and Microsoft documentation, October 2026."
+keyTakeaways:
+  - "Za SAP je put koji podržava dobavljač SAP Business Data Cloud s dijeljenjem bez kopiranja (zero-copy) u Snowflake, općenito dostupan od svibnja 2026."
+  - "SAP Note 3255746 navodi da korištenje ODP RFC modula od strane trećih strana nije dopušteno. Pitajte svakog dobavljača konektora koje sučelje koristi"
+  - "Oracle E-Business Suite može koristiti CDC temeljen na logovima (Openflow ili GoldenGate); Oracle Fusion Cloud ERP ne može i obično ide kroz BICC izvode"
+  - "Export to Azure Data Lake za Dynamics 365 trajno prestaje 30. studenoga 2026. Prijeđite na Synapse Link ili Fabric link odmah"
+  - "Izvoz podataka manji je posao. Brisanja, valute, jedinice, matični podaci i izgubljene autorizacije odnose većinu truda"
+pullQuote: "Konektor je lakši dio. Projekt je ponovna izgradnja onoga što je ERP znao o podacima."
+mentions:
+  - "Snowflake"
+  - "SAP Business Data Cloud"
+  - "SAP Snowflake"
+  - "SAP Datasphere"
+  - "SAP S/4HANA"
+  - "Snowflake Openflow"
+  - "Oracle E-Business Suite"
+  - "Oracle Fusion Cloud ERP"
+  - "Oracle GoldenGate"
+  - "Microsoft Dynamics 365 Finance and Operations"
+  - "Azure Synapse Link for Dataverse"
+  - "Microsoft Fabric"
+originalUrl: "https://noeldcosta.com/erp-data-into-snowflake/"
+canonicalUrl: "https://noeldcosta.com/hr/erp-data-into-snowflake/"
+locale: "hr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+U 2026. postoje tri realna načina za prijenos SAP podataka u Snowflake. SAP Business Data Cloud s dijeljenjem bez kopiranja (zero-copy), replikacija iz SAP Datasphere u cloud pohranu iz koje Snowflake učitava podatke ili alat treće strane koji koristi sučelje koje SAP dopušta. Oracle i Microsoft Dynamics 365 izgledaju jednostavnije, ali svaki ima svoju kvaku.
+
+Oracle Fusion Cloud ERP ne daje Vam bazu podataka iz koje biste replicirali. Dynamics 365 finance and operations nekoliko je tjedana udaljen od gubitka funkcije Export to Azure Data Lake.
+
+Alat za izvoz manja je odluka. U programima u proizvodnji i obrani na kojima sam radio, vrijeme odlazi na ono što se događa nakon što podaci stignu. Dekodiranje ERP tablica, obrada brisanja, usklađivanje valuta i jedinica, ponovna izgradnja pravila pristupa koja je ERP nekada provodio.
+
+Za podatke iz SAP-a, Oraclea i Dynamics 365 put koji sam stvarno koristio bio je middleware. Moj savjet je odabrati middleware koji može pokriti veći skup sustava, odnosno više izvornih sustava od onoga koji je pred Vama, a ne konektor jedne namjene. Koji god proizvod odabrali, provjerite sučelje koje koristi za SAP u odnosu na napomenu u nastavku.
+
+## Prijenos SAP podataka u Snowflake
+
+### SAP Business Data Cloud i dijeljenje bez kopiranja
+
+SAP i Snowflake najavili su opću dostupnost dviju zajedničkih ponuda na SAP Sapphireu u svibnju 2026. Snowflakeova bilješka o izdanju konektora datirana je 4. svibnja 2026.
+
+1. **SAP Snowflake.** Snowflake isporučen unutar SAP Business Data Clouda (BDC) kao certificirani SAP Solution Extension, koji prodaje i podržava SAP, a pokreće se iz SAP for Me. Namijenjen je SAP korisnicima bez Snowflake računa.
+2. **SAP BDC Connect for Snowflake.** Za tvrtke koje već koriste Snowflake. Postojeći račun povezujete putem pozivne poveznice iz SAP for Me.
+
+U oba slučaja SAP podatkovni proizvodi montiraju se u Snowflake kao catalog-linked baze podataka, bez kopiranja podataka. Možete nad njima postavljati upite i spajati ih, generirati semantičke poglede iz SAP-ovih metapodataka za Cortex Analyst i objavljivati Snowflake podatke natrag u BDC.
+
+Snowflakeova [dokumentacija o SAP zero-copy integraciji](https://docs.snowflake.com/en/user-guide/data-integration/zero-copy/about-sap-snowflake) navodi komercijalne regije na AWS-u, Azureu i GCP-u i isključuje državne regije. Za rad u obrani već samo to isključenje može značiti da ova opcija otpada.
+
+Kvaka je opseg. Zero-copy dijeli BDC podatkovne proizvode, pa Vam treba BDC pretplata i dobivate ono što je SAP zapakirao. Prije nego što planirate oko toga, mapirajte svoje potrebe izvještavanja na podatkovne proizvode dostupne za Vaše izdanje.
+
+Posebno provjerite svoja prilagođena polja i Z tablice. Gdje nisu pokriveni, trebate prilagođene podatkovne proizvode ili drugi put.
+
+### Replikacijski tokovi u SAP Datasphere
+
+Replikacijski tokovi (replication flows) u SAP Datasphere premještaju podatke iz S/4HANA, ECC-a i BW-a prema ne-SAP odredištima kroz ono što SAP naziva premium outbound integration. Mora se uključiti i dimenzionirati u tenantu. Snowflake nije odredište replikacijskog toka u SAP-ovoj matrici veza.
+
+Uobičajeni obrazac je replicirati u cloud pohranu objekata (Amazon S3, Azure Data Lake Storage Gen2 ili Google Cloud Storage) i odande učitavati u Snowflake. Plaćate kapacitet Datasphere i imate dva koraka.
+
+### Napomena o ODP-u: pročitajte je prije kupnje konektora
+
+SAP Note 3255746, „Unpermitted usage of ODP Data Replication APIs”, prvi je put objavljena u listopadu 2022. Revizija iz veljače 2024. obuhvaća RFC module Operational Data Provisioning (ODP) Data Replication API-ja. Navodi da SAP ne dopušta njihovo korištenje iz korisničkih aplikacija ili aplikacija trećih strana za pristup SAP ABAP izvorima, on-premise ili Cloud Private Edition.
+
+Ažuriranje iz srpnja 2024. upućuje korisnike na SAP Datasphere za replikaciju SAP podataka u alate trećih strana. Napomena je ponovno revidirana u travnju 2026.
+
+U lipnju 2026. SAP je objavio i zapis o ranjivosti, CVE-2026-44754, zbog nedostajuće identifikacije pozivatelja u tim istim API-jima. Ja to tumačim tako da ograničenje prelazi s papira na tehničku provedbu. Napomena je dostupna tek nakon prijave u SAP, pa sami pročitajte aktualnu verziju umjesto da se oslanjate na sažetak dobavljača.
+
+Mnogi SAP konektori trećih strana izgrađeni su na ODP-u preko RFC-a. Pitajte svakog dobavljača koje SAP sučelje koristi njegov konektor, a ako je to ODP preko RFC-a, zatražite njegov stav o napomeni u pisanom obliku.
+
+Snowflake Openflow, Snowflakeova upravljana usluga za unos podataka, nema SAP konektor na svom [aktualnom popisu konektora](https://docs.snowflake.com/en/user-guide/data-integration/openflow/connectors/about-openflow-connectors) (provjereno u listopadu 2026.). SAP se pojavljuje samo među zero-copy konektorima.
+
+## Oracle: E-Business Suite i Fusion su različiti problemi
+
+**Oracle E-Business Suite** radi na Oracle bazi podataka koju kontrolirate, pa je dostupno praćenje promjena temeljeno na logovima (CDC). [Openflow Connector for Oracle](https://docs.snowflake.com/en/user-guide/data-integration/openflow/connectors/oracle/about) postao je općenito dostupan u veljači 2026. Koristi Oracle XStream i podržava Oracle Database 11g i novije on-premise, na Exadati te na OCI virtualnim strojevima ili bare metalu.
+
+Licenciranju treba posvetiti pažnju. Ili uzimate ugrađenu XStream licencu koja se naplaćuje kroz Snowflake, uz obvezu od 36 mjeseci, ili donosite vlastitu Oracle licencu s XStream pravima, kao što je GoldenGate. Snowflakeova dokumentacija upozorava da Oracle za XStream zahtijeva Enterprise Edition.
+
+Svaka replicirana tablica treba primarni ključ, jedinstveno ograničenje ili indeks ili deklarirani logički ključ, a TRUNCATE se ne replicira. Provjerite pokrivenost ključevima na EBS tablicama koje Vam trebaju prije nego što se obvežete.
+
+Oracle GoldenGate drugi je etablirani put. Snowflake je dokumentirano GoldenGate odredište, uz stage-and-merge mikro serije ili Snowpipe Streaming.
+
+**Oracle Fusion Cloud ERP** je SaaS. Openflow Oracle konektor izričito ne podržava Fusion Cloud Applications. Standardni put za izvoz je Business Intelligence Cloud Connector (BICC).
+
+On zapisuje komprimirane CSV datoteke s manifestom u OCI Object Storage ili Oracleov content server, kao zakazane potpune ili inkrementalne izvode. Te datoteke zatim premještate u Snowflake. BICC može izdvojiti i same primarne ključeve, što je način na koji otkrivate brisanja.
+
+Oracleov GoldenGate FAQ navodi da GoldenGate može hvatati podatke iz Fusion SaaS aplikacija koje rade u OCI-ju. Ako Vam je to važno, pitajte Oracle što to znači za Vaš tenancy i licencu.
+
+## Microsoft Dynamics 365: rok je stvaran
+
+Za Dynamics 365 Finance and Operations Microsoft je funkciju Export to Azure Data Lake povukao 1. studenoga 2024. Ona [trajno prestaje 30. studenoga 2026.](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/fin-ops/get-started/removed-deprecated-features-platform-updates), bez produljenja. Ako ijedan Snowflake cjevovod još ovisi o njoj, to je Vaš prvi zadatak ovog kvartala.
+
+Zamjene su Azure Synapse Link for Dataverse i Fabric link. Microsoft za većinu korisnika preporučuje Fabric link, ali on podatke sprema u Microsoft Fabric. Za Snowflake kao odredište Synapse Link je praktična opcija.
+
+On zapisuje tablice finance and operations u Vaš vlastiti račun za pohranu u formatu Delta Parquet, pri čemu se obrisani redovi čuvaju i označavaju u polju `isDelete`. Snowflake može čitati Delta datoteke u pohrani objekata kao Iceberg tablice samo za čitanje, što je općenito dostupno od travnja 2025., ili ih možete učitati.
+
+Za aplikacije temeljene na Dataverseu, kao što su Dynamics 365 Sales i Customer Service, Openflow Connector for Microsoft Dataverse općenito je dostupan. Redove briše meko (soft delete) uz stupac s oznakom.
+
+Njegovi tokeni promjena istječu nakon sedam dana neaktivnosti, što prisiljava potpunu ponovnu sinkronizaciju, pa ne dopustite da raspored zastane. Dokumentacija ne spominje Finance and Operations, pa ga tretirajte kao put za customer engagement aplikacije osim ako niste testirali drukčije.
+
+## Opcije na prvi pogled
+
+Putovi koje bih uzeo u uži izbor za svaki ERP, stanje u listopadu 2026.:
+
+| ERP | Realne opcije | Napomene |
+|---|---|---|
+| SAP S/4HANA, ECC | SAP BDC sa SAP Snowflakeom ili BDC Connect for Snowflake; Datasphere replikacijski tokovi preko pohrane objekata; alati trećih strana | Zero-copy pokriva samo BDC podatkovne proizvode. SAP Note 3255746 ograničava ODP preko RFC-a. Nema Openflow SAP konektora |
+| Oracle E-Business Suite | Openflow Connector for Oracle; Oracle GoldenGate; CDC alati trećih strana | XStream licenciranje i Enterprise Edition. Ključ potreban za svaku tablicu. TRUNCATE se ne replicira |
+| Oracle Fusion Cloud ERP | BICC izvodi u pohranu objekata, zatim učitavanje; GoldenGate (provjerite s Oracleom) | Nema izravnog pristupa bazi podataka. Openflow Oracle konektor ne podržava Fusion |
+| Dynamics 365 Finance and Operations | Azure Synapse Link for Dataverse u Vašu pohranu, zatim Iceberg tablice ili učitavanje; Fabric link | Export to Azure Data Lake prestaje 30. studenoga 2026. Brisanja stižu kao označeni redovi |
+| Dynamics 365 Sales, Customer Service | Openflow Connector for Microsoft Dataverse | Meka brisanja. Istek tokena nakon sedam dana prisiljava ponovnu sinkronizaciju |
+
+## Problemi podatkovnog modela koje nitko ne uračuna
+
+Svaki ERP cjevovod koji sam vidio naleti na iste probleme, bez obzira na put izvoza. Ovdje odlazi proračun.
+
+1. **Složenost tablica.** ERP tablice dizajnirane su za transakcije, a ne za analizu. U SAP S/4HANA univerzalni dnevnik (`ACDOCA`) i dokumenti materijala (`MATDOC`) zamijenili su mnoge ECC tablice, pa se ECC logika ne može jednostavno prenijeti. EBS ima multi-org strukture; Dynamics ima entitete koji ne odgovaraju njegovim tablicama jedan na jedan. Predvidite proračun za ljude koji poznaju izvorni sustav.
+2. **Hvatanje promjena i brisanja.** Svaki put drukčije signalizira brisanja: stupci s oznakama, izvodi samo ključeva ili ništa. TRUNCATE i arhiviranje mogu tiho udaljiti Snowflake od ERP-a. Usklađujte broj zapisa i salda prema rasporedu, a ne jednom.
+3. **Valute i jedinice.** ERP iznosi nalaze se u valuti dokumenta, lokalnoj valuti i valuti grupe, s vrstama tečaja i datumima knjiženja. Količine nose jedinice mjere s pretvorbama specifičnima za materijal. Ponovna izgradnja toga u SQL-u mjesto je gdje financije prestaju vjerovati brojkama.
+4. **Matični podaci.** Materijali, kupci, dobavljači i pogoni razlikuju se između ERP sustava i pravnih subjekata. Ako imate dva ERP-a, mapiranje matičnih podataka projekt je za sebe. Moj tekst o tome [zašto migracija SAP podataka propada](/hr/why-sap-data-migration-fails-and-how-to-fix-it/) pokriva iste temeljne uzroke.
+5. **Autorizacije ne dolaze s podacima.** ERP je provodio ograničenja po organizacijskoj jedinici (company code), pogonu i profitnom centru. Snowflake ništa od toga ne zna. Morate ponovno izgraditi sigurnost na razini retka i stupca, a u obrani i odvajanje kontroliranih podataka, prije nego što itko izvan užeg tima dobije pristup.
+
+## Redoslijed koji funkcionira
+
+1. **Najprije utvrdite ciljna pitanja.** Odaberite pet do deset poslovnih pitanja i izvještaje koji na njih odgovaraju. To određuje koje Vam tablice trebaju.
+2. **Popišite izvore.** Verzije ERP-a, način implementacije, izdanje baze podataka, prilagođena polja i svaki postojeći izvod o kojem ovise sustavi nizvodno.
+3. **Riješite licenciranje prije alata.** BDC pretplata, kapacitet Datasphere, XStream prava, stav svakog dobavljača o ODP napomeni. Odgovore dobijte u pisanom obliku.
+4. **Odaberite put za svaki ERP**, koristeći gornju tablicu. Mješoviti putovi su normalni.
+5. **Izgradite sirovi sloj koji zrcali izvor**, uz sačuvane vremenske oznake učitavanja i oznake brisanja.
+6. **Povrh toga izgradite usklađene modele**: pretvorba valuta i jedinica, mapiranje matičnih podataka, fiskalni kalendari.
+7. **Ponovno izgradite sigurnost** pomoću pravila pristupa recima i maskiranja prije otvaranja pristupa.
+8. **Usklađujte s ERP-om** i automatizirajte provjeru. Provjera koja mora proći prije nego što financije povjeruju modelu je bruto bilanca usklađena s ERP-om. Vrijednosti zaliha vrijedi provjeriti na isti način.
+9. **Predajte operacije**: nadzor, obradu promjena sheme i imenovanog vlasnika za svaki cjevovod.
+
+Za planiranje troškova [vodič kroz cijene i kredite Snowflakea](/hr/snowflake-pricing-credits-explained/) iz ove serije objašnjava što kontinuirana replikacija čini Vašem računu.
+
+## Što proizvodni timovi obično žele prvo
+
+Prvi zahtjevi u proizvodnji predvidljivi su i testiraju podatkovni model.
+
+1. **Zalihe.** Zalihe po pogonu, starost i spori artikli. Rano otkriva probleme s jedinicama mjere i vrednovanjem.
+2. **Isporuka na vrijeme i u punoj količini (OTIF).** Treba usklađene prodajne narudžbe, isporuke i potvrđene datume, što testira Vaše hvatanje promjena.
+3. **Trošak proizvoda.** Standardni nasuprot stvarnom trošku i odstupanja. Treba usklađene financijske i proizvodne podatke.
+4. **Kvaliteta.** Rezultati inspekcija, nedostaci i nesukladnosti, često spojeni s podacima iz strojeva ili historiana izvan ERP-a.
+
+Ja bih počeo sa zalihama. Odjednom dotiču matične podatke, jedinice i vrednovanje, a voditelji pogona mogu ih provjeriti u odnosu na ono što je fizički na polici. Ako još birate sam ERP, moj vodič o [najboljem ERP-u za proizvodnju](/hr/best-erp-for-manufacturing/) pokriva stranu odabira.
+
+Najprije uspoređujete platforme? Pogledajte [Snowflake vs Databricks](/hr/snowflake-vs-databricks/).
+
+## Odakle početi ovaj tjedan
+
+Popišite svaki izvod koji danas izlazi iz Vašeg ERP-a, sučelje koje koristi i tko o njemu ovisi. Taj jedan popis pokazuje Vašu izloženost ODP napomeni, roku za Dynamics i eventualnim prazninama u Fusion izvodima. Ako želite drugo mišljenje o putu ili podatkovnom modelu, pomažem organizacijama u tim odlukama; možete [rezervirati razgovor sa mnom](/hr/contact-noel-erp-support/).
+
+## Često postavljana pitanja
+
+<details>
+<summary>Kako prenijeti SAP podatke u Snowflake?</summary>
+
+Opcije koje SAP podržava su SAP Business Data Cloud sa SAP Snowflakeom ili BDC Connect for Snowflake, koji dijele SAP podatkovne proizvode bez kopiranja. Druga su replikacijski tokovi iz SAP Datasphere u cloud pohranu objekata iz koje Snowflake zatim učitava podatke. Dostupni su i alati trećih strana, ali provjerite koje SAP sučelje koriste u odnosu na SAP Note 3255746.
+
+</details>
+
+<details>
+<summary>Je li SAP Snowflake općenito dostupan?</summary>
+
+Jest. SAP Snowflake i SAP BDC Connect for Snowflake najavljeni su kao općenito dostupni na SAP Sapphireu u svibnju 2026. Snowflakeova dokumentacija isključuje državne regije, što je važno za obranu i javni sektor.
+
+</details>
+
+<details>
+<summary>Mogu li alati trećih strana i dalje koristiti ODP za izvoz SAP podataka?</summary>
+
+SAP Note 3255746 navodi da korištenje RFC modula ODP Data Replication API-ja od strane korisnika ili trećih strana nije dopušteno. SAP umjesto toga upućuje korisnike na Datasphere. Pitajte svakog dobavljača koje sučelje koristi i kako postupa s napomenom. Aktualnu napomenu pročitajte sami na SAP portalu za podršku.
+
+</details>
+
+<details>
+<summary>Kako prenijeti podatke iz Oracle Fusion Cloud ERP-a u Snowflake?</summary>
+
+Fusion je SaaS, pa se CDC alati za baze podataka ne mogu primijeniti, a Snowflakeov Openflow Oracle konektor ga ne podržava. Standardni put su BICC izvodi u pohranu objekata, a zatim učitavanje u Snowflake. Primarne ključeve izdvajajte zasebno kako biste mogli otkriti brisanja.
+
+</details>
+
+<details>
+<summary>Što zamjenjuje Export to Data Lake za Dynamics 365 Finance and Operations?</summary>
+
+Azure Synapse Link for Dataverse ili Fabric link. Export to Azure Data Lake trajno prestaje 30. studenoga 2026. Za Snowflake kao odredište Synapse Link zapisuje Delta Parquet u Vašu vlastitu pohranu, koju Snowflake može čitati kao Iceberg tablice ili učitati.
+
+</details>

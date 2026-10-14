@@ -1,0 +1,224 @@
+---
+title: "Databricks Genie 與 Agent Bricks：企業資料上的 AI"
+h1: "Databricks Genie 與 Agent Bricks：企業資料上的 AI"
+slug: "databricks-genie-agent-bricks"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/databricks-genie-agent-bricks.webp"
+heroAlt: "工廠品管實驗室的工作台上擺著精密零件，旁邊的平板電腦顯示問答畫面"
+category: "data-and-ai"
+tags: ["databricks", "enterprise-ai"]
+author: "Noel D'Costa"
+metaTitle: "Databricks Genie 與 Agent Bricks：2026 年的誠實指南"
+metaDescription: "Databricks Genie 與 Agent Bricks 說明：Genie Agents 擅長回答什麼、會在哪裡失敗、目前的名稱與狀態、成本，以及針對您資料的試行計畫。"
+primaryKeyword: "Databricks Genie"
+excerpt: "Databricks Genie 讓業務使用者以自然語言對受治理的資料提問，Agent Bricks 則是開發人員在其上建構代理的地方。本文說明兩者目前各做什麼、什麼讓答案準確、哪裡會出問題，以及如何在製造業或國防領域進行第一次試行。"
+experienceSource: "Noel's first-person experience with Databricks on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts and prices checked against official Databricks documentation and release notes, October 2026."
+keyTakeaways:
+  - "Genie 現在是一個產品家族：給業務使用者的 Genie One、針對整理過的領域的 Genie Agents（前身為 Genie spaces），以及給開發人員的 Genie Code"
+  - "準確度來自整理工作：metric views、範例 SQL、SQL 函式與清楚的指示，而不是只靠模型"
+  - "每個答案都以終端使用者的身分、在 Unity Catalog 權限下執行，這正是 Genie 能在受監管環境中使用的原因"
+  - "Agent Bricks 現在是自訂代理的開發平台；Knowledge Assistant 與 Supervisor Agent 已不再建議用於新建置"
+  - "Genie 的 LLM 用量在 2027 年 1 月 31 日前免費，但 SQL warehouse 運算另外計費，服務主體則從第一天起就要付費"
+  - "從一個範圍狹窄的領域開始，準備一組基準測試問題，並為每個指標指定一位負責人"
+pullQuote: "Genie 的表現，取決於您在它前面做了多少語意工作。"
+mentions:
+  - "Databricks Genie"
+  - "Genie One"
+  - "Genie Agents"
+  - "Genie Code"
+  - "Agent Bricks"
+  - "Unity Catalog"
+  - "Unity Gateway"
+  - "Metric views"
+  - "MLflow"
+  - "Model Context Protocol"
+  - "Databricks on AWS GovCloud"
+originalUrl: "https://noeldcosta.com/databricks-genie-agent-bricks/"
+canonicalUrl: "https://noeldcosta.com/zh-TW/databricks-genie-agent-bricks/"
+locale: "zh-TW"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Databricks Genie 讓業務使用者以自然語言對受治理的公司資料提問，並得到 SQL、結果資料表與圖表。當資料團隊已經整理好一個範圍狹窄、指標定義明確的領域時，它表現很好；當它被直接指向原始資料表、只能自己猜時，表現就很差。
+
+Agent Bricks 是另一半。開發人員在這裡建構、部署與評估自訂 AI 代理，這些代理可以呼叫 Genie、文件、函式與外部工具。
+
+我曾在製造業與國防產業的資料平台專案中使用 Databricks。我的看法很簡單：這一層 AI 現在已經好到可以交給生產規劃人員、品質工程師與財務團隊使用。
+
+難的是底下的語意與治理工作，以及讓業務使用者準備好使用它。大部分的試行心力應該放在這裡。
+
+## 2026 年底的 Databricks Genie 是什麼
+
+Databricks 在 2026 年把 Genie 家族大部分的產品都改了名字，所以較舊的文章會讓您困惑。原本稱為 Databricks One 的業務使用者介面，在 2026 年 6 月改為 Genie One。
+
+Genie spaces 在 2026 年 7 月改為 Genie Agents。Databricks Assistant 現在叫 Genie Code。
+
+下表整理了每個產品的作用，以及截至 2026 年 10 月的狀態。
+
+| 產品 | 作用 | 使用者 | 狀態（2026 年 10 月） |
+|---|---|---|---|
+| Genie One | 橫跨儀表板、Genie Agents 與應用程式的單一聊天介面；另有 iOS 與 Android 應用程式 | 業務使用者 | 聊天功能自 2026 年 6 月起 GA；行動應用程式為公開預覽 |
+| Genie Agents（前身為 Genie spaces） | 針對特定領域、經過整理的聊天，最多涵蓋 50 張資料表、檢視或 metric views | 分析師建置，業務使用者提問 | Agent 模式自 2026 年 7 月起 GA；多項附加功能為 Beta |
+| Genie Code（前身為 Databricks Assistant） | 用於筆記本、管線與儀表板的程式與資料助理 | 工程師、分析師 | 自 2026 年 7 月 8 日起隨用隨付 |
+| Conversation API | 把 Genie Agents 嵌入應用程式、聊天機器人與其他代理 | 開發人員 | Agent 模式 API 與視覺化擷取自 2026 年 8 月起 GA |
+| Databricks 提供的 MCP 連接器 | 讓 Genie One 與 Genie Code 透過 Model Context Protocol 使用外部工具 | 管理員、開發人員 | 自 2026 年 9 月起 GA；寫入動作為 Beta |
+
+Genie Agent 會挑選相關的中繼資料、指示、範例 SQL 與對話紀錄，然後產生 SQL。這段 SQL 在 Pro 或 serverless SQL warehouse 上執行，而且一律是唯讀的。
+
+最重要的治理重點：根據 [Genie Agent 設定文件](https://docs.databricks.com/aws/en/genie-agents/set-up)，資料存取一律以每位終端使用者自己的 Unity Catalog 權限評估。使用者詢問自己看不到的資料時，會得到空白的答案。
+
+列篩選與欄遮罩都會套用。建置者的 warehouse 憑證會內嵌其中，讓使用者可以執行查詢，但不會擴大任何人的資料存取範圍。
+
+## 什麼讓 Databricks Genie 準確，以及它會在哪裡失敗
+
+模型不是提升準確度的槓桿，整理工作才是。[Genie Agent 品質調校指南](https://docs.databricks.com/aws/en/genie-agents/tune-quality)建議以 SQL 運算式定義商業邏輯，因為它們比文字指示產生更一致的結果。
+
+依我所見的影響程度排序：
+
+1. **Metric views。** 以 metric views 為核心的 Unity Catalog Business Semantics 於 2026 年 4 月正式上市。您只要定義一次「首次良率」或「準時交貨率」，加上標籤與同義詞，就可以直接在其上建置 Genie Agents。指標有了定義，Genie 就不必自己推斷。
+2. **範例 SQL 查詢。** 把一個真實問題與回答它的 SQL 配對，重點放在您獨有的邏輯上：報廢成本如何計算、哪些工廠彙總到哪個區域。
+3. **作為受信任資產的 SQL 函式。** Unity Catalog 函式可以容納靜態查詢無法表達的邏輯。當 Genie 使用參數化查詢或函式時，答案會被標記為已驗證。使用者需要這些函式的 `EXECUTE` 權限。
+4. **知識庫。** 說明、同義詞、聯結關係與隱藏欄位。隱藏重複的技術欄位，效果比大家預期的好。
+5. **一般指示。** 用於到處都適用、又放不進其他地方的背景文字。保持簡短，不要自相矛盾。
+
+有硬性上限。每個代理 50 張資料表、檢視或 metric views。
+
+100 條指示，其中每個範例查詢與 SQL 函式各算一條。200 個用於聯結與 SQL 運算式的程式片段。
+
+我把這些上限當作設計指引。涵蓋「整個製造部門」的 Genie Agent 會讓人失望。涵蓋「兩個工廠的品質通知與報廢」的，可以做得非常好。
+
+### Genie 會在哪裡失敗
+
+這是廠商展示會跳過的部分。
+
+1. **未定義的業務用語。** 對著原始 ERP 資料表問「上一季的毛利率是多少」，Genie 會自己挑一個定義。那不一定是財務部的定義。如果 SAP、Oracle 或 Dynamics 365 的資料落地時沒有受治理的指標層，請預期會得到看似合理、卻對不上帳的數字。
+2. **雜亂的主檔資料。** 重複的料號、不一致的工廠代碼與自由文字的缺陷描述，會產生信心十足的錯誤答案。Genie 會放大您給它的資料品質。
+3. **模稜兩可的問題。** 「哪條產線最差？」哪方面最差？良好的整理與範例問題可以引導使用者，但沒有任何東西能免除他們把問題問清楚的必要。
+4. **語言。** 文件指出提示會被包裝在英文中，所以即使使用者以其他語言撰寫，答案也可能以英文回覆。在推廣到非英語系工廠之前，請先測試這一點。
+5. **能提供洞察，不能採取行動。** 產生的 SQL 是唯讀的。這對控管是優點。但這也代表 Genie 能告訴維護規劃人員哪些資產已逾期，卻不會開立工單。
+
+## Agent Bricks、MCP 與 Unity Gateway
+
+Agent Bricks 的定位也改變了。[Agent Bricks 概覽](https://docs.databricks.com/aws/en/agents/concepts/)現在將它描述為給寫程式的人使用的 Databricks 代理開發平台。
+
+您自帶框架與模型，用 Agent Bricks CLI 建立專案骨架，再部署到 Databricks Apps 上的 Agent Runtime。較舊的資料把這一層稱為 Mosaic AI Agent Framework，文件中也仍可見到一些 Mosaic AI 的標籤。
+
+買方應該知道兩件事。Knowledge Assistant 與 Supervisor Agent 這兩個早期的宣告式建置工具，現在已「不再建議用於新代理」，Supervisor API 也已被淘汰。
+
+Databricks 建議低程式碼使用者改用 Genie Agents，開發人員改用 CLI。如果系統整合商提出的設計建立在兩者之一上，請問清楚原因。
+
+從文件擷取資訊，建議的途徑是 AI Functions，它可以從 SQL 對文件進行分類、擷取、摘要與剖析。對製造商來說，這涵蓋供應商證書、檢驗報告與維護日誌。
+
+評估透過託管的 MLflow 進行：每個代理步驟的追蹤紀錄、正確性等內建 LLM 評審、自訂評分器與專家回饋。同樣的評分器也可以監控正式環境流量的樣本。
+
+[Unity Gateway](https://docs.databricks.com/aws/en/unity-gateway/)（網址仍是 ai-gateway）是控制平面。它提供模型與 MCP 服務的速率限制、作為防護機制的服務政策、個資遮罩、系統資料表中的用量追蹤、把請求與回應記錄到 Unity Catalog 資料表，以及模型之間的備援切換。Databricks 提供的與已註冊的 MCP 伺服器都使用 Unity Catalog 權限，所以呼叫 Genie One MCP 伺服器的代理，仍受使用者可見範圍的約束。
+
+## 在製造業與國防領域挑選第一個使用情境
+
+在製造業，我會從您已經在治理的資料上的品質與維護問題開始。依產線、班別與物料的報廢與重工。依供應商的未結品質通知。
+
+關鍵資產的平均故障間隔時間，以 ERP 工廠維護資料結合歷史資料庫或 MES 摘要資料計算。這些問題有清楚的負責人，而使用者現在要等分析師好幾天才拿得到答案。
+
+第一次試行請避開需求預測或服務成本分析。這些定義有爭議，資料也橫跨太多系統。
+
+在國防領域，使用情境沒有控管機制重要。挑一個非機密、可稽核、對權限敏感的主題：備品可用性、合約里程碑狀態或供應商交貨績效。試行的重點，是證明列篩選、欄遮罩與出口管制標記在自然語言提問下能正確運作。
+
+及早確認部署環境。[AWS GovCloud 版本資訊](https://docs.databricks.com/aws/en/release-notes/gov-cloud/2026)顯示，Genie 與 Genie Agents 自 2026 年 1 月起在 GovCloud 與 GovCloud DoD 正式上市，Genie One 則自 2026 年 1 月 22 日起上市。Unity Gateway 於 2026 年 9 月以公開預覽進入 GovCloud，但不含預算、推論資料表與服務政策。
+
+在美洲、歐洲、澳洲、紐西蘭與日本以外，Agent 模式需要啟用跨地理區處理。對於在海灣地區或亞洲、對主權敏感的專案來說，這是一個政策決策，不是勾一個選項就好。
+
+## 十個步驟的試行計畫
+
+這是我會採用的順序。如果資料已經在 Unity Catalog 中受到治理，大部分時間會花在第 3 到第 7 步。在我參與過的自然語言試行中，出問題的是使用者上手準備。
+
+業務使用者沒有經過適當的上手訓練，所以毫無準備，這個落差很大程度上就是語意層與試行工作花了大約兩個月的原因。請在建置的同時讓使用者上手，而不是建置完成之後。
+
+1. **挑一個領域與一位贊助者。** 例如工廠品質經理或物流主管，而不是籠統的「業務部門」。
+2. **從實際使用者那裡收集 50 到 100 個真實問題。** 這些就是您的基準測試。
+3. **讓每個指標都有負責人與定義。** 在它成為 metric view 之前，由財務或營運簽核定義。
+4. **建置 metric views 與整理過的資料表。** 遠低於 50 張資料表的上限。
+5. **為第一次答錯的問題加入範例 SQL、函式與同義詞。**
+6. **以真實使用者身分測試權限。** 以受限使用者登入，提出刻意設計來套取資料的問題。記錄結果。
+7. **在任何使用者看到之前，執行基準測試並記錄準確度。**
+8. **開放給 10 到 20 位使用者**，建立回饋機制，並由一位具名的資料管理員每週檢視被按「不讚」的答案。
+9. **在用量成長之前設定預算與警示。**
+10. **在固定日期做決定：** 擴大、修正或停止，依據第 1 步議定的標準。
+
+整個過程都要有人參與其中。由資料管理員負責整理工作。
+
+任何人若要把答案用於財務數字、安全決策或合約承諾，在基準測試證明其可靠之前，都要對照來源報表確認。對於任何會寫入系統的代理，都要由人核准該動作。
+
+## 治理、成本與衡量指標
+
+Genie 現在試用起來很便宜。根據 [Genie 預算文件](https://docs.databricks.com/aws/en/genie/budgets)，Genie One 與 Genie Agents 的 LLM 用量在 2027 年 1 月 31 日前免費。服務主體不在此列，所有用量都要計費，如果您透過 API 嵌入 Genie，這一點很重要。
+
+SQL warehouse 運算另外計費，這才是真正的運行成本。Genie Code 自 2026 年 7 月 8 日起採隨用隨付，每位使用者每月有 150 DBU 的免費額度。
+
+Databricks 的定價頁面顯示，150 DBU 在 US East 為 $10.50（牌價，於 2026 年 10 月查核）。各區域不同，企業折扣與承諾用量也會改變這個數字。
+
+預算可以設定共用與每位使用者的門檻，但封鎖並不精確，所以預算不是硬性上限。請與 `system.billing.usage` 對帳。我的 [Databricks 定價指南](/zh-TW/databricks-pricing-explained/)涵蓋 warehouse 規格的規劃。
+
+要衡量什麼：
+
+| 衡量項目 | 為什麼重要 | 上線前要議定的目標 |
+|---|---|---|
+| 基準測試準確度 | 顯示整理工作是否有效 | 每個領域一個門檻，由指標負責人簽核 |
+| 已驗證答案比例 | 建立在受信任 SQL 上的答案更安全 | 逐週上升 |
+| 「不讚」比例與修正時間 | 告訴您資料管理是否運作 | 每週檢視 |
+| 權限測試結果 | 證明控管有效 | 零外洩 |
+| 省下的分析師需求 | 商業論證 | 試行前先量測基準 |
+| 每位活躍使用者的 warehouse 成本 | 真正的運行成本 | 在預算之內 |
+
+治理是這一切的基礎。如果 Unity Catalog 還沒到位，請從那裡開始；我的 [Unity Catalog 與資料治理指南](/zh-TW/databricks-unity-catalog-data-governance/)與 [AI 治理框架指南](/zh-TW/ai-governance-framework-guide-building-a-responsible-ai-plan/)涵蓋了基礎工作。
+
+## 從哪裡開始
+
+選一個領域，寫下使用者實際會問的 50 個問題，檢查您目前的資料能用已定義的指標回答其中多少個。這個練習比任何展示都更能告訴您是否已準備好使用 Genie。如果您也在評估替代方案，可以拿它與 [Snowflake Cortex AI 和 Snowflake Intelligence](/zh-TW/snowflake-cortex-ai-snowflake-intelligence/) 比較。
+
+我協助企業做這些決策並界定試行範圍。如果您想聽第二意見，[歡迎預約通話](/zh-TW/contact-noel-erp-support/)。
+
+## 常見問題
+
+<details>
+<summary>Databricks Genie 是什麼？</summary>
+
+Databricks Genie 是一系列 AI 工具，使用 Databricks 中受治理的資料回答自然語言問題。Genie One 是業務使用者介面，Genie Agents 是經過整理、針對特定領域的聊天（前身為 Genie spaces），Genie Code 則是給開發人員與分析師的助理。答案以唯讀 SQL 產生，並遵守每位使用者的 Unity Catalog 權限。
+
+</details>
+
+<details>
+<summary>Genie spaces 和 Genie Agents 有什麼不同？</summary>
+
+功能上沒有差別。Databricks 在 2026 年 7 月把 Genie spaces 改名為 Genie Agents，並表示功能不變。較舊的文章、教材與社群貼文仍使用「Genie spaces」。
+
+</details>
+
+<details>
+<summary>Databricks Genie 要多少錢？</summary>
+
+Genie One 與 Genie Agents 的 LLM 用量在 2027 年 1 月 31 日前對使用者免費。服務主體要計費，SQL warehouse 運算也另外計費。Genie Code 在每月免費額度之外採隨用隨付。
+
+</details>
+
+<details>
+<summary>Databricks Genie 的準確度足以用於財務或營運報表嗎？</summary>
+
+可以，前提是在一個經過整理的領域內，具備 metric views、範例 SQL 與受信任的函式，並以一組基準測試問題衡量。如果直接指向原始資料表，它會產生看似合理、卻未必符合您定義的答案。在基準測試證明之前，請把它用於財務或安全決策的答案視為未經驗證。
+
+</details>
+
+<details>
+<summary>Databricks Agent Bricks 用來做什麼？</summary>
+
+以您自己的框架與模型，建構、部署與治理自訂 AI 代理。它包括 Agent Bricks CLI、Agent Runtime、託管記憶體與 MLflow 評估。Knowledge Assistant 與 Supervisor Agent 已不再建議用於新代理。
+
+</details>
+
+<details>
+<summary>Databricks 支援 MCP 嗎？</summary>
+
+支援。Databricks 提供託管的 MCP 伺服器，包括 Genie One 與 Databricks SQL，您也可以註冊外部伺服器，或在 Databricks Apps 上建置自訂伺服器。存取透過 Unity Catalog 權限與 Unity Gateway 治理。
+
+</details>

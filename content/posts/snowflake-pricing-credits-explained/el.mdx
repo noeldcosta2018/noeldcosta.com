@@ -1,0 +1,223 @@
+---
+title: "Τιμολόγηση Snowflake: credits, editions και κόστος"
+h1: "Τιμολόγηση Snowflake: credits, editions και κόστος"
+slug: "snowflake-pricing-credits-explained"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/snowflake-pricing-credits-explained.webp"
+heroAlt: "Ο Noel D'Costa δίπλα σε γραφείο Οικονομικών με dashboard κόστους και τυπωμένα τιμολόγια"
+category: "data-and-ai"
+tags: ["snowflake", "data-platform-cost"]
+author: "Noel D'Costa"
+metaTitle: "Τιμολόγηση Snowflake: credits, editions και κόστος"
+metaDescription: "Η τιμολόγηση του Snowflake απλά: τιμή credit ανά edition και περιοχή, credits ανά ώρα warehouse, storage, χρεώσεις AI και serverless, και πώς μειώνετε τη δαπάνη."
+primaryKeyword: "Snowflake τιμολόγηση"
+excerpt: "Το Snowflake χρεώνει το compute σε credits, το storage ανά terabyte και τη μεταφορά δεδομένων ανά terabyte. Πόσο κοστίζει το καθένα σε τιμή καταλόγου, πού μεγαλώνουν οι λογαριασμοί χωρίς να το προσέξει κανείς και οι έλεγχοι που βάζω πριν από το go-live."
+experienceSource: "Noel's first-person experience with Snowflake on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts and prices checked against official Snowflake documentation and the Snowflake Service Consumption Table effective 9 October 2026, checked October 2026."
+keyTakeaways:
+  - "Το compute είναι ο λογαριασμός. Ένα credit έχει τιμή καταλόγου $2,00 έως $9,75 on demand ανάλογα με το edition, το cloud και την περιοχή"
+  - "Το μέγεθος του warehouse διπλασιάζει την κατανάλωση credits σε κάθε βήμα: το X-Small καίει 1 credit την ώρα, το 4X-Large καίει 128"
+  - "Το storage έχει τιμή καταλόγου περίπου $23 ανά συμπιεσμένο TB τον μήνα στις περιοχές των ΗΠΑ και σπάνια είναι η γραμμή που εκπλήσσει έναν CFO"
+  - "Οι serverless δυνατότητες, τα cloud services πάνω από την ποσόστωση του 10% και τα Cortex AI credits βρίσκονται εκτός του προϋπολογισμού των warehouses"
+  - "Οι συμβάσεις capacity δίνουν έκπτωση στα platform credits, αλλά η έκπτωση δεν ισχύει για τα AI credits"
+  - "Ορίστε auto-suspend, resource monitors, budgets και tagging πριν από την πρώτη παραγωγική φόρτωση, όχι μετά το πρώτο τιμολόγιο"
+pullQuote: "Το Snowflake σπάνια γίνεται ακριβό λόγω της τιμής ανά credit. Γίνεται ακριβό επειδή κανείς δεν είναι υπεύθυνος για τα warehouses."
+mentions:
+  - "Snowflake"
+  - "Snowflake Cortex"
+  - "Snowpark Container Services"
+  - "Snowpipe"
+  - "Query Acceleration Service"
+  - "Search Optimization Service"
+  - "Virtual Private Snowflake"
+  - "Amazon Web Services"
+  - "Microsoft Azure"
+  - "Google Cloud"
+originalUrl: "https://noeldcosta.com/snowflake-pricing-credits-explained/"
+canonicalUrl: "https://noeldcosta.com/el/snowflake-pricing-credits-explained/"
+locale: "el"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Η τιμολόγηση του Snowflake βασίζεται στη χρήση: πληρώνετε το compute σε credits, το storage ανά terabyte τον μήνα και τα δεδομένα που μετακινούνται εκτός μιας περιοχής. Ένα credit έχει τιμή καταλόγου $2,00 έως $3,25 στο Standard edition και $4,00 έως $6,50 στο Business Critical, ανάλογα με το cloud και την περιοχή (τιμή καταλόγου, ελεγμένη τον Οκτώβριο του 2026).
+
+Αυτός ο βασικός αριθμός σας λέει πολύ λίγα. Το τι πληρώνετε εξαρτάται από το πόσο μεγάλα είναι τα warehouses σας, πόσο ώρα τρέχουν, ποιες serverless δυνατότητες είναι ενεργές και αν κάποιος παρακολουθεί.
+
+Στα προγράμματα μεταποίησης και άμυνας όπου έχω δουλέψει, η τιμή ανά credit δεν ήταν ποτέ το πρόβλημα. Τα προβλήματα ήταν warehouses που έμεναν σε λειτουργία, serverless δυνατότητες που κανείς δεν είχε προϋπολογίσει και μια σύμβαση με μέγεθος βασισμένο σε εικασία. Ο οδηγός αυτός καλύπτει τις μονάδες, τις τιμές καταλόγου, τους κρυφούς παράγοντες κόστους και τους ελέγχους που θα έβαζα από την πρώτη μέρα.
+
+## Πώς λειτουργούν τα credits του Snowflake
+
+Το Snowflake έχει πλέον δύο μονάδες χρέωσης. Τα platform credits πληρώνουν τα virtual warehouses, το Snowpark Container Services, τις serverless δυνατότητες και τα cloud services.
+
+Τα AI credits πληρώνουν τις δυνατότητες Cortex AI. Όταν μια παλαιότερη σύμβαση λέει «credits», εννοεί platform credits.
+
+Ένα virtual warehouse είναι ένα επώνυμο μπλοκ compute. Επιλέγετε μέγεθος και το μέγεθος ορίζει τον ρυθμό κατανάλωσης credits. Κάθε βήμα προς τα πάνω διπλασιάζει τον ρυθμό.
+
+Ένα warehouse σε λειτουργία χρεώνεται ανά δευτερόλεπτο, με ελάχιστο 60 δευτερολέπτων κάθε φορά που ξεκινά ή συνεχίζει. Ένα warehouse σε αναστολή δεν κοστίζει τίποτα.
+
+Ο πίνακας προέρχεται από την [τεκμηρίωση warehouses](https://docs.snowflake.com/en/user-guide/warehouses-overview) του Snowflake και από το Service Consumption Table σε ισχύ από τις 9 Οκτωβρίου 2026.
+
+| Μέγεθος | Credits ανά ώρα (standard, Gen1) | Credits ανά ώρα (Gen2, AWS) |
+|---|---|---|
+| X-Small | 1 | 1,35 |
+| Small | 2 | 2,7 |
+| Medium | 4 | 5,4 |
+| Large | 8 | 10,8 |
+| X-Large | 16 | 21,6 |
+| 2X-Large | 32 | 43,2 |
+| 3X-Large | 64 | 86,4 |
+| 4X-Large | 128 | 172,8 |
+| 5X-Large | 256 | Δεν υπάρχει |
+| 6X-Large | 512 | Δεν υπάρχει |
+
+Τα warehouses Gen2 κοστίζουν περισσότερο ανά ώρα (1,25 φορές στο Azure, 1,35 φορές σε AWS και GCP) επειδή τρέχουν πιο γρήγορα. Το αν βγαίνουν φθηνότερα εξαρτάται από τον φόρτο εργασίας σας, οπότε δοκιμάστε πριν αλλάξετε. Το Gen2 δεν είναι διαθέσιμο σε κάθε περιοχή και δεν είναι η προεπιλογή.
+
+Δύο άλλοι τύποι warehouse έχουν τα δικά τους ελάχιστα. Τα interactive warehouses έχουν χαμηλότερες ωριαίες τιμές καταλόγου (0,6 credits την ώρα στο X-Small), αλλά χρεώνουν τουλάχιστον 60 λεπτά κάθε φορά που ξεκινούν. Τα Snowpark-optimised warehouses για βαριά σε μνήμη δουλειά Python και ML κοστίζουν από 1 έως 6 credits την ώρα στα μικρότερα μεγέθη, ανάλογα με την επιλογή μνήμης.
+
+Τα multi-cluster warehouses πολλαπλασιάζουν τον ρυθμό επί τον αριθμό των clusters σε λειτουργία. Ένα Medium warehouse με δικαίωμα για τρία clusters μπορεί να καίει έως 12 credits την ώρα. Το multi-cluster είναι δυνατότητα του Enterprise edition.
+
+## Editions και τιμή ανά credit
+
+Το edition που επιλέγετε ορίζει την τιμή κάθε credit που καίτε, οπότε είναι ο μεγαλύτερος μοχλός στη σύμβαση. Τα εύρη προέρχονται από τον Πίνακα 2(a) του [Snowflake Service Consumption Table](https://www.snowflake.com/legal-files/CreditConsumptionTable.pdf), τιμή καταλόγου on demand ανά platform credit, ελεγμένη τον Οκτώβριο του 2026.
+
+| Edition | Τι προσθέτει | Τιμή καταλόγου on demand ανά credit | AWS US East (N. Virginia) |
+|---|---|---|---|
+| Standard | Βασική πλατφόρμα, Snowpark, data sharing, Time Travel | $2,00 έως $3,25 | $2,00 |
+| Enterprise | Multi-cluster warehouses, λεπτομερέστεροι έλεγχοι διακυβέρνησης, μεγαλύτερο Time Travel, Query Acceleration | $3,00 έως $4,90 | $3,00 |
+| Business Critical | Tri-Secret Secure, ιδιωτική συνδεσιμότητα, failover και failback | $4,00 έως $6,50 | $4,00 |
+| Virtual Private Snowflake (VPS) | Όλα όσα έχει το Business Critical, σε περιβάλλον απομονωμένο από άλλους λογαριασμούς | $6,00 έως $9,75, συν ετήσιο τέλος εγκατάστασης | $6,00 |
+
+Οι φθηνότερες περιοχές είναι οι κύριες περιοχές των ΗΠΑ. Οι ακριβότερες είναι μέρη όπως η Ζυρίχη, το Switzerland North, το Χονγκ Κονγκ και το Νταμάμ. Για έναν αγοραστή στον Κόλπο ή στην Ευρώπη, η επιλογή περιοχής μπορεί να μετακινήσει τον λογαριασμό κατά 30% ή περισσότερο πριν γράψετε έστω ένα query.
+
+Για την άμυνα, αυτό μετράει ακόμη περισσότερο. Στις κυβερνητικές περιοχές των ΗΠΑ του πίνακα (συμπεριλαμβανομένων του AWS US Gov West 1, της περιοχής DoD και των περιοχών FedRAMP High Plus), τα Standard και Enterprise δεν προσφέρονται. Το Business Critical ξεκινά από $4,80 έως $5,60 ανά credit.
+
+Αν το πρόγραμμά σας έχει περιορισμούς κυριαρχίας ή ελέγχου εξαγωγών, προϋπολογίστε Business Critical από την αρχή. Στο Standard edition λείπουν οι έλεγχοι κρυπτογράφησης και ιδιωτικής συνδεσιμότητας για τους οποίους θα ρωτήσει ένας αμυντικός έλεγχος ασφάλειας. Δεν έχω εγκαταστήσει ο ίδιος Snowflake σε κυβερνητική περιοχή ή σε περιοχή του Κόλπου, οπότε αντιμετωπίστε αυτά τα στοιχεία ανά περιοχή ως καθοδήγηση τιμών καταλόγου και επιβεβαιώστε με τη Snowflake ποιες υπηρεσίες λειτουργούν στην περιοχή-στόχο σας.
+
+Για τους περισσότερους κατασκευαστές θα ξεκινούσα με Enterprise. Τα multi-cluster warehouses και το Query Acceleration είναι αυτά που εμποδίζουν τις αναφορές κλεισίματος μήνα να μπαίνουν σε ουρά πίσω από την ομάδα data science.
+
+## Storage, μεταφορά δεδομένων και οι άλλες γραμμές
+
+Το **storage** χρεώνεται με βάση τον μηνιαίο μέσο όρο των συμπιεσμένων δεδομένων. On demand έχει τιμή καταλόγου $23 ανά TB τον μήνα στις κύριες περιοχές των ΗΠΑ, $24,50 στη Φρανκφούρτη και $39 στο AWS US Gov West 1. Οι συμβάσεις capacity με μεγαλύτερες ετήσιες δεσμεύσεις το μειώνουν, έως $13,80 ανά TB στο ανώτατο κλιμάκιο στο US East.
+
+Η **μεταφορά δεδομένων** είναι δωρεάν μέσα στο ίδιο cloud και την ίδια περιοχή. Η μετακίνηση δεδομένων προς τα έξω κοστίζει. Από το AWS US East έχει τιμή καταλόγου $20 ανά TB προς άλλη περιοχή AWS και $90 ανά TB προς άλλο cloud ή το internet.
+
+Οι κυβερνητικές περιοχές χρεώνουν περισσότερο. Αν το ERP σας βρίσκεται στο Azure και το Snowflake στο AWS, κάθε εξαγωγή που φεύγει από το Snowflake πίσω προς το Azure φέρει αυτή την τιμή μεταφοράς ανάμεσα σε clouds. Ο οδηγός μου για τη [μεταφορά δεδομένων ERP στο Snowflake](/el/erp-data-into-snowflake/) καλύπτει πού να τοποθετήσετε τον λογαριασμό.
+
+Τα **cloud services** είναι το επίπεδο που χειρίζεται τις συνδέσεις, τη μεταγλώττιση queries και τα metadata. Χρεώνονται με 4,4 credits ανά ώρα χρήσης, αλλά μόνο για το μέρος πάνω από το 10% των credits warehouse της ημέρας.
+
+Οι περισσότεροι λογαριασμοί δεν βλέπουν ποτέ χρέωση. Τη βλέπουν οι λογαριασμοί που τρέχουν τεράστιο αριθμό μικροσκοπικών queries ή ρωτούν συνεχώς metadata από εργαλεία BI.
+
+Οι **serverless δυνατότητες** τρέχουν σε compute που διαχειρίζεται το Snowflake, με ένα credit ανά ώρα compute επί έναν πολλαπλασιαστή ανά δυνατότητα. Τίποτα δεν εμφανίζεται στη λίστα των warehouses σας, και γι' αυτό εκπλήσσουν τον κόσμο. Από τον Πίνακα 5 του consumption table:
+
+1. Snowpipe: 0,0037 credits ανά GB που φορτώνεται.
+2. Automatic clustering: 2 φορές το compute, συν cloud services.
+3. Search Optimization Service: 2 φορές το compute, συν cloud services.
+4. Συντήρηση materialized views: 2 φορές το compute, συν cloud services.
+5. Serverless tasks: 0,9 φορές το compute, συν cloud services.
+6. Query Acceleration: 1 φορά το compute, με χρέωση ανά δευτερόλεπτο όταν χρησιμοποιείται.
+
+Το clustering και η βελτιστοποίηση αναζήτησης σε έναν πίνακα που αλλάζει γρήγορα μπορεί σιωπηλά να κοστίσουν περισσότερο από τα warehouses που τον ρωτούν. Τα ελέγχω όλα πριν από το go-live.
+
+## Cortex AI και Snowpark Container Services
+
+Το **Cortex AI** χρεώνει σε AI credits, ξεχωριστή μονάδα. On demand ένα AI credit έχει τιμή καταλόγου $2,00 (global) ή $2,20 (regional). Η έκπτωσή σας στα platform credits δεν ισχύει για τα AI credits.
+
+Οι Cortex functions χρεώνουν ανά εκατομμύριο tokens, με την είσοδο και την έξοδο να τιμολογούνται συχνά διαφορετικά. Στο consumption table, το llama3.3-70b έχει τιμή καταλόγου 0,36 AI credits ανά εκατομμύριο tokens και προς τις δύο κατευθύνσεις, και το mistral-large2 1,00 για είσοδο και 3,00 για έξοδο. Το Cortex Analyst χρεώνει 67 platform credits ανά 1.000 μηνύματα και το Cortex Search 6,3 AI credits ανά GB τον μήνα δεδομένων σε ευρετήριο.
+
+Αν τρέχετε το Cortex σε λειτουργία μόνο εντός περιοχής για λόγους διαμονής δεδομένων, περιμένετε την υψηλότερη τιμή. Η [τεκμηρίωση cross-region inference](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cross-region-inference) εξηγεί τις επιλογές δρομολόγησης.
+
+Για την άμυνα, η επεξεργασία εντός περιοχής είναι συνήθως η μόνη αποδεκτή ρύθμιση. Το άρθρο μου για το [Snowflake Cortex AI και το Snowflake Intelligence](/el/snowflake-cortex-ai-snowflake-intelligence/) καλύπτει τι κάνουν αυτές οι δυνατότητες.
+
+Το **Snowpark Container Services** τρέχει τα δικά σας containers σε compute pools. Κάθε τύπος node έχει τη δική του τιμή σε credits. Τα μικρότερα general-purpose nodes έχουν τιμή καταλόγου πολύ κάτω από 0,1 credits την ώρα, και τα GPU nodes κυμαίνονται από περίπου 0,5 έως πάνω από 20.
+
+Τα nodes χρεώνουν ελάχιστο πέντε λεπτών κάθε φορά που ξεκινούν. Ένα GPU pool που μένει σε λειτουργία όλο το Σαββατοκύριακο είναι το ακριβότερο λάθος που μπορώ να σκεφτώ σε αυτή την πλατφόρμα.
+
+## Ενδεικτική αριθμητική: ένα warehouse, δύο συνήθειες
+
+Το παράδειγμα είναι μόνο ενδεικτικό. Χρησιμοποιεί τιμές καταλόγου από το consumption table του Οκτωβρίου 2026: Enterprise edition, AWS US East, $3,00 ανά credit, storage στα $23 ανά TB.
+
+Ένα Medium warehouse καίει 4 credits την ώρα. Με χρήση δέκα ωρών την ημέρα για 22 εργάσιμες ημέρες, αυτό κάνει 880 credits, δηλαδή $2.640 τον μήνα. Το ίδιο warehouse με απενεργοποιημένο auto-suspend τρέχει 720 ώρες τον μήνα.
+
+Αυτό κάνει 2.880 credits, δηλαδή $8.640. Ίδια queries, ίδιοι χρήστες, πάνω από τριπλάσιος λογαριασμός.
+
+Προσθέστε τώρα 20 TB συμπιεσμένου storage: $460 τον μήνα. Το storage είναι πραγματικά χρήματα, αλλά στις πλατφόρμες όπου έχω δουλέψει σπάνια ήταν η γραμμή που ανησυχεί έναν CFO. Το αδρανές compute και οι serverless δυνατότητες που δεν παρακολουθεί κανείς είναι.
+
+Οι εταιρικές εκπτώσεις και οι δεσμεύσεις capacity θα αλλάξουν αυτούς τους αριθμούς. Η μορφή δεν θα αλλάξει.
+
+## On demand ή συμβάσεις capacity
+
+Το Snowflake πουλά με δύο τρόπους. **On demand** σημαίνει ότι πληρώνετε την τιμή καταλόγου μηνιαία, εκ των υστέρων, χωρίς δέσμευση. **Capacity** σημαίνει ότι δεσμεύεστε σε ετήσια δαπάνη και παίρνετε έκπτωση στα platform credits, όπως ορίζεται στη φόρμα παραγγελίας σας.
+
+Η capacity μπορεί να χρησιμοποιηθεί σε όλους τους λογαριασμούς σας. Το storage φθηναίνει όσο μεγαλώνει η ετήσια αξία της σύμβασής σας. Τα AI credits έχουν τα δικά τους κλιμάκια.
+
+Ο κανόνας μου: τρέξτε on demand, ή με μικρή δέσμευση, για περίπου τρεις μήνες. Μετά διαστασιολογήστε τη σύμβαση από τα δεδομένα του `ACCOUNT_USAGE`, όχι από το βιβλίο εργασίας διαστασιολόγησης του προμηθευτή. Αυτοί οι τρεις μήνες σας δείχνουν επίσης πώς συμπεριφέρεται το μοντέλο κατανάλωσης στους δικούς σας φόρτους εργασίας.
+
+Μια υπερβολική δέσμευση είναι χρήματα που ξοδεύονται είτε τα χρησιμοποιείτε είτε όχι. Διαβάστε προσεκτικά τους όρους μεταφοράς υπολοίπου. Η ίδια πειθαρχία ισχύει για κάθε συμφωνία εταιρικού λογισμικού, κάτι που καλύπτω στη [μελέτη περίπτωσης για τη διαπραγμάτευση σύμβασης ERP](/el/erp-implementation-contract-negotiation-cost-review-cfo/).
+
+## Οι έλεγχοι που βάζω πριν από το go-live
+
+Το Snowflake σάς δίνει καλά εργαλεία. Η [τεκμηρίωση ελέγχου κόστους](https://docs.snowflake.com/en/user-guide/cost-controlling) τα εξηγεί. Λειτουργούν μόνο αν κάποιος τα ρυθμίσει πριν από την πρώτη παραγωγική φόρτωση.
+
+1. **Auto-suspend σε κάθε warehouse.** Είναι ενεργό από προεπιλογή. Ελέγξτε ότι κανείς δεν το απενεργοποίησε. Πολύ σύντομες ρυθμίσεις σε φόρτους με εξάρσεις μπορεί να κοστίσουν περισσότερο, γιατί κάθε επανεκκίνηση χρεώνει το ελάχιστο των 60 δευτερολέπτων.
+2. **Σωστό μέγεθος ανά φόρτο εργασίας.** Χωριστά warehouses για ELT, BI και data science. Ξεκινήστε μικρά και μεγαλώστε μόνο όταν το ιστορικό queries δείχνει spilling ή ουρές.
+3. **Multi-cluster με όρια.** Ορίστε λογικό μέγιστο αριθμό clusters. Χρησιμοποιήστε την πολιτική κλιμάκωσης Economy όπου κάποια αναμονή σε ουρά είναι αποδεκτή.
+4. **Resource monitors.** Παρακολουθούν τα credits των warehouses και μπορούν να αναστείλουν ένα warehouse όταν φτάσει ένα όριο. Δεν καλύπτουν τις serverless δυνατότητες.
+5. **Budgets.** Μηνιαία όρια δαπάνης με ειδοποιήσεις που καλύπτουν τις serverless δυνατότητες. Χρησιμοποιήστε custom budgets ανά τμήμα.
+6. **Query Acceleration με scale factor.** Χρήσιμο για σαρώσεις με αιχμές, αλλά βάλτε του όριο. Το προεπιλεγμένο scale factor του επιτρέπει να προσθέσει έως οκτώ φορές τον ρυθμό του ίδιου του warehouse.
+7. **Tagging.** Object tags σε warehouses και χρήστες, query tags για κοινόχρηστες εφαρμογές. Χωρίς αυτά, κανείς δεν μπορεί να πει ποιο εργοστάσιο, πρόγραμμα ή λειτουργία ξόδεψε τι.
+8. **Εβδομαδιαίος έλεγχος του `ACCOUNT_USAGE`.** Το `WAREHOUSE_METERING_HISTORY` για τα credits των warehouses, το `QUERY_ATTRIBUTION_HISTORY` για το κόστος ανά query, το `TAG_REFERENCES` για τη σύνδεση με τους υπευθύνους. Θυμηθείτε ότι το κόστος ανά query δεν περιλαμβάνει τον χρόνο αδράνειας, το storage, τις serverless δυνατότητες και την AI.
+
+Η δοκιμαστική περίοδος είναι καλός τρόπος να τα μάθετε αυτά πριν δεσμευτείτε. Το Snowflake προσφέρει σήμερα δοκιμή 30 ημερών με $400 σε δωρεάν credits.
+
+Οι δυνατότητες AI είναι απενεργοποιημένες μέχρι να προσθέσετε κάρτα. Επιλέξτε το cloud, την περιοχή και το edition που θα αγοράζατε πραγματικά, γιατί δεν αλλάζουν αργότερα.
+
+## Τι να κάνετε στη συνέχεια
+
+Πριν υπογράψετε, βάλτε τρεις αριθμούς σε μία σελίδα: credits ανά μήνα ανά φόρτο εργασίας, την τιμή του edition και της περιοχής, και τις serverless δυνατότητες μαζί με την AI ως χωριστές γραμμές. Αν ο προμηθευτής ή ο SI σας δεν μπορεί να σας τα δώσει, η εκτίμηση είναι εικασία. Αν ακόμη επιλέγετε πλατφόρμα, η [σύγκρισή μου Snowflake vs Databricks](/el/snowflake-vs-databricks/) και ο [οδηγός μου για την τιμολόγηση του Databricks](/el/databricks-pricing-explained/) χρησιμοποιούν την ίδια οπτική.
+
+Βοηθώ οργανισμούς να διαστασιολογούν συμβάσεις πλατφορμών δεδομένων και να στήνουν διακυβέρνηση κόστους πριν από το go-live. Αν αυτό σας είναι χρήσιμο, [επικοινωνήστε μαζί μου](/el/contact-noel-erp-support/).
+
+## Συχνές ερωτήσεις
+
+<details>
+<summary>Πόσο κοστίζει ένα credit του Snowflake;</summary>
+
+On demand, ένα platform credit έχει τιμή καταλόγου $2,00 έως $3,25 στο Standard edition, $3,00 έως $4,90 στο Enterprise, $4,00 έως $6,50 στο Business Critical και $6,00 έως $9,75 στο Virtual Private Snowflake, ανάλογα με το cloud και την περιοχή (τιμή καταλόγου, ελεγμένη τον Οκτώβριο του 2026). Στο AWS US East τα ποσά είναι $2, $3, $4 και $6. Οι συμβάσεις capacity εφαρμόζουν μια έκπτωση που διαπραγματεύεστε σε αυτές τις τιμές.
+
+</details>
+
+<details>
+<summary>Χρεώνεται το Snowflake ανά δευτερόλεπτο;</summary>
+
+Ναι. Τα standard virtual warehouses χρεώνουν ανά δευτερόλεπτο με ελάχιστο 60 δευτερολέπτων κάθε φορά που ξεκινούν ή συνεχίζουν. Τα interactive warehouses έχουν ελάχιστο 60 λεπτών και τα nodes του Snowpark Container Services ελάχιστο πέντε λεπτών. Τα warehouses σε αναστολή δεν κοστίζουν τίποτα.
+
+</details>
+
+<details>
+<summary>Πόσο κοστίζει το storage του Snowflake ανά TB;</summary>
+
+Το on-demand storage έχει τιμή καταλόγου $23 ανά TB τον μήνα στις κύριες περιοχές των ΗΠΑ, υψηλότερη σε ορισμένες περιοχές, όπως $24,50 στη Φρανκφούρτη και $39 στο AWS US Gov West 1. Χρεώνεται με βάση το συμπιεσμένο μέγεθος. Οι συμβάσεις capacity μειώνουν την τιμή όσο μεγαλώνει η ετήσια αξία της σύμβασής σας.
+
+</details>
+
+<details>
+<summary>Έχει το Snowflake δωρεάν δοκιμαστική περίοδο;</summary>
+
+Ναι. Το Snowflake προσφέρει δοκιμή 30 ημερών με $400 σε δωρεάν credits. Η δοκιμή λήγει όταν περάσουν 30 ημέρες ή εξαντληθούν τα credits, όποιο συμβεί πρώτο. Οι δυνατότητες AI είναι απενεργοποιημένες μέχρι να προσθέσετε πιστωτική κάρτα, και το cloud, η περιοχή και το edition που επιλέγετε δεν αλλάζουν αργότερα.
+
+</details>
+
+<details>
+<summary>Τι είναι η προσαρμογή 10% των cloud services του Snowflake;</summary>
+
+Η χρήση cloud services είναι δωρεάν έως το 10% των credits warehouse της ημέρας. Χρεώνεται μόνο η χρήση πάνω από αυτό το όριο. Οι serverless δυνατότητες και η χρήση του Snowpark Container Services δεν μετράνε στην ποσόστωση.
+
+</details>
+
+<details>
+<summary>Γιατί ο λογαριασμός μου στο Snowflake είναι υψηλότερος από τον αναμενόμενο;</summary>
+
+Οι συνηθισμένες αιτίες είναι warehouses που δεν αναστέλλονται ποτέ, υπερδιαστασιολογημένα warehouses, multi-cluster χωρίς όριο και serverless δυνατότητες όπως το automatic clustering, η βελτιστοποίηση αναζήτησης και τα materialized views. Η χρήση του Cortex AI και η μεταφορά δεδομένων ανάμεσα σε clouds επίσης αθροίζονται. Ρωτήστε το `WAREHOUSE_METERING_HISTORY` και τα views χρήσης των serverless δυνατοτήτων για να βρείτε την πηγή, και μετά ορίστε budgets και resource monitors.
+
+</details>

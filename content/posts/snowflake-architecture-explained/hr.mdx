@@ -1,0 +1,210 @@
+---
+title: "Arhitektura Snowflakea objašnjena i čemu služi"
+h1: "Arhitektura Snowflakea objašnjena i čemu služi"
+slug: "snowflake-architecture-explained"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/snowflake-architecture-explained.webp"
+heroAlt: "Široki pogled na svijetlu inženjersku montažnu halu s radnim stanicama i mosnom dizalicom"
+category: "data-and-ai"
+tags: ["snowflake", "data-governance", "manufacturing"]
+author: "Noel D'Costa"
+metaTitle: "Arhitektura Snowflakea: slojevi, upotreba i ograničenja"
+metaDescription: "Arhitektura Snowflakea jasno objašnjena: pohrana, compute i cloud services, mikroparticije, Time Travel, dijeljenje, Iceberg, izdanja i čemu služi."
+primaryKeyword: "Snowflake arhitektura"
+excerpt: "Snowflake je cloud podatkovna platforma koja pohranu, compute i koordinaciju drži u tri odvojena sloja. Evo kako ta arhitektura funkcionira, za što je tvrtke koriste i gdje nije pravi izbor."
+experienceSource: "Noel's first-person experience with Snowflake on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts checked against official Snowflake documentation, October 2026."
+keyTakeaways:
+  - "Snowflake odvaja pohranu, compute (virtualna skladišta) i cloud services, pa se svaki dio može zasebno skalirati i plaćati"
+  - "Podaci se nalaze u komprimiranim stupčanim mikroparticijama; metapodaci omogućuju upitima da preskoče one koje im ne trebaju"
+  - "Time Travel, zero-copy kloniranje i sigurno dijeljenje podataka proizlaze iz istog dizajna metapodataka"
+  - "Iceberg tablice, Horizon Catalog i Snowflake Postgres (GA u veljači 2026.) šire ga izvan klasičnog skladišta podataka"
+  - "Regulirani rad obično znači izdanje Business Critical ili više; Snowflake se ne može instalirati on-premise"
+  - "Ne odgovara zahtjevnim transakcijskim radnim opterećenjima ni podacima koji nikada ne smiju napustiti Vaš vlastiti podatkovni centar"
+pullQuote: "Većina troškovnih iznenađenja u Snowflakeu su arhitektonske odluke koje nitko nije zapisao."
+mentions:
+  - "Snowflake"
+  - "Snowpark"
+  - "Snowflake Horizon Catalog"
+  - "Snowflake Open Catalog"
+  - "Apache Polaris"
+  - "Apache Iceberg"
+  - "Snowflake Postgres"
+  - "Snowflake Marketplace"
+  - "Tri-Secret Secure"
+  - "Amazon Web Services"
+  - "Microsoft Azure"
+  - "Google Cloud"
+originalUrl: "https://noeldcosta.com/snowflake-architecture-explained/"
+canonicalUrl: "https://noeldcosta.com/hr/snowflake-architecture-explained/"
+locale: "hr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Arhitektura Snowflakea dijeli podatkovnu platformu na tri sloja koji se skaliraju neovisno: pohranu, compute (koji se zove virtualna skladišta) i sloj cloud servicesa koji sve koordinira. Tvrtke koriste Snowflake kao cloud skladište podataka za izvještavanje i analitiku, a sve više i kao mjesto za dijeljenje podataka, izvođenje Pythona i izgradnju AI-ja nad upravljanim podacima.
+
+Taj jedan dizajnerski izbor, odvajanje pohrane i computea, objašnjava većinu onoga što Snowflake radi dobro i većinu onoga što stoji.
+
+Radio sam sa Snowflakeom na programima podatkovnih platformi u proizvodnji i obrani. Obrazac koji često viđam: lideri ga kupe zbog analitike, a zatim otkriju da arhitektonske odluke (koliko skladišta, koje izdanje, gdje žive podaci) određuju račun i položaj u pogledu usklađenosti. Ovaj vodič namijenjen je CIO-u, CDO-u ili arhitektu koji mora razumjeti te odluke prije potpisivanja.
+
+## Što je Snowflake, u jednom odlomku
+
+Snowflake je potpuno upravljana podatkovna platforma koja radi na Amazon Web Servicesu, Microsoft Azureu i Google Cloudu. Ne instalirate ga, ne zakrpavate ga i ne podešavate indekse. Učitavate podatke, pišete SQL (ili Python) i zasebno plaćate pohranu i compute.
+
+Snowflake svoj dizajn opisuje kao hibrid arhitektura shared-disk i shared-nothing: jedno središnje spremište podataka nad kojim upite izvode neovisni računalni klasteri. Jedna je činjenica rano važna za kupce iz obrane: prema Snowflakeovom vlastitom [vodiču kroz ključne koncepte i arhitekturu](https://docs.snowflake.com/en/user-guide/intro-key-concepts), ne može se instalirati na lokalnu ili privatnu cloud infrastrukturu.
+
+## Tri sloja arhitekture Snowflakea
+
+Evo slojeva, odozdo prema gore.
+
+<explainer-layers title="Arhitektura Snowflakea, sloj po sloj" caption="Pohrana i compute skaliraju se i naplaćuju zasebno. Cloud services sve drži na okupu." layers="Cloud services => Sigurnost, kontrola pristupa, metapodaci, optimizacija upita i transakcije|Compute => Virtualna skladišta: neovisni klasteri koji izvode SQL i Python, naplaćuju se u kreditima dok rade|Pohrana => Komprimirane stupčane mikroparticije u cloud pohrani objekata, naplaćuju se po terabajtu" tones="accent|data|"></explainer-layers>
+
+### Pohrana
+
+Kada učitate podatke, Snowflake ih reorganizira u komprimirani stupčani format i pohranjuje u cloud pohranu objekata. Svaku tablicu dijeli na mikroparticije, od kojih svaka sadrži između 50 MB i 500 MB nekomprimiranih podataka. Snowflake za svaku bilježi metapodatke, kao što je raspon vrijednosti u svakom stupcu.
+
+Ti metapodaci su pametni dio. Upit filtriran na proizvodne naloge iz prošlog mjeseca preskače svaku mikroparticiju čiji se raspon datuma ne može poklopiti.
+
+To se zove pruning i razlog je zašto Snowflake dobro radi bez indeksa. Znači i da način na koji podaci stižu (sortirani po datumu ili pogonu, ili nasumično) utječe na trošak kod vrlo velikih tablica.
+
+### Compute: virtualna skladišta
+
+Virtualno skladište računalni je klaster koji izvodi upite i kod. Svako je neovisno. Vaši financijski izvještaji na kraju mjeseca mogu se izvoditi na jednom skladištu dok podatkovna znanost izvodi zahtjevne poslove na drugom, i nijedno ne usporava drugo.
+
+Skladišta dolaze u veličinama poput majica i troše kredite samo dok rade. Mogu se automatski suspendirati kada miruju. Veće veličine ubrzavaju pojedinačne zahtjevne upite.
+
+Više klastera opslužuje više korisnika istodobno, i to rade multi-cluster skladišta: u izdanju Enterprise i višima skladište može automatski dodavati klastere kada upiti počnu čekati u redu, a zatim ih ukloniti kada opterećenje padne. Snowflake izričito navodi da multi-cluster pomaže istodobnosti, a ne jednom sporom upitu. Za to povećavate veličinu.
+
+Moj vodič kroz cijene o [Snowflake kreditima i onome što pokreće račun](/hr/snowflake-pricing-credits-explained/) detaljno pokriva troškovnu stranu.
+
+### Cloud services
+
+Gornji sloj obrađuje autentikaciju, kontrolu pristupa, metapodatke, optimizaciju upita i transakcije. Time Travel i kloniranje uglavnom su operacije nad metapodacima, pa ih ovaj sloj omogućuje. Rijetko razmišljate o njemu, i upravo je to poanta.
+
+## Funkcionalnosti koje proizlaze iz arhitekture
+
+Zanimljive funkcionalnosti nisu naknadni dodaci. Proizlaze iz dizajna pohrane i metapodataka.
+
+1. **Time Travel.** Možete postavljati upite, klonirati ili vratiti podatke kakvi su bili u nekom trenutku u prošlosti. Izdanje Standard čuva 1 dan. Enterprise i viša izdanja mogu čuvati do 90 dana za trajne tablice, kako je navedeno u [dokumentaciji o Time Travelu](https://docs.snowflake.com/en/user-guide/data-time-travel).
+2. **Fail-safe.** Nakon isteka Time Travela podaci trajnih tablica prelaze u razdoblje Fail-safe od 7 dana. Samo ih Snowflake može oporaviti. Tretirajte to kao oporavak od katastrofe, a ne kao sigurnosnu kopiju koju kontrolirate.
+3. **Zero-copy kloniranje.** Klon tablice, sheme ili baze podataka pri izradi ne koristi dodatnu pohranu, jer pokazuje na iste mikroparticije. Plaćate samo podatke koji se nakon toga promijene. Tako timovi za nekoliko minuta podignu testna okruženja pune veličine.
+4. **Sigurno dijeljenje podataka.** Pružatelj dijeli žive tablice s drugim Snowflake računom i ne kopiraju se nikakvi podaci. Korisnik plaća samo compute koji koristi za upite. Izravna dijeljenja rade unutar jedne regije; međuregionalno dijeljenje ide kroz listinge s automatskim ispunjavanjem.
+5. **Snowflake Marketplace.** Listinzi Vam omogućuju objavljivanje podatkovnih proizvoda određenim partnerima ili javno, uključujući podatke trećih strana kao što su vremenski podaci ili tržišni indeksi.
+6. **Snowpark.** Biblioteke za Python, Javu i Scalu koje obradu guraju u Snowflake umjesto da izvlače podatke van. Snowpark Container Services, koji pokreće kontejnerizirane aplikacije uz podatke, općenito je dostupan na sva tri clouda u komercijalnim regijama.
+
+Za proizvođača se sigurno dijeljenje podataka isplati isprobati u pilotu. Budite realni u pogledu polazišta: većina razmjene podataka s dobavljačima koju viđam i dalje se odvija prijenosom datoteka.
+
+Dijeljenje upravljane tablice čišće je i možete ga opozvati. Počnite s jednim dobavljačem i jednim skupom podataka i dokažite to prije nego što planirate više.
+
+## Iceberg, katalozi, hibridne tablice i Postgres: kamo je Snowflake otišao
+
+Snowflake je nekada značio „Vaši podaci u Snowflakeovom formatu”. To se promijenilo, a promijenili su se i nazivi. Trenutačno stanje, listopad 2026.:
+
+| Mogućnost | Što radi | Status (listopad 2026.) |
+|---|---|---|
+| Apache Iceberg tablice | Podaci pohranjeni u otvorenom formatu Iceberg, u Vašoj cloud pohrani ili Snowflakeovoj | GA od lipnja 2024.; opcija pohrane kojom upravlja Snowflake GA u lipnju 2026. (komercijalni AWS i Azure) |
+| Snowflake Horizon Catalog | Upravljanje i katalog izgrađeni na Apache Polarisu; vanjski engineovi čitaju Iceberg tablice kojima upravlja Snowflake putem Iceberg REST API-ja | Preporučeno za nove korisnike |
+| Snowflake Open Catalog | Upravljana usluga Apache Polaris (ranije Polaris Catalog) | GA, ali zatvoreno za nove korisnike; postojeći korisnici mogu nastaviti |
+| Hibridne tablice (Unistore) | Tablice temeljene na recima za transakcijska dohvaćanja s malim kašnjenjem uz analitiku | GA samo u komercijalnim AWS i Azure regijama |
+| Snowflake Postgres | Potpuno upravljani PostgreSQL unutar Snowflake platforme | GA od 24. veljače 2026., na AWS-u i Azureu |
+
+Praktična posljedica: Iceberg tablice omogućuju Sparku, Databricksu ili drugim engineovima da rade na istim datotekama nad kojima Snowflake izvodi upite, što smanjuje vezanost uz dobavljača. Snowflakeov [pregled Open Cataloga](https://docs.snowflake.com/en/user-guide/opencatalog/overview) sada novim korisnicima kaže da umjesto njega koriste Horizon Catalog.
+
+Pročitajte ograničenja hibridnih tablica prije nego što ih itko predstavi kao operativnu bazu podataka. Svaka baza podataka ograničena je na 2 TB podataka u hibridnim tablicama, a one ne podržavaju Fail-safe, dijeljenje podataka, replikaciju ni streams. Dobre su za tablicu dohvaćanja u aplikaciji.
+
+Nisu operativna baza podataka. Ako aplikaciji treba takva baza uz analitiku, [Snowflake Postgres postao je općenito dostupan](https://docs.snowflake.com/en/release-notes/2026/other/2026-02-24-snowflake-postgres-ga) u veljači 2026. i iskreniji je izbor.
+
+## Izdanja i sigurnost za regulirane industrije
+
+Snowflake prodaje četiri izdanja: Standard, Enterprise, Business Critical i Virtual Private Snowflake (VPS). Izdanje određuje koje sigurnosne funkcionalnosti dobivate, a cijena kredita raste s njim.
+
+| Funkcionalnost | Standard | Enterprise | Business Critical | VPS |
+|---|---|---|---|---|
+| Time Travel | 1 dan | Do 90 dana | Do 90 dana | Do 90 dana |
+| Multi-cluster skladišta | Ne | Da | Da | Da |
+| Tri-Secret Secure (ključ kojim upravlja korisnik) | Ne | Ne | Da | Da |
+| Privatna povezanost (AWS PrivateLink, Azure Private Link, Google Private Service Connect) | Ne | Ne | Da | Da |
+| Podrška za HIPAA i PCI DSS | Ne | Ne | Da | Da |
+| Namjensko okruženje, bez dijeljenog hardvera | Ne | Ne | Ne | Da |
+
+Tri-Secret Secure kombinira Snowflakeov ključ s ključem koji držite u usluzi za upravljanje ključevima svog cloud pružatelja. Opozovete li svoj ključ, Snowflake više ne može dešifrirati Vaše podatke. Za dobavljače u obrani i zrakoplovstvu ta je kontrola važnija od bilo koje analitičke funkcionalnosti.
+
+Za rad za američku vladu Snowflake održava SnowGov regije na AWS GovCloudu i Azure Governmentu, otvorene za korisnike i ugovaratelje američke vlade. Snowflakeova [stranica s podržanim regijama](https://docs.snowflake.com/en/user-guide/intro-regions) navodi podršku za FedRAMP High, Impact Level 4 i ITAR u tim regijama, Impact Level 5 u jednoj AWS regiji, i zahtijeva izdanje Business Critical ili više. Provjerite dostupnost funkcionalnosti regiju po regiju: Open Catalog, hibridne tablice i dijelovi Snowpark Container Servicesa nisu dostupni u svim državnim regijama.
+
+U programima u obrani na kojima sam radio, prvo pitanje nikada nije „koliko je brz”. Pitanje je „gdje se podaci nalaze, tko ih može vidjeti i možemo li to dokazati revizoru”. Snowflake na to dobro odgovara u pravoj regiji i izdanju.
+
+Ne može odgovoriti za podatke koji moraju ostati u Vašoj vlastitoj zgradi. Klasificirana radna opterećenja ili radna opterećenja pod kontrolom izvoza koja zahtijevaju obradu on-premise trebaju drugu platformu, a Snowflake može pokriti neklasificirani dio.
+
+## Čemu Snowflake služi, a za što nije idealan
+
+Većina onoga što viđam spada u nekoliko obrazaca.
+
+1. **Poslovno izvještavanje i BI.** Financijsko, prodajno i operativno izvještavanje iz ERP podataka (SAP, Oracle ili Microsoft Dynamics 365), s Power BI-jem, Tableauom ili sličnim alatom povrh toga. To je i dalje temeljna upotreba. Moj vodič o tome [kako ERP podatke dovesti u Snowflake](/hr/erp-data-into-snowflake/) pokriva opcije izvoza.
+2. **Podaci o proizvodnim operacijama.** Podaci iz pogona i operacija koje sam vidio učitane u Snowflake su podaci o planiranju proizvodnje. Podaci iz historiana, MES-a, kvalitete i održavanja mogu stajati uz njih, a polustrukturirani senzorski podaci u JSON-u učitavaju se izvorno.
+3. **Dijeljenje podataka s partnerima.** Dobavljači, distributeri i kupci mogu izravno postavljati upite nad upravljanim tablicama. U praksi se većina razmjene s dobavljačima koju viđam i dalje odvija prijenosom datoteka.
+4. **Podatkovna znanost i AI nad upravljanim podacima.** Python putem Snowparka i Snowflakeove AI usluge, koje pokrivam u svom tekstu o [Snowflake Cortex AI i Snowflake Intelligence](/hr/snowflake-cortex-ai-snowflake-intelligence/).
+5. **Konsolidacija nakon akvizicija.** Nekoliko ERP sustava, jedan izvještajni sloj, s kloniranjem za sigurna testna okruženja.
+
+Gdje bih oklijevao:
+
+1. **Transakcijski sustavi velikog volumena.** Hibridne tablice i Snowflake Postgres pomažu, ali transakcije Vašeg ERP-a i MES-a pripadaju u vlastite baze podataka.
+2. **Upravljanje strojevima u stvarnom vremenu.** Snowflake odgovara minutama, a ne milisekundama. Unos streaming senzorskih podataka je u redu. Zatvaranje upravljačke petlje nije.
+3. **Strogi zahtjevi za on-premise.** Instalacija on-premise ne postoji.
+4. **Zahtjevno prilagođeno strojno učenje i podatkovni inženjering u Sparku.** Može se, ali mnogi timovi smatraju Databricks prirodnijim. Moja [usporedba Snowflake vs Databricks](/hr/snowflake-vs-databricks/) prolazi kroz taj izbor.
+
+### Snowflake shema nasuprot zvjezdastoj shemi: nešto drugo
+
+Ljudi koji traže Snowflake često završe na „snowflake shemi”. Ona nema nikakve veze s proizvodom. Snowflake shema obrazac je modeliranja podataka u kojem su tablice dimenzija normalizirane u podtablice, pa se dijagram grana poput pahuljice.
+
+Zvjezdasta shema (star schema) drži svaku dimenziju u jednoj ravnoj tablici. Bilo koji od ta dva modela možete izgraditi u Snowflakeu ili u bilo kojem drugom skladištu podataka. Većina BI timova preferira zvjezdaste sheme zbog jednostavnijih upita.
+
+## Odakle bih počeo
+
+Prije potpisivanja zapišite četiri odluke: koje Vam izdanje treba za Vaš položaj u pogledu usklađenosti, koji cloud i regija, kako ćete podijeliti radna opterećenja po skladištima i ostaju li Vaši podaci u Snowflakeovom formatu ili u Icebergu. Zatražite od dobavljača i svog sistemskog integratora da prikažu procjenu kredita po skladištu, a ne jedan godišnji iznos. Većina troškovnih iznenađenja u Snowflakeu su arhitektonske odluke koje nitko nije zapisao.
+
+Ako su ERP podaci u opsegu, najprije pročitajte [zašto migracija SAP podataka propada](/hr/why-sap-data-migration-fails-and-how-to-fix-it/); isti problemi s kvalitetom podataka prate Vas na svaku platformu. Ako želite drugo mišljenje o odluci vezanoj uz Snowflake, [javite se](/hr/contact-noel-erp-support/).
+
+## Često postavljana pitanja
+
+<details>
+<summary>Čemu služi Snowflake?</summary>
+
+Uglavnom kao cloud skladište podataka za izvještavanje i analitiku nad poslovnim podacima kao što su ERP, CRM i operativni podaci. Tvrtke ga koriste i za dijeljenje živih podataka s partnerima, za podatkovnu znanost u Pythonu putem Snowparka i za izgradnju AI aplikacija nad upravljanim podacima.
+
+</details>
+
+<details>
+<summary>Koja su tri sloja arhitekture Snowflakea?</summary>
+
+Pohrana, compute i cloud services. Pohrana drži podatke u komprimiranim stupčanim mikroparticijama. Compute čine virtualna skladišta koja izvode upite. Cloud services obrađuje sigurnost, metapodatke, optimizaciju upita i transakcije. Pohrana i compute skaliraju se i naplaćuju zasebno.
+
+</details>
+
+<details>
+<summary>Je li Snowflake baza podataka ili skladište podataka?</summary>
+
+Oboje, ovisno o definiciji. To je SQL baza podataka izgrađena za analitička radna opterećenja, zbog čega se obično naziva cloud skladištem podataka. S Iceberg tablicama, hibridnim tablicama i Snowflake Postgresom sada pokriva i lakehouse i neke transakcijske slučajeve upotrebe, unutar ograničenja.
+
+</details>
+
+<details>
+<summary>Može li Snowflake raditi on-premise?</summary>
+
+Ne može. Snowflake radi samo na AWS-u, Microsoft Azureu i Google Cloudu. Za radna opterećenja američke vlade i obrane nudi SnowGov regije na AWS GovCloudu i Azure Governmentu, koje zahtijevaju izdanje Business Critical ili više.
+
+</details>
+
+<details>
+<summary>Je li snowflake shema povezana s tvrtkom Snowflake?</summary>
+
+Nije. Snowflake shema obrazac je modeliranja podataka s normaliziranim tablicama dimenzija. Starija je od tvrtke i funkcionira u bilo kojem skladištu podataka.
+
+</details>
+
+<details>
+<summary>Koje izdanje Snowflakea trebaju regulirane tvrtke?</summary>
+
+Obično Business Critical. Dodaje Tri-Secret Secure s ključem kojim upravlja korisnik, privatnu povezanost te podršku za HIPAA i PCI DSS, a minimum je za državne regije. Virtual Private Snowflake dodaje namjensko okruženje bez dijeljenog hardvera.
+
+</details>

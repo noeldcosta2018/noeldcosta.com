@@ -1,0 +1,230 @@
+---
+title: "Databricks vs Microsoft Fabric: vodič za odluku"
+h1: "Databricks vs Microsoft Fabric: vodič za odluku"
+slug: "databricks-vs-microsoft-fabric"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/databricks-vs-microsoft-fabric.webp"
+heroAlt: "Noel D'Costa u svijetlom uredu pokraj staklene sobe za sastanke sa skicom podatkovne arhitekture na ploči"
+category: "data-and-ai"
+tags: ["databricks", "microsoft-fabric", "data-platform-cost"]
+author: "Noel D'Costa"
+metaTitle: "Databricks vs Microsoft Fabric: koji odabrati, a kada oba"
+metaDescription: "Databricks vs Microsoft Fabric za organizacije oslonjene na Microsoft: arhitektura, cjenik, Power BI, upravljanje, AI i državni cloud, uz pravila za odluku."
+primaryKeyword: "Databricks vs Microsoft Fabric"
+excerpt: "Fabric je brži put za Microsoft organizaciju čiji je glavni izlaz Power BI. Databricks je jača platforma za inženjering i ML. Mnoge organizacije na kraju koriste oba, i to može biti pravi odgovor ako ga namjerno dizajnirate."
+experienceSource: "Noel's first-person experience with Databricks on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts and prices checked against official Microsoft Learn, Azure pricing and Databricks documentation, October 2026."
+keyTakeaways:
+  - "Fabric je kapacitet koji kupujete i dijelite. Databricks je potrošnja koju mjerite po radnom opterećenju. Ta razlika uzrokuje većinu troškovnih iznenađenja."
+  - "Odaberite Fabric kada je Power BI glavni korisnik, a tim prije svega radi u SQL-u i Power BI-ju."
+  - "Odaberite Databricks kada su zahtjevan inženjering, streaming, ML ili više cloudova važniji od praktičnosti BI-ja."
+  - "Korištenje obaju je uobičajeno i izvedivo: Azure Databricks za inženjering, Fabric za Power BI putem mirroringa i Direct Lakea."
+  - "Mirroring ne prenosi Unity Catalog dozvole u Fabric. Planirajte dva sigurnosna modela ili jednu namjernu predaju."
+  - "U američkim državnim cloudovima obje platforme danas imaju stvarne praznine. Provjerite popise funkcionalnosti prije nego što išta dizajnirate."
+pullQuote: "Rijetko zakaže platforma. Zakaže operativni model između dviju platformi."
+mentions:
+  - "Databricks"
+  - "Azure Databricks"
+  - "Microsoft Fabric"
+  - "OneLake"
+  - "Unity Catalog"
+  - "Power BI"
+  - "Direct Lake"
+  - "Microsoft Purview"
+  - "Genie"
+  - "Agent Bricks"
+  - "Copilot in Fabric"
+  - "Azure Government"
+originalUrl: "https://noeldcosta.com/databricks-vs-microsoft-fabric/"
+canonicalUrl: "https://noeldcosta.com/hr/databricks-vs-microsoft-fabric/"
+locale: "hr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Odluka Databricks vs Microsoft Fabric svodi se na to tko koristi podatke. Ako većina završava u Power BI-ju, a Vaš tim razmišlja u SQL-u, Fabric je obično brži i jednostavniji izbor. Ako su Vaši teški problemi inženjering, streaming, strojno učenje ili više od jednog clouda, Databricks je jača platforma.
+
+Za mnoge organizacije snažno oslonjene na Microsoft iskren odgovor glasi: oba. Azure Databricks obavlja zahtjevan inženjering.
+
+Fabric i Power BI služe poslovanju. To funkcionira, ali samo ako namjerno dizajnirate spoj između njih.
+
+U programima u proizvodnji i obrani na kojima sam radio, odluka se rijetko svodi na popise funkcionalnosti. Svodi se na model troškova, vještine, sigurnosne granice i to gdje podaci smiju biti.
+
+## Kako su dvije platforme izgrađene
+
+Obje su lakehouse platforme na otvorenim formatima tablica. Razlikuju se po tome tko posjeduje pohranu i kako plaćate compute.
+
+**Microsoft Fabric** je SaaS platforma. Sve završava u OneLakeu, jednom logičkom lakeu po tenantu, s tablicama pohranjenima u formatu Delta. Lakehouse, warehouse, pipelines, Real-Time Intelligence i Power BI crpe iz jednog zajedničkog kapaciteta.
+
+Shortcuts pokazuju na podatke u drugim spremištima bez kopiranja. Mirroring dovodi baze podataka i vanjske kataloge.
+
+**Databricks** radi na Vašem cloud računu (na Azureu kao Azure Databricks, Microsoftova first-party usluga). Vaši podaci nalaze se u Vašoj vlastitoj pohrani, pod upravljanjem Unity Cataloga. Compute čine klasteri, SQL skladišta ili serverless, a mjeri se po radnom opterećenju u Databricks Units (DBUs).
+
+Što se otvorenosti tiče, jaz se suzio. OneLake virtualizira metapodatke tako da se Delta tablica može čitati kao Iceberg, a Iceberg tablica kao Delta. Postoje stvarna ograničenja: samo Parquet, izlaz u Iceberg V2, a equality deletes prekidaju konverziju.
+
+Unity Catalog upravljane Iceberg tablice općenito su dostupne, a vanjski engineovi čitaju i pišu kroz Iceberg REST Catalog API Unity Cataloga. Nijedna platforma ne zaključava Vaše podatke u vlasnički format. Obje zaključavaju Vaše cjevovode, sigurnosni model i vještine, i tu se zapravo nalazi trošak prelaska.
+
+Za Microsoft organizaciju najvažniji je most između njih. Fabric može [zrcaliti Azure Databricks Unity Catalog](https://learn.microsoft.com/en-us/fabric/mirroring/azure-databricks) kao stavku kataloga, i to je općenito dostupno. Zrcale se samo metapodaci.
+
+Podaci se čitaju na mjestu putem shortcuts. Jedna kvaka: Unity Catalog dozvole se ne prenose. Fabric primjenjuje vlastiti model dozvola.
+
+## Cijene Databricksa i Fabrica: kapacitet nasuprot potrošnji
+
+**Fabric** prodaje kapacitet u F-SKU-ovima, od F2 do F8192, mjeren u jedinicama kapaciteta (CU). Azure ga naplaćuje po sekundi bez obveze, ili ga rezervirate na godinu dana. U regiji East US cjenička cijena pay-as-you-go iznosi $0,18 po CU-satu.
+
+To znači da F64 stoji oko $11,52 na sat, otprilike $8.400 mjesečno ako ostane uključen. Microsoft navodi da rezervacija štedi oko 41 % u odnosu na pay-as-you-go.
+
+OneLake hot pohrana prema cjeniku stoji $0,026 po GB mjesečno. Pogledajte [stranicu s cijenama Microsoft Fabrica](https://azure.microsoft.com/en-us/pricing/details/microsoft-fabric/).
+
+F64 je ujedno i licencni prag. Prema [dokumentaciji o licenciranju Fabrica](https://learn.microsoft.com/en-us/fabric/enterprise/licenses), ispod F64 svaka osoba koja pregledava Power BI sadržaj treba licencu Pro ili Premium Per User.
+
+Na F64 i više, korisnici s besplatnom licencom i ulogom preglednika mogu čitati izvještaje. Kod nekoliko stotina čitatelja izvještaja samo to može odlučiti o SKU-u.
+
+**Azure Databricks** naplaćuje DBU-ove po vrsti radnog opterećenja, plus Azure virtualne strojeve ispod za klasični compute. Serverless cijene uključuju compute.
+
+Cjeničke cijene za East US Premium navedene su u nastavku. Pogledajte [stranicu s cijenama Azure Databricksa](https://azure.microsoft.com/en-us/pricing/details/databricks/).
+
+1. Jobs compute: $0,30 po DBU-satu.
+2. All-purpose compute (interaktivne bilježnice): $0,55 po DBU-satu.
+3. SQL Pro: $0,55 po DBU-satu. Serverless SQL: $0,70 po DBU-satu.
+4. Serverless jobs: $0,45 po DBU-satu. Serverless interaktivni compute: $0,95 po DBU-satu.
+
+Svi iznosi su cjeničke cijene, provjerene u listopadu 2026., za East US. Druge regije se razlikuju.
+
+Enterprise ugovori, Databricksove obveze unaprijed kupljene potrošnje i Azure rezervacije mijenjaju stvarni broj. Moj [vodič kroz cijene Databricksa](/hr/databricks-pricing-explained/) ide dublje u DBU-ove.
+
+Što to znači u praksi:
+
+1. **Fabric je predvidljiv, ali dijeljen.** Jedan zahtjevan Spark posao može usporiti Power BI izvještaje na istom kapacitetu. Netko mora upravljati kapacitetom kao dijeljenim poslužiteljem.
+2. **Databricks je granularan, ali propušta.** Svako radno opterećenje stoji točno onoliko koliko troši. Klasteri ostavljeni uključeni, predimenzionirana skladišta i all-purpose compute korišten za zakazane poslove uobičajena su curenja.
+3. **Usporedite ukupni trošak na stvarnim radnim opterećenjima.** Izračunajte cijenu svojih deset glavnih cjevovoda i najprometnijeg sata izvještavanja na obje platforme. Proračunska tablica cjeničkih cijena ne dokazuje ništa.
+
+## Usporedba jedno uz drugo
+
+Tablica pokriva točke koje obično odlučuju za organizaciju snažno oslonjenu na Microsoft.
+
+| Kriterij | Microsoft Fabric | Databricks (Azure Databricks) |
+|---|---|---|
+| Model isporuke | SaaS, jedan OneLake za cijeli tenant | Platforma na Vašem cloud računu i pohrani |
+| Cijene | F-SKU kapacitet, pay-as-you-go ili rezerviran | DBU-ovi po radnom opterećenju, plus VM-ovi za klasični compute |
+| Dubina podatkovnog inženjeringa | Dobar za SQL, pipelines, Dataflows i Spark bilježnice | Dublji: podešavanje Sparka, streaming, deklarativni cjevovodi, CI/CD |
+| ML i GenAI | Copilot in Fabric, Fabric data agents (GA), ML modeli i eksperimenti | Model serving, MLflow, Genie, Agent Bricks |
+| Power BI | Izvorno; Direct Lake na OneLakeu | Putem mirroringa u Fabric, ili DirectQuery i Import |
+| Upravljanje | Fabric dozvole, OneLake security, Purview, oznake osjetljivosti | Unity Catalog; Purview ga može skenirati |
+| Više cloudova | Samo Azure | Azure, AWS i Google Cloud |
+| Usklađenost s vještinama | Power BI, SQL i Microsoft podatkovni timovi | Podatkovni inženjeri, Python i Spark, ML inženjeri |
+
+**Power BI i Direct Lake.** Direct Lake omogućuje Power BI semantičkom modelu da Delta tablice iz OneLakea čita izravno u memoriju, bez osvježavanja importa. To je najjači razlog za korištenje Fabrica.
+
+Potreban mu je Fabric kapacitet, a ograničenja tablica rastu sa SKU-om. Zrcaljeni Azure Databricks katalog podržani je izvor za Direct Lake, pa gold tablice izgrađene u Databricksu mogu napajati Direct Lake izvještaje.
+
+**ML i GenAI.** Fabric data agents, koji odgovaraju na pitanja postavljena običnim jezikom nad podacima u OneLakeu, općenito su dostupni. Neke integracije, kao što je njihovo korištenje iz Microsoft 365 Copilota, još su u preview fazi. Copilot in Fabric treba plaćeni kapacitet F2 ili veći i troši iz njega.
+
+Na Databricksu Genie omogućuje poslovnim korisnicima da običnim jezikom postavljaju upite nad upravljanim tablicama. Agent Bricks je platforma za izgradnju i implementaciju prilagođenih agenata u kodu.
+
+Databricks sada Knowledge Assistant i Supervisor Agent navodi kao naslijeđene (legacy) i novi low-code rad usmjerava na Genie Agents. Moj [članak o Genieju i Agent Bricksu](/hr/databricks-genie-agent-bricks/) to detaljno pokriva.
+
+**Upravljanje.** Unity Catalog zreliji je jedinstveni kontrolni sloj za tablice, modele, lineage i detaljan pristup preko radnih prostora i cloudova. Upravljanje u Fabricu brzo napreduje.
+
+U Microsoft okruženju Purview je često već poslovni katalog i može skenirati metapodatke i lineage Unity Cataloga. Moj [vodič kroz upravljanje Unity Catalogom](/hr/databricks-unity-catalog-data-governance/) pokriva Databricks stranu.
+
+## Obrazac „koristite oba”, iskreno
+
+Većina organizacija snažno oslonjenih na Microsoft koje viđam ne bira jedno. Koriste Azure Databricks za unos, inženjering i ML, a zatim pripremljene tablice izlažu Fabricu za Power BI. Uz mirroring kataloga i Direct Lake taj je obrazac sada dobro podržan.
+
+Funkcionira kada su ispunjena tri uvjeta:
+
+1. **Jedna platforma posjeduje svaki sloj.** Databricks posjeduje sve od bronzea do golda. Fabric posjeduje semantičke modele i izvještaje. Nitko ne gradi istu tablicu na oba mjesta.
+2. **Sigurnost se dizajnira dvaput, i to jednom.** Mirroring ne kopira Unity Catalog dozvole. Odlučite tko posjeduje pravila na razini retka i stupca u Fabricu i dokumentirajte mapiranje.
+3. **Netko posjeduje račun za oba.** DBU-ovi i kapacitet nalaze se na različitim troškovnim stavkama. Bez jednog vlasnika svaki tim optimizira svoju platformu, a ukupni iznos raste.
+
+Ne funkcionira kada Fabric potajno postane druga inženjerska platforma i završite s dva gold sloja koja se ne slažu. Gdje sam vidio da „koristite oba” krene po zlu, svodilo se na dvije stvari: integracija između platformi nije bila dobra i nitko nije znao koja platforma posjeduje podatke. Radije bih postavio pravilo prvog dana nego ga kasnije raspetljavao.
+
+Za ERP podatke (SAP, Oracle ili Microsoft Dynamics 365) vrijedi ista logika. Učitajte ih i modelirajte jednom, na jednom mjestu. Moje bilješke o [modernizaciji ERP-a i clean coreu](/hr/erp-modernization-2025-cloud-ai-clean-core/) objašnjavaju zašto je ERP strana jednako važna kao i platforma.
+
+## Razmatranja za obranu i proizvodnju
+
+**Proizvodnja.** Podaci iz pogona su test opterećenja. Feedovi iz historiana i MES-a, senzorski tokovi visoke frekvencije, zapisi kvalitete i održavanja spojeni s ERP-om. Fabricov Real-Time Intelligence (eventstreams i eventhouses) dobro se nosi s operativnim nadzornim pločama.
+
+Za streaming inženjering velikih razmjera, cjevovode značajki za prediktivno održavanje i ML na senzorskim podacima koristim Databricks. Streaming i strojno učenje na senzorskim i strojnim podacima mjesto je gdje u mom radu opravdava svoje mjesto.
+
+**Obrana.** Suverenost i odvajanje dolaze na prvo mjesto. Klasificirana i neklasificirana okruženja ostaju odvojena. Podaci pod kontrolom izvoza (ITAR kao kategorija) zahtijevaju strogu kontrolu pristupa i reviziju.
+
+Programi traju desetljećima. Ovdje provjerite dostupnost prije nego što išta dizajnirate, jer državni cloudovi zaostaju za komercijalnim Azureom.
+
+1. **Fabric u GCC High.** Prema [Microsoft Learnu](https://learn.microsoft.com/en-us/fabric/enterprise/us-government-community-cloud-high), provjereno u listopadu 2026., Fabric radi u regijama US Gov Virginia i US Gov Texas. Temeljna radna opterećenja su dostupna, uključujući lakehouse, warehouse, pipelines i Power BI s Direct Lakeom. Ključevi kojima upravlja korisnik, većina izvora za mirroring, Private Link za radni prostor i Copilot for Power BI nisu podržani. FedRAMP High autorizacija za GCC High još je u procjeni.
+2. **Azure Databricks u Azure Governmentu.** Prema [popisu regionalnih funkcionalnosti Azure Databricksa](https://learn.microsoft.com/en-us/azure/databricks/resources/feature-region-support), ažuriranom 1. listopada 2026., US Gov regije ne podržavaju Databricks SQL ni Unity Catalog. Nedostaju im i serverless i novije AI funkcionalnosti. Databricks je najavio planove da cijelu platformu dovede u Azure Government. Potvrdite što je aktivno u Vašoj regiji na dan kada odlučujete.
+
+Izvan SAD-a vrijedi ista disciplina. Provjerite regionalne tablice za točnu Azure regiju za koju ste vezani. Nekoliko Databricks serverless i AI funkcionalnosti u nekim regijama zahtijeva obradu izvan geografije, što za suverene podatke može biti neprihvatljivo.
+
+## Pravila za odluku: Fabric, Databricks ili oba
+
+**Odaberite Fabric kada:**
+
+1. Power BI je glavni korisnik i želite Direct Lake.
+2. Vaš tim prije svega radi u SQL-u, Power BI-ju i Microsoft alatima, s malo dubine u Sparku.
+3. Želite jedan račun za kapacitet i SaaS operacije, a ne platformski inženjering.
+4. Imate stotine čitatelja izvještaja i licenciranje na F64 čini da se brojke slažu.
+
+**Odaberite Databricks kada:**
+
+1. Teški dio je podatkovni inženjering, streaming ili ML, a ne izvještavanje.
+2. Radite na više od jednog clouda ili to očekujete.
+3. Trebate Unity Catalog kao jedan sloj upravljanja preko mnogo radnih prostora.
+4. Trebate strogu kontrolu troškova po radnom opterećenju i imate vještine da njome upravljate.
+
+**Odaberite oba kada** već dobro koristite Azure Databricks, a poslovanje živi u Power BI-ju. Zrcalite Unity Catalog u Fabric, koristite Direct Lake za izvještaje i zapišite tko posjeduje koji sloj.
+
+Ako već imate zrelu Databricks platformu, nemojte je migrirati u Fabric da biste uštedjeli na BI-ju. Za širi pogled pogledajte moju [usporedbu Snowflake vs Databricks](/hr/snowflake-vs-databricks/).
+
+## Što učiniti sljedeće
+
+Provedite dvotjedni test pod jednakim uvjetima na tri stvarna radna opterećenja: jednom zahtjevnom cjevovodu, jednom Power BI modelu za upravu i jednom ML ili AI slučaju upotrebe. Izmjerite trošak po izvođenju, kašnjenje osvježavanja i napor koji je Vašem timu trebao. Zatražite od dobavljača ili svog SI-ja da upravo taj skup izračunaju po Vašim ispregovaranim cijenama.
+
+Postavite svakom dobavljaču tri pitanja: što je GA, a što preview u mojoj regiji, što se događa s troškom kada se korištenje udvostruči i kako sigurnost funkcionira preko spoja.
+
+Ako želite neovisan pogled na odluku o platformi ili dizajn testa, pomažem organizacijama upravo u tome. Možete [rezervirati razgovor od 30 minuta](/hr/contact-noel-erp-support/).
+
+## Često postavljana pitanja
+
+<details>
+<summary>Zamjenjuje li Microsoft Fabric Azure Databricks?</summary>
+
+Ne. Azure Databricks ostaje first-party Azure usluga, a Microsoft dokumentira kako njih dvoje rade zajedno. Fabric može zrcaliti Azure Databricks Unity Catalog, što je općenito dostupno, pa Power BI može koristiti Databricks tablice kroz Direct Lake bez kopiranja podataka. Mnoge organizacije koriste oba.
+
+</details>
+
+<details>
+<summary>Je li Fabric jeftiniji od Databricksa?</summary>
+
+Ovisi o kombinaciji radnih opterećenja. Fabric je dijeljeni kapacitet (cjenička cijena za East US $0,18 po CU-satu, oko 41 % manje uz jednogodišnju rezervaciju). Databricks naplaćuje DBU-ove po radnom opterećenju, plus VM-ove za klasični compute. Izračunajte cijenu svojih glavnih radnih opterećenja na obje platforme.
+
+</details>
+
+<details>
+<summary>Može li Power BI koristiti Databricks podatke bez Fabrica?</summary>
+
+Može. Power BI se spaja na Databricks SQL skladišta u načinu Import ili DirectQuery. Direct Lake treba Fabric kapacitet, a zrcaljeni Azure Databricks katalog podržani je izvor za Direct Lake.
+
+</details>
+
+<details>
+<summary>Prenosi li se sigurnost Unity Cataloga u Fabric?</summary>
+
+Ne. Kada Fabric zrcali Azure Databricks katalog, zrcali metapodatke i čita podatke putem shortcuts. Pravila i dozvole Unity Cataloga ne zrcale se, pa se primjenjuje Fabricov vlastiti model dozvola. Dizajnirajte i dokumentirajte pravila pristupa na strani Fabrica.
+
+</details>
+
+<details>
+<summary>Je li Microsoft Fabric dostupan u Azure Governmentu?</summary>
+
+Fabric radi u okruženju GCC High u regijama US Gov Virginia i US Gov Texas, s užim skupom funkcionalnosti od komercijalnog Fabrica. Ključevi kojima upravlja korisnik, većina izvora za mirroring i Copilot for Power BI nisu podržani, prema Microsoft Learnu, listopad 2026. FedRAMP High za GCC High još je u procjeni. Provjerite aktualni popis prije planiranja.
+
+</details>
+
+<details>
+<summary>Što je bolje za strojno učenje, Databricks ili Fabric?</summary>
+
+Databricks ima dublje alate za ML i GenAI: MLflow, model serving, Genie i Agent Bricks za prilagođene agente. Fabric pokriva ML eksperimente i modele, data agents (GA) i Copilot, a njegovi data agents mogu se koristiti iz Microsoft Foundryja (u preview fazi). Ako je ML temeljna sposobnost, a ne dodatak, Databricks je obično jača osnova.
+
+</details>

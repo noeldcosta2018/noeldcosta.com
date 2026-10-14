@@ -1,0 +1,225 @@
+---
+title: "Snowflake vs Databricks：2026 年如何選擇"
+h1: "Snowflake vs Databricks：2026 年如何選擇"
+slug: "snowflake-vs-databricks"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/snowflake-vs-databricks.webp"
+heroAlt: "Noel D'Costa 在明亮的董事會議室裡，牆上兩個螢幕各顯示一個儀表板"
+category: "data-and-ai"
+tags: ["snowflake", "databricks", "data-platform-cost"]
+author: "Noel D'Costa"
+metaTitle: "Snowflake vs Databricks（2026）：誠實的決策指南"
+metaDescription: "2026 年的 Snowflake vs Databricks：架構、Iceberg 與 Delta、治理、credits 與 DBU、AI，以及適用於財務、製造業與國防的決策原則。"
+primaryKeyword: "Snowflake Databricks 比較"
+excerpt: "兩個平台現在都能做資料倉儲、資料工程、Postgres 與 AI 代理。選擇取決於您的工作從哪裡開始、由誰來營運，以及誰支付雲端帳單。以下是我會如何決定。"
+experienceSource: "Noel's first-person experience with Databricks and Snowflake on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts and prices checked against official Snowflake and Databricks documentation, October 2026."
+keyTakeaways:
+  - "Snowflake 從 SQL 與託管式資料倉儲出發；Databricks 從 Spark、資料工程與機器學習出發"
+  - "到了 2026 年，兩者都能執行 SQL warehouse、託管 Postgres、Iceberg 資料表與 AI 代理，所以功能清單已不再是決定因素"
+  - "Snowflake 把運算包進 credits；Databricks 的傳統運算則把帳單拆成 DBU 與您自己的雲端帳戶兩部分"
+  - "以 BI 為主的財務團隊通常會選 Snowflake；感測器資料多的製造業與 ML 團隊通常會選 Databricks"
+  - "兩者並用很常見。請議定以開放資料表格式只保存一份資料，否則儲存與管線都要付兩次錢"
+pullQuote: "功能上的差距已經消失，營運模式上的差距還在。"
+mentions:
+  - "Snowflake"
+  - "Databricks"
+  - "Snowflake Horizon Catalog"
+  - "Unity Catalog"
+  - "Apache Iceberg"
+  - "Delta Lake"
+  - "Snowflake Intelligence"
+  - "Snowflake Openflow"
+  - "Snowflake Postgres"
+  - "Databricks Lakebase"
+  - "Agent Bricks"
+  - "Genie One"
+originalUrl: "https://noeldcosta.com/snowflake-vs-databricks/"
+canonicalUrl: "https://noeldcosta.com/zh-TW/snowflake-vs-databricks/"
+locale: "zh-TW"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Snowflake 與 Databricks 之間的選擇，取決於您的工作從哪裡開始。如果大部分價值來自由分析師執行的 SQL、儀表板與財務報表，Snowflake 通常是較簡單的選擇。如果大部分價值來自由工程師建置的資料工程、感測器資料與機器學習，Databricks 通常更適合。
+
+這條規則成立了好幾年。到了 2026 年仍然成立，只是不再那麼分明。Snowflake 現在可以執行 Python、Postgres 與 AI 代理。
+
+Databricks 現在可以執行 serverless SQL warehouse、Postgres 與給業務使用者的 AI。功能上的差距已經消失，營運模式上的差距還在。
+
+我曾在製造業與國防專案中使用這兩個平台。這份指南寫給必須二選一、或必須為同時保留兩者提出理由的 CIO、CFO 或資料主管。內容涵蓋起源、架構、開放格式、治理、定價、AI 與所需技能，最後依情境提供決策原則。
+
+## 兩個平台各自的起源
+
+起源至今仍形塑著產品、定價，以及銷售它們的人。
+
+Snowflake 一開始是雲端資料倉儲。儲存與運算分離，服務完全託管，SQL 是第一語言。
+
+您不需要調校叢集。您決定 warehouse 的規格、執行查詢，再為它執行的秒數付費。
+
+Databricks 源自 Apache Spark，由 Spark 的創造者打造。它的重心是資料工程、串流，以及在雲端物件儲存檔案上進行機器學習，使用 Delta Lake 資料表格式。它把這稱為 Lakehouse，SQL 資料倉儲是後來才加入的。
+
+<compare-split title="重心所在" left-label="Snowflake" left-points="以 SQL 為主，完全託管的服務|分析師與 BI 團隊很快就能上手|透過 Snowpark 與容器的 Python 支援是後來加入的|可調的選項較少，出錯的方式也較少" right-label="Databricks" right-points="以 Spark、Python 與筆記本為主|資料工程師與資料科學家用起來得心應手|SQL warehouse 與 BI 是後來加入的|控制權更多，要營運的東西也更多"></compare-split>
+
+兩者花了三年時間進入彼此的領域。以下是 2026 年的現況，已對照官方版本資訊確認：
+
+1. **Postgres。** Snowflake Postgres 建立在其收購 Crunchy Data 所取得的技術上，已於 [2026 年 2 月 24 日在部分 AWS 與 Azure 區域正式上市](https://docs.snowflake.com/release-notes/2026/other/2026-02-24-snowflake-postgres-ga)。Databricks 的 serverless Postgres，即 Databricks Lakebase，[於 2026 年 1 月在 AWS 上正式上市](https://databricks.com/blog/databricks-lakebase-generally-available)，2026 年 3 月在 Azure 上正式上市。
+2. **資料擷取。** 建立在 Apache NiFi 上的 Snowflake Openflow 已正式上市。它可以在 AWS、Azure 與 GCP 上的 Snowflake 內執行，或在您自己的 AWS 帳戶中執行。Databricks 則有 Lakeflow Connect，其管線建立在 Spark Declarative Pipelines 上。
+3. **給業務使用者的 AI。** Snowflake Intelligence 於 2025 年 11 月正式上市，與 Cortex Agents 及 Cortex AI Functions 同時推出，並於 2026 年 6 月改名為 Snowflake CoWork。Databricks 於 [2026 年 6 月正式推出](https://www.databricks.com/company/newsroom/press-releases/databricks-launches-genie-one-all-new-agentic-coworker-every-team) Genie One 與 Genie Agents（前身為 Genie Spaces）。Genie App Builder 則進入私人預覽。
+4. **代理建置。** Databricks Agent Bricks 的各元件在 2026 年分階段正式上市：1 月是 Knowledge Assistant，2 月是 Supervisor Agent，4 月是 Document Intelligence 與 Custom Agents。Databricks 現在引導新的低程式碼代理改用 Genie Agents，並將 Knowledge Assistant 與 Supervisor Agent 列為舊版功能。Snowflake 的對應產品是 Cortex Agents。
+
+## 架構、開放格式與治理
+
+真正重要的差異，現在就在這裡。
+
+Snowflake 預設把資料保存在它自己的託管儲存中。您也可以使用 Apache Iceberg 資料表，存放在您自己的雲端儲存中。
+
+Spark 等外部引擎可以[透過 Horizon Catalog 讀寫 Snowflake 託管的 Iceberg 資料表](https://docs.snowflake.com/en/release-notes/2026/other/2026-05-26-tables-iceberg-query-using-external-query-engine-snowflake-horizon-writes-ga)；寫入功能於 2026 年 5 月正式上市。Snowflake 表示，外部引擎存取的計費將從 2026 年下半年開始，所以請問清楚。
+
+Databricks 預設把資料以 Delta Lake 格式保存在您的雲端儲存中，由 Unity Catalog 治理。
+
+Databricks 於 2026 年 5 月宣布 Unity Catalog 中的託管 Iceberg 資料表正式上市，不過我查核時，部分 Databricks 文件頁面仍標示為公開預覽。在以它為核心進行設計之前，請先確認您的雲端與區域的狀態。
+
+所以格式之爭大致已經結束。兩者都能讀寫 Iceberg。
+
+真正的問題是哪個目錄是主目錄，以及哪個引擎寫入哪張資料表。如果兩個目錄都認為自己擁有某張資料表，您會花一整季去解開它。
+
+治理也是同樣的模式。Snowflake Horizon Catalog 涵蓋 Snowflake 內的存取政策、遮罩、血緣與稽核，現在也延伸到 Iceberg 資料表。Unity Catalog 則在 Databricks 中對資料表、檔案、模型與 AI 函式做同樣的事。
+
+Databricks 在 2024 年將 Unity Catalog 開源。我的 [Unity Catalog 治理指南](/zh-TW/databricks-unity-catalog-data-governance/)有更深入的說明。
+
+在國防工作中，決定性因素通常是治理，而不是查詢速度。機密與非機密的隔離、受出口管制的資料，以及能撐過長期專案的稽核軌跡，比效能基準圖表更重要。兩個平台都能做到細緻的存取控管。
+
+差別在於一條政策必須在多少個地方定義。目錄越少，漏洞越少。當 AI 代理開始查詢這些資料時，也是同樣的邏輯，這就是為什麼我會在第一個代理上線之前，先寫好 [AI 治理框架](/zh-TW/ai-governance-framework-guide-building-a-responsible-ai-plan/)。
+
+## Snowflake 與 Databricks 並列比較
+
+下表摘要截至 2026 年 10 月的比較。價格為 AWS US East 牌價，於 2026 年 10 月查核。
+
+| 面向 | Snowflake | Databricks |
+|---|---|---|
+| 起點 | SQL 資料倉儲，完全託管 | Lakehouse 上的 Spark、資料工程與 ML |
+| 預設儲存 | Snowflake 託管儲存，或放在您儲存中的 Iceberg | 您的雲端儲存，預設為 Delta Lake |
+| 開放格式 | Iceberg 讀寫，外部引擎透過 Horizon Catalog 存取（GA） | 原生 Delta Lake，Unity Catalog 中的託管 Iceberg（2026 年 5 月宣布 GA） |
+| 治理 | Horizon Catalog | Unity Catalog（2024 年開源） |
+| 運算單位 | Credits，按秒計費，最低 60 秒 | DBU，費率依產品與方案等級而定 |
+| 牌價 | 每 credit $2（Standard）、$3（Enterprise）、$4（Business Critical） | SQL Serverless 每 DBU $0.70，已含雲端運算 |
+| 誰支付雲端帳單 | Snowflake，包含在 credit 內（您自有的 Iceberg 儲存除外） | 傳統運算由您的雲端帳戶支付；serverless 則已包含 |
+| 儲存牌價 | 隨選每 TB 每月 $23 | 依您雲端供應商的儲存費率 |
+| 營運工作量 | 低。需要調校的設定很少 | 傳統運算為中到高，serverless 較低 |
+| 給業務使用者的 AI | Snowflake CoWork，前身為 Snowflake Intelligence（GA） | Genie One 與 Genie Agents（GA） |
+| 代理建置 | Cortex Agents（GA） | Agent Bricks（元件在 2026 年陸續 GA） |
+| Postgres | Snowflake Postgres（GA，部分區域） | Lakebase（AWS 與 Azure 上 GA） |
+| 所需技能 | SQL、dbt 式建模、一些 Python | Python、Spark、SQL、MLOps、雲端工程 |
+
+## 定價：credits vs DBU，以及誰支付雲端帳單
+
+表面上的費率無法直接比較。Credit 與 DBU 衡量的是不同的東西，而且建立在不同的成本結構上。
+
+根據 [Snowflake 定價頁面](https://www.snowflake.com/en/pricing-options/)，在 AWS US East 上，隨選 credit 的牌價為 Standard $2.00、Enterprise $3.00、Business Critical $4.00。隨選儲存為每 TB 每月 $23。
+
+Credit 涵蓋運算，所以您只會收到 Snowflake 一份帳單。價格依區域與雲端而異，AI 功能則使用另外的 AI credits。
+
+根據 [Databricks SQL 定價頁面](https://www.databricks.com/product/pricing/databricks-sql)，在 AWS US East 的 Premium 方案上，SQL Serverless 的牌價為每 DBU $0.70，已包含雲端執行個體成本。SQL Classic 為每 DBU $0.22，SQL Pro 為 $0.55，但這些不含虛擬機器，您需要另外付給 AWS、Azure 或 Google。
+
+這個拆分對 CFO 很重要。使用 Databricks 傳統運算時，一半成本在您的雲端帳單上，一半在 Databricks 帳單上。
+
+除非您指定某人負責，否則沒有人會為總額負責。Snowflake 的單一帳單比較容易看懂，但也比較容易在不知不覺中增長。
+
+企業承諾用量與折扣會大幅改變兩邊的數字。永遠不要只比較牌價就稱之為商業論證。
+
+在兩個平台上執行同樣三到四個真實工作負載，至少持續幾週，再比較帳單。我的 [Databricks 定價指南](/zh-TW/databricks-pricing-explained/)與 [Snowflake credits 指南](/zh-TW/snowflake-pricing-credits-explained/)拆解了各項成本來源。
+
+## 哪一個適合您的情況
+
+決策原則比功能檢查清單更有用。以下是我在最常見的四種情況下會如何判斷。
+
+| 情況 | 我通常的傾向 | 原因 |
+|---|---|---|
+| 以 BI 為主的財務團隊、ERP 報表、工程師很少 | Snowflake | 以 SQL 為主、營運負擔低，分析師能很快自助使用 |
+| 製造業，有大量感測器、歷史資料庫與品質資料，ML 已在規劃中 | Databricks | 串流、Python 與 ML 都是原生支援；資料留在您的儲存中 |
+| 有資料落地與出口管制需求的受監管國防單位 | 兩者皆可，依區域與認證決定 | 兩者都提供美國政府區域；請確認當地實際可用的服務 |
+| 已深度使用 Microsoft Azure 與 Fabric | 優先考慮 Azure Databricks，若以 SQL 為主則選 Snowflake | Azure Databricks 是 Microsoft 第一方服務，由 Microsoft 計費與支援 |
+
+這張表背後的幾點說明。
+
+1. **財務與 ERP 報表。** 大部分價值在於經過建模、結合與對帳的 SAP、Oracle 或 Microsoft Dynamics 365 資料。這是 SQL 的工作。Snowflake 較低的營運負擔通常勝出。我的[把 ERP 資料導入 Snowflake](/zh-TW/erp-data-into-snowflake/) 指南涵蓋了擷取這一側。
+2. **製造業。** 在我參與過的製造業專案中，資料量來自機台，而不是 ERP。決定選擇的是感測器與機台資料，而它把選擇推向 Databricks。高頻率的感測器資料、MES 事件與品質影像，需要的是工程技能，而不是報表技能。Databricks 原生就能處理這些。
+3. **國防。** 兩個產品都不能在地端執行。兩者都是公有雲或政府雲上的 SaaS。Snowflake 在其定價頁面上列出 US Gov 與 DoD 區域。Databricks 在具備 FedRAMP High 的 AWS GovCloud 上執行，另有獨立的 DoD IL5 環境。在美國以外，請確認有哪些主權區域，以及哪些功能已經上線。政府區域的功能清單落後於商用區域。
+4. **以 Microsoft 為主的企業。** Snowflake 在 Azure 上也運作良好，Microsoft 也已宣布 OneLake 與 Snowflake 的互通性正式上市。我的 [Databricks vs Microsoft Fabric 比較](/zh-TW/databricks-vs-microsoft-fabric/)涵蓋了這個選擇。
+
+SAP 客戶還有一個考量。SAP Business Data Cloud 現在有通往兩個平台的零複製連接器。
+
+Snowflake 將其 SAP BDC 連接器列為自 2026 年 5 月起正式上市，Databricks 則透過 SAP BDC Connect 連接。這讓雙方都少了一個論點。
+
+## 「兩者並用」的現實，以及如何避免付兩次錢
+
+許多大型企業最後兩者都有。工程部門選了 Databricks，財務部門選了 Snowflake，沒有人想為此爭論。
+
+這可以行得通，但通常花費比應有的多。
+
+在我看過兩個平台並用的情況中，大多是為了測試產出結果。一個平台用來檢查另一個平台的結果。
+
+那不是經過規劃的長期分工。如果這是您同時運作兩者的原因，請為平行運作設定結束日期。
+
+浪費來自三個地方：
+
+1. **同一份資料有兩份副本。** 原始 ERP 與工廠資料落地兩次、儲存兩次、更新兩次。
+2. **同一個來源有兩條管線。** 兩個團隊從同一套 SAP、Oracle 或 Dynamics 365 系統擷取資料，而且往往採用不同的商業規則。
+3. **兩套治理模式。** 存取政策在 Horizon 定義一次，又在 Unity Catalog 定義一次，然後逐漸分歧。
+
+解法是書面的分工。挑一個平台負責資料擷取與整理後的資料層。共用資料表以 Iceberg 格式只存一次，並以一個目錄為主。
+
+讓另一個平台讀取這些資料表，而不是複製它們。為合併的帳單指定單一負責人。
+
+我也會設定一個檢討日期。如果一年後某個平台只服務寥寥幾個使用情境，就整併。
+
+## 下一步我會怎麼做
+
+不要從廠商展示開始。從一份清單開始：未來兩年最重要的五個資料使用情境、由誰建置，以及您目前具備哪些技能。這份清單通常在任何概念驗證之前就能回答問題。
+
+接著用真實資料做一次短期、付費的概念驗證：一個財務報表案例，一個工程或 AI 案例。比較成本、工作量，以及您自己的人使用起來的感受。如果您希望在這個決策或商業條款上得到[獨立的觀點](/zh-TW/erp-ai-tech-consulting-advisory/)，[歡迎與我聯繫](/zh-TW/contact-noel-erp-support/)。
+
+## 常見問題
+
+<details>
+<summary>Snowflake 和 Databricks 哪一個比較好？</summary>
+
+一般而言沒有哪一個比較好。對於工程團隊規模小的 SQL 分析與 BI，Snowflake 通常是較簡單的選擇。對於資料工程、串流與機器學習，Databricks 通常更適合。到了 2026 年，兩者都已涵蓋對方大部分的領域，所以決策取決於您的技能、工作負載，以及您想要的付費方式。
+
+</details>
+
+<details>
+<summary>Databricks 比 Snowflake 便宜嗎？</summary>
+
+這取決於工作負載，也取決於您怎麼算。Snowflake 的 credit 已包含運算。使用 Databricks 傳統運算時，您要付 DBU 給 Databricks，再付虛擬機器成本給雲端供應商。Serverless Databricks 則把兩者包在一起。唯一可靠的比較方式，是在兩邊執行同樣的真實工作負載，比較折扣後的帳單。
+
+</details>
+
+<details>
+<summary>Snowflake 和 Databricks 可以共用同一份資料嗎？</summary>
+
+可以。兩者都能讀寫 Apache Iceberg 資料表，外部引擎也能透過 Horizon Catalog 存取 Snowflake 託管的 Iceberg 資料表。決定每張資料表由哪個目錄擁有，只存一次，再讓另一個平台讀取。這可以避免儲存與管線都付兩次錢。
+
+</details>
+
+<details>
+<summary>Snowflake 支援機器學習與 Python 嗎？</summary>
+
+支援。Snowpark 可以在 Snowflake 內執行 Python、Java 與 Scala，Cortex AI Functions 與 Cortex Agents 也已正式上市。不過，有大量自訂 ML、串流或 Spark 工作負載的團隊，仍然往往覺得 Databricks 更順手。
+
+</details>
+
+<details>
+<summary>國防單位可以在地端執行 Snowflake 或 Databricks 嗎？</summary>
+
+不行。兩者都是雲端服務。對於受監管的國防工作，Snowflake 提供美國政府區域，包括一個 DoD 區域；Databricks 則在具備 FedRAMP High 的 AWS GovCloud 上執行，另有獨立的 DoD IL5 環境。請確認您所在的確切區域有哪些功能可用，因為政府區域落後於商用區域。
+
+</details>
+
+<details>
+<summary>搭配 Microsoft Fabric 時，應該用 Snowflake 還是 Databricks？</summary>
+
+兩者都能與 Microsoft 搭配。Azure Databricks 是 Azure 第一方服務，由 Microsoft 計費與支援。Snowflake 與 OneLake 的互通性已正式上市。如果您的團隊主要使用 SQL 與 Power BI，在加入任何一個之前，請先認真評估單靠 Fabric 是否就能滿足需求。
+
+</details>

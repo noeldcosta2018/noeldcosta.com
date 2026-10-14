@@ -1,0 +1,210 @@
+---
+title: "Snowflake architecture समझें, और यह किस काम आता है"
+h1: "Snowflake architecture समझें, और यह किस काम आता है"
+slug: "snowflake-architecture-explained"
+date: "2026-10-11"
+updated: "2026-10-11"
+hero: "/images/data-ai/snowflake-architecture-explained.webp"
+heroAlt: "Workstations और ऊपर लगी क्रेन वाले रोशन engineering assembly hall का चौड़ा दृश्य"
+category: "data-and-ai"
+tags: ["snowflake", "data-governance", "manufacturing"]
+author: "Noel D'Costa"
+metaTitle: "Snowflake Architecture: layers, उपयोग और सीमाएँ"
+metaDescription: "सरल शब्दों में Snowflake architecture: storage, compute और cloud services, micro-partitions, Time Travel, sharing, Iceberg, editions, और यह किस काम आता है।"
+primaryKeyword: "Snowflake architecture क्या है"
+excerpt: "Snowflake एक cloud data platform है जो storage, compute और समन्वय को तीन अलग layers में रखता है। यहाँ देखें कि यह architecture कैसे काम करता है, कंपनियाँ इसे किस काम में लेती हैं, और यह कहाँ सही विकल्प नहीं है।"
+experienceSource: "Noel's first-person experience with Snowflake on data platform work in manufacturing and defence (confirmed by Noel, 11 October 2026). No client names or figures. Product facts checked against official Snowflake documentation, October 2026."
+keyTakeaways:
+  - "Snowflake, storage, compute (virtual warehouses) और cloud services को अलग रखता है, ताकि हर एक अलग से बढ़ सके और उसका अलग भुगतान हो"
+  - "डेटा compressed, columnar micro-partitions में रहता है; metadata की मदद से queries उन partitions को छोड़ देती हैं जिनकी उन्हें ज़रूरत नहीं"
+  - "Time Travel, zero-copy cloning और secure data sharing, तीनों उसी metadata डिज़ाइन से आते हैं"
+  - "Iceberg टेबल्स, Horizon Catalog और Snowflake Postgres (February 2026 में GA) इसे पारंपरिक warehouse से आगे ले जाते हैं"
+  - "Regulated काम का मतलब आम तौर पर Business Critical edition या उससे ऊपर है; Snowflake को on-premises install नहीं किया जा सकता"
+  - "यह भारी transactional workloads के लिए, या ऐसे डेटा के लिए सही नहीं है जिसे कभी आपके अपने data centre से बाहर नहीं जाना चाहिए"
+pullQuote: "Snowflake की लागत के ज़्यादातर झटके ऐसे architecture फ़ैसले हैं जिन्हें किसी ने लिखा नहीं।"
+mentions:
+  - "Snowflake"
+  - "Snowpark"
+  - "Snowflake Horizon Catalog"
+  - "Snowflake Open Catalog"
+  - "Apache Polaris"
+  - "Apache Iceberg"
+  - "Snowflake Postgres"
+  - "Snowflake Marketplace"
+  - "Tri-Secret Secure"
+  - "Amazon Web Services"
+  - "Microsoft Azure"
+  - "Google Cloud"
+originalUrl: "https://noeldcosta.com/snowflake-architecture-explained/"
+canonicalUrl: "https://noeldcosta.com/hi/snowflake-architecture-explained/"
+locale: "hi"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Snowflake architecture एक data platform को तीन layers में बाँटता है जो स्वतंत्र रूप से बढ़ती हैं: storage, compute (जिसे virtual warehouses कहा जाता है) और एक cloud services layer जो सब कुछ समन्वित करती है। कंपनियाँ Snowflake को रिपोर्टिंग और analytics के लिए cloud data warehouse के रूप में इस्तेमाल करती हैं, और तेज़ी से डेटा साझा करने, Python चलाने और गवर्न किए गए डेटा पर AI बनाने की जगह के रूप में भी।
+
+Storage और compute को अलग रखने का वही एक डिज़ाइन फ़ैसला बताता है कि Snowflake ज़्यादातर क्या अच्छा करता है और उसकी ज़्यादातर लागत कहाँ से आती है।
+
+मैंने मैन्युफैक्चरिंग और डिफ़ेंस में data platform programmes पर Snowflake के साथ काम किया है। एक पैटर्न मुझे अक्सर दिखता है: लीडर इसे analytics के लिए ख़रीदते हैं, फिर पता चलता है कि architecture के फ़ैसले (कितने warehouses, कौन सा edition, डेटा कहाँ रहता है) बिल और compliance की स्थिति तय करते हैं। यह गाइड उस CIO, CDO या architect के लिए है जिसे साइन करने से पहले इन फ़ैसलों को समझना है।
+
+## Snowflake क्या है, एक पैराग्राफ़ में
+
+Snowflake एक पूरी तरह managed data platform है जो Amazon Web Services, Microsoft Azure और Google Cloud पर चलता है। आप इसे install, patch या indexes tune नहीं करते। आप डेटा लोड करते हैं, SQL (या Python) लिखते हैं, और storage और compute का अलग-अलग भुगतान करते हैं।
+
+Snowflake अपने डिज़ाइन को shared-disk और shared-nothing architectures का मिश्रण बताता है: डेटा का एक केंद्रीय store, जिसे स्वतंत्र compute clusters query करते हैं। डिफ़ेंस ख़रीदारों के लिए एक तथ्य शुरुआत में ही मायने रखता है: Snowflake की अपनी [key concepts and architecture guide](https://docs.snowflake.com/en/user-guide/intro-key-concepts) के अनुसार, इसे local या private cloud infrastructure पर install नहीं किया जा सकता।
+
+## Snowflake architecture की तीन layers
+
+नीचे से ऊपर की ओर stack यह है।
+
+<explainer-layers title="Snowflake architecture, layer दर layer" caption="Storage और compute अलग-अलग बढ़ते हैं और उनका बिल अलग बनता है। Cloud services सबको जोड़े रखता है।" layers="Cloud services => Security, access control, metadata, query optimisation और transactions|Compute => Virtual warehouses: स्वतंत्र clusters जो SQL और Python चलाते हैं, चलते समय credits में बिल|Storage => Cloud object storage में compressed columnar micro-partitions, प्रति terabyte बिल" tones="accent|data|"></explainer-layers>
+
+### Storage
+
+जब आप डेटा लोड करते हैं, तो Snowflake उसे एक compressed, columnar format में दोबारा व्यवस्थित करता है और cloud object storage में स्टोर करता है। यह हर टेबल को micro-partitions में बाँटता है, जिनमें से हर एक में 50 MB से 500 MB तक uncompressed डेटा होता है। Snowflake हर एक के लिए metadata रिकॉर्ड करता है, जैसे हर column में values की range।
+
+यही metadata इसका चतुर हिस्सा है। पिछले महीने के production orders पर filter की गई query हर उस micro-partition को छोड़ देती है जिसकी date range मेल नहीं खा सकती।
+
+इसे pruning कहते हैं, और यही वजह है कि Snowflake बिना indexes के अच्छा प्रदर्शन करता है। इसका मतलब यह भी है कि डेटा किस तरह आता है (date या plant के हिसाब से sorted, या बेतरतीब), यह बहुत बड़ी टेबल्स पर लागत को प्रभावित करता है।
+
+### Compute: virtual warehouses
+
+Virtual warehouse एक compute cluster है जो queries और कोड चलाता है। हर एक स्वतंत्र है। आपकी फ़ाइनेंस की month-end रिपोर्ट्स एक warehouse पर चल सकती हैं जबकि data science दूसरे पर भारी jobs चलाता है, और कोई भी दूसरे को धीमा नहीं करता।
+
+Warehouses, T-shirt sizes में आते हैं और सिर्फ़ चलते समय credits खर्च करते हैं। खाली होने पर वे अपने आप suspend हो सकते हैं। बड़े आकार अलग-अलग भारी queries को तेज़ बनाते हैं।
+
+ज़्यादा clusters एक साथ ज़्यादा यूज़र्स को संभालते हैं, और multi-cluster warehouses यही करते हैं: Enterprise edition और उससे ऊपर, queries के क़तार में लगने पर warehouse अपने आप clusters जोड़ सकता है, और load घटने पर उन्हें हटा सकता है। Snowflake साफ़ कहता है कि multi-cluster, concurrency में मदद करता है, किसी एक धीमी query में नहीं। उसके लिए आप आकार बदलते हैं।
+
+[Snowflake credits और बिल किन चीज़ों से बनता है](/hi/snowflake-pricing-credits-explained/) पर मेरी pricing गाइड लागत वाले पक्ष को विस्तार से कवर करती है।
+
+### Cloud services
+
+सबसे ऊपर की layer authentication, access control, metadata, query optimisation और transactions संभालती है। Time Travel और cloning ज़्यादातर metadata operations हैं, इसलिए यही layer इन्हें संभव बनाती है। आप शायद ही कभी इसके बारे में सोचते हैं, और यही मक़सद है।
+
+## Architecture से निकलने वाले features
+
+दिलचस्प features बाद में जोड़े गए हिस्से नहीं हैं। वे storage और metadata डिज़ाइन से ही निकलते हैं।
+
+1. **Time Travel.** आप डेटा को उसी रूप में query, clone या restore कर सकते हैं जैसा वह अतीत के किसी समय पर था। Standard edition 1 दिन रखता है। Enterprise और उससे ऊपर permanent टेबल्स के लिए 90 दिन तक रख सकते हैं, जैसा [Time Travel documentation](https://docs.snowflake.com/en/user-guide/data-time-travel) में बताया गया है।
+2. **Fail-safe.** Time Travel ख़त्म होने के बाद permanent टेबल का डेटा 7 दिन की Fail-safe अवधि में जाता है। इसे सिर्फ़ Snowflake ही recover कर सकता है। इसे disaster recovery मानें, ऐसा backup नहीं जिसे आप नियंत्रित करते हैं।
+3. **Zero-copy cloning.** किसी टेबल, schema या database का clone बनाते समय कोई अतिरिक्त storage नहीं लेता, क्योंकि वह उन्हीं micro-partitions की ओर इशारा करता है। आप सिर्फ़ बाद में बदलने वाले डेटा का भुगतान करते हैं। टीमें इसी तरह मिनटों में पूरे आकार के test environments खड़े करती हैं।
+4. **Secure data sharing.** एक provider किसी दूसरे Snowflake account के साथ live टेबल्स साझा करता है और कोई डेटा कॉपी नहीं होता। Consumer सिर्फ़ query के लिए इस्तेमाल किए compute का भुगतान करता है। Direct shares एक region के अंदर काम करते हैं; cross-region sharing, auto-fulfilment वाली listings से होती है।
+5. **Snowflake Marketplace.** Listings आपको data products को चुनिंदा partners के लिए या सार्वजनिक रूप से publish करने देती हैं, जिसमें मौसम या market indices जैसा third-party डेटा भी शामिल है।
+6. **Snowpark.** Python, Java और Scala के लिए libraries जो डेटा बाहर खींचने के बजाय processing को Snowflake के अंदर ले जाती हैं। Snowpark Container Services, जो containerised ऐप्स को डेटा के पास चलाता है, commercial regions में तीनों clouds पर generally available है।
+
+किसी manufacturer के लिए secure data sharing का pilot करना फ़ायदेमंद है। शुरुआती स्थिति के बारे में यथार्थवादी रहें: मैं जो ज़्यादातर supplier data exchange देखता हूँ, वह अब भी file transfers है।
+
+एक गवर्न की गई टेबल साझा करना ज़्यादा साफ़ है, और आप उसे वापस ले सकते हैं। एक supplier और एक dataset से शुरू करें, और ज़्यादा की योजना बनाने से पहले उसे साबित करें।
+
+## Iceberg, catalogs, hybrid tables और Postgres: Snowflake कहाँ पहुँचा है
+
+पहले Snowflake का मतलब था "आपका डेटा Snowflake के format में"। यह बदल गया है, और नाम भी बदल गए हैं। October 2026 की मौजूदा स्थिति:
+
+| क्षमता | यह क्या करती है | स्थिति (October 2026) |
+|---|---|---|
+| Apache Iceberg tables | Open Iceberg format में स्टोर डेटा, आपके cloud storage में या Snowflake के | June 2024 से GA; Snowflake-managed storage विकल्प June 2026 में GA (commercial AWS और Azure) |
+| Snowflake Horizon Catalog | Apache Polaris पर बना governance और catalog; बाहरी engines, Iceberg REST API के ज़रिए Snowflake-managed Iceberg टेबल्स पढ़ते हैं | नए ग्राहकों के लिए सुझाया गया |
+| Snowflake Open Catalog | Managed Apache Polaris सर्विस (पहले Polaris Catalog) | GA, लेकिन नए ग्राहकों के लिए बंद; मौजूदा यूज़र्स जारी रख सकते हैं |
+| Hybrid tables (Unistore) | Analytics के पास कम latency वाले transactional lookups के लिए row-based टेबल्स | सिर्फ़ commercial AWS और Azure regions में GA |
+| Snowflake Postgres | Snowflake प्लेटफ़ॉर्म के अंदर पूरी तरह managed PostgreSQL | 24 February 2026 से AWS और Azure पर GA |
+
+व्यावहारिक नतीजा: Iceberg टेबल्स, Spark, Databricks या दूसरे engines को उन्हीं फ़ाइलों पर काम करने देती हैं जिन्हें Snowflake query करता है, जिससे lock-in घटता है। Snowflake का [Open Catalog overview](https://docs.snowflake.com/en/user-guide/opencatalog/overview) अब नए ग्राहकों को इसकी जगह Horizon Catalog इस्तेमाल करने को कहता है।
+
+किसी के hybrid tables को operational database के रूप में पेश करने से पहले उनकी सीमाएँ पढ़ें। हर database में hybrid table डेटा की सीमा 2 TB है, और वे Fail-safe, data sharing, replication या streams को support नहीं करतीं। किसी एप्लिकेशन की lookup table के लिए वे ठीक हैं।
+
+वे operational database नहीं हैं। अगर किसी एप्लिकेशन को अपने analytics के पास एक की ज़रूरत है, तो [Snowflake Postgres, February 2026 में generally available हुआ](https://docs.snowflake.com/en/release-notes/2026/other/2026-02-24-snowflake-postgres-ga) और वह ज़्यादा ईमानदार फ़िट है।
+
+## Regulated उद्योगों के लिए editions और security
+
+Snowflake चार editions बेचता है: Standard, Enterprise, Business Critical और Virtual Private Snowflake (VPS)। Edition तय करता है कि आपको कौन से security features मिलते हैं, और उसके साथ credit की कीमत बढ़ती है।
+
+| Feature | Standard | Enterprise | Business Critical | VPS |
+|---|---|---|---|---|
+| Time Travel | 1 दिन | 90 दिन तक | 90 दिन तक | 90 दिन तक |
+| Multi-cluster warehouses | नहीं | हाँ | हाँ | हाँ |
+| Tri-Secret Secure (customer-managed key) | नहीं | नहीं | हाँ | हाँ |
+| Private connectivity (AWS PrivateLink, Azure Private Link, Google Private Service Connect) | नहीं | नहीं | हाँ | हाँ |
+| HIPAA और PCI DSS support | नहीं | नहीं | हाँ | हाँ |
+| Dedicated environment, कोई साझा hardware नहीं | नहीं | नहीं | नहीं | हाँ |
+
+Tri-Secret Secure एक Snowflake key को उस key के साथ जोड़ता है जो आप अपने cloud provider की key management service में रखते हैं। अपनी key वापस लें, और Snowflake आपका डेटा decrypt नहीं कर सकता। डिफ़ेंस और aerospace suppliers के लिए यह नियंत्रण किसी भी analytics feature से ज़्यादा मायने रखता है।
+
+अमेरिकी सरकारी काम के लिए Snowflake, AWS GovCloud और Azure Government पर SnowGov regions चलाता है, जो अमेरिकी सरकारी ग्राहकों और contractors के लिए खुले हैं। Snowflake का [supported regions पेज](https://docs.snowflake.com/en/user-guide/intro-regions) उन regions में FedRAMP High, Impact Level 4 और ITAR support, एक AWS region में Impact Level 5 बताता है, और Business Critical edition या उससे ऊपर की शर्त रखता है। Feature की उपलब्धता region दर region जाँचें: Open Catalog, hybrid tables और Snowpark Container Services के कुछ हिस्से सभी सरकारी regions में उपलब्ध नहीं हैं।
+
+जिन डिफ़ेंस programmes पर मैंने काम किया है, उनमें पहला सवाल कभी "यह कितना तेज़ है" नहीं होता। सवाल होता है "डेटा कहाँ रहता है, उसे कौन देख सकता है, और क्या हम यह किसी ऑडिटर के सामने साबित कर सकते हैं"। सही region और edition में Snowflake इसका अच्छा जवाब देता है।
+
+ऐसे डेटा के लिए यह जवाब नहीं दे सकता जिसे आपकी अपनी इमारत में ही रहना है। जिन classified या export-controlled workloads को on-premises processing चाहिए, उन्हें एक अलग प्लेटफ़ॉर्म चाहिए, और Snowflake, unclassified estate संभाले।
+
+## Snowflake किस काम आता है, और किसके लिए आदर्श नहीं है
+
+मैं जो ज़्यादातर देखता हूँ, वह कुछ पैटर्न में आता है।
+
+1. **Enterprise रिपोर्टिंग और BI.** ERP डेटा (SAP, Oracle या Microsoft Dynamics 365) से फ़ाइनेंस, sales और operations रिपोर्टिंग, ऊपर Power BI, Tableau या उसके जैसे टूल के साथ। यह अब भी मुख्य उपयोग है। [ERP डेटा को Snowflake में लाने](/hi/erp-data-into-snowflake/) पर मेरी गाइड extraction के विकल्प कवर करती है।
+2. **मैन्युफैक्चरिंग operations डेटा.** मैंने Snowflake में जो प्लांट और operations डेटा उतरते देखा है, वह production planning डेटा है। Historian, MES, quality और maintenance डेटा उसके साथ रह सकता है, और JSON में semi-structured सेंसर डेटा natively लोड होता है।
+3. **Partners के साथ data sharing.** Suppliers, distributors और ग्राहक सीधे गवर्न की गई टेबल्स को query कर सकते हैं। व्यवहार में, मैं जो ज़्यादातर supplier exchange देखता हूँ, वह अब भी file transfers है।
+4. **गवर्न किए गए डेटा पर data science और AI.** Snowpark के ज़रिए Python और Snowflake की AI services, जिन्हें [Snowflake Cortex AI और Snowflake Intelligence](/hi/snowflake-cortex-ai-snowflake-intelligence/) पर मेरे लेख में कवर किया गया है।
+5. **अधिग्रहण के बाद consolidation.** कई ERP, एक रिपोर्टिंग layer, और सुरक्षित test environments के लिए cloning।
+
+जहाँ मैं हिचकिचाऊँगा:
+
+1. **High-volume transactional सिस्टम.** Hybrid tables और Snowflake Postgres मदद करते हैं, लेकिन आपके ERP और MES ट्रांज़ैक्शन की जगह उनके अपने डेटाबेस में है।
+2. **Real-time machine control.** Snowflake मिनटों के लिए ठीक है, milliseconds के लिए नहीं। सेंसर डेटा को stream करके लाना ठीक है। Control loop को बंद करना नहीं।
+3. **सख़्त on-premises ज़रूरतें.** कोई on-premises install मौजूद नहीं है।
+4. **Spark में भारी custom machine learning और data engineering.** यह किया जा सकता है, लेकिन कई टीमों को Databricks ज़्यादा स्वाभाविक लगता है। मेरी [Snowflake vs Databricks तुलना](/hi/snowflake-vs-databricks/) उस चुनाव से होकर गुज़रती है।
+
+### Snowflake schema बनाम star schema: यह अलग चीज़ है
+
+Snowflake खोजने वाले लोग अक्सर "snowflake schema" पर पहुँच जाते हैं। इसका प्रोडक्ट से कोई लेना-देना नहीं है। Snowflake schema एक data modelling पैटर्न है जिसमें dimension टेबल्स को sub-tables में normalise किया जाता है, इसलिए diagram बर्फ़ के फ़ाहे की तरह शाखाओं में फैलता है।
+
+Star schema हर dimension को एक flat टेबल में रखता है। आप दोनों में से कोई भी मॉडल Snowflake में, या किसी भी दूसरे warehouse में बना सकते हैं। ज़्यादातर BI टीमें सरल queries के लिए star schemas पसंद करती हैं।
+
+## मैं कहाँ से शुरू करूँगा
+
+साइन करने से पहले चार फ़ैसले लिखें: अपनी compliance स्थिति के लिए आपको कौन सा edition चाहिए, कौन सा cloud और region, आप workloads को warehouses में कैसे बाँटेंगे, और आपका डेटा Snowflake के format में रहेगा या Iceberg में। वेंडर और अपने systems integrator से हर warehouse के लिए credit का अनुमान दिखाने को कहें, कोई एक सालाना आँकड़ा नहीं। Snowflake की लागत के ज़्यादातर झटके ऐसे architecture फ़ैसले हैं जिन्हें किसी ने लिखा नहीं।
+
+अगर ERP डेटा दायरे में है, तो पहले [SAP data migration क्यों fail होता है](/hi/why-sap-data-migration-fails-and-how-to-fix-it/) पढ़ें; data quality की वही समस्याएँ किसी भी प्लेटफ़ॉर्म में आपके पीछे आती हैं। अगर आप Snowflake के किसी फ़ैसले पर दूसरी राय चाहते हैं, तो [संपर्क करें](/hi/contact-noel-erp-support/)।
+
+## अक्सर पूछे जाने वाले सवाल
+
+<details>
+<summary>Snowflake किस काम आता है?</summary>
+
+मुख्य रूप से ERP, CRM और operations डेटा जैसे बिज़नेस डेटा पर रिपोर्टिंग और analytics के लिए cloud data warehouse के रूप में। कंपनियाँ इसका इस्तेमाल partners के साथ live डेटा साझा करने, Snowpark के ज़रिए Python data science चलाने, और गवर्न किए गए डेटा पर AI एप्लिकेशन बनाने के लिए भी करती हैं।
+
+</details>
+
+<details>
+<summary>Snowflake architecture की तीन layers कौन सी हैं?</summary>
+
+Storage, compute और cloud services। Storage डेटा को compressed, columnar micro-partitions में रखता है। Compute, queries चलाने वाले virtual warehouses से बना है। Cloud services, security, metadata, query optimisation और transactions संभालता है। Storage और compute अलग-अलग बढ़ते हैं और उनका बिल अलग बनता है।
+
+</details>
+
+<details>
+<summary>क्या Snowflake एक डेटाबेस है या data warehouse?</summary>
+
+परिभाषा के हिसाब से दोनों। यह analytical workloads के लिए बना एक SQL डेटाबेस है, इसीलिए इसे आम तौर पर cloud data warehouse कहा जाता है। Iceberg टेबल्स, hybrid tables और Snowflake Postgres के साथ अब यह सीमाओं के भीतर lakehouse और कुछ transactional use cases भी कवर करता है।
+
+</details>
+
+<details>
+<summary>क्या Snowflake on-premises चल सकता है?</summary>
+
+नहीं। Snowflake सिर्फ़ AWS, Microsoft Azure और Google Cloud पर चलता है। अमेरिकी सरकारी और डिफ़ेंस workloads के लिए यह AWS GovCloud और Azure Government पर SnowGov regions देता है, जिनके लिए Business Critical edition या उससे ऊपर ज़रूरी है।
+
+</details>
+
+<details>
+<summary>क्या snowflake schema का Snowflake कंपनी से कोई संबंध है?</summary>
+
+नहीं। Snowflake schema, normalise की गई dimension टेबल्स वाला एक data modelling पैटर्न है। यह कंपनी से पहले का है और किसी भी warehouse में काम करता है।
+
+</details>
+
+<details>
+<summary>Regulated कंपनियों को कौन सा Snowflake edition चाहिए?</summary>
+
+आम तौर पर Business Critical। यह customer-managed key के साथ Tri-Secret Secure, private connectivity, और HIPAA और PCI DSS support जोड़ता है, और सरकारी regions के लिए न्यूनतम यही है। Virtual Private Snowflake बिना साझा hardware वाला dedicated environment जोड़ता है।
+
+</details>
