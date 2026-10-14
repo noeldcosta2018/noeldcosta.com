@@ -1,26 +1,28 @@
 ---
-title: "SAP PP: što radi i gdje pođe po zlu"
-h1: "SAP PP: što radi i gdje pođe po zlu"
+title: "SAP PP: modul za planiranje proizvodnje objašnjen"
+h1: "SAP PP: modul za planiranje proizvodnje objašnjen"
 slug: "sap-pp-production-planning"
 date: "2025-04-02"
-updated: "2026-10-07"
+updated: "2026-10-14"
 hero: "/images/seo-refresh/sap-pp-production-planning.webp"
-heroAlt: "Nadzorna ploča SAP PP planiranja proizvodnje s rezultatima MRP izvođenja i kapacitetom radnog centra"
+heroAlt: "Svijetli proizvodni pogon s pločom za planiranje proizvodnje i grafikonom kapaciteta na tabletu"
 category: "sap-modules"
 tags: ["sap-technical-decisions", "sap-pp", "sap-manufacturing", "mrp"]
 author: "Noel D'Costa"
-metaTitle: "SAP PP u 2026.: što radi i gdje zakazuje"
-metaDescription: "SAP PP planiranje proizvodnje: MRP Live, sastavnice, tehnološki postupci, proizvodne verzije, promjene u S/4HANA i pogreške matičnih podataka koje kvare planiranje."
-excerpt: "SAP PP povezuje ono što poslovanje treba proizvesti s onim što proizvodna hala može isporučiti. Ovaj vodič obuhvaća kako radi u S/4HANA, što se promijenilo u odnosu na ECC i pogreške matičnih podataka zbog kojih je MRP izlaz beskoristan."
-experienceSource: "Noel's SAP PP implementation experience as published in the original article: the packaging plant with over 400 production orders a week, the double PIR upload, the missing PP-view field that blocked production for a week, and the automotive parts company that spent six months after go-live fixing production orders. Product facts (PP-PI, S/4HANA compatibility scope, MRP Live, pMRP) checked against SAP documentation in October 2026."
+metaTitle: "SAP PP: značenje, modul i planiranje proizvodnje u S/4HANA"
+metaDescription: "SAP PP znači Production Planning. Što radi SAP PP modul: diskretna, procesna i serijska proizvodnja, MRP Live, PP/DS i kada preuzima IBP."
+primaryKeyword: "sap pp modul"
+excerpt: "SAP PP znači Production Planning (planiranje proizvodnje). Ovaj vodič pokriva što modul radi, kako podržava diskretnu, procesnu i serijsku proizvodnju, kako MRP Live i ugrađeni PP/DS rade u S/4HANA, kada preuzima IBP te pogreške u matičnim podacima zbog kojih rezultat MRP-a postaje neupotrebljiv."
+experienceSource: "Noel's SAP PP implementation experience as published in the original article: the packaging plant with over 400 production orders a week, the double PIR upload, the missing PP-view field that blocked production for a week, and the automotive parts company that spent six months after go-live fixing production orders. Noel confirmed on 14 October 2026 that he has implemented PP in discrete, process (PP-PI) and repetitive manufacturing, has used both embedded PP/DS and MRP Live, and has sent clients to IBP depending on the case. Product facts (MRP Live, PP/DS, repetitive manufacturing, IBP, compatibility scope) checked against SAP Help Portal, SAP Learning and sap.com in October 2026."
 lastReviewed: "2026-05-21"
 keyTakeaways:
-  - "SAP PP pretvara prognoze i prodajne narudžbe u prijedloge proizvodnje i nabave putem MRP-a. Pogrešni matični podaci znače pogrešan MRP izlaz"
-  - "U S/4HANA MRP Live (MD01N) preporučeno je izvođenje planiranja, a proizvodne verzije obvezne su za vlastitu proizvodnju"
-  - "Klasični SOP i planiranje temeljeno na prognozi u S/4HANA su opseg kompatibilnosti. SAP-ov nasljednik za SOP je IBP"
-  - "Pogrešna grupa strategija u matičnom zapisu materijala uzrokuje da se prodajne narudžbe i prognoze zbrajaju umjesto da se prebijaju, bez poruke o pogrešci"
-  - "Najdosljedniji neuspjeh je konfiguriranje SAP-a da kopira naslijeđene procese umjesto prihvaćanja standardne logike planiranja"
-pullQuote: "Ako požurite s matičnim podacima u SAP PP implementaciji, sve ostalo postaje zaobilazno rješenje. Točnost sastavnica, potpunost tehnoloških postupaka, održavanje radnih centara. Ništa od toga nije neobavezno."
+  - "SAP PP znači Production Planning: SAP modul koji potražnju pretvara u prijedloge za proizvodnju i nabavu te vodi proizvodnju sve do obračuna"
+  - "PP pokriva tri načina rada: diskretnu proizvodnju (proizvodni nalozi), procesnu (PP-PI, procesni nalozi i glavni recepti) i serijsku proizvodnju (planiranje po razdobljima na proizvodnim linijama)"
+  - "U S/4HANA je MRP Live (MD01N) preporučeno izvođenje planiranja, a proizvodne verzije obvezne su za vlastitu proizvodnju"
+  - "Ugrađeni PP/DS dodaje terminiranje s ograničenim kapacitetom za materijale na uskim grlima unutar S/4HANA. IBP je cloud alat za planiranje prodaje i poslovanja, potražnje i opskrbe iznad razine pogona"
+  - "Pogrešna grupa strategija u matičnom zapisu materijala uzrokuje da se prodajni nalozi i prognoze zbrajaju umjesto da se međusobno poravnaju, i to bez ikakve poruke o pogrešci"
+  - "Najčešći uzrok neuspjeha jest konfiguriranje SAP-a tako da kopira naslijeđene procese umjesto preuzimanja standardne logike planiranja"
+pullQuote: "Ako u implementaciji SAP PP-a požurite s matičnim podacima, sve ostalo postaje zaobilazno rješenje. Točnost sastavnica, potpunost tehnoloških postupaka, održavanje radnih mjesta. Ništa od toga nije neobavezno."
 mentions:
   - "SAP S/4HANA"
   - "SAP PP"
@@ -41,176 +43,213 @@ translatedFrom: "en"
 translationSource: "reviewed-en-2026-10"
 ---
 
-SAP PP (Production Planning, planiranje proizvodnje) dio je SAP S/4HANA koji pretvara potražnju u plan proizvodnje. Uzima prognoze i prodajne narudžbe, provjerava ih prema zalihama, sastavnicama (BOM), tehnološkim postupcima (routing) i kapacitetu te predlaže što proizvesti, što kupiti i kada. Ovaj je vodič za voditelje pogona, planere i voditelje projekata koji trebaju znati što PP radi, što se promijenilo u S/4HANA i gdje implementacije pucaju. Kratak odgovor na posljednje su matični podaci. Ako su matični zapis materijala, sastavnice, tehnološki postupci i radni centri pogrešni, pogrešan je i MRP izlaz, a nikakva konfiguracija to ne popravlja. Kontrolna lista spremnosti niže je mjesto za početak.
+SAP PP znači Production Planning, odnosno planiranje proizvodnje. To je SAP modul koji potražnju pretvara u plan proizvodnje, a zatim vodi proizvodne naloge od puštanja preko potvrde do obračuna troškova.
 
-Jednom sam radio s timom u pogonu za ambalažu koji je imao više od 400 proizvodnih naloga tjedno. Bez PP-a žonglirali su proračunskim tablicama i ljepljivim papirićima. Nakon implementacije nisu postali savršeni, ali su prestali tonuti.
+PP uzima prognoze i prodajne naloge, provjerava ih u odnosu na zalihe, sastavnice, tehnološke postupke i kapacitet te predlaže što proizvesti, što kupiti i kada. U SAP S/4HANA nalazi se u području proizvodnje, uz upravljanje materijalima (MM), upravljanje kvalitetom (QM) i kontroling (CO).
 
-## Čime SAP PP upravlja
+Ovaj je vodič za voditelje pogona, planere i voditelje projekata. Implementirao sam PP u diskretnoj, procesnoj (PP-PI) i serijskoj proizvodnji, pa vodič pokriva sva tri načina. Kratak odgovor na pitanje gdje PP puca glasi: matični podaci.
 
-PP je u središtu logističkog lanca. Uzima potražnju i unatrag prolazi kroz materijale, kapacitet i vremenski raspored kako bi generirao prijedloge proizvodnje. Funkcije, redom kojim kroz njih teče potražnja:
+Jednom sam radio s timom u pogonu za proizvodnju ambalaže koji je imao više od 400 proizvodnih naloga tjedno. Bez PP-a žonglirali su tablicama i ljepljivim papirićima. Nakon implementacije nisu postali savršeni, ali su se prestali utapati.
 
-1. **Planiranje prodaje i operacija (SOP)**: količine na visokoj razini temeljene na prognozama i tržišnim očekivanjima
+## Što radi SAP PP modul
+
+PP je u središtu logističkog lanca. Polazi od potražnje i radi unatrag kroz materijale, kapacitet i vrijeme kako bi generirao prijedloge za proizvodnju. Funkcije, redoslijedom kojim kroz njih prolazi potražnja:
+
+1. **Planiranje prodaje i poslovanja (SOP)**: količine na visokoj razini na temelju prognoza i očekivanja tržišta
 2. **Upravljanje potražnjom**: pretvara te količine u planirane neovisne zahtjeve (PIR) koji pokreću MRP
-3. **Planiranje potreba za materijalima (MRP)**: izračunava što proizvesti ili kupiti, kada i u kojoj količini, uz zalihe, vremena isporuke i otvorene naloge
-4. **Planiranje kapaciteta i izravnavanje**: prikazuje preopterećenja radnih centara prije nego što stignu do proizvodne hale
-5. **Upravljanje proizvodnim nalozima**: kreira, otpušta, raspoređuje i potvrđuje naloge do završetka
+3. **Planiranje potreba za materijalom (MRP)**: utvrđuje što proizvesti ili kupiti, kada i u kojoj količini, na temelju zaliha, vremena isporuke i otvorenih naloga
+4. **Planiranje i izravnavanje kapaciteta**: pokazuje preopterećenja radnih mjesta prije nego što stignu u pogon
+5. **Izvršenje proizvodnje**: kreira, pušta, terminira i potvrđuje naloge sve do završetka i obračuna
 
-PP pokriva diskretnu proizvodnju (autodijelovi, elektronika, industrijska dobra) i repetitivnu proizvodnju (ambalaža, potrošna dobra). Šaržna proizvodnja i proizvodnja prema recepturama u prehrambenoj, kemijskoj i farmaceutskoj industriji koristi PP-PI (planiranje proizvodnje za procesne industrije). PP-PI radi s procesnim nalozima i glavnim recepturama umjesto s proizvodnim nalozima i tehnološkim postupcima.
+U S/4HANA klasični SOP spada u compatibility scope, a SAP kupce za taj posao upućuje na IBP. Više o oba u nastavku.
+
+## Diskretna, procesna i serijska proizvodnja
+
+PP nije jedan jedini način vođenja pogona. Podržava tri načina proizvodnje, a izbor određuje koju vrstu naloga, koje matične podatke i koji pristup obračunu troškova konfigurirate. Mnogi pogoni koriste više od jednog.
+
+Tablica uspoređuje sva tri onako kako ih SAP isporučuje.
+
+| Način | Tipične industrije | Objekt izvršenja | Ključni matični podaci | Obračun troškova |
+|---|---|---|---|---|
+| Diskretna proizvodnja | Strojevi, elektronika, autodijelovi, obrambena oprema | Proizvodni nalog | Sastavnica, tehnološki postupak, radno mjesto | Po nalogu, obračun pri zatvaranju |
+| Procesna proizvodnja (PP-PI) | Hrana, pića, kemikalije, farmaceutski proizvodi | Procesni nalog | Glavni recept, resursi, sastavnica | Po nalogu, sa suproizvodima i nusproizvodima |
+| Serijska proizvodnja | Ambalaža, roba široke potrošnje, linije velikog volumena | Planski nalozi u rasporedu izvođenja | Proizvodna verzija, proizvodna linija, tehnološki postupak po stopi ili tehnološki postupak | Po razdoblju |
+
+### Diskretna proizvodnja
+
+Diskretna proizvodnja je ono što većina ljudi podrazumijeva kad kaže „SAP PP”. MRP kreira planske naloge, planeri ih pretvaraju u proizvodne naloge, a svaki nalog nosi vlastite komponente, operacije i troškove. Odgovara proizvodima koji se izrađuju u zasebnim serijama, često po narudžbi, gdje svaki nalog treba pratiti.
+
+### Procesna proizvodnja (PP-PI)
+
+PP-PI (Production Planning for Process Industries) pokriva šaržnu proizvodnju i proizvodnju po recepturama. Proizvodne naloge zamjenjuje procesnim nalozima, a tehnološke postupke glavnim receptima, te dodaje suproizvode, nusproizvode i sljedivost šarži. U reguliranim industrijama poput farmacije i prehrane takav trag na razini šarže zakonski je zahtjev, a ne nešto što je samo lijepo imati.
+
+### Serijska proizvodnja
+
+Serijska proizvodnja odgovara istim proizvodima koji se dugo izrađuju na istim linijama. Umjesto pojedinačnih naloga planiranje se odvija u vremenskim intervalima prema rasporedu izvođenja, a operateri potvrđuju izravno na planske naloge. SAP-ova [dokumentacija o serijskoj proizvodnji](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/21aead0c98bd4755abdacd91c99e3393/9577b6535fe6b74ce10000000a174cb4.html) opisuje planiranje po razdobljima i retrogradno knjiženje (backflush) koje knjiži potrošnju komponenti kada se potvrdi gotova količina.
+
+Cijena toga je razina detalja. Serijska proizvodnja uklanja administraciju pojedinačnih naloga, a troškovi se obračunavaju po razdoblju, ne po nalogu. Ako trebate troškove i sljedivost po seriji, bolje Vam odgovara diskretna proizvodnja ili PP-PI.
 
 ## Kako teče ciklus planiranja
 
-Tok od potražnje do završetka ima pet faza. U praksi rijetko teče bez prekida, ali to je struktura kojom PP upravlja.
+Tijek od potražnje do završetka ima pet faza. U praksi rijetko teče bez prekida, ali to je struktura kojom PP treba upravljati.
 
-<explainer-flow title="Kako potražnja postaje proizvodnja u SAP PP" caption="Svaka faza napaja sljedeću pa se pogreška u PIR-ovima ili matičnim podacima vidi u svakoj sljedećoj fazi." steps="SOP|Upravljanje potražnjom|MRP|Izvršenje proizvodnje|Potvrda" notes="Ciljane količine iz prognoza|PIR-ovi koji pokreću MRP izvođenje|Planirani nalozi i nabavne zahtjevnice|Nalozi otpušteni, materijali pripremljeni|Rad, količine i kretanja robe proknjiženi" result="SAP odražava što se stvarno dogodilo u hali"></explainer-flow>
+<explainer-flow title="Kako potražnja postaje proizvodnja u SAP PP" caption="Svaka faza hrani sljedeću, pa se pogreška u PIR-ovima ili matičnim podacima pokazuje u svakoj fazi nakon nje." steps="SOP|Upravljanje potražnjom|MRP|Izvršenje proizvodnje|Potvrda" notes="Ciljane količine iz prognoza|PIR-ovi koji pokreću MRP|Planski nalozi i zahtjevi za nabavu|Nalozi pušteni, materijali pripremljeni|Rad, količine i kretanja robe proknjiženi" result="SAP odražava ono što se stvarno dogodilo u pogonu"></explainer-flow>
 
-**SOP** je mjesto gdje se postavljaju proizvodni ciljevi na visokoj razini. Neke tvrtke to provode rigorozno prema tržišnim podacima. Druge koriste grube procjene. U svakom slučaju hrani upravljanje potražnjom. U S/4HANA klasične SOP transakcije su opseg kompatibilnosti (compatibility scope), što obrađujem niže.
+**Upravljanje potražnjom** generira PIR-ove. PIR je prognoza: očekujemo da će nam trebati ova količina ovog proizvoda u ovo vrijeme. PIR-ovi su ulaz za MRP, a pogreške se ovdje šire kaskadno. Jedan je klijent jednom učitao dvostruke PIR-ove za tri mjeseca. Nitko to nije primijetio dok proizvodnja nije počela naručivati previše svega.
 
-**Upravljanje potražnjom** generira PIR-ove. PIR je prognoza: očekujemo da će nam trebati ova količina ovog proizvoda u ovo vrijeme. PIR-ovi su ulaz u MRP, a pogreške ovdje se kaskadno šire. Jedan je klijent jednom učitao duplicirane PIR-ove za tri mjeseca. Nitko to nije primijetio dok proizvodnja nije počela prekomjerno naručivati sve.
+**MRP** je motor planiranja. Poravnava PIR-ove i prodajne naloge sa zalihama i otvorenim primicima, a zatim kreira planske naloge za vlastitu proizvodnju i zahtjeve za nabavu za kupovne dijelove. Izvođenje koje počiva na netočnim matičnim podacima proizvodi šum za kojim planeri jure tjednima.
 
-**MRP** je mehanizam planiranja. Prebija PIR-ove i prodajne narudžbe sa zalihama i otvorenim primitcima, a zatim kreira planirane naloge za vlastitu proizvodnju i nabavne zahtjevnice za kupljene dijelove. Dobro konfigurirano izvođenje donosi jasnoću. Izvođenje izgrađeno na netočnim matičnim podacima proizvodi šum koji planeri tjednima jure.
+**Izvršenje i potvrda** zatvaraju krug. Nalozi se puštaju, materijali pripremaju, a operacije izvode na radnim mjestima. Zatim se knjiže rad, količine i kretanja robe, i sustav odražava ono što se dogodilo u pogonu, pod uvjetom da ljudi potvrđuju na vrijeme.
 
-**Izvršenje proizvodnje** je mjesto gdje planirani nalozi postaju proizvodni nalozi. Nalozi se otpuštaju, materijali pripremaju, a operacije se izvode na radnim centrima.
+## MRP Live i ugrađeni PP/DS u S/4HANA
 
-**Potvrda** zatvara krug. Rad se bilježi, količine evidentiraju, a kretanja robe knjiže. Sustav tada odražava što se stvarno dogodilo u hali, pod uvjetom da ljudi potvrđuju na vrijeme.
+Ako prelazite s ECC-a, ovo su promjene u planiranju koje utječu na dizajn i podatke. Šire putove migracije opisujem u svom [vodiču za migraciju s ECC-a na S/4HANA](/hr/ecc-to-s4hana-migration/).
 
-## Matični podaci: gdje većina implementacija pukne
+### MRP Live
 
-Matični podaci okosnica su SAP PP-a. Ne kao izreka. Kao činjenica s posljedicama.
+MRP Live (transakcija MD01N) SAP-ovo je preporučeno izvođenje planiranja u S/4HANA. Radi unutar baze podataka SAP HANA, može u jednom izvođenju planirati jedan ili više pogona i ne zapisuje klasične MRP liste. SAP-ov [modul za učenje o MRP Live](https://learning.sap.com/courses/exploring-production-planning-in-sap-s-4hana/outlining-material-requirements-planning-with-mrp-live-1) dobar je uvod, a [stranica SAP Helpa o radu s MRP Live](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/f899ce30af9044299d573ea30b533f1c/86e15c58eb021f60e10000000a44147b.html) sadrži pojedinosti konfiguracije.
 
-**Matični zapis materijala (MRP prikazi).** Svaki proizvedeni materijal treba imati ispravno postavljene MRP prikaze. Vrsta MRP-a, veličina serije, grupa strategija, provjera raspoloživosti i ključ marže rasporeda svaki mijenjaju što MRP radi. Jedno polje koje je nedostajalo u matičnom zapisu materijala blokiralo je proizvodnju tjedan dana na projektu na kojem sam bio. Jedno polje.
+S njim dolaze još tri promjene:
 
-**Sastavnice (BOM).** Sastavnica definira što ulazi u gotov proizvod: komponente, količine, postotke škarta, ponekad alternative. Sastavnice mogu imati varijante, što odgovara konfigurabilnim proizvodima, a zbunjuje timove koji su novi u SAP-u. Pitanje „trebamo li doista pet sastavnica za ovaj jedan artikl?” ima pravi odgovor. Utvrdite ga prije implementacije, a ne tijekom MRP izvođenja.
+1. **Proizvodne verzije su obvezne** za materijale iz vlastite proizvodnje. MRP Live bez nje neće raščlaniti sastavnicu, pa kupci s ECC-a koji su se oslanjali na metode odabira sastavnice moraju ih kreirati tijekom konverzije.
+2. **MRP područja zamjenjuju MRP na razini skladišne lokacije.** Skladišne lokacije koje su se u ECC-u planirale zasebno u S/4HANA trebaju MRP područje.
+3. **SOP, MRP liste i planiranje na temelju prognoze spadaju u compatibility scope.** Prava korištenja vremenski su ograničena i razlikuju se ovisno o vrsti ugovora, a SAP je datume mijenjao više puta. Prije nego što na njima gradite dizajn, provjerite SAP Note 2269324 u odnosu na vlastiti ugovor.
 
-**Tehnološki postupci (routing).** Tehnološki postupak definira kako se nešto proizvodi: slijed operacija, koji radni centri ih izvode i koliko svaka traje. Bez njega SAP ne može izračunati trajanje proizvodnje ni provjeriti kapacitet. Čak i jednostavni proizvodi trebaju jasne tehnološke postupke, a projekti pod pritiskom ih preskaču.
+### Ugrađeni PP/DS
 
-**Radni centri.** Radni centri su mjesta gdje se proizvodnja odvija: strojevi, linije, skupine ljudi. Nose formule raspoređivanja, veze za obračun troškova i kalendare smjena. Održavanje njihove ažurnosti nakon puštanja u rad zadatak je koji se zanemari. Kada se zanemari, planiranje kapaciteta postaje netočno, a planeri prestaju vjerovati sustavu.
+PP/DS (Production Planning and Detailed Scheduling) napredni je motor planiranja koji je nekad bio u SAP APO-u. U S/4HANA je ugrađen, pa nema zasebnog APO sustava koji treba održavati. Dodaje terminiranje s ograničenim kapacitetom, redoslijede pripreme i povezivanje (pegging) kroz razine sastavnice.
 
-**Proizvodne verzije.** Proizvodna verzija povezuje valjanu sastavnicu s valjanim tehnološkim postupkom za raspon datuma i veličinu serije. U S/4HANA obvezne su za materijale proizvedene u vlastitoj proizvodnji, a MRP Live neće razložiti sastavnicu bez njih. ECC kupci koji su se oslanjali na metode odabira sastavnice moraju ih kreirati tijekom konverzije.
+MRP Live i PP/DS dijele posao po materijalu. Materijali označeni za napredno planiranje u matičnom zapisu materijala idu u PP/DS, a ostali ostaju u MRP Live. SAP-ov [sadržaj za učenje o PP/DS](https://learning.sap.com/courses/exploring-advanced-production-planning-with-sap-s-4hana-pp-ds/outlining-advanced-planning-pp-ds-in-sap-s-4hana-1) preporučuje da se kritični proizvodi na resursima uskih grla planiraju u PP/DS, a manje kritični materijali temeljeni na potrošnji u MRP Live.
 
-### Organizacijska struktura
+Na implementacijama sam koristio i MRP Live i ugrađeni PP/DS. Dvije praktične stvari važnije su od popisa funkcija:
 
-Ovo su elementi strukture o kojima PP ovisi i mjesta gdje se svaki povezuje.
+1. **Sve što dijeli resurs uskog grla planirajte u PP/DS.** Ako polovica proizvoda na ograničenoj liniji ostane u MRP Live, planiranje s ograničenim kapacitetom na toj liniji ne funkcionira.
+2. **Isključite PP/DS materijale iz opsega planiranja MRP Live.** U suprotnom ih kasnije izvođenje MRP Live ponovno terminira i rezultat detaljnog terminiranja se gubi.
 
-| Element strukture | Svrha u SAP PP | Ključna veza |
-|---|---|---|
-| Client (mandant) | Organizacijska struktura najviše razine | Zajednička svim modulima |
-| Company code (šifra poduzeća) | Pravni subjekt za financijsko izvještavanje | FI praćenje troškova proizvodnje |
-| Plant (pogon) | Središnja jedinica u kojoj se odvija proizvodnja | Povezuje PP s MM, SD, PM |
-| Skladišna lokacija | Fizička podjela zaliha unutar pogona | Priprema i kretanje materijala |
-| MRP područje | Opseg planiranja za zasebna MRP izvođenja | Zamjenjuje MRP po skladišnoj lokaciji u S/4HANA |
-| Radni centar | Proizvodni resurs (stroj, linija, skupina) | Tehnološki postupak, planiranje kapaciteta, CO troškovna mjesta |
-| Proizvodna verzija | Valjana kombinacija sastavnice i tehnološkog postupka za materijal | Obvezna za MRP i kreiranje naloga u S/4HANA |
+Prije nego što dizajn gradite oko PP/DS-a, provjerite što Vaš ugovor pokriva.
 
-### Kontrolna lista spremnosti prije prvog MRP izvođenja
+## Kada preuzima IBP
 
-Provedite ovaj slijed prije nego što pustite MRP na migrirane podatke. Vlasnik u zagradi je osoba koja ga potpisuje.
+PP planira pogon: što proizvesti, na kojoj liniji, u kojem tjednu. [SAP Integrated Business Planning (IBP)](https://www.sap.com/products/scm/integrated-business-planning.html) planira poslovanje iznad toga. To je cloud proizvod koji pokriva planiranje prodaje i poslovanja, prognoziranje potražnje, planiranje zaliha i planiranje opskrbe kroz cijelu mrežu.
+
+Klijente sam upućivao na IBP, ali samo kad je slučaj to zahtijevao. Neki pogoni dobro rade samo s MRP Live.
+
+Drugima treba PP/DS za liniju koja je usko grlo. Manjoj skupini treba IBP jer problem planiranja uopće nije u pogonu.
+
+Tablica pokazuje kako razdvajam te tri razine.
+
+| Pitanje planiranja | Alat | Horizont | Tipičan okidač za prelazak na višu razinu |
+|---|---|---|---|
+| Što proizvodim i kupujem, i kada? | MRP Live u S/4HANA | Od nekoliko dana do nekoliko mjeseci | Planeri ručno nadjačavaju MRP na ograničenim resursima |
+| Kojim redoslijedom vodim liniju, uz ograničen kapacitet? | Ugrađeni PP/DS | Od nekoliko sati do nekoliko tjedana | Odluke o volumenu i asortimanu donose se na razini više pogona ili regija |
+| Koliko bi poslovanje trebalo prodati, držati na zalihi i isporučiti? | SAP IBP | Od nekoliko mjeseci do nekoliko godina | Mreže s više lokacija, usuglašena potražnja, planiranje scenarija |
+
+Signali koji upućuju na IBP:
+
+1. Trebate mjesečni proces planiranja prodaje i poslovanja u kojem sudjeluju financije.
+2. Potražnja proizlazi iz statističkog prognoziranja za mnogo kupaca i kanala.
+3. Odluke o opskrbi obuhvaćaju više pogona i distribucijskih centara.
+
+Činjenica da klasični SOP spada u compatibility scope toj odluci dodaje rok. Moj vodič o tome [zašto je SAP IBP važan](/hr/why-sap-integrated-business-planning-sap-ibp-matters/) detaljnije pokriva stranu IBP-a.
+
+Ako za pogon još birate između SAP-a i drugih ERP sustava, moja usporedba [najboljih ERP sustava za proizvodnju](/hr/best-erp-for-manufacturing/) prikazuje opcije prema veličini i vrsti poduzeća.
+
+## Matični podaci: gdje većina implementacija puca
+
+Matični podaci okosnica su SAP PP-a. Ne kao fraza. Kao činjenica s posljedicama.
+
+**Matični zapis materijala (MRP prikazi).** Svaki proizvedeni materijal treba ispravno postavljene MRP prikaze. Vrsta MRP-a, veličina serije, grupa strategija, provjera raspoloživosti i ključ rezerve za terminiranje svaki za sebe mijenjaju ono što MRP radi. Na jednom projektu na kojem sam radio jedno polje koje je nedostajalo u matičnom zapisu materijala blokiralo je proizvodnju na tjedan dana. Jedno polje.
+
+**Grupa strategija.** Grupa strategija određuje troše li prodajni nalozi PIR-ove. Ako je pogrešna, prodajni nalozi i prognoze teku usporedno umjesto da se poravnaju, što udvostručuje signal potražnje bez ikakve poruke o pogrešci.
+
+**Sastavnice (BOM).** Sastavnica određuje što ulazi u gotov proizvod: komponente, količine, postotke otpada, ponekad alternative. Pitanje „trebamo li stvarno pet sastavnica za ovaj jedan artikl?” ima pravi odgovor. Riješite ga prije implementacije, a ne tijekom izvođenja MRP-a.
+
+**Tehnološki postupci i glavni recepti.** Tehnološki postupak određuje kako se nešto proizvodi: operacije, radna mjesta i vremena. Procesne industrije umjesto toga koriste glavne recepte. Bez njih SAP ne može izračunati trajanje proizvodnje ni provjeriti kapacitet.
+
+**Radna mjesta.** Radna mjesta nose formule za terminiranje, veze s obračunom troškova i kalendare smjena. Njihovo ažuriranje nakon go-livea zadatak je koji se zanemari. Kad se to dogodi, planiranje kapaciteta postaje netočno i planeri prestaju vjerovati sustavu.
+
+### Kontrolni popis spremnosti prije prvog izvođenja MRP-a
+
+Prođite ovaj redoslijed prije nego što MRP pustite na migrirane podatke. Odgovorna osoba u zagradi je ona koja to odobrava.
 
 1. **MRP prikazi matičnog zapisa materijala potpuni** za svaki planirani materijal, uključujući grupu strategija i veličinu serije (voditelj planiranja)
-2. **Sastavnice validirane prema onome što se stvarno gradi**, uz potvrdu komponenti i škarta od strane inženjeringa (inženjering)
-3. **Tehnološki postupci postoje za svaki materijal iz vlastite proizvodnje**, s realističnim vremenima operacija (proizvodni inženjering)
-4. **Kalendari i kapaciteti radnih centara odražavaju trenutne smjene** (voditelj pogona)
+2. **Sastavnice provjerene u odnosu na ono što se stvarno proizvodi**, s inženjeringom koji potvrđuje komponente i otpad (inženjering)
+3. **Tehnološki postupci ili glavni recepti postoje za svaki materijal iz vlastite proizvodnje**, s realnim vremenima operacija (proizvodni inženjering)
+4. **Kalendari i kapaciteti radnih mjesta odražavaju trenutačne smjene** (voditelj pogona)
 5. **Jedna valjana proizvodna verzija po materijalu iz vlastite proizvodnje**, koja pokriva horizont planiranja (voditelj planiranja)
 6. **PIR-ovi učitani jednom**, usklađeni s odobrenim planom potražnje prije prvog izvođenja (planer potražnje)
-7. **Otvoreni nalozi i zalihe usklađeni** između naslijeđenog sustava i SAP-a (kontroler zaliha)
-8. **Probno MRP izvođenje na jednom pogonu ili MRP području**, uz pregled iznimki od strane planera prije punog izvođenja (voditelj planiranja)
+7. **Otvoreni nalozi i zalihe usklađeni** između naslijeđenog sustava i SAP-a (kontrolor zaliha)
+8. **Probno izvođenje MRP-a na jednom pogonu ili MRP području**, pri čemu planeri pregledaju iznimke prije punog izvođenja (voditelj planiranja)
 
-## Integracijske točke koje odlučuju o uspjehu
+## Točke integracije i načini zakazivanja
 
-PP ne radi sam. Svaka integracijska točka ujedno je i točka kvara.
+PP ne radi sam. MM nabavlja ono što PP treba, prodajni nalozi iz SD-a troše prognoze, CO prati stvarne troškove u odnosu na standardne, a kontrolne serije iz QM-a mogu zadržati naloge. Svaka točka integracije ujedno je i točka zakazivanja.
 
-**MM (upravljanje materijalima).** PP generira potrebe za materijalima, a MM ih nabavlja. Ako je raspoloživost u MM-u pogrešna, proizvodni nalozi nailaze na manjkove. Dobra integracija PP-a i MM-a ono je što okončava hitne nabave.
+Tijekom godina vidio sam pravih katastrofa, a ovo su obrasci koje treba izbjegavati.
 
-**SD (prodaja i distribucija).** Prodajne narudžbe mogu trošiti PIR-ove u upravljanju potražnjom. Grupa strategija u matičnom zapisu materijala kontrolira kako. Ako je pogrešna, prodajne narudžbe i prognoze teku paralelno umjesto da se prebijaju, udvostručujući signal potražnje bez poruke o pogrešci. Moj [vodič za SAP SD](/hr/sap-sd-sales-and-distribution/) obrađuje stranu narudžbi te veze.
+1. **Žurba s migracijom matičnih podataka.** Sjećam se jednog proizvođača autodijelova koji je požurio s migracijom sastavnica i tehnoloških postupaka. Nakon go-livea proveo je šest mjeseci popravljajući proizvodne naloge koji su stalno padali zbog problema s podacima. Moj tekst o tome [zašto migracija podataka u SAP zakazuje](/hr/why-sap-data-migration-fails-and-how-to-fix-it/) ide dalje.
+2. **Preslikavanje naslijeđenih procesa.** Najčešća pogreška u konfiguraciji koju vidim: SAP se postavi tako da radi točno kao stari proces umjesto da se preuzme standardna logika planiranja. Rezultat je prekonfiguriran sustav koji daje manje nego što je PP zamišljen da daje.
+3. **Nedovoljno testiranje integracija.** Timovi koji svaki modul testiraju zasebno otkrivaju probleme integracije u produkciji. Testirajte cijeli lanac od planiranja do proizvodnje kroz PP, MM, SD, CO i QM, kako je opisano u mom vodiču za [SAP testiranje](/hr/sap-testing-explained/).
+4. **Otpor korisnika.** Iskusni planeri često se opiru PP-u jer preuzima posao koji su prije radili ručno i po procjeni. Uključite ih rano u konfiguraciju i pokažite im gdje im PP vraća vrijeme.
+5. **Rezanje obuke.** Vidio sam poduzeća koja potroše milijune na implementaciju, a onda štede tako što skrate obuku. Korisnici koji ne razumiju sustav stvaraju zaobilazna rješenja, a zaobilazna rješenja razbijaju točnost podataka o kojoj MRP ovisi.
 
-**CO (kontroling).** Proizvodni nalozi nose troškove. CO prati stvarni rad, materijal i opće troškove u odnosu na standardni trošak, a poravnanje (settlement) knjiži odstupanja. Bez njega je financijska slika proizvodnje nepotpuna.
+Tablica povezuje svaki rizik s njegovim učinkom i mjerom ublažavanja koju bih uvrstio u plan.
 
-**QM (upravljanje kvalitetom).** Događaji u PP-u mogu pokrenuti QM inspekcijske lotove, a rezultati kvalitete mogu zadržati naloge. Zbog toga je kvaliteta kontrola procesa, a ne naknadna misao.
-
-## Što se promijenilo u S/4HANA
-
-Ako prelazite s ECC-a, ovo su promjene u PP-u koje utječu na dizajn i podatke. Pojedinosti su u SAP-ovom popisu pojednostavljenja (simplification list) i matrici opsega kompatibilnosti (SAP Note 2269324).
-
-1. **MRP Live (transakcija MD01N)** je SAP-ovo preporučeno izvođenje planiranja. Radi unutar HANA baze podataka, može planirati više pogona u jednom izvođenju i ne zapisuje MRP liste. Klasične MD01 do MD03 i dalje postoje. SAP-ov [modul za učenje o MRP Live](https://learning.sap.com/courses/exploring-production-planning-in-sap-s-4hana/outlining-material-requirements-planning-with-mrp-live-1) dobar je uvod.
-2. **Proizvodne verzije su obvezne** za vlastitu proizvodnju, kao gore.
-3. **MRP područja zamjenjuju MRP po skladišnoj lokaciji.** Skladišne lokacije koje su se u ECC-u planirale zasebno trebaju MRP područje u S/4HANA.
-4. **SOP, MRP liste i planiranje temeljeno na prognozi (vrsta MRP-a VV) su opseg kompatibilnosti.** Prava korištenja završila su 31. prosinca 2025. za on-premise sustave. SAP ih je produljio do 31. prosinca 2030. za S/4HANA sustave u okviru RISE with SAP ili SAP Cloud ERP Private ugovora. SAP-ov imenovani nasljednik za SOP je [SAP IBP](/hr/why-sap-integrated-business-planning-sap-ibp-matters/).
-5. **Ugrađeni PP/DS** (planiranje proizvodnje i detaljno raspoređivanje) radi unutar S/4HANA za konačno raspoređivanje (finite scheduling). MRP Live prosljeđuje materijale označene za napredno planiranje heuristikama PP/DS-a. Provjerite svoju licencu prije nego što oko njega dizajnirate.
-
-[SAP Help stranica o radu s MRP Live](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/f899ce30af9044299d573ea30b533f1c/86e15c58eb021f60e10000000a44147b.html) sadrži pojedinosti konfiguracije.
-
-## Načini neuspjeha i rizik
-
-Tijekom godina vidio sam prave katastrofe, a ovo su obrasci koje treba izbjegavati. Uz RISE with SAP pristup Clean Core ograničava prilagođeni kod koji je nekad skrivao te probleme. Loši matični podaci sada izlaze na vidjelo brže, a zaobilaženje košta više.
-
-**Žurba s migracijom matičnih podataka.** Sjećam se jedne tvrtke za autodijelove koja je požurila s migracijom sastavnica i tehnoloških postupaka. Šest mjeseci nakon puštanja u rad ispravljala je proizvodne naloge koji su stalno padali zbog problema s podacima. Validacija matičnih podataka prije migracije nije sporedni zadatak. To je projekt. Moj tekst o tome [zašto migracija SAP podataka ne uspijeva](/hr/why-sap-data-migration-fails-and-how-to-fix-it/) ide dalje.
-
-**Otpor korisnika.** Iskusni planeri često se opiru PP-u jer preuzima posao koji su radili ručno i procjenom. Uključite ih rano u konfiguraciju. Pokažite im gdje im PP vraća vrijeme. To odlučuje o usvajanju.
-
-**Replikacija naslijeđenih procesa.** Najdosljednija pogreška konfiguracije koju vidim: postavljanje SAP-a da radi točno kao stari proces umjesto prihvaćanja standardne logike planiranja. Rezultat je prekonfiguriran sustav koji isporučuje manje nego što je PP projektiran.
-
-**Nedovoljno testiranje integracija.** Svaka veza s MM-om, SD-om, CO-om i QM-om može zakazati. Timovi koji testiraju svaki modul zasebno otkrivaju integracijske probleme u produkciji.
-
-**Rezanje obuke.** Vidio sam tvrtke koje potroše milijune na implementaciju, a zatim štede rezanjem obuke. Korisnici koji ne razumiju sustav stvaraju zaobilazna rješenja. Zaobilazna rješenja narušavaju točnost podataka o kojoj MRP ovisi.
-
-Tablica povezuje svaki rizik s njegovim utjecajem i ublažavanjem koje bih stavio u plan.
-
-| Rizik | Utjecaj | Ublažavanje |
+| Rizik | Učinak | Ublažavanje |
 |---|---|---|
-| Netočna MRP konfiguracija | Nestašice, prekomjerna proizvodnja, trošak prekomjerne nabave | Validirajte vrste MRP-a, grupe strategija i veličine serija s poslovnim voditeljima |
-| Netočna sastavnica ili tehnološki postupak | Pogrešne potrebe za materijalima, kašnjenja u hali | Uključite inženjering u preglede sastavnica i tehnoloških postupaka prije migracije |
-| Loše planiranje kapaciteta | Uska grla radnih centara, propušteni rokovi isporuke | Provedite procjenu kapaciteta i izravnavanje prije otpuštanja naloga |
-| Nedostajuća proizvodna verzija | MRP ne može razložiti sastavnicu ni kreirati valjane naloge | Jedna valjana proizvodna verzija po materijalu iz vlastite proizvodnje |
-| Nema povratnih informacija iz hale u stvarnom vremenu | Netočan status proizvodnje, kasna vidljivost odstupanja | Provodite pravodobne potvrde; integrirajte SAP Digital Manufacturing ili drugi MES |
-| Nedovoljno obučeni korisnici | Pogrešne potvrde, pogreške backflusha, neriješena dorada | Obuka po ulogama na stvarnim proizvodnim ciklusima |
-| Neobrađena konfiguracija varijanti | Pogrešni nalozi za konfigurabilne proizvode | Testirajte logiku konfiguracije kroz sastavnicu i tehnološki postupak zajedno |
+| Pogrešna konfiguracija MRP-a | Nestašice zaliha, prekomjerna proizvodnja, previsoki troškovi nabave | Provjerite vrste MRP-a, grupe strategija i određivanje veličine serije s poslovnim voditeljima |
+| Netočna sastavnica, tehnološki postupak ili recept | Pogrešne potrebe za materijalom, kašnjenja u pogonu | Uključite inženjering u preglede prije migracije |
+| Nedostaje proizvodna verzija | MRP ne može raščlaniti sastavnicu ni kreirati valjane naloge | Jedna valjana proizvodna verzija po materijalu iz vlastite proizvodnje |
+| Preklapanje PP/DS-a i MRP Live | Detaljne rasporede prepisuje sljedeće izvođenje MRP-a | Isključite PP/DS materijale iz opsega planiranja MRP Live |
+| Nema povratne informacije iz pogona u stvarnom vremenu | Netočan status, kasna vidljivost odstupanja | Inzistirajte na pravodobnim potvrdama; integrirajte SAP Digital Manufacturing ili drugi MES |
+| Nedovoljno obučeni korisnici | Pogrešne potvrde, pogreške retrogradnog knjiženja, neriješene dorade | Obuka prilagođena ulogama na stvarnim proizvodnim ciklusima |
 
 ## Često postavljana pitanja
 
 <details>
-<summary>Što je SAP PP i što radi?</summary>
+<summary>Što znači kratica SAP PP?</summary>
 
-SAP PP (Production Planning) je SAP-ov modul za planiranje i izvršenje proizvodnje. Upravlja sastavnicama, radnim centrima, tehnološkim postupcima i proizvodnim nalozima. Njegov je temeljni zadatak povezati potražnju iz prognoza i prodajnih narudžbi s proizvodnim kapacitetom putem MRP-a, a zatim voditi proizvodni nalog od kreiranja do poravnanja.
-
-</details>
-
-<details>
-<summary>Koje matične podatke zahtijeva SAP PP?</summary>
-
-Pet objekata: MRP prikaze matičnog zapisa materijala, sastavnice, tehnološke postupke, radne centre i, u S/4HANA, proizvodne verzije. Svaki mora biti točan pri puštanju u rad i održavan nakon njega. Jedno polje koje nedostaje u matičnom zapisu materijala može spriječiti kreiranje proizvodnih naloga.
+SAP PP znači Production Planning (planiranje proizvodnje). To je SAP modul za planiranje i izvršenje proizvodnje, od potražnje i MRP-a preko proizvodnih naloga i potvrde do obračuna troškova.
 
 </details>
 
 <details>
-<summary>Kako MRP radi u SAP S/4HANA?</summary>
+<summary>Za što se koristi SAP PP modul?</summary>
 
-MRP prebija potražnju (PIR-ove, prodajne narudžbe, zavisne zahtjeve) sa zalihama i otvorenim primitcima, koristeći vremena isporuke, veličine serija i sigurnosne zalihe iz matičnog zapisa materijala. Izlaz su planirani nalozi za vlastitu proizvodnju i nabavne zahtjevnice za vanjsku nabavu. U S/4HANA SAP preporučuje MRP Live (MD01N), koji radi u HANA bazi podataka i ne kreira MRP liste.
-
-</details>
-
-<details>
-<summary>Što je proizvodni nalog u SAP PP?</summary>
-
-Proizvodni nalog je uputa za proizvodnju određene količine materijala do određenog datuma. Obično se pretvara iz MRP planiranog naloga. Njegov životni ciklus ide od kreiranja i otpuštanja do potvrde, primitka robe i poravnanja, gdje se stvarni troškovi uspoređuju sa standardnima, a odstupanje se knjiži u CO.
+SAP PP modul povezuje potražnju iz prognoza i prodajnih naloga s proizvodnim kapacitetom putem MRP-a. Upravlja sastavnicama, tehnološkim postupcima, radnim mjestima i proizvodnim verzijama te vodi proizvodne ili procesne naloge od kreiranja do obračuna.
 
 </details>
 
 <details>
 <summary>Koja je razlika između SAP PP i SAP PP-PI?</summary>
 
-SAP PP je izgrađen za diskretnu i repetitivnu proizvodnju, uz proizvodne naloge temeljene na sastavnicama i tehnološkim postupcima. SAP PP-PI izgrađen je za šaržnu proizvodnju i proizvodnju prema recepturama u prehrambenoj industriji, proizvodnji pića, kemiji i farmaciji. Koristi procesne naloge i glavne recepture te dodaje koproizvode, nusproizvode i sljedivost šarži. U reguliranim industrijama taj trag na razini šarže regulatorni je zahtjev.
+SAP PP u užem smislu pokriva diskretnu i serijsku proizvodnju, uz proizvodne naloge ili rasporede izvođenja na temelju sastavnica i tehnoloških postupaka. PP-PI služi za šaržnu proizvodnju i proizvodnju po recepturama u prehrani, kemijskoj i farmaceutskoj industriji. Koristi procesne naloge i glavne recepte te dodaje suproizvode, nusproizvode i sljedivost šarži.
 
 </details>
 
 <details>
-<summary>Je li SOP još dostupan u SAP S/4HANA?</summary>
+<summary>Što je MRP Live u SAP S/4HANA?</summary>
 
-Klasični SOP je u opsegu kompatibilnosti S/4HANA, uz ograničena prava korištenja. Ta su prava završila 31. prosinca 2025. za on-premise sustave, a traju do 31. prosinca 2030. za sustave u okviru RISE with SAP ili SAP Cloud ERP Private ugovora. SAP-ov preporučeni nasljednik je SAP Integrated Business Planning (IBP).
+MRP Live (transakcija MD01N) SAP-ovo je preporučeno izvođenje MRP-a u S/4HANA. Radi unutar baze podataka SAP HANA, može u jednom izvođenju planirati više pogona i ne kreira klasične MRP liste. Materijali označeni za napredno planiranje predaju se PP/DS-u.
 
 </details>
 
 <details>
-<summary>Koje su najčešće pogreške u SAP PP implementaciji?</summary>
+<summary>Koja je razlika između SAP PP i PP/DS?</summary>
 
-Žurba s matičnim podacima, postavljanje pogrešne grupe strategija, kopiranje naslijeđenih procesa u konfiguraciju, preskakanje punog integracijskog testiranja i rezanje obuke. Većina završi isto: MRP izlaz kojem nitko ne vjeruje i planeri koji se vraćaju u proračunske tablice.
+PP s MRP Live planira uz neograničen kapacitet: što proizvesti i kupiti, i kada. PP/DS dodaje terminiranje s ograničenim kapacitetom, redoslijede pripreme i povezivanje (pegging) za kritične materijale na resursima uskih grla. U S/4HANA je PP/DS ugrađen; provjerite sa SAP-om kako ga Vaš ugovor licencira.
 
 </details>
+
+<details>
+<summary>Zamjenjuje li SAP IBP SAP PP?</summary>
+
+Ne. IBP planira prodaju i poslovanje, potražnju, zalihe i opskrbu na razini cijelog poslovanja, obično u mjesečnim ili tjednim intervalima. PP i dalje planira i izvršava proizvodnju u pogonu.
+
+IBP je SAP-ov imenovani nasljednik klasičnog SOP-a, koji u S/4HANA spada u compatibility scope.
+
+</details>
+
+## Sljedeći korak
+
+Ako određujete opseg PP-a za program S/4HANA, najprije riješite tri stvari: koje načine proizvodnje koristi svaki pogon, kojim materijalima treba PP/DS i pripada li Vaš problem planiranja uopće u IBP. Ako želite drugo mišljenje o tom dizajnu, [razgovarajte sa mnom o svom SAP programu](/hr/contact-noel-erp-support/).

@@ -1,23 +1,25 @@
 ---
-title: "SAP PP : ce qu'il fait et où ça se passe mal"
-h1: "SAP PP : ce qu'il fait et où ça se passe mal"
+title: "SAP PP : le module de planification de la production expliqué"
+h1: "SAP PP : le module de planification de la production expliqué"
 slug: "sap-pp-production-planning"
 date: "2025-04-02"
-updated: "2026-10-07"
+updated: "2026-10-14"
 hero: "/images/seo-refresh/sap-pp-production-planning.webp"
-heroAlt: "Tableau de bord SAP PP de planification de la production avec résultats du calcul MRP et capacité des postes de travail"
+heroAlt: "Un atelier de production lumineux avec un tableau de planification et un graphique de capacité sur une tablette"
 category: "sap-modules"
 tags: ["sap-technical-decisions", "sap-pp", "sap-manufacturing", "mrp"]
 author: "Noel D'Costa"
-metaTitle: "SAP PP en 2026 : ce qu'il fait et où il échoue"
-metaDescription: "SAP PP expliqué : MRP Live, nomenclatures, gammes, versions de fabrication, nouveautés S/4HANA et erreurs de données de base qui faussent la planification."
-excerpt: "SAP PP relie ce que l'entreprise doit produire à ce que l'atelier peut livrer. Ce guide explique son fonctionnement dans S/4HANA, ce qui a changé depuis ECC et les erreurs de données de base qui rendent le résultat du MRP inutilisable."
-experienceSource: "Noel's SAP PP implementation experience as published in the original article: the packaging plant with over 400 production orders a week, the double PIR upload, the missing PP-view field that blocked production for a week, and the automotive parts company that spent six months after go-live fixing production orders. Product facts (PP-PI, S/4HANA compatibility scope, MRP Live, pMRP) checked against SAP documentation in October 2026."
+metaTitle: "SAP PP : signification, module et planification S/4HANA"
+metaDescription: "SAP PP signifie Production Planning. Rôle du module, fabrication discrète, process et répétitive, MRP Live, PP/DS et le moment où IBP prend le relais."
+primaryKeyword: "sap pp"
+excerpt: "SAP PP signifie Production Planning, la planification de la production. Ce guide explique ce que fait le module, comment il gère la fabrication discrète, process et répétitive, comment MRP Live et PP/DS intégré fonctionnent dans S/4HANA, quand IBP prend le relais, et les erreurs de données de base qui rendent le résultat du MRP inutilisable."
+experienceSource: "Noel's SAP PP implementation experience as published in the original article: the packaging plant with over 400 production orders a week, the double PIR upload, the missing PP-view field that blocked production for a week, and the automotive parts company that spent six months after go-live fixing production orders. Noel confirmed on 14 October 2026 that he has implemented PP in discrete, process (PP-PI) and repetitive manufacturing, has used both embedded PP/DS and MRP Live, and has sent clients to IBP depending on the case. Product facts (MRP Live, PP/DS, repetitive manufacturing, IBP, compatibility scope) checked against SAP Help Portal, SAP Learning and sap.com in October 2026."
 lastReviewed: "2026-05-21"
 keyTakeaways:
-  - "SAP PP transforme les prévisions et les commandes clients en propositions de production et d'achat grâce au MRP. Des données de base fausses donnent un résultat MRP faux"
+  - "SAP PP signifie Production Planning : le module SAP qui transforme la demande en propositions de production et d'achat et pilote la production jusqu'à l'imputation des coûts"
+  - "PP couvre trois modes : la fabrication discrète (ordres de fabrication), la fabrication en process (PP-PI, ordres de process et recettes de référence) et la fabrication répétitive (planification par période sur des lignes de production)"
   - "Dans S/4HANA, MRP Live (MD01N) est le calcul de planification recommandé et les versions de fabrication sont obligatoires pour la production interne"
-  - "Le SOP classique et la planification basée sur les prévisions relèvent du périmètre de compatibilité dans S/4HANA. Le successeur du SOP chez SAP est IBP"
+  - "PP/DS intégré ajoute l'ordonnancement à capacité finie pour les articles goulots dans S/4HANA. IBP est l'outil cloud de planification des ventes et des opérations, de la demande et de l'approvisionnement au-dessus de l'usine"
   - "Un mauvais groupe de stratégies dans les données de base article fait que commandes clients et prévisions s'additionnent au lieu de se compenser, sans aucun message d'erreur"
   - "L'échec le plus constant : paramétrer SAP pour copier les anciens processus au lieu d'adopter la logique de planification standard"
 pullQuote: "Si vous bâclez les données de base dans une mise en œuvre de SAP PP, tout le reste devient un contournement. Exactitude des nomenclatures, complétude des gammes, entretien des postes de travail. Rien de cela n'est optionnel."
@@ -41,176 +43,213 @@ translatedFrom: "en"
 translationSource: "reviewed-en-2026-10"
 ---
 
-SAP PP (Production Planning, la planification de la production) est la partie de SAP S/4HANA qui transforme la demande en plan de production. Il prend les prévisions et les commandes clients, les confronte au stock, aux nomenclatures, aux gammes et à la capacité, puis propose ce qu'il faut fabriquer, ce qu'il faut acheter et quand. Ce guide s'adresse aux responsables d'usine, aux planificateurs et aux chefs de projet qui doivent savoir ce que fait PP, ce qui a changé dans S/4HANA et où les mises en œuvre échouent. La réponse courte sur ce dernier point : les données de base. Si les données de base article, les nomenclatures, les gammes et les postes de travail sont faux, le résultat du MRP est faux, et aucun paramétrage n'y changera rien. La liste de préparation plus bas est le bon point de départ.
+SAP PP signifie Production Planning, la planification de la production. C'est le module SAP qui transforme la demande en plan de production, puis pilote les ordres de fabrication de leur lancement à la confirmation et jusqu'à l'imputation des coûts.
 
-J'ai travaillé un jour avec l'équipe d'une usine d'emballage qui traitait plus de 400 ordres de fabrication par semaine. Sans PP, elle jonglait entre tableurs et post-it. Après la mise en œuvre, elle n'est pas devenue parfaite, mais elle a cessé de se noyer.
+PP prend les prévisions et les commandes clients, les confronte au stock, aux nomenclatures, aux gammes et à la capacité, puis propose ce qu'il faut fabriquer, ce qu'il faut acheter et quand. Dans SAP S/4HANA, il se situe dans le domaine de la production, à côté de la gestion des articles (MM), de la gestion de la qualité (QM) et du contrôle de gestion (CO).
 
-## Ce que gère SAP PP
+Ce guide s'adresse aux responsables d'usine, aux planificateurs et aux chefs de projet. J'ai mis en œuvre PP en fabrication discrète, en fabrication en process (PP-PI) et en fabrication répétitive, donc le guide couvre les trois. La réponse courte sur l'endroit où PP casse : les données de base.
 
-PP se situe au cœur de la chaîne logistique. Il part de la demande et remonte à travers les articles, la capacité et les délais pour générer des propositions de production. Les fonctions, dans l'ordre où la demande les traverse :
+J'ai travaillé un jour avec l'équipe d'une usine d'emballage qui gérait plus de 400 ordres de fabrication par semaine. Sans PP, elle jonglait avec des tableurs et des post-it. Après la mise en œuvre, elle n'est pas devenue parfaite, mais elle a cessé de se noyer.
+
+## Ce que fait le module SAP PP
+
+PP est au centre de la chaîne logistique. Il part de la demande et remonte les articles, la capacité et les délais pour générer des propositions de production. Les fonctions, dans l'ordre où la demande les traverse :
 
 1. **Planification des ventes et des opérations (SOP)** : volumes globaux fondés sur les prévisions et les attentes du marché
-2. **Gestion des besoins** : transforme ces volumes en besoins indépendants prévisionnels (PIR) qui alimentent le MRP
-3. **Planification des besoins en composants (MRP)** : détermine ce qu'il faut produire ou acheter, quand et en quelle quantité, à partir du stock, des délais et des ordres ouverts
-4. **Planification et nivellement de la capacité** : montre les surcharges des postes de travail avant qu'elles n'atteignent l'atelier
-5. **Gestion des ordres de fabrication** : crée, lance, ordonnance et confirme les ordres jusqu'à leur achèvement
+2. **Gestion de la demande** : convertit ces volumes en besoins indépendants planifiés (BIP, ou PIR en anglais) qui pilotent le MRP
+3. **Calcul des besoins nets (MRP)** : détermine quoi produire ou acheter, quand et en quelle quantité, à partir du stock, des délais et des commandes en cours
+4. **Planification et lissage de la capacité** : montre les surcharges des postes de travail avant qu'elles n'atteignent l'atelier
+5. **Exécution de la production** : crée, lance, ordonnance et confirme les ordres jusqu'à leur clôture et leur imputation
 
-PP couvre la fabrication discrète (pièces automobiles, électronique, biens d'équipement) et la fabrication répétitive (emballage, biens de consommation). La production par lots et par recettes dans l'agroalimentaire, la chimie et la pharmacie relève de PP-PI (Production Planning for Process Industries, la planification de la production pour les industries de process). PP-PI travaille avec des ordres de process et des recettes de base à la place des ordres de fabrication et des gammes.
+Dans S/4HANA, le SOP classique relève du périmètre de compatibilité, et SAP oriente ses clients vers IBP pour ce travail. Plus de détails sur les deux ci-dessous.
+
+## Fabrication discrète, en process et répétitive
+
+PP n'impose pas une seule façon de faire tourner une usine. Il prend en charge trois modes de fabrication, et ce choix détermine le type d'ordre, les données de base et la méthode de calcul des coûts à paramétrer. Beaucoup d'usines en utilisent plus d'un.
+
+Le tableau compare les trois tels que SAP les livre.
+
+| Mode | Secteurs typiques | Objet d'exécution | Données de base principales | Calcul des coûts |
+|---|---|---|---|---|
+| Fabrication discrète | Machines, électronique, pièces automobiles, équipements de défense | Ordre de fabrication | Nomenclature, gamme, poste de travail | Par ordre, imputé à la clôture |
+| Fabrication en process (PP-PI) | Agroalimentaire, boissons, chimie, pharmacie | Ordre de process | Recette de référence, ressources, nomenclature | Par ordre, avec coproduits et sous-produits |
+| Fabrication répétitive | Emballage, biens de consommation, lignes à grand volume | Ordres planifiés sur un échéancier | Version de fabrication, ligne de production, gamme de cadence ou gamme | Par période |
+
+### Fabrication discrète
+
+La fabrication discrète est ce que la plupart des gens entendent par « SAP PP ». Le MRP crée des ordres planifiés, les planificateurs les convertissent en ordres de fabrication, et chaque ordre porte ses propres composants, opérations et coûts. Elle convient aux produits fabriqués en lots distincts, souvent à la commande, où chaque ordre doit être suivi.
+
+### Fabrication en process (PP-PI)
+
+PP-PI (Production Planning for Process Industries) gère la production par lots et à base de recettes. Les ordres de fabrication y deviennent des ordres de process et les gammes des recettes de référence, avec en plus les coproduits, les sous-produits et la traçabilité des lots. Dans les secteurs réglementés comme la pharmacie et l'agroalimentaire, cette traçabilité au niveau du lot est une exigence de conformité, pas un plus.
+
+### Fabrication répétitive
+
+La fabrication répétitive convient aux mêmes produits fabriqués sur les mêmes lignes pendant de longues périodes. Au lieu d'ordres individuels, la planification se fait par tranches de temps sur un échéancier, et les opérateurs confirment directement sur les ordres planifiés. La [documentation SAP sur la fabrication répétitive](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/21aead0c98bd4755abdacd91c99e3393/9577b6535fe6b74ce10000000a174cb4.html) décrit la planification par période et le prélèvement rétroactif (backflush) qui comptabilise la consommation des composants au moment où la quantité de produit fini est confirmée.
+
+Le compromis porte sur le niveau de détail. La fabrication répétitive supprime la charge de gestion des ordres, et les coûts sont imputés par période plutôt que par ordre. Si vous avez besoin du coût et de la traçabilité par lot, la fabrication discrète ou PP-PI convient mieux.
 
 ## Comment se déroule le cycle de planification
 
-Le flux qui va de la demande à l'achèvement comporte cinq étapes. Dans la pratique, il se déroule rarement sans interruption, mais c'est la structure que PP est conçu pour gérer.
+Le flux qui va de la demande à l'achèvement compte cinq étapes. En pratique, il se déroule rarement sans interruption, mais c'est la structure que PP est conçu pour gérer.
 
-<explainer-flow title="Comment la demande devient production dans SAP PP" caption="Chaque étape alimente la suivante : une erreur dans les PIR ou dans les données de base se retrouve à toutes les étapes qui suivent." steps="SOP|Gestion des besoins|MRP|Exécution de la production|Confirmation" notes="Objectifs de volume issus des prévisions|PIR qui alimentent le calcul MRP|Ordres prévisionnels et demandes d'achat|Ordres lancés, articles préparés|Main-d'œuvre, quantités et mouvements de marchandises enregistrés" result="SAP reflète ce qui s'est réellement passé dans l'atelier"></explainer-flow>
+<explainer-flow title="Comment la demande devient production dans SAP PP" caption="Chaque étape alimente la suivante, donc une erreur dans les BIP ou dans les données de base se retrouve dans toutes les étapes suivantes." steps="SOP|Gestion de la demande|MRP|Exécution de la production|Confirmation" notes="Objectifs de volume issus des prévisions|BIP qui pilotent le calcul MRP|Ordres planifiés et demandes d'achat|Ordres lancés, articles mis à disposition|Main-d'œuvre, quantités et mouvements de stock comptabilisés" result="SAP reflète ce qui s'est réellement passé dans l'atelier"></explainer-flow>
 
-**Le SOP** est l'endroit où l'on fixe les objectifs de production globaux. Certaines entreprises le pilotent avec rigueur à partir de données de marché. D'autres s'appuient sur des estimations grossières. Dans les deux cas, il alimente la gestion des besoins. Dans S/4HANA, les transactions SOP classiques relèvent du périmètre de compatibilité, que je détaille plus bas.
+**La gestion de la demande** génère les BIP. Un BIP est une prévision : nous prévoyons d'avoir besoin de cette quantité de ce produit à ce moment-là. Les BIP alimentent le MRP, et les erreurs à ce stade se propagent en cascade. Un client a un jour chargé en double des BIP couvrant trois mois. Personne ne s'en est aperçu avant que la production ne commence à surcommander absolument tout.
 
-**La gestion des besoins** génère les PIR. Un PIR est une prévision : nous pensons avoir besoin de cette quantité de ce produit à cette date. Les PIR sont l'entrée du MRP, et les erreurs s'y propagent en cascade. Un client a un jour chargé en double des PIR couvrant trois mois. Personne ne l'a remarqué jusqu'à ce que la production se mette à tout surcommander.
+**Le MRP** est le moteur de planification. Il compense les BIP et les commandes clients avec le stock et les entrées prévues, puis crée des ordres planifiés pour la production interne et des demandes d'achat pour les pièces achetées. Un calcul fondé sur des données de base inexactes produit du bruit que les planificateurs passent des semaines à traquer.
 
-**Le MRP** est le moteur de planification. Il compense les PIR et les commandes clients par le stock et les réceptions ouvertes, puis crée des ordres prévisionnels pour la fabrication interne et des demandes d'achat pour les pièces achetées. Un calcul bien paramétré apporte de la clarté. Un calcul bâti sur des données de base inexactes produit du bruit que les planificateurs passent des semaines à traquer.
+**L'exécution et la confirmation** bouclent la boucle. Les ordres sont lancés, les articles mis à disposition et les opérations exécutées aux postes de travail. La main-d'œuvre, les quantités et les mouvements de stock sont ensuite comptabilisés, et le système reflète ce qui s'est passé dans l'atelier, à condition que les gens confirment à temps.
 
-**L'exécution de la production** est le moment où les ordres prévisionnels deviennent des ordres de fabrication. Les ordres sont lancés, les articles sont préparés et les opérations s'exécutent sur les postes de travail.
+## MRP Live et PP/DS intégré dans S/4HANA
 
-**La confirmation** referme la boucle. La main-d'œuvre est imputée, les quantités enregistrées et les mouvements de marchandises comptabilisés. Le système reflète alors ce qui s'est réellement passé dans l'atelier, à condition que les gens confirment à temps.
+Si vous migrez depuis ECC, voici les changements de planification qui touchent la conception et les données. Les différentes voies de migration sont décrites dans mon [guide de migration d'ECC vers S/4HANA](/fr/ecc-to-s4hana-migration/).
 
-## Données de base : là où la plupart des mises en œuvre échouent
+### MRP Live
 
-Les données de base sont l'ossature de SAP PP. Pas comme une formule. Comme un fait, avec des conséquences.
+MRP Live (transaction MD01N) est le calcul de planification recommandé par SAP dans S/4HANA. Il s'exécute dans la base de données SAP HANA, peut planifier une ou plusieurs divisions en un seul calcul et n'écrit pas les listes MRP classiques. Le [module de formation SAP sur MRP Live](https://learning.sap.com/courses/exploring-production-planning-in-sap-s-4hana/outlining-material-requirements-planning-with-mrp-live-1) est une bonne introduction, et la [page d'aide SAP sur l'utilisation de MRP Live](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/f899ce30af9044299d573ea30b533f1c/86e15c58eb021f60e10000000a44147b.html) donne le détail du paramétrage.
 
-**Données de base article (vues MRP).** Chaque article fabriqué a besoin de vues MRP correctement renseignées. Le type de MRP, la taille de lot, le groupe de stratégies, le contrôle de disponibilité et la clé de marge de planification changent chacun le comportement du MRP. Sur un projet où j'étais, un seul champ manquant dans les données de base article a bloqué la production pendant une semaine. Un seul champ.
+Trois autres changements l'accompagnent :
 
-**Nomenclatures.** La nomenclature définit ce qui entre dans un produit fini : composants, quantités, pourcentages de rebut, parfois alternatives. Les nomenclatures peuvent avoir des variantes, ce qui convient aux produits configurables et déroute les équipes nouvelles dans SAP. La question « faut-il vraiment cinq nomenclatures pour cet article ? » appelle une vraie réponse. Trouvez-la avant la mise en œuvre, pas pendant les calculs MRP.
+1. **Les versions de fabrication sont obligatoires** pour les articles fabriqués en interne. MRP Live n'éclate pas une nomenclature sans version de fabrication, donc les clients ECC qui s'appuyaient sur les méthodes de sélection de nomenclature doivent les créer pendant la conversion.
+2. **Les zones MRP remplacent le MRP au niveau du magasin.** Les magasins planifiés séparément dans ECC ont besoin d'une zone MRP dans S/4HANA.
+3. **Le SOP, les listes MRP et la planification basée sur les prévisions relèvent du périmètre de compatibilité.** Leurs droits d'utilisation sont limités dans le temps et varient selon le type de contrat, et SAP a modifié les dates plus d'une fois. Vérifiez la note SAP 2269324 au regard de votre propre contrat avant de concevoir quoi que ce soit autour.
 
-**Gammes.** Une gamme définit comment un produit est fabriqué : la séquence des opérations, les postes de travail qui les réalisent et la durée de chacune. Sans gamme, SAP ne peut ni calculer la durée de production ni contrôler la capacité. Même les produits simples ont besoin de gammes claires, et les projets pressés les sautent.
+### PP/DS intégré
 
-**Postes de travail.** Les postes de travail sont les lieux où la production a lieu : machines, lignes, groupes de personnes. Ils portent des formules d'ordonnancement, des liens de calcul des coûts et des calendriers d'équipes. Les tenir à jour après le go-live est la tâche qu'on abandonne. Quand c'est le cas, la planification de la capacité devient imprécise et les planificateurs cessent de faire confiance au système.
+PP/DS (Production Planning and Detailed Scheduling) est le moteur de planification avancée qui se trouvait autrefois dans SAP APO. Dans S/4HANA, il est intégré, donc il n'y a plus de système APO séparé à exploiter. Il ajoute l'ordonnancement à capacité finie, les séquences de réglage et le pegging sur plusieurs niveaux de nomenclature.
 
-**Versions de fabrication.** Une version de fabrication associe une nomenclature valide à une gamme valide pour une période et une taille de lot. Dans S/4HANA, elles sont obligatoires pour les articles fabriqués en interne, et MRP Live n'éclate pas une nomenclature sans elles. Les clients ECC qui s'appuyaient sur des méthodes de sélection de nomenclature doivent les créer pendant la conversion.
+MRP Live et PP/DS se répartissent le travail par article. Les articles marqués pour la planification avancée dans les données de base article vont dans PP/DS, et les autres restent dans MRP Live. Les [contenus de formation SAP sur PP/DS](https://learning.sap.com/courses/exploring-advanced-production-planning-with-sap-s-4hana-pp-ds/outlining-advanced-planning-pp-ds-in-sap-s-4hana-1) recommandent de planifier dans PP/DS les produits critiques sur des ressources goulots, et dans MRP Live les articles moins critiques pilotés par la consommation.
 
-### Structure organisationnelle
+J'ai utilisé MRP Live et PP/DS intégré sur des projets. Deux points pratiques comptent plus que la liste des fonctionnalités :
 
-Voici les éléments de structure dont PP dépend et le lien de chacun.
+1. **Planifiez dans PP/DS tout ce qui partage une ressource goulot.** Si la moitié des produits d'une ligne contrainte reste dans MRP Live, la planification à capacité finie de cette ligne ne fonctionne pas.
+2. **Excluez les articles PP/DS du périmètre de planification de MRP Live.** Sinon, un calcul MRP Live ultérieur les replanifie et le résultat de l'ordonnancement détaillé est perdu.
 
-| Élément de structure | Rôle dans SAP PP | Lien principal |
-|---|---|---|
-| Mandant | Structure d'entreprise de plus haut niveau | Commun à tous les modules |
-| Société | Entité juridique pour le reporting financier | Suivi des coûts de production en FI |
-| Division | Unité centrale où a lieu la production | Relie PP à MM, SD, PM |
-| Magasin | Subdivision physique du stock au sein de la division | Préparation et mouvements des articles |
-| Zone MRP | Périmètre de planification pour des calculs MRP distincts | Remplace le MRP par magasin dans S/4HANA |
-| Poste de travail | Ressource de production (machine, ligne, groupe) | Gamme, planification de la capacité, centres de coûts CO |
-| Version de fabrication | Combinaison valide de nomenclature et de gamme pour un article | Obligatoire pour le MRP et la création d'ordres dans S/4HANA |
+Vérifiez ce que couvre votre contrat avant de concevoir quoi que ce soit autour de PP/DS.
+
+## Quand IBP prend le relais
+
+PP planifie l'usine : quoi fabriquer, sur quelle ligne, quelle semaine. [SAP Integrated Business Planning (IBP)](https://www.sap.com/products/scm/integrated-business-planning.html) planifie l'entreprise au-dessus. C'est un produit cloud qui couvre la planification des ventes et des opérations, la prévision de la demande, la planification des stocks et la planification de l'approvisionnement sur l'ensemble du réseau.
+
+J'ai orienté des clients vers IBP, mais seulement quand le cas l'exigeait. Certaines usines fonctionnent bien avec MRP Live seul.
+
+D'autres ont besoin de PP/DS pour une ligne goulot. Un groupe plus restreint a besoin d'IBP parce que le problème de planification ne se situe pas du tout dans l'atelier.
+
+Le tableau montre comment je sépare les trois niveaux.
+
+| Question de planification | Outil | Horizon | Signal typique pour passer au niveau supérieur |
+|---|---|---|---|
+| Que dois-je fabriquer et acheter, et quand ? | MRP Live dans S/4HANA | De quelques jours à quelques mois | Des planificateurs qui corrigent le MRP à la main sur les ressources contraintes |
+| Dans quel ordre faire tourner la ligne, à capacité finie ? | PP/DS intégré | De quelques heures à quelques semaines | Des décisions de volume et de mix prises entre usines ou régions |
+| Combien l'entreprise doit-elle vendre, stocker et approvisionner ? | SAP IBP | De quelques mois à quelques années | Réseaux multisites, demande consensuelle, planification par scénarios |
+
+Les signaux qui orientent vers IBP :
+
+1. Vous avez besoin d'un processus mensuel de planification des ventes et des opérations avec la finance autour de la table.
+2. La demande vient de prévisions statistiques sur de nombreux clients et canaux.
+3. Les décisions d'approvisionnement concernent plusieurs usines et centres de distribution.
+
+Le fait que le SOP classique relève du périmètre de compatibilité ajoute une échéance à cette décision. Mon guide sur [l'importance de SAP IBP](/fr/why-sap-integrated-business-planning-sap-ibp-matters/) traite le volet IBP plus en profondeur.
+
+Si vous hésitez encore entre SAP et d'autres ERP pour une usine, ma comparaison des [meilleurs ERP pour l'industrie](/fr/best-erp-for-manufacturing/) présente les options selon la taille et le type d'entreprise.
+
+## Données de base : là où la plupart des mises en œuvre cassent
+
+Les données de base sont la colonne vertébrale de SAP PP. Pas une formule. Un fait, avec des conséquences.
+
+**Données de base article (vues MRP).** Chaque article fabriqué doit avoir ses vues MRP correctement renseignées. Le type de planification, la taille de lot, le groupe de stratégies, le contrôle de disponibilité et la clé d'horizon changent chacun ce que fait le MRP. Sur un projet auquel j'ai participé, un seul champ manquant dans des données de base article a bloqué la production pendant une semaine. Un seul champ.
+
+**Groupe de stratégies.** Le groupe de stratégies détermine si les commandes clients consomment les BIP. S'il est faux, commandes clients et prévisions s'additionnent au lieu de se compenser, ce qui double le signal de demande sans aucun message d'erreur.
+
+**Nomenclatures.** La nomenclature définit ce qui entre dans un produit fini : composants, quantités, pourcentages de rebut, parfois des alternatives. La question « avons-nous vraiment besoin de cinq nomenclatures pour cet article ? » a une vraie réponse. Trouvez-la avant la mise en œuvre, pas pendant les calculs MRP.
+
+**Gammes et recettes de référence.** Une gamme définit comment une chose est fabriquée : opérations, postes de travail et temps. Les industries de process utilisent des recettes de référence à la place. Sans elles, SAP ne peut ni calculer la durée de production ni contrôler la capacité.
+
+**Postes de travail.** Les postes de travail portent les formules d'ordonnancement, les liens avec le calcul des coûts et les calendriers d'équipes. Les tenir à jour après le go-live est la tâche qu'on abandonne. Quand c'est le cas, la planification de la capacité devient inexacte et les planificateurs cessent de faire confiance au système.
 
 ### Liste de préparation avant le premier calcul MRP
 
-Exécutez cette séquence avant de lâcher le MRP sur des données migrées. Le responsable entre parenthèses est celui qui valide.
+Suivez cette séquence avant de lancer le MRP sur des données migrées. Le responsable entre parenthèses est celui qui valide.
 
-1. **Vues MRP des données de base article complètes** pour chaque article planifié, y compris le groupe de stratégies et la taille de lot (responsable planification)
-2. **Nomenclatures validées par rapport à ce qui est réellement fabriqué**, avec confirmation des composants et des rebuts par le bureau d'études (bureau d'études)
-3. **Gammes existantes pour chaque article fabriqué en interne**, avec des temps d'opération réalistes (méthodes)
-4. **Calendriers et capacités des postes de travail alignés sur les équipes actuelles** (directeur d'usine)
-5. **Une version de fabrication valide par article fabriqué en interne**, couvrant l'horizon de planification (responsable planification)
-6. **PIR chargés une seule fois**, rapprochés du plan de demande approuvé avant le premier calcul (planificateur de la demande)
-7. **Ordres ouverts et stock rapprochés** entre l'ancien système et SAP (contrôleur des stocks)
-8. **Un calcul MRP de test sur une seule division ou zone MRP**, avec revue des exceptions par les planificateurs avant le calcul complet (responsable planification)
+1. **Vues MRP des données de base article complètes** pour chaque article planifié, y compris le groupe de stratégies et la taille de lot (responsable de la planification)
+2. **Nomenclatures validées par rapport à ce qui est réellement fabriqué**, l'ingénierie confirmant les composants et le rebut (ingénierie)
+3. **Une gamme ou une recette de référence pour chaque article fabriqué en interne**, avec des temps d'opération réalistes (ingénierie de production)
+4. **Calendriers et capacités des postes de travail conformes aux équipes actuelles** (responsable d'usine)
+5. **Une version de fabrication valide par article fabriqué en interne**, couvrant l'horizon de planification (responsable de la planification)
+6. **BIP chargés une seule fois**, rapprochés du plan de demande approuvé avant le premier calcul (planificateur de la demande)
+7. **Commandes en cours et stock rapprochés** entre l'ancien système et SAP (gestionnaire des stocks)
+8. **Un calcul MRP de test sur une seule division ou zone MRP**, les planificateurs examinant les exceptions avant le calcul complet (responsable de la planification)
 
-## Les points d'intégration qui décident du succès
+## Points d'intégration et modes de défaillance
 
-PP ne travaille pas seul. Chaque point d'intégration est aussi un point de défaillance.
+PP ne fonctionne pas seul. MM approvisionne ce dont PP a besoin, les commandes clients de SD consomment les prévisions, CO suit le réel par rapport au coût standard, et les lots de contrôle de QM peuvent bloquer des ordres. Chaque point d'intégration est aussi un point de défaillance.
 
-**MM (gestion des articles).** PP génère les besoins en articles et MM les approvisionne. Si la disponibilité est fausse dans MM, les ordres de fabrication se heurtent à des ruptures. Une bonne intégration entre PP et MM est ce qui met fin aux achats en urgence.
+J'ai vu de vrais désastres au fil des années, et voici les schémas à éviter.
 
-**SD (ventes et distribution).** Les commandes clients peuvent consommer des PIR dans la gestion des besoins. Le groupe de stratégies des données de base article contrôle la manière dont ils le font. S'il est faux, commandes clients et prévisions s'additionnent au lieu de se compenser, ce qui double le signal de demande sans aucun message d'erreur. Mon [guide SAP SD](/fr/sap-sd-sales-and-distribution/) couvre le côté commande de ce lien.
+1. **Bâcler la migration des données de base.** Je me souviens d'un équipementier automobile qui avait bâclé la migration de ses nomenclatures et de ses gammes. Il a passé six mois après le go-live à corriger des ordres de fabrication qui échouaient sans cesse à cause de problèmes de données. Mon article sur [les raisons de l'échec de la migration de données SAP](/fr/why-sap-data-migration-fails-and-how-to-fix-it/) va plus loin.
+2. **Reproduire les anciens processus.** L'erreur de paramétrage la plus constante que je vois : configurer SAP pour qu'il fonctionne exactement comme l'ancien processus au lieu d'adopter la logique de planification standard. Le résultat est un système surparamétré qui apporte moins que ce pour quoi PP a été conçu.
+3. **Tester insuffisamment les intégrations.** Les équipes qui testent chaque module isolément découvrent les problèmes d'intégration en production. Testez toute la chaîne de la planification à la production à travers PP, MM, SD, CO et QM, comme l'explique mon guide sur [les tests SAP](/fr/sap-testing-explained/).
+4. **La résistance des utilisateurs.** Les planificateurs expérimentés résistent souvent à PP parce qu'il prend en charge un travail qu'ils faisaient à la main et au jugé. Associez-les tôt au paramétrage et montrez-leur où PP leur fait gagner du temps.
+5. **Réduire la formation.** J'ai vu des entreprises dépenser des millions pour la mise en œuvre, puis économiser en réduisant la formation. Les utilisateurs qui ne comprennent pas le système créent des contournements, et les contournements détruisent l'exactitude des données dont dépend le MRP.
 
-**CO (contrôle de gestion).** Les ordres de fabrication portent des coûts. CO suit la main-d'œuvre, les articles et les frais généraux réels par rapport au coût standard, et le règlement comptabilise les écarts. Sans lui, la vision financière de la production est incomplète.
+Le tableau associe chaque risque à son impact et à la mesure que je mettrais dans le plan.
 
-**QM (gestion de la qualité).** Des événements PP peuvent déclencher des lots de contrôle QM, et les résultats qualité peuvent bloquer des ordres. C'est ce qui fait de la qualité un contrôle de process plutôt qu'une réflexion après coup.
-
-## Ce qui a changé dans S/4HANA
-
-Si vous migrez depuis ECC, voici les changements de PP qui touchent la conception et les données. Le détail se trouve dans la liste de simplification de SAP et dans la matrice du périmètre de compatibilité (note SAP 2269324).
-
-1. **MRP Live (transaction MD01N)** est le calcul de planification recommandé par SAP. Il s'exécute dans la base de données HANA, peut planifier plusieurs divisions en un seul calcul et n'écrit pas de listes MRP. Les transactions classiques MD01 à MD03 existent toujours. Le [module d'apprentissage SAP sur MRP Live](https://learning.sap.com/courses/exploring-production-planning-in-sap-s-4hana/outlining-material-requirements-planning-with-mrp-live-1) est une bonne introduction.
-2. **Les versions de fabrication sont obligatoires** pour la production interne, comme indiqué plus haut.
-3. **Les zones MRP remplacent le MRP par magasin.** Les magasins planifiés séparément dans ECC ont besoin d'une zone MRP dans S/4HANA.
-4. **Le SOP, les listes MRP et la planification basée sur les prévisions (type de MRP VV) relèvent du périmètre de compatibilité.** Les droits d'utilisation ont pris fin le 31 décembre 2025 pour les systèmes on-premise. SAP les a prolongés jusqu'au 31 décembre 2030 pour les systèmes S/4HANA sous contrat RISE with SAP ou SAP Cloud ERP Private. Le successeur désigné par SAP pour le SOP est [SAP IBP](/fr/why-sap-integrated-business-planning-sap-ibp-matters/).
-5. **PP/DS embarqué** (Production Planning and Detailed Scheduling, la planification de la production et l'ordonnancement détaillé) s'exécute dans S/4HANA pour l'ordonnancement à capacité finie. MRP Live transmet les articles marqués pour la planification avancée aux heuristiques de PP/DS. Vérifiez votre licence avant de concevoir autour de cette fonction.
-
-La [page SAP Help sur le travail avec MRP Live](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/f899ce30af9044299d573ea30b533f1c/86e15c58eb021f60e10000000a44147b.html) donne le détail du paramétrage.
-
-## Modes de défaillance et risques
-
-J'ai vu de vrais désastres au fil des années, et voici les schémas à éviter. Avec RISE with SAP, l'approche Clean Core limite le code spécifique qui masquait autrefois ces problèmes. Les mauvaises données de base apparaissent désormais plus vite, et coûtent plus cher à contourner.
-
-**Précipiter la migration des données de base.** Je me souviens d'un fabricant de pièces automobiles qui avait bâclé la migration de ses nomenclatures et de ses gammes. Il a passé six mois après le go-live à corriger des ordres de fabrication qui échouaient sans cesse à cause de problèmes de données. La validation des données de base avant la migration n'est pas une tâche annexe. C'est le projet. Mon article sur [les raisons de l'échec de la migration de données SAP](/fr/why-sap-data-migration-fails-and-how-to-fix-it/) va plus loin.
-
-**La résistance des utilisateurs.** Les planificateurs expérimentés résistent souvent à PP parce qu'il reprend un travail qu'ils faisaient à la main et au jugement. Associez-les tôt au paramétrage. Montrez-leur où PP leur rend du temps. C'est ce qui décide de l'adoption.
-
-**Reproduire les processus existants.** L'erreur de paramétrage la plus constante que je vois : configurer SAP pour qu'il fonctionne exactement comme l'ancien processus au lieu d'adopter la logique de planification standard. Résultat : un système sur-paramétré qui apporte moins que ce pour quoi PP a été conçu.
-
-**Sous-tester les intégrations.** Chaque connexion avec MM, SD, CO et QM peut échouer. Les équipes qui testent chaque module isolément découvrent les problèmes d'intégration en production.
-
-**Rogner sur la formation.** J'ai vu des entreprises dépenser des millions pour la mise en œuvre, puis faire des économies en coupant la formation. Les utilisateurs qui ne comprennent pas le système créent des contournements. Les contournements détruisent l'exactitude des données dont dépend le MRP.
-
-Le tableau associe chaque risque à son impact et à la parade que j'inscrirais dans le plan.
-
-| Risque | Impact | Parade |
+| Risque | Impact | Mesure |
 |---|---|---|
-| Paramétrage MRP incorrect | Ruptures, surproduction, surcoût d'approvisionnement | Valider avec les responsables métier les types de MRP, les groupes de stratégies et les tailles de lot |
-| Nomenclature ou gamme inexacte | Besoins en articles faux, retards en atelier | Associer le bureau d'études aux revues de nomenclatures et de gammes avant la migration |
-| Mauvaise planification de la capacité | Goulots d'étranglement sur les postes de travail, dates de livraison manquées | Exécuter l'évaluation et le nivellement de la capacité avant de lancer les ordres |
-| Version de fabrication manquante | Le MRP ne peut ni éclater la nomenclature ni créer d'ordres valides | Une version de fabrication valide par article fabriqué en interne |
-| Pas de retour d'atelier en temps réel | Statut de production inexact, écarts détectés tardivement | Imposer des confirmations dans les délais ; intégrer SAP Digital Manufacturing ou un autre MES |
-| Utilisateurs insuffisamment formés | Confirmations erronées, erreurs de backflush, reprises non résolues | Formation par rôle sur des cycles de production réels |
-| Configuration par variantes non traitée | Ordres erronés pour les produits configurables | Tester la logique de configuration sur la nomenclature et la gamme ensemble |
+| Paramétrage MRP incorrect | Ruptures de stock, surproduction, coûts d'approvisionnement excessifs | Valider les types de planification, les groupes de stratégies et les tailles de lot avec les responsables métier |
+| Nomenclature, gamme ou recette inexacte | Mauvais besoins en articles, retards dans l'atelier | Associer l'ingénierie aux revues avant la migration |
+| Version de fabrication manquante | Le MRP ne peut pas éclater la nomenclature ni créer d'ordres valides | Une version de fabrication valide par article fabriqué en interne |
+| Chevauchement entre PP/DS et MRP Live | Ordonnancements détaillés écrasés par le calcul MRP suivant | Exclure les articles PP/DS du périmètre de planification de MRP Live |
+| Pas de retour en temps réel de l'atelier | Statuts inexacts, écarts détectés trop tard | Imposer des confirmations dans les délais ; intégrer SAP Digital Manufacturing ou un autre MES |
+| Utilisateurs insuffisamment formés | Confirmations erronées, erreurs de prélèvement rétroactif, reprises non résolues | Formation par rôle sur de vrais cycles de production |
 
 ## Questions fréquentes
 
 <details>
-<summary>Qu'est-ce que SAP PP et à quoi sert-il ?</summary>
+<summary>Que signifie SAP PP ?</summary>
 
-SAP PP (Production Planning) est le module SAP de planification et d'exécution de la fabrication. Il gère les nomenclatures, les postes de travail, les gammes et les ordres de fabrication. Son rôle central : relier la demande issue des prévisions et des commandes clients à la capacité de production par le MRP, puis conduire l'ordre de fabrication de sa création à son règlement.
-
-</details>
-
-<details>
-<summary>De quelles données de base SAP PP a-t-il besoin ?</summary>
-
-Cinq objets : les vues MRP des données de base article, les nomenclatures, les gammes, les postes de travail et, dans S/4HANA, les versions de fabrication. Chacun doit être exact au go-live et entretenu ensuite. Un seul champ manquant dans les données de base article peut empêcher la création d'ordres de fabrication.
+SAP PP signifie Production Planning, la planification de la production. C'est le module SAP qui sert à planifier et à exécuter la fabrication, de la demande et du MRP jusqu'aux ordres de fabrication, à la confirmation et à l'imputation des coûts.
 
 </details>
 
 <details>
-<summary>Comment fonctionne le MRP dans SAP S/4HANA ?</summary>
+<summary>À quoi sert le module SAP PP ?</summary>
 
-Le MRP compense la demande (PIR, commandes clients, besoins dépendants) par le stock et les réceptions ouvertes, en s'appuyant sur les délais, les tailles de lot et le stock de sécurité des données de base article. Il produit des ordres prévisionnels pour la fabrication interne et des demandes d'achat pour l'approvisionnement externe. Dans S/4HANA, SAP recommande MRP Live (MD01N), qui s'exécute dans la base de données HANA et ne crée pas de listes MRP.
-
-</details>
-
-<details>
-<summary>Qu'est-ce qu'un ordre de fabrication dans SAP PP ?</summary>
-
-Un ordre de fabrication est l'instruction de fabriquer une quantité précise d'un article à une date précise. Il est généralement converti à partir d'un ordre prévisionnel du MRP. Son cycle de vie va de la création et du lancement à la confirmation, à l'entrée en stock et au règlement, où les coûts réels sont comparés au standard et où l'écart est comptabilisé dans CO.
+Le module SAP PP relie la demande issue des prévisions et des commandes clients à la capacité de production grâce au MRP. Il gère les nomenclatures, les gammes, les postes de travail et les versions de fabrication, et pilote les ordres de fabrication ou de process de leur création à leur imputation.
 
 </details>
 
 <details>
 <summary>Quelle est la différence entre SAP PP et SAP PP-PI ?</summary>
 
-SAP PP est conçu pour la fabrication discrète et répétitive, avec des ordres de fabrication fondés sur des nomenclatures et des gammes. SAP PP-PI est conçu pour la production par lots et par recettes dans l'agroalimentaire, les boissons, la chimie et la pharmacie. Il utilise des ordres de process et des recettes de base, et ajoute les coproduits, les sous-produits et la traçabilité par lot. Pour les secteurs réglementés, cette traçabilité au niveau du lot est une exigence de conformité.
+SAP PP au sens strict couvre la fabrication discrète et répétitive, avec des ordres de fabrication ou des échéanciers fondés sur des nomenclatures et des gammes. PP-PI sert à la production par lots et à base de recettes dans l'agroalimentaire, la chimie et la pharmacie. Il utilise des ordres de process et des recettes de référence, et ajoute les coproduits, les sous-produits et la traçabilité des lots.
 
 </details>
 
 <details>
-<summary>Le SOP est-il toujours disponible dans SAP S/4HANA ?</summary>
+<summary>Qu'est-ce que MRP Live dans SAP S/4HANA ?</summary>
 
-Le SOP classique fait partie du périmètre de compatibilité de S/4HANA, avec des droits d'utilisation limités. Ces droits ont pris fin le 31 décembre 2025 pour les systèmes on-premise et courent jusqu'au 31 décembre 2030 pour les systèmes sous contrat RISE with SAP ou SAP Cloud ERP Private. Le successeur recommandé par SAP est SAP Integrated Business Planning (IBP).
+MRP Live (transaction MD01N) est le calcul MRP recommandé par SAP dans S/4HANA. Il s'exécute dans la base de données SAP HANA, peut planifier plusieurs divisions en un seul calcul et ne crée pas de listes MRP classiques. Les articles marqués pour la planification avancée sont transmis à PP/DS.
 
 </details>
 
 <details>
-<summary>Quelles sont les erreurs de mise en œuvre de SAP PP les plus courantes ?</summary>
+<summary>Quelle est la différence entre SAP PP et PP/DS ?</summary>
 
-Bâcler les données de base, choisir le mauvais groupe de stratégies, copier les anciens processus dans le paramétrage, sauter les tests d'intégration complets et rogner sur la formation. La plupart finissent de la même façon : un résultat MRP auquel personne ne fait confiance, et des planificateurs de retour dans leurs tableurs.
+PP avec MRP Live planifie à capacité infinie : quoi fabriquer et acheter, et quand. PP/DS ajoute l'ordonnancement à capacité finie, les séquences de réglage et le pegging pour les articles critiques sur des ressources goulots. Dans S/4HANA, PP/DS est intégré ; vérifiez auprès de SAP comment votre contrat en couvre la licence.
 
 </details>
+
+<details>
+<summary>SAP IBP remplace-t-il SAP PP ?</summary>
+
+Non. IBP planifie les ventes et les opérations, la demande, les stocks et l'approvisionnement à l'échelle de l'entreprise, généralement par tranches mensuelles ou hebdomadaires. PP continue de planifier et d'exécuter la production dans l'usine.
+
+IBP est le successeur désigné par SAP du SOP classique, qui relève du périmètre de compatibilité dans S/4HANA.
+
+</details>
+
+## Prochaine étape
+
+Si vous définissez le périmètre de PP pour un programme S/4HANA, réglez d'abord trois questions : quels modes de fabrication chaque usine utilise, quels articles ont besoin de PP/DS, et si votre problème de planification relève vraiment d'IBP. Si vous voulez un deuxième avis sur cette conception, [parlez-moi de votre programme SAP](/fr/contact-noel-erp-support/).

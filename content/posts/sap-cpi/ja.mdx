@@ -1,26 +1,27 @@
 ---
-title: "SAP CPIとIntegration Suite：役割と位置づけ"
-h1: "SAP CPIとIntegration Suite：役割と位置づけ"
+title: "SAP CPIとは：アーキテクチャとPI/POからの移行"
+h1: "SAP CPIとは：アーキテクチャとPI/POからの移行"
 slug: "sap-cpi"
 date: "2025-04-28"
-updated: "2026-10-07"
+updated: "2026-10-14"
 hero: "/images/seo-refresh/sap-cpi.webp"
-heroAlt: "ノートパソコンに向かう人物の周りに、グラフ、ターゲット、レポートを表すビジネス用アイコンが浮かんでいる"
+heroAlt: "中央のクラウドハブを介してシステムが接続されたインテグレーションフローを表示するモニター"
 category: "sap-modules"
 tags: ["sap-technical-decisions", "sap-integration-suite", "sap-btp", "sap-cpi"]
 author: "Noel D'Costa"
-metaTitle: "2026年のSAP CPIとIntegration Suite：位置づけを解説"
-metaDescription: "SAP CPIを解説。Integration Suiteの機能、2027年前のPI/POとの比較、Neo環境の終了、インタフェースを移行するためのウェーブ計画を取り上げます。"
-excerpt: "SAP CPIは現在、SAP Integration SuiteのCloud Integration機能です。壊れやすいポイントツーポイントのスクリプトを、管理されたインテグレーションフローに置き換えます。PI/POのメインストリームメンテナンスが2027年に終了するいま、位置づけと移行の計画方法を説明します。"
-experienceSource: "Direct experience designing and implementing SAP CPI and SAP Integration Suite integration architectures across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets. Includes SAP PI/PO migration, S/4HANA and SuccessFactors integrations, Salesforce-to-SAP pipelines, and post-go-live monitoring design. Anchored stories: European retail 2023 (Groovy script fragility on order interface), GCC manufacturing 2024 (PI/PO to Integration Suite migration in waves). Product dates (PI/PO maintenance, Neo shutdown, Edge Integration Cell) verified October 2026."
+metaTitle: "SAP CPIとは：アーキテクチャ、構成図、PI/POからの移行"
+metaDescription: "SAP CPIはSAP Integration SuiteのCloud Integration機能です。アーキテクチャの構成図、2027年を前にしたPI/POとの比較、そして移行の進め方を解説します。"
+primaryKeyword: "SAP CPI"
+excerpt: "SAP CPIは、SAP BTP上のSAPのクラウドミドルウェアであるSAP Integration SuiteのCloud Integration機能です。アーキテクチャの仕組み、2027年のメインストリームメンテナンス終了を前にしたPI/POとの比較、そして移行の計画方法を説明します。"
+experienceSource: "Noel's published experience designing SAP CPI and SAP Integration Suite integrations across the 21 SAP programmes he has led or rescued. PI/PO advice and the most common integration failure confirmed by Noel, 14 October 2026. Product facts (PI/PO maintenance dates, migration tooling, Edge Integration Cell, Neo sunset) checked against help.sap.com, support.sap.com, developers.sap.com and learning.sap.com, October 2026."
 lastReviewed: "2026-05-21"
 keyTakeaways:
-  - "SAP CPIはSAP BTP上のクラウドミドルウェアです。システム間でデータを移動・変換しますが、長期保存はしません"
-  - "正式にはSAP Integration SuiteのCloud Integration機能ですが、コンサルタントの間では今もCPIという呼び名が一般的です"
-  - "CPIはETLツールではなく、SAP BTPと同じものでもありません。BTPはプラットフォームで、連携を担うのがIntegration Suiteです"
-  - "SAP PI/PO 7.5のメインストリームメンテナンスは2027年末に終了し、延長メンテナンスは2030年末までです。強制的な切替ではなく、ウェーブに分けて移行を計画してください"
-  - "SAP BTP Neo環境は2028年12月31日に終了します。まだ稼働しているものは、Cloud Foundryへ移す必要があります"
-  - "複雑なマッピングにはGroovyかJavaScriptが必要です。標準フローを超える範囲では、CPIはノーコードではありません"
+  - "SAP CPIは、SAP BTP上のSAP Integration SuiteのCloud Integration機能です。メッセージを移動・変換・ルーティングしますが、データを長期保存することはありません"
+  - "すべてのフローはiFlowです。送信側アダプタ、処理ステップ、受信側アダプタで構成され、その周りを監視とセキュリティが囲みます"
+  - "PI/POを含むSAP NetWeaver 7.5のメインストリームメンテナンスは2027年末に終了し、延長メンテナンスは2030年末までです"
+  - "SAPは、PI/PO向けにMigration Assessmentと半自動のMigration Toolingを提供しています。速くなるのは作業の手順であって、判断ではありません"
+  - "Neo環境上のCloud Integrationは2028年12月31日に終了します。NeoのテナントはCloud Foundryへ移る必要があります"
+  - "私が最もよく目にする連携の失敗は、連携に十分な時間をかけないことです"
 pullQuote: "SAP CPIは、アーキテクチャのレベルで設計すれば強力です。設定作業として扱うと、小さな近道の一つひとつが脆弱性を生み、半年後に表面化します。"
 mentions:
   - "SAP CPI"
@@ -32,7 +33,8 @@ mentions:
   - "SAP SuccessFactors"
   - "SAP Ariba"
   - "SAP Analytics Cloud"
-  - "RISE with SAP"
+  - "SAP Cloud Connector"
+  - "Edge Integration Cell"
   - "Cloud Foundry"
 originalUrl: "https://noeldcosta.com/sap-cpi/"
 canonicalUrl: "https://noeldcosta.com/ja/sap-cpi/"
@@ -41,135 +43,184 @@ translatedFrom: "en"
 translationSource: "reviewed-en-2026-10"
 ---
 
-SAP CPI（Cloud Platform Integration）は、SAPのクラウドミドルウェアです。現在はSAP BTP上のSAP Integration Suiteの中で、Cloud Integration機能として提供されており、S/4HANAをほかのSAPシステムや非SAPシステムにつなぐためのSAPの答えです。まだSAP PI/POを使っているなら、時間の制約が重要になります。PI/PO 7.5のメインストリームメンテナンスは、2027年末に終了します。
+SAP CPI（Cloud Platform Integration）は、SAPシステムとSAP以外のシステムを接続するための、SAPのクラウドミドルウェアです。現在はCloud Integrationと呼ばれ、SAP Business Technology Platform（SAP BTP）上のSAP Integration Suiteの中核機能になっています。
 
-本ガイドは、PI/POからの移行を検討している、あるいは新しいS/4HANAプログラムの連携を設計するインテグレーションリードやCIO向けです。CPIにできること、できないこと、PI/POとの比較、そしてインタフェースを移行するためのウェーブ計画を取り上げます。
+アプリケーション間でメッセージを移動し、形式を変換し、適切なターゲットへルーティングします。まだSAP PI/POを使っているなら、時間が重要です。PI/POを含むSAP NetWeaver 7.5のメインストリームメンテナンスは、2027年末に終了します。
 
-私は、SAPと非SAPのシステムをつなぐために、壊れやすいカスタムスクリプトを作り込むのに何か月も費やすチームを見てきました。最初はうまく動きます。そのうちシステムの更新でフィールド名が変わったり、新しいAPIバージョンがリリースされたり、トラフィックが倍になったりします。スクリプトは音もなく壊れます。レポートが古いデータを引いてくる、あるいは受注が3日間処理されないまま放置される、そこまで誰も気づきません。
+このガイドでは、CPIの機能、アーキテクチャの仕組み、PI/POとの比較、そして移行の計画方法を取り上げます。開発者だけでなく、連携のリーダーやCIOに向けて書いています。
 
-CPIはそれを、管理された再利用可能なインテグレーションフローに置き換えます。単純になるからではありません（むしろ単純でないことが多いです）。監視と保守を前提にアーキテクチャが作られているからです。CPIの設計の初期に下した小さな判断は、多くのチームが予想するより早く技術的負債になります。
+## 私の経験から見た、CPIが重要な理由
+
+SAPシステムとSAP以外のシステムを接続するために、壊れやすい独自スクリプトの構築に何か月も費やすチームを見てきました。最初は動きます。そのうち、システムの更新で項目名が変わったり、新しいAPIバージョンが公開されたり、トラフィックが倍増したりします。
+
+スクリプトは静かに壊れます。レポートが古いデータを取り込んだり、受注が3日間処理されずに残ったりするまで、誰も気づきません。
+
+CPIは、それを管理された再利用可能なインテグレーションフローに置き換えます。シンプルだからではありません（たいていシンプルではありません）。アーキテクチャが、監視と保守を前提に作られているからです。CPIの設計の初期に下した小さな判断は、多くのチームが予想するよりも速く技術的負債として積み上がります。
+
+まだSAP PI/POを使っている企業への私の助言は、SAP Integration Suiteへ移行することです。私が最もよく目にする連携の失敗は、連携に十分な時間をかけないことです。
 
 ## SAP CPIとは何か、何ではないか
 
-CPIは、システムをつなぎ、データを変換し、アプリケーション間でメッセージをルーティングする層です。SAP Integration Suiteは、これにAPI Management、Event Mesh、Integration Advisor、取引パートナー管理を加えたものです。ほとんどのコンサルタントは、今もインテグレーションフローの部分を指して「CPI」と呼びますが、それで問題ありません。
+[SAP自身の移行ガイド](https://help.sap.com/docs/migration-guide-po/migration-guide-for-sap-process-orchestration/introduction-sap-integration-suite)は、Cloud Integrationを、クラウド、オンプレミス、ハイブリッドの構成にわたってインテグレーションフローを設計・実行するための機能と説明しています。アプリケーション間（A2A）、企業間（B2B）、企業と政府機関の間（B2G）のシナリオをカバーします。今でもほとんどのコンサルタントは「CPI」や「SAP CI」と呼んでおり、それで問題ありません。
 
-**CPIにできること：** システム間のデータ移動、メッセージ形式の変換、適切な宛先へのルーティング、エラー処理とリトライ。標準アダプタを通じて、SAPシステム（S/4HANA、SuccessFactors、Ariba）や非SAPのプラットフォーム（Salesforce、Workday、ServiceNow）に接続します。
+SAP Integration Suiteは、Cloud Integrationをほかの機能とまとめたものです。主なものは、API Management、Event Mesh、Integration Advisor、Trading Partner Management、Open Connectors、Migration Assessmentです。
 
-**できないこと：** データの長期保存、ERPの代替、大量データ移行のためのETLツールとしての利用。リアルタイムまたはそれに近いメッセージ向けに作られています。データウェアハウスや移行ツールとして使うと、あとでアーキテクチャ上の問題が起きます。
+**CPIがすること：** システム間でデータを移動し、メッセージ形式を変換し、適切なターゲットへルーティングし、エラーと再試行を処理します。標準アダプタを通じて、SAPシステム（S/4HANA、SuccessFactors、Ariba）とSAP以外のプラットフォーム（Salesforce、Workday、ServiceNow）を接続します。
 
-**CPIとSAP BTPの違い：** BTPはプラットフォーム全体で、アプリケーション開発、データ、AI、分析、連携を含みます。CPIはその上の一つのサービスです。スキルと予算の範囲を決めるとき、この違いが重要です。BTPアーキテクトはサービス全体にわたって設計します。CPIスペシャリストは、フロー、アダプタ、マッピング、接続を担当します。
+**CPIがしないこと：** データの長期保存、ERPの代替、大量データ移行のためのETLツールとしての役割です。リアルタイムまたはほぼリアルタイムのメッセージのために作られています。データウェアハウスや移行ツールとして使うと、後でアーキテクチャの問題を引き起こします。
 
-## 2026年時点で変わったこと
+**CPIとSAP BTPの違い：** BTPはプラットフォーム全体です。アプリケーション開発、データ、AI、アナリティクス、連携を含みます。CPIはその上の1つのサービスです。BTPアーキテクトはサービス全体にわたって設計し、CPIのスペシャリストはフロー、アダプタ、マッピング、接続を担当します。
 
-現在の連携計画を形づくるのは、4つの日付と判断です。
+## SAP CPIのアーキテクチャ：実際の仕組み
 
-<explainer-timeline title="連携計画の背景にある日付" caption="2027年を軸に計画してください。それまでにウェーブ方式で移行するほうが、強制的な切替よりはるかに低コストです。" items="2023 => Edge Integration Cell一般提供開始|2027 => PI/POのメインストリームメンテナンス終了|2028 => SAP BTP Neo環境の終了|2030 => PI/POの延長メンテナンス終了" notes="2023年後半。自社ネットワーク内でIntegration Suiteのフローを実行|年末、SAP NetWeaver 7.5の場合|12月31日。NeoのCPIテナントはCloud Foundryへ移行|年末。PI/POランドスケープの最後の期限" highlight="2" source="SAP NetWeaver 7.5のメンテナンスとNeoのサンセットに関する発表、SAPinsider報道"></explainer-timeline>
+下の図は、CPIが想定している連携シナリオを示しています。クラウド間、オンプレミスとクラウド間、企業間（B2B）、企業と政府機関の間（B2G）、そしてユーザーやデバイスとの接続です。
 
-1. **PI/POは先が見えてきました。** [PI/POを含むSAP NetWeaver 7.5は、Business Suiteのメンテナンス予定に沿っています](https://sapinsider.org/blogs/sap-extends-maintenance-for-sap-netweaver-7-5-and-sap-bw-4hana/)。メインストリームメンテナンスは2027年末まで、延長メンテナンスは2030年末までです。新機能は追加されません。計画的なウェーブ方式の移行は、2027年や2030年に迫られる強制的な切替よりはるかに低コストです。
-2. **ハイブリッドにも答えがあります。** 2023年後半から一般提供されているEdge Integration Cellは、Integration Suiteのフローを自社ネットワーク内で実行します。オンプレミスに残す必要があるインタフェース向けです。これで、PI/POに残る理由として多くのチームが挙げてきた最大の理由がなくなります。
-3. **Neoは終了します。** SAPは[2023年に発表しました](https://sapinsider.org/blogs/sap-announces-sunset-of-neo-cloud-environment/)。SAP BTP Neo環境は2028年12月31日に終了します。Neo上にある以前のCPIテナントは、マルチクラウド（Cloud Foundry）環境へ移行する必要があり、その移行は小さなプロジェクトになります。
-4. **Jouleがツールに組み込まれています。** SAPはIntegration SuiteにJouleを追加し、開発者がフローを平易な言葉で説明すると、最初のドラフトが得られるようになりました。標準的なシナリオは速くなります。業務ロジックを伴う複雑なオーケストレーションには、引き続き経験豊富なインテグレーションアーキテクトが必要です。
+![SAP S/4HANAとSAP以外のアプリケーションを中心に、クラウド間、オンプレミスとクラウド間、B2B、B2Gの連携を示すSAP CPIのアーキテクチャ構成図](/images/wp/elementor/thumbs/SAP-CPI-r6e607fx79xud4tbbufp2yww164i041nvu8xtwedj4.webp "SAP CPIのアーキテクチャ")
 
-契約面では、RISE with SAPをご利用なら、Integration Suiteの容量を別途購入する前に、契約にすでにどのSAP BTPのエンタイトルメントが含まれているかを確認してください。
+CPIのアーキテクチャを理解することは、開発者だけの仕事ではありません。私の経験では、CPIが構造のレベルで連携をどう扱うかを把握しているチームほど、最初の段階でよい設計判断を下します。
+
+CPIは、SAP BTP上でマルチテナントのクラウドサービスとして動きます。SAPがプラットフォームを運用するため、自社で連携サーバーを保守する必要はありません。フローを自社のネットワーク内で実行しなければならない場合は、オプションのハイブリッドランタイムである[Edge Integration Cell](https://help.sap.com/docs/integration-suite/sap-integration-suite/what-is-sap-integration-suite-edge-integration-cell)があります。設計と監視はクラウドで行い、フローは自社のネットワークで実行します。
+
+### 実際のメッセージの流れ
+
+中心にあるのはiFlow（インテグレーションフロー）です。CPIのすべての連携はiFlowとしてモデル化され、各iFlowは3つの段階でメッセージをソースからターゲットへ移動します。
+
+1. **送信側アダプタ。** SOAP、REST、OData、IDoc、SFTP、JMS、AS2などのプロトコルで、ソースシステムからメッセージを受け取ります。
+2. **処理ステップ。** マッピング、形式変換（たとえばJSONからXMLへ）、コンテンツベースのルーティング、ほかのシステムの呼び出し、暗号化、エラー処理です。
+3. **受信側アダプタ。** 処理済みのメッセージをターゲットへ送ります。
+
+フローは、ユースケースに応じて同期でも非同期でも実行されます。どちらを選ぶべきかは必ずしも明らかではないため、実際のボリュームで両方をテストしてください。
+
+監視が大きな役割を果たします。メッセージ処理ログ、トレース、永続化されたメッセージがあり、それぞれ目的が異なります。テストやデバッグの間、私はどこまで深く調べる必要があるかに応じて、トレースと永続化を切り替えることが多いです。
+
+### SAP CPIアーキテクチャの構成要素
+
+各構成要素を、アーキテクチャにおける役割に対応させた表です。
+
+| 構成要素 | 何をするか | アーキテクチャにおける役割 |
+|---|---|---|
+| インテグレーションフローのランタイム | iFlowを実行する | 実行時にルーティング、マッピング、変換、セキュリティを処理する |
+| Webベースのデザイナー | iFlowを構築、設定、デプロイするグラフィカルエディター | 開発者がフローをモデル化する場所。複雑なロジックには依然としてGroovyかJavaScriptが必要 |
+| アダプタ | SOAP、REST、OData、IDoc、JDBC、SFTP、JMS、AS2、SaaS固有のアダプタ | クラウドとオンプレミスのシステムを接続する |
+| セキュリティ | OAuth 2.0、SAML、TLS、証明書と鍵の管理 | 認証情報と転送中のメッセージを保護する |
+| 監視と運用 | メッセージログ、エラーの詳細、再試行、アラート | サポートチームが障害を見つけて修正できるようにする |
+| 事前パッケージ化されたコンテンツ | SAP Business Accelerator HubでSAPが提供する連携パッケージ | テスト済みのコンテンツで標準シナリオを迅速化する |
+| SAP Cloud Connector | 自社ネットワークからSAP BTPへの安全なトンネル | オンプレミスのシステムをインターネットに公開せずに接続する |
+| Edge Integration Cell | 自社のデータセンターやプライベートクラウドで動くオプションのランタイム | オンプレミスに留める必要があるフロー向け |
+
+グラフィカルなステップでは扱えないロジックは、Groovyスクリプトが処理します。スクリプトが多すぎると後で保守の問題につながるため、私はこれを最小限に抑えるよう勧めることがよくあります。パッケージはバージョン管理されているため、デプロイされたパッケージ以外から本番に変更が入ることはありません。
+
+## 連携計画を左右する日付
+
+現在、ほぼすべての連携計画を3つの日付が左右しています。
+
+<explainer-timeline title="連携計画の背景にある日付" caption="2027年を軸に計画してください。それまでにウェーブ方式で移行すれば、強制的な切替よりはるかに安く済みます。" items="2027年 => PI/POのメインストリームメンテナンス終了|2028年 => Neo上のCloud Integration終了|2030年 => PI/POの延長メンテナンス終了" notes="SAP NetWeaver 7.5について、年末|12月31日。NeoのテナントはCloud Foundryへ移行|年末。すべてのPI/POシステムにとって最後の期限" highlight="1" source="SAP Note 1648480およびSAPナレッジベース記事3355661"></explainer-timeline>
+
+1. **PI/POに残された時間は少なくなっています。** [SAP Note 1648480](https://me.sap.com/notes/1648480)は、PI/POを含むSAP NetWeaver 7.5のメインストリームメンテナンスを2027年末まで、延長メンテナンスを2030年末までと定めています。2028年1月1日にシステムが止まるわけではありませんが、それ以降は年を追うごとに維持コストが上がります。
+2. **Neoは終了します。** [SAPナレッジベース記事3355661](https://me.sap.com/notes/3355661)は、SAP BTP Neo環境上のCloud Integrationが2028年12月31日に終了することを確認しています。Neo上の初期のCPIテナントはマルチクラウド（Cloud Foundry）環境へ移る必要があり、その移行自体が小さなプロジェクトになります。
+3. **ハイブリッドには答えがあります。** Edge Integration Cellは、Integration Suiteのフローを自社のネットワーク内で実行します。これで、チームがPI/POに留まる理由として最もよく挙げていたものがなくなります。
+
+契約面について：RISE with SAPを利用しているなら、Integration Suiteの容量を別途購入する前に、契約にすでにどのSAP BTPの利用権が含まれているかを確認してください。
 
 ## CPIとSAP PI/POの比較
 
+PI（Process Integration）とPO（Process Orchestration）は、SAPのオンプレミスのミドルウェアです。CPIとの比較は次のとおりです。
+
 | 要素 | SAP PI/PO | SAP CPI（Integration Suite） |
 |---|---|---|
-| デプロイ | オンプレミス、自社サーバー | SAP BTP上のクラウド。オンプレミスで実行する場合はEdge Integration Cell |
-| 保守の負担 | 大きい：パッチ適用、アップグレード、サーバー管理 | 小さい：プラットフォームはSAPが運用 |
-| 拡張性 | 深いカスタマイズが可能。アップグレードは難しい | モジュール式。更新は速い。低レベルの制御は少ない |
-| ライセンス | 固定的。通常は容量ベース | サブスクリプション。メッセージ数ベースの指標 |
-| 投資の方向性 | 保守のみ、新機能なし | 活発に開発中 |
+| 導入形態 | オンプレミス、自社のサーバー | SAP BTP上のクラウド。オンプレミスのランタイムにはEdge Integration Cell |
+| 保守の負担 | 高い：パッチ適用、アップグレード、サーバー管理 | 低い：SAPがプラットフォームを運用 |
+| 拡張性 | 深いカスタマイズが可能。アップグレードは難しくなる | モジュール型。更新が速い。低レベルの制御は少ない |
+| ライセンス | ライセンスに加えて自社のインフラ | SAP BTP上のサブスクリプション、エディション別 |
+| 投資の方向性 | 保守のみ、新機能なし | 積極的に開発中 |
 | メインストリームメンテナンスの終了 | 2027年末（延長は2030年末まで） | 該当なし（クラウドサービス） |
 
-ライセンスの変化は、モデル化しておく価値があります。CPIのコストはメッセージ量に連動します。PI/POより安くなる企業もあります。一方で、実際の連携トラフィックが想定より多いと分かり、早めにフローを最適化しなければならなくなる企業もあります。移行する前に試算してください。
-
-## 主な機能とアダプタ
-
-基本単位は**iFlow**（インテグレーションフロー）です。各iFlowは、メッセージがソースからターゲットへどう流れるかを定義します。変換、ルーティングのルール、障害時に起動するエラー処理です。
-
-| 機能 | 内容 |
-|---|---|
-| 構築済みの連携コンテンツ | SAP Business Accelerator Hubにある、SAPや一般的なサードパーティのシナリオ向けの、すぐ使えるiFlowのパッケージ |
-| グラフィカルなフローデザイナー | iFlowを構築するWebベースのデザイナー |
-| API Management | APIの設計、公開、セキュリティ、監視 |
-| セキュリティ | OAuth 2.0、SAML、TLS、証明書管理 |
-| モニタリング | メッセージログ、エラーの詳細、リトライ履歴、アラート |
-
-**標準アダプタ**には、SOAP、REST、OData、IDoc、JDBC、SFTP、JMS、AS2があり、特定のSaaS製品向けにはさらに用意されています。
-
-**スクリプト。** 複雑な変換には、iFlowの中でGroovyまたはJavaScriptが必要です。標準フローを超える範囲では、CPIはノーコードではありません。チームに基本的なスクリプトを書ける人がいなければ、複雑なマッピングがボトルネックになります。
+SAPの移行ガイドは、PI/POの機能の大半をカバーすることから、Cloud Integrationを主な後継として扱っています。ご自身のエディションがどのように計量されるかをSAPに確認し、移行の前に実際のメッセージ量に照らしてモデル化してください。連携のトラフィックが想定より多いことに気づく企業もあります。
 
 ## PI/POの移行：実際に何が必要か
 
-移行は、自動変換ではありません。PIとCPIではアダプタの挙動が異なり、PIで動いていたエラー処理がCPIでは違う動きをすることがあります。作り直しが必要なフローもあれば、小さな変更で移せるものもあります。SAPの移行ツールと構築済みコンテンツは、機械的な作業を減らします。ただし、何を作り直し、何を廃止するかという判断までは代わってくれません。
+移行は自動変換ではありません。アダプタの動作はPIとCPIで異なり、PIで機能していたエラー処理がCPIでは違う動きをすることがあります。作り直しが必要なフローもあれば、小さな変更で移せるフローもあります。
 
-私が出発点として使うウェーブ計画は次のとおりです。ウェーブは、自社のインベントリに合わせて調整してください。
+SAPは公式ツールを2つ提供しています。
 
-| ウェーブ | 移行するもの | この順序にする理由 | 担当 | 完了基準 |
+1. **Migration Assessment。** Integration Suiteの機能で、POシステムに接続して連携シナリオを抽出し、移行の工数を見積もります。セットアップは[SAPのチュートリアル](https://developers.sap.com/tutorials/migration-assessment.html)で説明されています。
+2. **Migration Tooling。** Cloud Integrationの機能で、POの統合設定オブジェクト（ICO）からiFlowへの[移行を半自動化します](https://developers.sap.com/tutorials/migration-tool.html)。このツールで移行できるのは、「Ready to migrate」または「Adjustment required」と評価されたシナリオだけです。
+
+[SAP Learning](https://learning.sap.com/courses/sap-process-orchestration-to-sap-integration-suite-migration/developing-a-migration-approach)は、すべてのお客様に合う単一の移行パスはないと明言しており、多くのお客様は移行期間中にPI/POとIntegration Suiteを並行稼働させています。ツールは機械的な作業を減らします。何を作り直し、何を廃止するかという判断まではしてくれません。
+
+私が出発点として使っているウェーブ計画は次のとおりです。ウェーブは、ご自身のインタフェース一覧に合わせて調整してください。
+
+| ウェーブ | 移行するもの | この順序の理由 | 担当者 | 完了条件 |
 |---|---|---|---|---|
-| 0. 棚卸し | PIのすべてのインタフェース：頻度、量、アダプタ、重要度、オーナー | 数えていないものは計画できない | インテグレーションリード | 業務オーナーが棚卸しを承認 |
-| 1. 低リスク | 標準コンテンツを使うSAPからSAPへのフロー | 運用モデルとモニタリングを実証する | インテグレーションリード | 本番で2週間安定稼働、PI側の経路を廃止 |
-| 2. パートナー | 主要な取引パートナーとのB2BおよびEDIのフロー | パートナーのテスト期間と調整したカットオーバーが必要 | インテグレーションリードと、調達および営業 | 各パートナーが書面で確認 |
-| 3. 高リスク | 大量、規制対象、または収益に直結するフロー | 最後に移行し、リハーサルを最も重ねる | インテグレーションアーキテクト | ボリュームテストに合格、PIへのフォールバックをリハーサル済み |
-| 4. 廃止 | PI/POを停止 | 2つのプラットフォームへの支払いを止める | CIO | すべてのフローを移行または廃止、ライセンスを終了 |
+| 0. 棚卸し | すべてのPIインタフェース：頻度、ボリューム、アダプタ、重要度、オーナー | 数えていないものは計画できない | 連携リーダー | 業務オーナーがインタフェース一覧を承認 |
+| 1. 低リスク | 標準コンテンツを使うSAP間のフロー | 運用モデルと監視を実証する | 連携リーダー | 本番で2週間安定稼働し、PIの経路を廃止 |
+| 2. パートナー | 主要な取引先とのB2BおよびEDIのフロー | パートナーのテスト期間と調整された切替が必要 | 連携リーダーと購買部門・営業部門 | 各パートナーが書面で確認 |
+| 3. 高リスク | 大量、規制対象、または収益に直結するフロー | 最後に、最も多くのリハーサルを経て移行する | 連携アーキテクト | ボリュームテストに合格し、PIへのフォールバックをリハーサル済み |
+| 4. 廃止 | PI/POの停止 | 2つのプラットフォームへの支払いを止める | CIO | すべてのフローを移行または廃止し、ライセンスを終了 |
 
-各ウェーブについて、新しいフローが本番で問題なく動くまでは、PIへのフォールバック経路を残しておいてください。順序が重要です。収益を担うインタフェースに手を付ける前に、低リスクのフローで運用モデルを実証してください。
+新しいフローが本番で問題なく稼働するまで、ウェーブごとにPIへのフォールバックの経路を残しておいてください。順序が重要です。収益を担うインタフェースに手を付ける前に、低リスクのフローで運用モデルを実証してください。
+
+連携テストは、時間が消えていく場所です。B2BパートナーやSAP以外のターゲットとの回帰テストは、静かに壊れるため、早めに計画してください。連携テストと回帰テストのサイクルの組み立て方は、私の「[SAPテストガイド](/ja/sap-testing-explained/)」で取り上げています。
+
+PI/POの移行がS/4HANAプログラムの中にあるなら、2つの計画をそろえてください。ERP側の移行パスと期限については、私の「[ECCからS/4HANAへの移行ガイド](/ja/ecc-to-s4hana-migration/)」で取り上げています。
 
 ## よくある連携パターン
 
-私がもっともよく目にするシナリオです。
+私が最もよく目にするシナリオは次のとおりです。
 
-1. **S/4HANAからSuccessFactorsへ。** 組織データ、人員数、報酬の変更。SAP標準の連携コンテンツで一般的なシナリオはカバーされ、例外はカスタムフローで対応します。
-2. **従来の調達システムからSAP Aribaへ。** 発注を送り出し、確認と請求書を受け取ります。通常は双方向です。
-3. **財務データからSAP Analytics Cloudへ。** ECCまたは非SAPシステムのデータをSACへ移します。
-4. **SalesforceからSAPへ。** 成約した案件が、出荷、請求、在庫更新のためにSAPへ流れます。管理された連携がなければ、これは通常、スプレッドシートのエクスポートや壊れやすいスクリプトで動いています。設計上のミスについては、私の記事[SalesforceとERPの連携が失敗する理由](/ja/why-erp-integration-with-salesforce-fails-and-how-to-fix-it/)で取り上げています。
+1. **S/4HANAからSuccessFactorsへ。** 組織データ、人員数、報酬の変更です。一般的なシナリオはSAPの標準連携コンテンツでカバーでき、例外は独自のフローで処理します。
+2. **従来の購買システムからSAP Aribaへ。** 購買発注を送り、確認と請求書を受け取ります。通常は双方向です。
+3. **財務データをSAP Analytics Cloudへ。** ECCやSAP以外のシステムからSACへデータを移動します。
+4. **SalesforceからSAPへ。** 成約した案件を、出荷、請求、在庫更新のためにSAPへ流します。設計上の誤りについては、私の記事「[SalesforceとERPの連携が失敗する理由](/ja/why-erp-integration-with-salesforce-fails-and-how-to-fix-it/)」で取り上げています。
 
-プログラムで連携作業がすでに遅れている場合は、[SAP Integration Suiteのデリバリー遅延](/ja/sap-integration-suite-delivery-delays/)で、よくある原因を取り上げています。[SAP連携プラットフォーム](/ja/sap-implementation/sap-integration-platforms/)の概要ページでは、選択肢を並べて比較しています。
+プログラムで連携作業がすでに遅れているなら、「[SAP Integration Suiteの導入遅延](/ja/sap-integration-suite-delivery-delays/)」でよくある原因を取り上げています。「[SAPの連携プラットフォーム](/ja/sap-implementation/sap-integration-platforms/)」の概要では、選択肢を並べて比較しています。
 
 ## よくある質問
 
 <details>
-<summary>SAP CPIとは何ですか。現在の正式名称は何ですか？</summary>
+<summary>SAP CPIとは何ですか？現在は何と呼ばれていますか？</summary>
 
-SAP CPIはCloud Platform Integrationの略です。現在は、SAP BTP上のSAP Integration SuiteのCloud Integration機能で、API Management、Event Mesh、パートナー連携ツールと並ぶ位置づけです。インテグレーションフローを構築する作業については、今も「CPI」が日常的な呼び名です。
-
-</details>
-
-<details>
-<summary>SAP CPIとSAP PI/POはどう違いますか？</summary>
-
-PI（Process Integration）とPO（Process Orchestration）は、深いカスタマイズが可能で、インフラを完全に制御できるオンプレミスのミドルウェアです。CPIはSAP BTP上のクラウドサービスで、SAPが運用し、新しいアダプタやコンテンツは中央から提供されます。
-
-PI/PO 7.5は保守のみが提供されます。メインストリームメンテナンスは2027年末、延長メンテナンスは2030年末に終了するため、すべてのPI/POランドスケープに移行計画が必要です。
+SAP CPIはCloud Platform Integrationの略です。現在は、API Management、Event Mesh、パートナー連携ツールと並ぶ、SAP BTP上のSAP Integration SuiteのCloud Integration機能です。インテグレーションフローを構築する日常の場面では、今も「CPI」という呼び名が使われています。
 
 </details>
 
 <details>
-<summary>SAP CPIとSAP BTPは同じものですか？</summary>
+<summary>SAP CIとは何ですか？</summary>
 
-いいえ。SAP BTPはプラットフォームで、アプリケーション開発、データ、分析、AI、連携を含みます。CPIはその上の連携サービスです。作業を見積もるとき、予算とスキルは異なります。BTPアーキテクトはサービス全体にわたって働き、CPIスペシャリストはフロー、アダプタ、マッピングを担当します。
-
-</details>
-
-<details>
-<summary>SAP CPIの習得はどのくらい難しいですか？</summary>
-
-手に負えないわけではありませんが、簡単でもありません。標準フローは文書化されたパターンに沿っており、グラフィカルなデザイナーが助けになります。難しいのは、フローを設計できるほど業務プロセスを理解すること、エラー処理とリトライを適切に扱うこと、複雑なマッピングのためにGroovyやJavaScriptを書くことです。先に業務プロセスを学び、それから連携を学んでください。
+SAP CIはSAP Cloud Integrationの略で、かつてSAP CPIと呼ばれていたものの現在の名称です。どちらも、SAP Integration Suiteの中の同じ機能を指します。
 
 </details>
 
 <details>
-<summary>SAP PI/POからCPIへ移行するとき、何を考慮すべきですか？</summary>
+<summary>SAP CPIはミドルウェアですか？</summary>
 
-すべてのインタフェースを、量、頻度、アダプタ、重要度とともに棚卸しします。それぞれについて、作り直す、調整する、廃止するのいずれかを決めます。メッセージ数ベースのコストを、実際の量に対して試算します。フォールバック経路を確保してウェーブで移行し、B2Bパートナーと非SAPのターゲットのリグレッションテストは早めに計画してください。そこは音もなく壊れるからです。オンプレミスに残す必要があるフローには、Edge Integration Cellを使います。
+はい。CPIはクラウドミドルウェアです。システムの間に位置し、メッセージを変換・ルーティングし、エラーと再試行を処理します。SAP PI/POのようなオンプレミスのミドルウェアを置き換えるもので、業務データを長期保存することはありません。
 
 </details>
 
 <details>
-<summary>SAP CPIにおけるNeoとCloud Foundryの違いは何ですか？</summary>
+<summary>SAP CPIはSAP PI/POとどう違いますか？</summary>
 
-どちらもSAP BTPの環境です。NeoはSAP独自の古い環境で、2028年12月31日に終了します。Cloud Foundryをベースにしたマルチクラウド環境が、SAPの開発の中心です。いまもNeoにあるCPIテナントは、今すぐ移行計画が必要です。新しいテナントをNeoで始めてはいけません。
+PI/POは、自社でインストール、パッチ適用、運用を行うオンプレミスのミドルウェアです。CPIはSAPが運用するSAP BTP上のクラウドサービスで、新しいアダプタやコンテンツは一元的に提供されます。オンプレミスに留める必要があるフローは、Edge Integration Cellでカバーします。
 
 </details>
+
+<details>
+<summary>SAP PI/POのサポートはいつ終了しますか？</summary>
+
+PI/POを含むSAP NetWeaver 7.5のメインストリームメンテナンスは、2027年末に終了します。延長メンテナンスは2030年末まで利用できます。SAPは、シナリオをIntegration Suiteへ移行するための支援として、Migration AssessmentとMigration Toolingを提供しています。
+
+</details>
+
+<details>
+<summary>SAP CPIはSAP BTPと同じものですか？</summary>
+
+いいえ。SAP BTPはプラットフォームです。アプリケーション開発、データ、アナリティクス、AI、連携を含みます。CPIはその上の連携サービスです。
+
+作業のスコープを決めるときは、予算とスキルが異なります。BTPアーキテクトはサービス全体にわたって仕事をし、CPIのスペシャリストはフロー、アダプタ、マッピングを担当します。
+
+</details>
+
+## 次のステップ
+
+PI/POの移行を計画している場合も、新しいS/4HANAプログラムの連携を設計している場合も、まずインタフェースの棚卸しから始めてください。計画を確定する前にセカンドオピニオンが欲しい場合は、[ご連絡ください](/ja/contact-noel-erp-support/)。

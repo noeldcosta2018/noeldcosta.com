@@ -1,26 +1,27 @@
 ---
-title: "SAP CPI e Integration Suite: qué son y dónde encajan"
-h1: "SAP CPI e Integration Suite: qué son y dónde encajan"
+title: "SAP CPI: qué es, su arquitectura y el paso desde PI/PO"
+h1: "SAP CPI: qué es, su arquitectura y el paso desde PI/PO"
 slug: "sap-cpi"
 date: "2025-04-28"
-updated: "2026-10-07"
+updated: "2026-10-14"
 hero: "/images/seo-refresh/sap-cpi.webp"
-heroAlt: "Persona ante una laptop con iconos de negocio flotantes: gráficos, objetivos e informes"
+heroAlt: "Un monitor que muestra un flujo de integración con sistemas conectados a través de un nodo central en la nube"
 category: "sap-modules"
 tags: ["sap-technical-decisions", "sap-integration-suite", "sap-btp", "sap-cpi"]
 author: "Noel D'Costa"
-metaTitle: "SAP CPI e Integration Suite en 2026: cómo encajan"
-metaDescription: "SAP CPI explicado: qué hace Integration Suite, cómo se compara con PI/PO antes de 2027, el cierre de Neo y un plan por oleadas para migrar sus interfaces."
-excerpt: "SAP CPI, ahora la capacidad Cloud Integration de SAP Integration Suite, sustituye los scripts punto a punto frágiles por flujos de integración gestionados. Con el fin del mantenimiento estándar de PI/PO en 2027, así encaja y así se planifica el cambio."
-experienceSource: "Direct experience designing and implementing SAP CPI and SAP Integration Suite integration architectures across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets. Includes SAP PI/PO migration, S/4HANA and SuccessFactors integrations, Salesforce-to-SAP pipelines, and post-go-live monitoring design. Anchored stories: European retail 2023 (Groovy script fragility on order interface), GCC manufacturing 2024 (PI/PO to Integration Suite migration in waves). Product dates (PI/PO maintenance, Neo shutdown, Edge Integration Cell) verified October 2026."
+metaTitle: "SAP CPI explicado: arquitectura, diagrama y paso desde PI/PO"
+metaDescription: "SAP CPI es la capacidad Cloud Integration de SAP Integration Suite. Vea su diagrama de arquitectura, cómo se compara con PI/PO antes de 2027 y cómo migrar."
+primaryKeyword: "sap cpi"
+excerpt: "SAP CPI es la capacidad Cloud Integration de SAP Integration Suite, el middleware en la nube de SAP sobre SAP BTP. Así funciona su arquitectura, así se compara con PI/PO antes de que termine el mantenimiento estándar en 2027, y así se planifica el cambio."
+experienceSource: "Noel's published experience designing SAP CPI and SAP Integration Suite integrations across the 21 SAP programmes he has led or rescued. PI/PO advice and the most common integration failure confirmed by Noel, 14 October 2026. Product facts (PI/PO maintenance dates, migration tooling, Edge Integration Cell, Neo sunset) checked against help.sap.com, support.sap.com, developers.sap.com and learning.sap.com, October 2026."
 lastReviewed: "2026-05-21"
 keyTakeaways:
-  - "SAP CPI es un middleware en la nube sobre SAP BTP: mueve y transforma datos entre sistemas, pero no los almacena a largo plazo"
-  - "Oficialmente es la capacidad Cloud Integration de SAP Integration Suite; CPI sigue siendo el nombre que usa la mayoría de los consultores"
-  - "CPI no es una herramienta ETL ni equivale a SAP BTP. BTP es la plataforma; Integration Suite se ocupa de la integración"
-  - "SAP PI/PO 7.5 sale del mantenimiento estándar a finales de 2027, con mantenimiento ampliado hasta finales de 2030. Planifique el cambio por oleadas, no como un cutover forzado"
-  - "El entorno SAP BTP Neo se cierra el 31 de diciembre de 2028. Todo lo que siga ejecutándose allí debe pasar a Cloud Foundry"
-  - "Los mapeos complejos requieren Groovy o JavaScript. CPI no es de cero código más allá de los flujos estándar"
+  - "SAP CPI es la capacidad Cloud Integration de SAP Integration Suite en SAP BTP. Mueve, transforma y enruta mensajes; no almacena datos a largo plazo"
+  - "Cada flujo es un iFlow: un adaptador emisor, pasos de procesamiento y un adaptador receptor, con monitorización y seguridad alrededor"
+  - "SAP NetWeaver 7.5, que incluye PI/PO, sale del mantenimiento estándar a finales de 2027; el mantenimiento ampliado llega hasta finales de 2030"
+  - "SAP ofrece Migration Assessment y una Migration Tooling semiautomática para PI/PO. Aceleran la parte mecánica, no las decisiones"
+  - "Cloud Integration en el entorno Neo se retira el 31 de diciembre de 2028. Los tenants de Neo deben pasar a Cloud Foundry"
+  - "El fallo de integración más común que veo es no dedicar suficiente tiempo a la integración"
 pullQuote: "SAP CPI es potente cuando se diseña a nivel de arquitectura. Cuando los equipos lo tratan como un ejercicio de configuración, cada pequeño atajo crea una fragilidad que aparece seis meses después."
 mentions:
   - "SAP CPI"
@@ -32,7 +33,8 @@ mentions:
   - "SAP SuccessFactors"
   - "SAP Ariba"
   - "SAP Analytics Cloud"
-  - "RISE with SAP"
+  - "SAP Cloud Connector"
+  - "Edge Integration Cell"
   - "Cloud Foundry"
 originalUrl: "https://noeldcosta.com/sap-cpi/"
 canonicalUrl: "https://noeldcosta.com/es/sap-cpi/"
@@ -41,135 +43,184 @@ translatedFrom: "en"
 translationSource: "reviewed-en-2026-10"
 ---
 
-SAP CPI (Cloud Platform Integration) es el middleware en la nube de SAP. Ahora forma parte, como capacidad Cloud Integration, de SAP Integration Suite en SAP BTP, y es la respuesta de SAP para conectar S/4HANA con otros sistemas, SAP y no SAP. Si todavía ejecuta SAP PI/PO, el calendario importa: PI/PO 7.5 sale del mantenimiento estándar a finales de 2027.
+SAP CPI (Cloud Platform Integration) es el middleware en la nube de SAP para conectar sistemas SAP y no SAP. Hoy se llama Cloud Integration, la capacidad central de SAP Integration Suite en SAP Business Technology Platform (SAP BTP).
 
-Esta guía es para responsables de integración y CIO que deciden cómo salir de PI/PO o cómo diseñar la integración de un nuevo programa S/4HANA. Explica qué hace y qué no hace CPI, cómo se compara con PI/PO y un plan por oleadas para migrar interfaces.
+Mueve mensajes entre aplicaciones, transforma su formato y los enruta al destino correcto. Si todavía usa SAP PI/PO, el calendario importa: el mantenimiento estándar de SAP NetWeaver 7.5, que incluye PI/PO, termina a finales de 2027.
 
-He visto equipos pasar meses construyendo scripts personalizados y frágiles para conectar sistemas SAP y no SAP. Al principio funciona. Después una actualización del sistema cambia el nombre de un campo, o sale una nueva versión de la API, o el tráfico se duplica. El script falla en silencio. Nadie se entera hasta que un informe muestra datos desactualizados o un pedido lleva tres días sin procesarse.
+Esta guía explica qué hace CPI, cómo funciona su arquitectura, cómo se compara con PI/PO y cómo planificar el cambio. Está escrita para responsables de integración y CIO, no solo para desarrolladores.
 
-CPI lo sustituye por flujos de integración gestionados y reutilizables. No porque sea más sencillo (a menudo no lo es), sino porque la arquitectura está pensada para supervisarse y mantenerse. Las pequeñas decisiones que se toman pronto en el diseño de CPI se convierten en deuda técnica más rápido de lo que la mayoría de los equipos espera.
+## Por qué importa CPI, según mi experiencia
+
+He visto equipos pasar meses construyendo scripts personalizados frágiles para conectar sistemas SAP y no SAP. Al principio algo funciona. Luego una actualización del sistema cambia el nombre de un campo, o sale una nueva versión de una API, o el tráfico se duplica.
+
+El script falla en silencio. Nadie se entera hasta que un informe extrae datos obsoletos o un pedido se queda sin procesar durante tres días.
+
+CPI sustituye eso por flujos de integración gestionados y reutilizables. No porque sea más sencillo (a menudo no lo es), sino porque la arquitectura está pensada para monitorizarse y mantenerse. Las pequeñas decisiones que se toman al principio del diseño en CPI se acumulan como deuda técnica más rápido de lo que la mayoría de los equipos espera.
+
+Mi consejo a cualquier empresa que siga en SAP PI/PO es pasar a SAP Integration Suite. El fallo de integración más común que veo es no dedicar suficiente tiempo a la integración.
 
 ## Qué es SAP CPI y qué no es
 
-CPI es la capa que conecta sistemas, transforma datos y enruta mensajes entre aplicaciones. SAP Integration Suite la agrupa con API Management, Event Mesh, Integration Advisor y la gestión de socios comerciales. La mayoría de los consultores siguen diciendo «CPI» cuando se refieren a la parte de los flujos de integración, y no pasa nada.
+La [guía de migración de SAP](https://help.sap.com/docs/migration-guide-po/migration-guide-for-sap-process-orchestration/introduction-sap-integration-suite) describe Cloud Integration como la capacidad para diseñar y ejecutar flujos de integración en entornos cloud, on-premise e híbridos. Cubre escenarios de aplicación a aplicación (A2A), de empresa a empresa (B2B) y de empresa a administración pública (B2G). La mayoría de los consultores aún lo llaman «CPI» o «SAP CI», y no pasa nada.
+
+SAP Integration Suite agrupa Cloud Integration con otras capacidades. Las principales son API Management, Event Mesh, Integration Advisor, Trading Partner Management, Open Connectors y Migration Assessment.
 
 **Qué hace CPI:** mueve datos entre sistemas, transforma formatos de mensaje, enruta al destino correcto y gestiona errores y reintentos. Conecta sistemas SAP (S/4HANA, SuccessFactors, Ariba) y plataformas no SAP (Salesforce, Workday, ServiceNow) mediante adaptadores estándar.
 
-**Qué no hace:** almacenar datos a largo plazo, sustituir un ERP ni funcionar como herramienta ETL para la migración masiva de datos. Está pensado para mensajes en tiempo real o casi real. Usarlo como almacén de datos o como herramienta de migración provoca problemas de arquitectura más adelante.
+**Qué no hace:** almacenar datos a largo plazo, sustituir un ERP o servir como herramienta ETL para la migración masiva de datos. Está hecho para mensajes en tiempo real o casi real. Usarlo como data warehouse o como herramienta de migración causa problemas de arquitectura más adelante.
 
-**CPI frente a SAP BTP:** BTP es toda la plataforma: desarrollo de aplicaciones, datos, IA, analítica e integración. CPI es un servicio dentro de ella. La distinción importa al dimensionar capacidades y presupuesto. Un arquitecto de BTP diseña a través de varios servicios. Un especialista en CPI es responsable de los flujos, los adaptadores, los mapeos y la conectividad.
+**CPI frente a SAP BTP:** BTP es la plataforma completa: desarrollo de aplicaciones, datos, IA, analítica e integración. CPI es un servicio dentro de ella. Un arquitecto de BTP diseña entre servicios; un especialista en CPI es responsable de flujos, adaptadores, mapeos y conectividad.
 
-## Qué ha cambiado para 2026
+## Arquitectura de SAP CPI explicada: cómo funciona en la práctica
 
-Cuatro fechas y decisiones determinan hoy cualquier plan de integración.
+El diagrama siguiente muestra los escenarios de integración para los que está hecho CPI. Nube a nube, on-premise a nube, empresa a empresa (B2B), empresa a administración pública (B2G) y conexiones con usuarios y dispositivos.
 
-<explainer-timeline title="Las fechas detrás de un plan de integración" caption="Planifique en torno a 2027. Un cambio por oleadas antes de esa fecha cuesta mucho menos que un cutover forzado." items="2023 => Edge Integration Cell disponible con carácter general|2027 => Termina el mantenimiento estándar de PI/PO|2028 => Se cierra el entorno SAP BTP Neo|2030 => Termina el mantenimiento ampliado de PI/PO" notes="Finales de 2023. Ejecuta flujos de Integration Suite dentro de su propia red|A finales de año, para SAP NetWeaver 7.5|31 de diciembre. Los tenants de CPI en Neo pasan a Cloud Foundry|A finales de año. La última parada de cualquier instalación PI/PO" highlight="2" source="Anuncios de mantenimiento de SAP NetWeaver 7.5 y de cierre de Neo, recogidos por SAPinsider"></explainer-timeline>
+![Diagrama de arquitectura de SAP CPI que muestra integración nube a nube, on-premise a nube, B2B y B2G en torno a SAP S/4HANA y aplicaciones no SAP](/images/wp/elementor/thumbs/SAP-CPI-r6e607fx79xud4tbbufp2yww164i041nvu8xtwedj4.webp "Arquitectura de SAP CPI")
 
-1. **PI/PO se está quedando sin recorrido.** [SAP NetWeaver 7.5, que incluye PI/PO, sigue el calendario de mantenimiento de Business Suite](https://sapinsider.org/blogs/sap-extends-maintenance-for-sap-netweaver-7-5-and-sap-bw-4hana/): mantenimiento estándar hasta finales de 2027, mantenimiento ampliado hasta finales de 2030. No llegarán nuevas funciones. Un cambio planificado y por oleadas cuesta mucho menos que un cutover forzado en 2027 o 2030.
-2. **Lo híbrido tiene respuesta.** Edge Integration Cell, disponible con carácter general desde finales de 2023, ejecuta flujos de Integration Suite dentro de su propia red para las interfaces que deben permanecer on-premise. Eso elimina el motivo más habitual que daban los equipos para seguir en PI/PO.
-3. **Neo se cierra.** SAP [anunció en 2023](https://sapinsider.org/blogs/sap-announces-sunset-of-neo-cloud-environment/) que el entorno SAP BTP Neo se cierra el 31 de diciembre de 2028. Los tenants de CPI más antiguos en Neo deben pasar al entorno multi-cloud (Cloud Foundry), y esa migración es un pequeño proyecto en sí misma.
-4. **Joule llega a las herramientas.** SAP ha incorporado Joule a Integration Suite para que los desarrolladores describan un flujo en lenguaje natural y obtengan un primer borrador. Acelera los escenarios estándar. La orquestación compleja con lógica de negocio real sigue necesitando a un arquitecto de integración sénior.
+Entender la arquitectura de CPI no es solo cosa de desarrolladores. Según mi experiencia, los equipos que comprenden cómo gestiona CPI la integración a nivel estructural suelen tomar mejores decisiones de diseño desde el principio.
 
-Sobre el aspecto comercial: si está en RISE with SAP, compruebe qué derechos de uso de SAP BTP incluye ya su contrato antes de comprar capacidad de Integration Suite por separado.
+CPI funciona como un servicio en la nube multitenant en SAP BTP. SAP opera la plataforma, así que usted no mantiene sus propios servidores de integración. Cuando un flujo debe ejecutarse dentro de su propia red, [Edge Integration Cell](https://help.sap.com/docs/integration-suite/sap-integration-suite/what-is-sap-integration-suite-edge-integration-cell) es un runtime híbrido opcional: diseña y monitoriza en la nube y ejecuta el flujo en su propia red.
+
+### El flujo de mensajes en la práctica
+
+En el centro está el iFlow (flujo de integración). Cada integración en CPI se modela como uno, y cada iFlow lleva un mensaje de un origen a un destino en tres etapas:
+
+1. **Adaptador emisor.** Recibe el mensaje del sistema de origen por SOAP, REST, OData, IDoc, SFTP, JMS, AS2 u otro protocolo.
+2. **Pasos de procesamiento.** Mapeo, conversión de formato (de JSON a XML, por ejemplo), enrutamiento basado en contenido, llamadas a otros sistemas, cifrado y gestión de errores.
+3. **Adaptador receptor.** Envía el mensaje procesado a su destino.
+
+Los flujos se ejecutan de forma síncrona o asíncrona, según el caso de uso. No siempre es evidente cuál elegir, así que pruebe ambos con volúmenes reales.
+
+La monitorización tiene un papel importante. Dispone de logs de procesamiento de mensajes, trazas y mensajes persistidos, cada uno con un propósito distinto. Durante las pruebas o la depuración, suelo alternar entre la traza y la persistencia según la profundidad que necesite.
+
+### Componentes de la arquitectura de SAP CPI
+
+La tabla relaciona cada componente con su función en la arquitectura.
+
+| Componente | Qué hace | Papel en la arquitectura |
+|---|---|---|
+| Runtime de flujos de integración | Ejecuta los iFlows | Gestiona enrutamiento, mapeo, transformación y seguridad en tiempo de ejecución |
+| Diseñador web | Editor gráfico para construir, configurar y desplegar iFlows | Donde los desarrolladores modelan los flujos; la lógica compleja sigue necesitando Groovy o JavaScript |
+| Adaptadores | SOAP, REST, OData, IDoc, JDBC, SFTP, JMS, AS2 y adaptadores específicos de SaaS | Conectan sistemas en la nube y on-premise |
+| Seguridad | OAuth 2.0, SAML, TLS, gestión de certificados y claves | Protege credenciales y mensajes en tránsito |
+| Monitorización y operaciones | Logs de mensajes, detalle de errores, reintentos, alertas | Permite a los equipos de soporte encontrar y corregir fallos |
+| Contenido preempaquetado | Paquetes de integración entregados por SAP en SAP Business Accelerator Hub | Acelera los escenarios estándar con contenido probado |
+| SAP Cloud Connector | Túnel seguro desde su red hasta SAP BTP | Llega a los sistemas on-premise sin exponerlos a internet |
+| Edge Integration Cell | Runtime opcional en su propio centro de datos o nube privada | Para flujos que deben permanecer on-premise |
+
+Los scripts Groovy resuelven la lógica que los pasos gráficos no pueden. Suelo recomendar que sean ligeros, porque demasiado scripting genera problemas de mantenimiento después. Los paquetes están versionados, así que ningún cambio llega a producción fuera de un paquete desplegado.
+
+## Fechas que condicionan un plan de integración
+
+Tres fechas condicionan ahora casi cualquier plan de integración.
+
+<explainer-timeline title="Las fechas detrás de un plan de integración" caption="Planifique en torno a 2027. Un cambio por oleadas antes de esa fecha cuesta mucho menos que un cutover forzado." items="2027 => Termina el mantenimiento estándar de PI/PO|2028 => Se retira Cloud Integration en Neo|2030 => Termina el mantenimiento ampliado de PI/PO" notes="Final de año, para SAP NetWeaver 7.5|31 de diciembre. Los tenants de Neo pasan a Cloud Foundry|Final de año. La última parada para cualquier sistema PI/PO" highlight="1" source="Nota SAP 1648480 y artículo de la base de conocimientos de SAP 3355661"></explainer-timeline>
+
+1. **A PI/PO se le acaba el camino.** La [nota SAP 1648480](https://me.sap.com/notes/1648480) fija el mantenimiento estándar de SAP NetWeaver 7.5, que incluye PI/PO, hasta finales de 2027, con mantenimiento ampliado hasta finales de 2030. El sistema no se detiene el 1 de enero de 2028, pero cada año posterior cuesta más mantenerlo.
+2. **Neo cierra.** El [artículo de la base de conocimientos de SAP 3355661](https://me.sap.com/notes/3355661) confirma que Cloud Integration en el entorno Neo de SAP BTP se retira el 31 de diciembre de 2028. Los tenants de CPI más antiguos en Neo deben pasar al entorno multicloud (Cloud Foundry), y ese cambio es un pequeño proyecto en sí mismo.
+3. **Lo híbrido tiene respuesta.** Edge Integration Cell ejecuta flujos de Integration Suite dentro de su propia red. Eso elimina el motivo más habitual que daban los equipos para quedarse en PI/PO.
+
+En lo comercial: si está en RISE with SAP, compruebe qué derecho de uso de SAP BTP incluye ya su contrato antes de comprar capacidad de Integration Suite por separado.
 
 ## Cómo se compara CPI con SAP PI/PO
 
+PI (Process Integration) y PO (Process Orchestration) son el middleware on-premise de SAP. Así se comparan con CPI.
+
 | Factor | SAP PI/PO | SAP CPI (Integration Suite) |
 |---|---|---|
-| Despliegue | On-premise, en sus servidores | Nube en SAP BTP; Edge Integration Cell para el runtime on-premise |
+| Despliegue | On-premise, en sus servidores | Nube en SAP BTP; Edge Integration Cell para un runtime on-premise |
 | Carga de mantenimiento | Alta: parches, actualizaciones, gestión de servidores | Menor: SAP opera la plataforma |
 | Extensibilidad | Personalización profunda; más difícil de actualizar | Modular; actualizaciones más rápidas; menos control de bajo nivel |
-| Licencias | Estáticas, normalmente por capacidad | Suscripción con métricas basadas en mensajes |
+| Licencias | Licencia más su propia infraestructura | Suscripción en SAP BTP, por edición |
 | Dirección de la inversión | Solo mantenimiento, sin funciones nuevas | Desarrollo activo |
 | Fin del mantenimiento estándar | Finales de 2027 (ampliado hasta finales de 2030) | No aplica (servicio en la nube) |
 
-El cambio de licenciamiento merece un modelo. El costo de CPI depende del volumen de mensajes. Algunas empresas ahorran frente a PI/PO. Otras descubren que su tráfico real de integración es mayor de lo que pensaban y tienen que optimizar los flujos pronto. Modélelo antes de migrar.
+La guía de migración de SAP trata Cloud Integration como el sustituto principal porque cubre la mayor parte de lo que hace PI/PO. Pregunte a SAP cómo se mide su edición y luego modélelo con sus volúmenes reales de mensajes antes de migrar. Algunas empresas descubren que su tráfico de integración es mayor de lo que creían.
 
-## Funciones y adaptadores principales
+## Migración de PI/PO: lo que implica realmente
 
-El bloque de construcción es el **iFlow** (flujo de integración). Cada iFlow define cómo viaja un mensaje del origen al destino: la transformación, las reglas de enrutamiento y el tratamiento de errores que se activa cuando algo falla.
+La migración no es una conversión automática. El comportamiento de los adaptadores difiere entre PI y CPI, y una gestión de errores que funcionaba en PI puede comportarse de otra manera en CPI. Algunos flujos hay que reconstruirlos; otros pasan con pequeños cambios.
 
-| Función | Qué hace |
-|---|---|
-| Contenido de integración predefinido | Paquetes de iFlows listos para usar para escenarios SAP y de terceros habituales en el SAP Business Accelerator Hub |
-| Diseñador gráfico de flujos | Diseñador web para construir iFlows |
-| API Management | Diseño, publicación, seguridad y monitorización de API |
-| Seguridad | OAuth 2.0, SAML, TLS, gestión de certificados |
-| Monitorización | Registros de mensajes, detalle de errores, historial de reintentos, alertas |
+SAP ofrece dos herramientas oficiales:
 
-**Los adaptadores estándar** incluyen SOAP, REST, OData, IDoc, JDBC, SFTP, JMS y AS2, con más adaptadores para productos SaaS concretos.
+1. **Migration Assessment.** Una capacidad de Integration Suite que se conecta a su sistema PO, extrae los escenarios de integración y estima el esfuerzo de trasladarlos. El [tutorial de SAP](https://developers.sap.com/tutorials/migration-assessment.html) explica la configuración.
+2. **Migration Tooling.** Una función de Cloud Integration que [semiautomatiza la migración](https://developers.sap.com/tutorials/migration-tool.html) de los objetos de configuración integrada (ICO) de PO a iFlows. Solo los escenarios evaluados como «Ready to migrate» o «Adjustment required» pueden migrarse con ella.
 
-**Scripting.** Las transformaciones complejas necesitan Groovy o JavaScript dentro del iFlow. CPI no es de cero código más allá de los flujos estándar. Si nadie de su equipo sabe escribir lógica básica de scripts, los mapeos complejos se convierten en el cuello de botella.
-
-## Migración de PI/PO: qué implica realmente
-
-La migración no es una conversión automática. El comportamiento de los adaptadores difiere entre PI y CPI, y el tratamiento de errores que funcionaba en PI puede comportarse de otra manera en CPI. Algunos flujos hay que reconstruirlos. Otros pasan con cambios pequeños. Las herramientas de migración y el contenido predefinido de SAP reducen el trabajo mecánico. No toman las decisiones de criterio sobre qué reconstruir y qué retirar.
+[SAP Learning](https://learning.sap.com/courses/sap-process-orchestration-to-sap-integration-suite-migration/developing-a-migration-approach) deja claro que ninguna vía de migración sirve para todos los clientes, y muchos ejecutan PI/PO e Integration Suite en paralelo durante el cambio. Las herramientas reducen el trabajo mecánico. No toman las decisiones sobre qué reconstruir y qué retirar.
 
 Este es el plan por oleadas que uso como punto de partida. Ajuste las oleadas a su propio inventario.
 
 | Oleada | Qué se traslada | Por qué en este orden | Responsable | Criterios de salida |
 |---|---|---|---|---|
-| 0. Inventario | Todas las interfaces de PI: frecuencia, volumen, adaptador, criticidad, responsable | No se puede planificar lo que no se ha contado | Responsable de integración | Inventario aprobado por los responsables de negocio |
-| 1. Riesgo bajo | Flujos de SAP a SAP con contenido estándar | Demuestra el modelo operativo y la monitorización | Responsable de integración | Dos semanas estables en producción, ruta de PI retirada |
-| 2. Socios | Flujos B2B y EDI con socios comerciales clave | Requiere ventanas de pruebas con los socios y un cutover coordinado | Responsable de integración con compras y ventas | Cada socio lo confirma por escrito |
-| 3. Riesgo alto | Flujos de gran volumen, regulados o críticos para los ingresos | Se trasladan al final, con más ensayos | Arquitecto de integración | Prueba de volumen superada; retorno a PI ensayado |
-| 4. Retirada | Se apaga PI/PO | Se deja de pagar por dos plataformas | CIO | Todos los flujos migrados o retirados; licencias finalizadas |
+| 0. Inventario | Cada interfaz de PI: frecuencia, volumen, adaptador, criticidad, responsable | No se puede planificar lo que no se ha contado | Responsable de integración | Inventario aprobado por los responsables de negocio |
+| 1. Bajo riesgo | Flujos SAP a SAP con contenido estándar | Demuestra el modelo operativo y la monitorización | Responsable de integración | Dos semanas estable en producción, ruta de PI retirada |
+| 2. Socios | Flujos B2B y EDI con socios comerciales clave | Requiere ventanas de prueba con los socios y un cutover coordinado | Responsable de integración con compras y ventas | Cada socio lo confirma por escrito |
+| 3. Alto riesgo | Flujos de gran volumen, regulados o críticos para los ingresos | Se trasladan al final, con más ensayos | Arquitecto de integración | Prueba de volumen superada; vuelta a PI ensayada |
+| 4. Retirada | Apagado de PI/PO | Deja de pagar por dos plataformas | CIO | Todos los flujos migrados o retirados; licencias finalizadas |
 
-Mantenga una vía de retorno a PI en cada oleada hasta que el nuevo flujo haya funcionado sin incidencias en producción. El orden importa: demuestre el modelo operativo con flujos de bajo riesgo antes de tocar las interfaces que sostienen los ingresos.
+Mantenga una ruta de vuelta a PI en cada oleada hasta que el nuevo flujo haya funcionado sin errores en producción. El orden importa: demuestre el modelo operativo con flujos de bajo riesgo antes de tocar las interfaces que generan ingresos.
+
+Las pruebas de integración son donde desaparece el tiempo. Planifique pronto las pruebas de regresión con socios B2B y destinos no SAP, porque esos fallan en silencio. Mi [guía de pruebas en SAP](/es/sap-testing-explained/) explica cómo estructurar los ciclos de integración y regresión.
+
+Si el cambio de PI/PO forma parte de un programa de S/4HANA, alinee los dos planes. Mi [guía de migración de ECC a S/4HANA](/es/ecc-to-s4hana-migration/) cubre las vías y los plazos del lado del ERP.
 
 ## Patrones de integración habituales
 
 Los escenarios que veo con más frecuencia:
 
-1. **S/4HANA a SuccessFactors.** Datos organizativos, plantilla y cambios de compensación. El contenido de integración estándar de SAP cubre los escenarios habituales; los flujos personalizados resuelven las desviaciones.
-2. **Compras heredadas a SAP Ariba.** Salen los pedidos, vuelven las confirmaciones y las facturas. Normalmente es bidireccional.
+1. **S/4HANA a SuccessFactors.** Datos organizativos, plantilla y cambios de compensación. El contenido de integración estándar de SAP cubre los escenarios comunes; los flujos personalizados se ocupan de las desviaciones.
+2. **Compras heredadas a SAP Ariba.** Pedidos de compra de salida, confirmaciones y facturas de vuelta. Normalmente bidireccional.
 3. **Datos financieros a SAP Analytics Cloud.** Traslado de datos desde ECC o sistemas no SAP a SAC.
-4. **Salesforce a SAP.** Las operaciones cerradas fluyen a SAP para la entrega, la facturación y las actualizaciones de existencias. Sin integración gestionada, esto suele funcionar con exportaciones de hojas de cálculo o scripts frágiles. Mi artículo sobre [por qué fallan las integraciones entre Salesforce y el ERP](/es/why-erp-integration-with-salesforce-fails-and-how-to-fix-it/) cubre los errores de diseño.
+4. **Salesforce a SAP.** Operaciones cerradas que llegan a SAP para su entrega, facturación y actualización de stock. Mi artículo sobre [por qué fallan las integraciones entre Salesforce y el ERP](/es/why-erp-integration-with-salesforce-fails-and-how-to-fix-it/) explica los errores de diseño.
 
-Si el trabajo de integración ya se está retrasando en su programa, [los retrasos en la entrega de SAP Integration Suite](/es/sap-integration-suite-delivery-delays/) explican las causas habituales. La visión general de [las plataformas de integración de SAP](/es/sap-implementation/sap-integration-platforms/) compara las opciones lado a lado.
+Si el trabajo de integración ya se está retrasando en su programa, [los retrasos en la entrega de SAP Integration Suite](/es/sap-integration-suite-delivery-delays/) explica las causas habituales. El resumen de [plataformas de integración de SAP](/es/sap-implementation/sap-integration-platforms/) compara las opciones una junto a otra.
 
 ## Preguntas frecuentes
 
 <details>
 <summary>¿Qué es SAP CPI y cómo se llama ahora?</summary>
 
-SAP CPI son las siglas de Cloud Platform Integration. Ahora es la capacidad Cloud Integration de SAP Integration Suite en SAP BTP, junto con API Management, Event Mesh y las herramientas de integración de socios. «CPI» sigue siendo el nombre cotidiano para construir flujos de integración.
+SAP CPI significa Cloud Platform Integration. Ahora es la capacidad Cloud Integration de SAP Integration Suite en SAP BTP, junto con API Management, Event Mesh y las herramientas de integración con socios. «CPI» sigue siendo el nombre habitual para la construcción de flujos de integración.
+
+</details>
+
+<details>
+<summary>¿Qué es SAP CI?</summary>
+
+SAP CI es la abreviatura de SAP Cloud Integration, el nombre actual de lo que antes era SAP CPI. Ambos términos se refieren a la misma capacidad dentro de SAP Integration Suite.
+
+</details>
+
+<details>
+<summary>¿SAP CPI es un middleware?</summary>
+
+Sí. CPI es un middleware en la nube: se sitúa entre sistemas, transforma y enruta mensajes, y gestiona errores y reintentos. Sustituye a middleware on-premise como SAP PI/PO, y no almacena datos de negocio a largo plazo.
 
 </details>
 
 <details>
 <summary>¿En qué se diferencia SAP CPI de SAP PI/PO?</summary>
 
-PI (Process Integration) y PO (Process Orchestration) son middleware on-premise con personalización profunda y control total de la infraestructura. CPI es un servicio en la nube en SAP BTP que SAP opera por usted, y los nuevos adaptadores y contenidos llegan de forma centralizada.
+PI/PO es un middleware on-premise que usted instala, parchea y opera. CPI es un servicio en la nube en SAP BTP que SAP opera por usted, con nuevos adaptadores y contenido que llegan de forma centralizada. Edge Integration Cell cubre los flujos que deben permanecer on-premise.
 
-PI/PO 7.5 solo recibe mantenimiento. El mantenimiento estándar termina a finales de 2027 y el ampliado a finales de 2030, por lo que toda instalación de PI/PO necesita un plan de migración.
+</details>
+
+<details>
+<summary>¿Cuándo termina el soporte de SAP PI/PO?</summary>
+
+El mantenimiento estándar de SAP NetWeaver 7.5, que incluye PI/PO, termina a finales de 2027. El mantenimiento ampliado está disponible hasta finales de 2030. SAP ofrece Migration Assessment y Migration Tooling para ayudar a trasladar los escenarios a Integration Suite.
 
 </details>
 
 <details>
 <summary>¿SAP CPI es lo mismo que SAP BTP?</summary>
 
-No. SAP BTP es la plataforma: desarrollo de aplicaciones, datos, analítica, IA e integración. CPI es el servicio de integración dentro de ella. Al dimensionar el trabajo, el presupuesto y las competencias son distintos: un arquitecto de BTP trabaja a través de varios servicios y un especialista en CPI es responsable de los flujos, los adaptadores y los mapeos.
+No. SAP BTP es la plataforma: desarrollo de aplicaciones, datos, analítica, IA e integración. CPI es el servicio de integración dentro de ella.
+
+Al definir el alcance del trabajo, el presupuesto y las competencias difieren: un arquitecto de BTP trabaja entre servicios, un especialista en CPI es responsable de flujos, adaptadores y mapeos.
 
 </details>
 
-<details>
-<summary>¿Qué dificultad tiene aprender SAP CPI?</summary>
+## Siguiente paso
 
-Es manejable, no sencillo. Los flujos estándar siguen patrones documentados y el diseñador gráfico ayuda. Lo difícil es entender el proceso de negocio lo bastante bien para diseñar el flujo, gestionar bien los errores y los reintentos, y escribir Groovy o JavaScript para los mapeos complejos. Aprenda primero el proceso de negocio y después la integración.
-
-</details>
-
-<details>
-<summary>¿Qué debo tener en cuenta al migrar de SAP PI/PO a CPI?</summary>
-
-Haga un inventario de cada interfaz con su volumen, frecuencia, adaptador y criticidad. Decida para cada una: reconstruir, adaptar o retirar. Modele los costos basados en mensajes con sus volúmenes reales. Migre por oleadas con una vía de retorno y planifique pronto las pruebas de regresión con los socios B2B y los destinos no SAP, porque ahí es donde las cosas se rompen en silencio. Use Edge Integration Cell para los flujos que deban permanecer on-premise.
-
-</details>
-
-<details>
-<summary>¿Cuál es la diferencia entre Neo y Cloud Foundry para SAP CPI?</summary>
-
-Ambos son entornos de SAP BTP. Neo es el entorno más antiguo, propio de SAP, y se cierra el 31 de diciembre de 2028. El entorno multi-cloud basado en Cloud Foundry es hacia donde va el desarrollo de SAP. Todo tenant de CPI que siga en Neo necesita ya un plan de migración; los tenants nuevos no deberían empezar allí.
-
-</details>
+Si está planificando el paso desde PI/PO o diseñando la integración de un nuevo programa de S/4HANA, empiece por el inventario de interfaces. Si quiere una segunda opinión sobre el plan antes de comprometerse, [póngase en contacto conmigo](/es/contact-noel-erp-support/).

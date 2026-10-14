@@ -1,26 +1,27 @@
 ---
-title: "SAP CPI en Integration Suite: wat ze zijn en waar ze passen"
-h1: "SAP CPI en Integration Suite: wat ze zijn en waar ze passen"
+title: "SAP CPI: wat het is, de architectuur en de overstap van PI/PO"
+h1: "SAP CPI: wat het is, de architectuur en de overstap van PI/PO"
 slug: "sap-cpi"
 date: "2025-04-28"
-updated: "2026-10-07"
+updated: "2026-10-14"
 hero: "/images/seo-refresh/sap-cpi.webp"
-heroAlt: "Persoon achter een laptop met zwevende bedrijfsicoontjes voor grafieken, doelen en rapporten"
+heroAlt: "Een monitor met een integratieflow waarin systemen via een centrale cloudhub zijn verbonden"
 category: "sap-modules"
 tags: ["sap-technical-decisions", "sap-integration-suite", "sap-btp", "sap-cpi"]
 author: "Noel D'Costa"
-metaTitle: "SAP CPI en Integration Suite in 2026: zo past het erin"
-metaDescription: "SAP CPI uitgelegd: wat Integration Suite doet, hoe het zich verhoudt tot PI/PO vóór 2027, het einde van Neo en een golfplan om uw interfaces te verplaatsen."
-excerpt: "SAP CPI, nu de Cloud Integration-functionaliteit van SAP Integration Suite, vervangt kwetsbare punt-naar-puntscripts door beheerde integration flows. Nu het mainstream-onderhoud van PI/PO in 2027 eindigt, leest u hier hoe het past en hoe u de overstap plant."
-experienceSource: "Direct experience designing and implementing SAP CPI and SAP Integration Suite integration architectures across 21 SAP S/4HANA programmes in Europe, GCC, US, and UK markets. Includes SAP PI/PO migration, S/4HANA and SuccessFactors integrations, Salesforce-to-SAP pipelines, and post-go-live monitoring design. Anchored stories: European retail 2023 (Groovy script fragility on order interface), GCC manufacturing 2024 (PI/PO to Integration Suite migration in waves). Product dates (PI/PO maintenance, Neo shutdown, Edge Integration Cell) verified October 2026."
+metaTitle: "SAP CPI uitgelegd: architectuur, diagram en overstap PI/PO"
+metaDescription: "SAP CPI is de Cloud Integration-functionaliteit van SAP Integration Suite. Bekijk het architectuurdiagram, de vergelijking met PI/PO vóór 2027 en de migratie."
+primaryKeyword: "sap cpi"
+excerpt: "SAP CPI is de Cloud Integration-functionaliteit van SAP Integration Suite, de cloudmiddleware van SAP op SAP BTP. Zo werkt de architectuur, zo verhoudt het zich tot PI/PO voordat het mainstream-onderhoud in 2027 eindigt, en zo plant u de overstap."
+experienceSource: "Noel's published experience designing SAP CPI and SAP Integration Suite integrations across the 21 SAP programmes he has led or rescued. PI/PO advice and the most common integration failure confirmed by Noel, 14 October 2026. Product facts (PI/PO maintenance dates, migration tooling, Edge Integration Cell, Neo sunset) checked against help.sap.com, support.sap.com, developers.sap.com and learning.sap.com, October 2026."
 lastReviewed: "2026-05-21"
 keyTakeaways:
-  - "SAP CPI is cloudmiddleware op SAP BTP: het verplaatst en transformeert data tussen systemen, maar slaat die niet langdurig op"
-  - "Officieel is het de Cloud Integration-functionaliteit van SAP Integration Suite; CPI is nog steeds de naam die de meeste consultants gebruiken"
-  - "CPI is geen ETL-tool en niet hetzelfde als SAP BTP. BTP is het platform; Integration Suite verzorgt de integratie"
-  - "SAP PI/PO 7.5 verlaat eind 2027 het mainstream-onderhoud, met verlengd onderhoud tot eind 2030. Plan de overstap in golven, niet als geforceerde cutover"
-  - "De SAP BTP Neo-omgeving wordt op 31 december 2028 uitgeschakeld. Alles wat daar nog draait, moet naar Cloud Foundry"
-  - "Complexe mappings vragen Groovy of JavaScript. CPI is niet zero-code voor alles buiten standaardflows"
+  - "SAP CPI is de Cloud Integration-functionaliteit van SAP Integration Suite op SAP BTP. Het verplaatst, transformeert en routeert berichten; het slaat geen data langdurig op"
+  - "Elke flow is een iFlow: een senderadapter, verwerkingsstappen en een receiveradapter, met monitoring en beveiliging eromheen"
+  - "SAP NetWeaver 7.5, waar PI/PO onder valt, verlaat eind 2027 het mainstream-onderhoud; het verlengde onderhoud loopt tot eind 2030"
+  - "SAP levert Migration Assessment en een semi-automatische Migration Tooling voor PI/PO. Die versnellen het mechanische werk, niet de beslissingen"
+  - "Cloud Integration op de Neo-omgeving wordt op 31 december 2028 uitgefaseerd. Neo-tenants moeten naar Cloud Foundry"
+  - "De meest voorkomende integratiefout die ik zie, is te weinig tijd besteden aan integratie"
 pullQuote: "SAP CPI is krachtig wanneer het op architectuurniveau wordt ontworpen. Behandelt een team het als een configuratieoefening, dan veroorzaakt elke kleine shortcut kwetsbaarheid die zes maanden later zichtbaar wordt."
 mentions:
   - "SAP CPI"
@@ -32,7 +33,8 @@ mentions:
   - "SAP SuccessFactors"
   - "SAP Ariba"
   - "SAP Analytics Cloud"
-  - "RISE with SAP"
+  - "SAP Cloud Connector"
+  - "Edge Integration Cell"
   - "Cloud Foundry"
 originalUrl: "https://noeldcosta.com/sap-cpi/"
 canonicalUrl: "https://noeldcosta.com/nl/sap-cpi/"
@@ -41,135 +43,184 @@ translatedFrom: "en"
 translationSource: "reviewed-en-2026-10"
 ---
 
-SAP CPI (Cloud Platform Integration) is de cloudmiddleware van SAP. Tegenwoordig vormt het de Cloud Integration-functionaliteit binnen SAP Integration Suite op SAP BTP, en het is het antwoord van SAP om S/4HANA te koppelen aan andere SAP- en niet-SAP-systemen. Draait u nog SAP PI/PO, dan telt de klok: PI/PO 7.5 verlaat eind 2027 het mainstream-onderhoud.
+SAP CPI (Cloud Platform Integration) is de cloudmiddleware van SAP om SAP- en niet-SAP-systemen met elkaar te verbinden. Tegenwoordig heet het Cloud Integration, de kernfunctionaliteit van SAP Integration Suite op SAP Business Technology Platform (SAP BTP).
 
-Deze gids is voor integratieleads en CIO's die bepalen hoe ze van PI/PO afstappen of hoe ze de integratie voor een nieuw S/4HANA-programma ontwerpen. Hij behandelt wat CPI wel en niet doet, hoe het zich verhoudt tot PI/PO en een golfplan om interfaces te migreren.
+Het verplaatst berichten tussen applicaties, transformeert hun formaat en routeert ze naar het juiste doel. Draait u nog op SAP PI/PO, dan telt de klok: het mainstream-onderhoud voor SAP NetWeaver 7.5, waar PI/PO onder valt, eindigt eind 2027.
 
-Ik heb teams maandenlang kwetsbare custom scripts zien bouwen om SAP- en niet-SAP-systemen te koppelen. In het begin werkt het. Dan wijzigt een systeemupdate een veldnaam, verschijnt er een nieuwe API-versie of verdubbelt het verkeer. Het script gaat stilletjes kapot. Niemand merkt het tot een rapport verouderde data ophaalt of een order drie dagen onverwerkt blijft liggen.
+Deze gids behandelt wat CPI doet, hoe de architectuur werkt, hoe het zich verhoudt tot PI/PO en hoe u de overstap plant. Hij is geschreven voor integratieleads en CIO's, niet alleen voor ontwikkelaars.
 
-CPI vervangt dat door beheerde, herbruikbare integration flows. Niet omdat het eenvoudiger is (vaak is het dat niet), maar omdat de architectuur is gebouwd om te worden gemonitord en onderhouden. Kleine beslissingen vroeg in het CPI-ontwerp stapelen zich sneller op tot technische schuld dan de meeste teams verwachten.
+## Waarom CPI ertoe doet, in mijn ervaring
+
+Ik heb teams maandenlang kwetsbare maatwerkscripts zien bouwen om SAP- en niet-SAP-systemen te koppelen. In het begin werkt iets. Dan verandert een systeemupdate een veldnaam, komt er een nieuwe API-versie uit of verdubbelt het verkeer.
+
+Het script breekt geruisloos. Niemand weet het totdat een rapport verouderde data ophaalt of een order drie dagen onverwerkt blijft liggen.
+
+CPI vervangt dat door beheerde, herbruikbare integratieflows. Niet omdat het eenvoudiger is (vaak is het dat niet), maar omdat de architectuur is gebouwd om te worden gemonitord en onderhouden. Kleine beslissingen die vroeg in het CPI-ontwerp worden genomen, stapelen zich sneller op tot technische schuld dan de meeste teams verwachten.
+
+Mijn advies aan elk bedrijf dat nog op SAP PI/PO draait, is over te stappen naar SAP Integration Suite. De meest voorkomende integratiefout die ik zie, is te weinig tijd besteden aan integratie.
 
 ## Wat SAP CPI is, en wat niet
 
-CPI is de laag die systemen koppelt, data transformeert en berichten tussen applicaties routeert. SAP Integration Suite bundelt die met API Management, Event Mesh, Integration Advisor en beheer van handelspartners. De meeste consultants zeggen nog steeds “CPI” als ze het deel met integration flows bedoelen, en dat is prima.
+[De eigen migratiegids van SAP](https://help.sap.com/docs/migration-guide-po/migration-guide-for-sap-process-orchestration/introduction-sap-integration-suite) beschrijft Cloud Integration als de functionaliteit om integratieflows te ontwerpen en uit te voeren over cloud-, on-premise en hybride omgevingen. Het dekt scenario's van applicatie naar applicatie (A2A), van bedrijf naar bedrijf (B2B) en van bedrijf naar overheid (B2G). De meeste consultants zeggen er nog steeds "CPI" of "SAP CI" tegen, en dat is prima.
 
-**Wat CPI doet:** verplaatst data tussen systemen, transformeert berichtformaten, routeert naar het juiste doel en handelt fouten en retries af. Het koppelt SAP-systemen (S/4HANA, SuccessFactors, Ariba) en niet-SAP-platforms (Salesforce, Workday, ServiceNow) via standaardadapters.
+SAP Integration Suite bundelt Cloud Integration met andere functionaliteiten. De belangrijkste zijn API Management, Event Mesh, Integration Advisor, Trading Partner Management, Open Connectors en Migration Assessment.
+
+**Wat CPI doet:** data tussen systemen verplaatsen, berichtformaten transformeren, naar het juiste doel routeren, en fouten en nieuwe pogingen afhandelen. Het koppelt SAP-systemen (S/4HANA, SuccessFactors, Ariba) en niet-SAP-platforms (Salesforce, Workday, ServiceNow) via standaardadapters.
 
 **Wat het niet doet:** data langdurig opslaan, een ERP vervangen of dienen als ETL-tool voor bulkmigratie van data. Het is gebouwd voor berichten in realtime of bijna realtime. Wie het als datawarehouse of migratietool gebruikt, krijgt later architectuurproblemen.
 
-**CPI versus SAP BTP:** BTP is het hele platform: applicatieontwikkeling, data, AI, analytics en integratie. CPI is één service daarop. Het onderscheid doet ertoe wanneer u vaardigheden en budget afbakent. Een BTP-architect ontwerpt over services heen. Een CPI-specialist is eigenaar van flows, adapters, mappings en connectiviteit.
+**CPI versus SAP BTP:** BTP is het hele platform: applicatieontwikkeling, data, AI, analytics en integratie. CPI is één dienst daarop. Een BTP-architect ontwerpt over diensten heen; een CPI-specialist is eigenaar van flows, adapters, mappings en connectiviteit.
 
-## Wat er voor 2026 is veranderd
+## De architectuur van SAP CPI uitgelegd: hoe het in de praktijk werkt
 
-Vier data en beslissingen bepalen nu elk integratieplan.
+Het diagram hieronder toont de integratiescenario's waarvoor CPI is gebouwd. Cloud naar cloud, on-premise naar cloud, bedrijf naar bedrijf (B2B), bedrijf naar overheid (B2G), en verbindingen met gebruikers en apparaten.
 
-<explainer-timeline title="De data achter een integratieplan" caption="Plan rond 2027. Een overstap in golven vóór die tijd kost veel minder dan een geforceerde cutover." items="2023 => Edge Integration Cell algemeen beschikbaar|2027 => Mainstream-onderhoud van PI/PO eindigt|2028 => SAP BTP Neo-omgeving wordt uitgeschakeld|2030 => Verlengd onderhoud van PI/PO eindigt" notes="Eind 2023. Draait Integration Suite-flows binnen uw eigen netwerk|Einde van het jaar, voor SAP NetWeaver 7.5|31 december. Neo CPI-tenants verhuizen naar Cloud Foundry|Einde van het jaar. De laatste halte voor elk PI/PO-landschap" highlight="2" source="Aankondigingen over het onderhoud van SAP NetWeaver 7.5 en de uitfasering van Neo, gemeld door SAPinsider"></explainer-timeline>
+![Architectuurdiagram van SAP CPI met integratie van cloud naar cloud, on-premise naar cloud, B2B en B2G rond SAP S/4HANA en niet-SAP-apps](/images/wp/elementor/thumbs/SAP-CPI-r6e607fx79xud4tbbufp2yww164i041nvu8xtwedj4.webp "Architectuur van SAP CPI")
 
-1. **PI/PO loopt tegen het einde van de weg aan.** [SAP NetWeaver 7.5, waar PI/PO deel van uitmaakt, volgt de onderhoudstijdlijn van Business Suite](https://sapinsider.org/blogs/sap-extends-maintenance-for-sap-netweaver-7-5-and-sap-bw-4hana/): mainstream-onderhoud tot eind 2027, verlengd onderhoud tot eind 2030. Er komen geen nieuwe functies meer. Een geplande overstap in golven kost veel minder dan een geforceerde cutover in 2027 of 2030.
-2. **Voor hybride is er een antwoord.** Edge Integration Cell, sinds eind 2023 algemeen beschikbaar, draait Integration Suite-flows binnen uw eigen netwerk voor interfaces die on-premise moeten blijven. Daarmee verdwijnt de meest genoemde reden van teams om op PI/PO te blijven.
-3. **Neo gaat dicht.** SAP [kondigde in 2023 aan](https://sapinsider.org/blogs/sap-announces-sunset-of-neo-cloud-environment/) dat de SAP BTP Neo-omgeving op 31 december 2028 wordt uitgeschakeld. Oudere CPI-tenants op Neo moeten naar de multi-cloudomgeving (Cloud Foundry), en die migratie is een eigen klein project.
-4. **Joule zit in de tooling.** SAP heeft Joule aan Integration Suite toegevoegd, zodat ontwikkelaars een flow in gewone taal kunnen beschrijven en een eerste opzet krijgen. Dat versnelt standaardscenario's. Complexe orkestratie met echte bedrijfslogica vraagt nog steeds een senior integratiearchitect.
+De architectuur van CPI begrijpen is niet alleen iets voor ontwikkelaars. In mijn ervaring maken teams die snappen hoe CPI integratie op structureel niveau afhandelt, vooraf betere ontwerpkeuzes.
 
-Over de commerciële kant: zit u op RISE with SAP, controleer dan welke SAP BTP-entitlement uw contract al bevat voordat u Integration Suite-capaciteit apart koopt.
+CPI draait als multi-tenant clouddienst op SAP BTP. SAP beheert het platform, dus u onderhoudt geen eigen integratieservers. Waar een flow binnen uw eigen netwerk moet draaien, is [Edge Integration Cell](https://help.sap.com/docs/integration-suite/sap-integration-suite/what-is-sap-integration-suite-edge-integration-cell) een optionele hybride runtime: u ontwerpt en monitort in de cloud en voert de flow uit in uw eigen netwerk.
+
+### De berichtenstroom in de praktijk
+
+De kern is de iFlow (integratieflow). Elke integratie in CPI wordt als iFlow gemodelleerd, en elke iFlow brengt een bericht in drie fasen van een bron naar een doel:
+
+1. **Senderadapter.** Ontvangt het bericht van het bronsysteem via SOAP, REST, OData, IDoc, SFTP, JMS, AS2 of een ander protocol.
+2. **Verwerkingsstappen.** Mapping, formaatconversie (bijvoorbeeld van JSON naar XML), routering op basis van inhoud, aanroepen van andere systemen, versleuteling en foutafhandeling.
+3. **Receiveradapter.** Stuurt het verwerkte bericht naar het doel.
+
+Flows draaien synchroon of asynchroon, afhankelijk van de toepassing. Welke u moet kiezen, is niet altijd evident, dus test beide met echte volumes.
+
+Monitoring speelt een grote rol. U hebt logs van berichtverwerking, trace en opgeslagen berichten, elk voor een ander doel. Tijdens testen of debuggen wissel ik meestal tussen trace en persist, afhankelijk van hoe diep ik moet gaan.
+
+### Componenten van de SAP CPI-architectuur
+
+De tabel koppelt elke component aan zijn taak in de architectuur.
+
+| Component | Wat het doet | Rol in de architectuur |
+|---|---|---|
+| Runtime voor integratieflows | Voert iFlows uit | Verzorgt routering, mapping, transformatie en beveiliging tijdens runtime |
+| Webgebaseerde designer | Grafische editor om iFlows te bouwen, configureren en deployen | Waar ontwikkelaars flows modelleren; complexe logica vraagt nog steeds Groovy of JavaScript |
+| Adapters | SOAP, REST, OData, IDoc, JDBC, SFTP, JMS, AS2 en SaaS-specifieke adapters | Koppelen cloud- en on-premise systemen |
+| Beveiliging | OAuth 2.0, SAML, TLS, beheer van certificaten en sleutels | Beschermt inloggegevens en berichten onderweg |
+| Monitoring en beheer | Berichtlogs, foutdetails, nieuwe pogingen, alerting | Laat supportteams fouten vinden en oplossen |
+| Voorverpakte content | Door SAP geleverde integratiepakketten op de SAP Business Accelerator Hub | Versnelt standaardscenario's met geteste content |
+| SAP Cloud Connector | Beveiligde tunnel van uw netwerk naar SAP BTP | Bereikt on-premise systemen zonder ze bloot te stellen aan internet |
+| Edge Integration Cell | Optionele runtime in uw eigen datacenter of private cloud | Voor flows die on-premise moeten blijven |
+
+Groovy-scripts verzorgen logica die de grafische stappen niet aankunnen. Ik raad vaak aan dit licht te houden, want te veel scripting leidt later tot onderhoudsproblemen. Pakketten hebben versiebeheer, dus geen enkele wijziging gaat in productie buiten een gedeployed pakket om.
+
+## Data die een integratieplan bepalen
+
+Drie data sturen op dit moment bijna elk integratieplan.
+
+<explainer-timeline title="De data achter een integratieplan" caption="Plan rond 2027. Een overstap in golven vóór die tijd kost veel minder dan een geforceerde cutover." items="2027 => Mainstream-onderhoud PI/PO eindigt|2028 => Cloud Integration op Neo wordt uitgefaseerd|2030 => Verlengd onderhoud PI/PO eindigt" notes="Eind van het jaar, voor SAP NetWeaver 7.5|31 december. Neo-tenants gaan naar Cloud Foundry|Eind van het jaar. Het eindstation voor elk PI/PO-systeem" highlight="1" source="SAP Note 1648480 en SAP Knowledge Base Article 3355661"></explainer-timeline>
+
+1. **PI/PO raakt in het nauw.** [SAP Note 1648480](https://me.sap.com/notes/1648480) stelt het mainstream-onderhoud voor SAP NetWeaver 7.5, waar PI/PO onder valt, vast tot eind 2027, met verlengd onderhoud tot eind 2030. Het systeem stopt niet op 1 januari 2028, maar elk jaar daarna kost het meer om het in de lucht te houden.
+2. **Neo gaat dicht.** [SAP Knowledge Base Article 3355661](https://me.sap.com/notes/3355661) bevestigt dat Cloud Integration op de Neo-omgeving van SAP BTP op 31 december 2028 wordt uitgefaseerd. Oudere CPI-tenants op Neo moeten naar de multi-cloudomgeving (Cloud Foundry), en die overstap is een klein project op zich.
+3. **Hybride heeft een antwoord.** Edge Integration Cell voert flows van Integration Suite uit binnen uw eigen netwerk. Daarmee verdwijnt de meest gehoorde reden van teams om op PI/PO te blijven.
+
+Over de commerciële kant: zit u op RISE with SAP, controleer dan welk SAP BTP-entitlement uw contract al bevat voordat u apart capaciteit voor Integration Suite koopt.
 
 ## Hoe CPI zich verhoudt tot SAP PI/PO
 
+PI (Process Integration) en PO (Process Orchestration) zijn de on-premise middleware van SAP. Zo verhouden ze zich tot CPI.
+
 | Factor | SAP PI/PO | SAP CPI (Integration Suite) |
 |---|---|---|
-| Deployment | On-premise, op uw eigen servers | Cloud op SAP BTP; Edge Integration Cell voor on-premise runtime |
-| Onderhoudslast | Hoog: patchen, upgrades, serverbeheer | Lager: SAP beheert het platform |
-| Uitbreidbaarheid | Diepe maatwerkmogelijkheden; lastiger te upgraden | Modulair; snellere updates; minder controle op laag niveau |
-| Licenties | Statisch, meestal capaciteitsgebaseerd | Abonnement met berichtgebaseerde metrics |
+| Inzet | On-premise, op uw servers | Cloud op SAP BTP; Edge Integration Cell voor een on-premise runtime |
+| Onderhoudslast | Hoog: patches, upgrades, serverbeheer | Lager: SAP beheert het platform |
+| Uitbreidbaarheid | Diepgaand maatwerk; moeilijker te upgraden | Modulair; snellere updates; minder controle op laag niveau |
+| Licenties | Licentie plus uw eigen infrastructuur | Abonnement op SAP BTP, per editie |
 | Investeringsrichting | Alleen onderhoud, geen nieuwe functies | Actieve ontwikkeling |
-| Einde mainstream-onderhoud | Eind 2027 (verlengd tot eind 2030) | Niet van toepassing (cloudservice) |
+| Einde mainstream-onderhoud | Eind 2027 (verlengd tot eind 2030) | Niet van toepassing (clouddienst) |
 
-De verschuiving in licenties is het doorrekenen waard. De kosten van CPI hangen samen met het berichtvolume. Sommige bedrijven besparen vergeleken met PI/PO. Anderen ontdekken dat hun echte integratieverkeer hoger ligt dan gedacht en moeten flows vroeg optimaliseren. Reken het door voordat u migreert.
+De migratiegids van SAP behandelt Cloud Integration als de belangrijkste vervanger, omdat het het meeste dekt van wat PI/PO doet. Vraag SAP hoe uw editie wordt gemeten en zet dat af tegen uw echte berichtvolumes voordat u migreert. Sommige bedrijven ontdekken dat hun integratieverkeer hoger is dan ze dachten.
 
-## Belangrijkste functies en adapters
+## Migratie van PI/PO: wat het echt inhoudt
 
-De bouwsteen is de **iFlow** (integration flow). Elke iFlow legt vast hoe een bericht van bron naar doel gaat: de transformatie, de routeringsregels en welke foutafhandeling in werking treedt wanneer iets misgaat.
+Migratie is geen automatische conversie. Adapters gedragen zich anders in PI dan in CPI, en foutafhandeling die in PI werkte, kan zich in CPI anders gedragen. Sommige flows moeten opnieuw worden gebouwd; andere gaan mee met kleine aanpassingen.
 
-| Functie | Wat het doet |
-|---|---|
-| Kant-en-klare integratiecontent | Pakketten met kant-en-klare iFlows voor SAP en gangbare externe scenario's op de SAP Business Accelerator Hub |
-| Grafische flowdesigner | Webgebaseerde designer om iFlows te bouwen |
-| API Management | API-ontwerp, publicatie, beveiliging en monitoring |
-| Beveiliging | OAuth 2.0, SAML, TLS, certificaatbeheer |
-| Monitoring | Berichtlogs, foutdetails, retryhistorie, alerting |
+SAP levert twee officiële tools:
 
-**Standaardadapters** zijn onder meer SOAP, REST, OData, IDoc, JDBC, SFTP, JMS en AS2, met meer voor specifieke SaaS-producten.
+1. **Migration Assessment.** Een functionaliteit van Integration Suite die verbinding maakt met uw PO-systeem, integratiescenario's extraheert en de inspanning inschat om ze te verplaatsen. [De tutorial van SAP](https://developers.sap.com/tutorials/migration-assessment.html) behandelt de inrichting.
+2. **Migration Tooling.** Een functie van Cloud Integration die de [migratie semi-automatisch uitvoert](https://developers.sap.com/tutorials/migration-tool.html) van integrated configuration objects (ICO's) uit PO naar iFlows. Alleen scenario's die als "Ready to migrate" of "Adjustment required" zijn beoordeeld, kunnen ermee worden gemigreerd.
 
-**Scripting.** Complexe transformaties vragen Groovy of JavaScript binnen de iFlow. CPI is niet zero-code buiten standaardflows. Kan niemand in uw team basale scriptlogica schrijven, dan worden complexe mappings de bottleneck.
+[SAP Learning](https://learning.sap.com/courses/sap-process-orchestration-to-sap-integration-suite-migration/developing-a-migration-approach) is duidelijk: er is geen migratiepad dat bij elke klant past, en velen draaien PI/PO en Integration Suite tijdens de overstap parallel. De tools verminderen het mechanische werk. Ze nemen niet de afwegingen over wat opnieuw gebouwd en wat uitgefaseerd moet worden.
 
-## PI/PO-migratie: wat het in de praktijk inhoudt
+Dit is het golfplan dat ik als vertrekpunt gebruik. Pas de golven aan uw eigen inventaris aan.
 
-Migratie is geen automatische conversie. Het gedrag van adapters verschilt tussen PI en CPI, en foutafhandeling die in PI werkte, kan zich in CPI anders gedragen. Sommige flows moeten opnieuw worden gebouwd. Andere verhuizen met kleine aanpassingen. De migratietooling en kant-en-klare content van SAP verminderen het mechanische werk. Ze nemen de afwegingen niet over: wat bouwt u opnieuw en wat faseert u uit.
-
-Dit is het golfplan dat ik als vertrekpunt gebruik. Pas de golven aan op uw eigen inventaris.
-
-| Golf | Wat verhuist | Waarom in deze volgorde | Eigenaar | Exitcriteria |
+| Golf | Wat verhuist | Waarom deze volgorde | Eigenaar | Exitcriteria |
 |---|---|---|---|---|
-| 0. Inventaris | Elke PI-interface: frequentie, volume, adapter, kritikaliteit, eigenaar | U kunt niet plannen wat u niet hebt geteld | Integratielead | Inventaris geaccordeerd door de businesseigenaren |
-| 1. Laag risico | SAP-naar-SAP-flows met standaardcontent | Bewijst het operating model en de monitoring | Integratielead | Twee weken stabiel in productie, PI-pad uitgefaseerd |
-| 2. Partners | B2B- en EDI-flows met belangrijke handelspartners | Vraagt testvensters met partners en een gecoördineerde cutover | Integratielead met inkoop en sales | Elke partner bevestigt schriftelijk |
-| 3. Hoog risico | Flows met hoog volume, gereguleerde of omzetkritieke flows | Gaat als laatste, met de meeste repetitie | Integratiearchitect | Volumetest geslaagd; terugval naar PI gerepeteerd |
-| 4. Uitfaseren | PI/PO uitgeschakeld | Stopt het betalen voor twee platformen | CIO | Alle flows gemigreerd of uitgefaseerd; licenties beëindigd |
+| 0. Inventaris | Elke PI-interface: frequentie, volume, adapter, kritiekheid, eigenaar | U kunt niet plannen wat u niet hebt geteld | Integratielead | Inventaris afgetekend door de eigenaren uit de business |
+| 1. Laag risico | SAP-naar-SAP-flows met standaardcontent | Bewijst het beheermodel en de monitoring | Integratielead | Twee weken stabiel in productie, PI-pad uitgefaseerd |
+| 2. Partners | B2B- en EDI-flows met belangrijke handelspartners | Vraagt testvensters met partners en een gecoördineerde cutover | Integratielead met inkoop en verkoop | Elke partner bevestigt schriftelijk |
+| 3. Hoog risico | Flows met hoge volumes, gereguleerde flows of flows die kritiek zijn voor de omzet | Gaat als laatste, met de meeste generale repetities | Integratiearchitect | Volumetest geslaagd; terugval naar PI geoefend |
+| 4. Uitfaseren | PI/PO uitgezet | Stopt het betalen voor twee platforms | CIO | Alle flows gemigreerd of uitgefaseerd; licenties beëindigd |
 
-Houd voor elke golf een terugvalpad naar PI aan totdat de nieuwe flow schoon in productie heeft gedraaid. De volgorde doet ertoe: bewijs het operating model op laagrisicoflows voordat u de interfaces aanraakt die omzet dragen.
+Houd per golf een terugvalpad naar PI aan totdat de nieuwe flow foutloos in productie heeft gedraaid. De volgorde telt: bewijs het beheermodel op flows met laag risico voordat u de interfaces aanraakt die omzet dragen.
+
+Integratietesten is waar de tijd verdwijnt. Plan regressietesten met B2B-partners en niet-SAP-doelsystemen vroeg in, want die breken geruisloos. Mijn [gids over SAP-testen](/nl/sap-testing-explained/) beschrijft hoe u integratie- en regressiecycli opzet.
+
+Valt de overstap van PI/PO binnen een S/4HANA-programma, stem de twee plannen dan op elkaar af. Mijn [gids voor de migratie van ECC naar S/4HANA](/nl/ecc-to-s4hana-migration/) behandelt de routes en deadlines aan de ERP-kant.
 
 ## Veelvoorkomende integratiepatronen
 
 De scenario's die ik het vaakst zie:
 
-1. **S/4HANA naar SuccessFactors.** Organisatiedata, headcount en salariswijzigingen. De standaardintegratiecontent van SAP dekt de gangbare scenario's; custom flows vangen de afwijkingen op.
-2. **Legacy-inkoop naar SAP Ariba.** Inkooporders gaan eruit, bevestigingen en facturen komen terug. Meestal tweerichtingsverkeer.
-3. **Financiële data naar SAP Analytics Cloud.** Data uit ECC of niet-SAP-systemen naar SAC brengen.
-4. **Salesforce naar SAP.** Gesloten deals die naar SAP stromen voor levering, facturatie en voorraadupdates. Zonder beheerde integratie draait dit meestal op spreadsheetexports of kwetsbare scripts. Mijn stuk over [waarom Salesforce-ERP-integraties mislukken](/nl/why-erp-integration-with-salesforce-fails-and-how-to-fix-it/) behandelt de ontwerpfouten.
+1. **S/4HANA naar SuccessFactors.** Organisatiedata, headcount en wijzigingen in beloning. De standaard integratiecontent van SAP dekt de gangbare scenario's; maatwerkflows vangen de afwijkingen op.
+2. **Legacy-inkoop naar SAP Ariba.** Inkooporders gaan eruit, bevestigingen en facturen komen terug. Meestal in twee richtingen.
+3. **Financiële data naar SAP Analytics Cloud.** Data verplaatsen uit ECC of niet-SAP-systemen naar SAC.
+4. **Salesforce naar SAP.** Gesloten deals die naar SAP stromen voor levering, facturatie en voorraadupdates. Mijn stuk over [waarom integraties tussen Salesforce en ERP mislukken](/nl/why-erp-integration-with-salesforce-fails-and-how-to-fix-it/) behandelt de ontwerpfouten.
 
-Loopt het integratiewerk in uw programma al achter, dan behandelt [vertragingen bij de oplevering van SAP Integration Suite](/nl/sap-integration-suite-delivery-delays/) de gebruikelijke oorzaken. Het platformoverzicht over [SAP-integratieplatforms](/nl/sap-implementation/sap-integration-platforms/) vergelijkt de opties naast elkaar.
+Loopt het integratiewerk in uw programma al uit, dan beschrijft [vertraging bij de oplevering van SAP Integration Suite](/nl/sap-integration-suite-delivery-delays/) de gebruikelijke oorzaken. Het overzicht van [SAP-integratieplatforms](/nl/sap-implementation/sap-integration-platforms/) zet de opties naast elkaar.
 
 ## Veelgestelde vragen
 
 <details>
 <summary>Wat is SAP CPI en hoe heet het nu?</summary>
 
-SAP CPI staat voor Cloud Platform Integration. Het is nu de Cloud Integration-functionaliteit van SAP Integration Suite op SAP BTP, naast API Management, Event Mesh en tools voor partnerintegratie. “CPI” is nog steeds de gewone naam voor het bouwen van integration flows.
+SAP CPI staat voor Cloud Platform Integration. Het is nu de Cloud Integration-functionaliteit van SAP Integration Suite op SAP BTP, naast API Management, Event Mesh en tools voor partnerintegratie. "CPI" is nog steeds de gangbare naam voor het bouwen van integratieflows.
 
 </details>
 
 <details>
-<summary>Waarin verschilt SAP CPI van SAP PI/PO?</summary>
+<summary>Wat is SAP CI?</summary>
 
-PI (Process Integration) en PO (Process Orchestration) zijn on-premise middleware met diepe maatwerkmogelijkheden en volledige controle over de infrastructuur. CPI is een cloudservice op SAP BTP die SAP voor u beheert, waarbij nieuwe adapters en content centraal binnenkomen.
+SAP CI is de afkorting van SAP Cloud Integration, de huidige naam van wat vroeger SAP CPI heette. Beide termen verwijzen naar dezelfde functionaliteit binnen SAP Integration Suite.
 
-PI/PO 7.5 krijgt alleen nog onderhoud. Het mainstream-onderhoud eindigt eind 2027 en het verlengde onderhoud eind 2030, dus voor elk PI/PO-landschap is een migratieplan nodig.
+</details>
+
+<details>
+<summary>Is SAP CPI middleware?</summary>
+
+Ja. CPI is cloudmiddleware: het zit tussen systemen, transformeert en routeert berichten, en handelt fouten en nieuwe pogingen af. Het vervangt on-premise middleware zoals SAP PI/PO en slaat geen bedrijfsdata langdurig op.
+
+</details>
+
+<details>
+<summary>Hoe verschilt SAP CPI van SAP PI/PO?</summary>
+
+PI/PO is on-premise middleware die u zelf installeert, patcht en beheert. CPI is een clouddienst op SAP BTP die SAP voor u beheert, waarbij nieuwe adapters en content centraal binnenkomen. Edge Integration Cell dekt flows die on-premise moeten blijven.
+
+</details>
+
+<details>
+<summary>Wanneer eindigt de ondersteuning voor SAP PI/PO?</summary>
+
+Het mainstream-onderhoud voor SAP NetWeaver 7.5, waar PI/PO onder valt, eindigt eind 2027. Verlengd onderhoud is beschikbaar tot eind 2030. SAP biedt Migration Assessment en Migration Tooling om scenario's naar Integration Suite te helpen verplaatsen.
 
 </details>
 
 <details>
 <summary>Is SAP CPI hetzelfde als SAP BTP?</summary>
 
-Nee. SAP BTP is het platform: app-ontwikkeling, data, analytics, AI en integratie. CPI is de integratieservice daarop. Bij het afbakenen van werk verschillen budget en vaardigheden: een BTP-architect werkt over services heen, een CPI-specialist is eigenaar van flows, adapters en mappings.
+Nee. SAP BTP is het platform: appontwikkeling, data, analytics, AI en integratie. CPI is de integratiedienst daarop.
+
+Bij het bepalen van de scope verschillen budget en vaardigheden: een BTP-architect werkt over diensten heen, een CPI-specialist is eigenaar van flows, adapters en mappings.
 
 </details>
 
-<details>
-<summary>Hoe moeilijk is SAP CPI te leren?</summary>
+## Volgende stap
 
-Haalbaar, niet simpel. Standaardflows volgen gedocumenteerde patronen en de grafische designer helpt. Het lastige zit in het goed genoeg begrijpen van het bedrijfsproces om de flow te ontwerpen, het correct afhandelen van fouten en retries en het schrijven van Groovy of JavaScript voor complexe mappings. Leer eerst het bedrijfsproces, daarna de integratie.
-
-</details>
-
-<details>
-<summary>Waar moet ik op letten bij de migratie van SAP PI/PO naar CPI?</summary>
-
-Inventariseer elke interface met volume, frequentie, adapter en kritikaliteit. Beslis per interface: opnieuw bouwen, aanpassen of uitfaseren. Reken de berichtgebaseerde kosten door tegen uw echte volumes. Migreer in golven met een terugvalpad en plan regressietesten met B2B-partners en niet-SAP-doelen vroeg in, want die gaan stilletjes kapot. Gebruik Edge Integration Cell voor flows die on-premise moeten blijven.
-
-</details>
-
-<details>
-<summary>Wat is het verschil tussen Neo en Cloud Foundry voor SAP CPI?</summary>
-
-Beide zijn SAP BTP-omgevingen. Neo is de oudere, SAP-eigen omgeving en wordt op 31 december 2028 uitgeschakeld. De multi-cloudomgeving op basis van Cloud Foundry is waar de ontwikkeling van SAP naartoe gaat. Elke CPI-tenant die nog op Neo staat, heeft nu een migratieplan nodig; nieuwe tenants moeten daar niet beginnen.
-
-</details>
+Plant u een overstap van PI/PO of ontwerpt u de integratie voor een nieuw S/4HANA-programma, begin dan bij de inventaris van interfaces. Wilt u een second opinion op het plan voordat u zich eraan verbindt, [neem dan contact op](/nl/contact-noel-erp-support/).

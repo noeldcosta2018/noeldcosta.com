@@ -1,26 +1,28 @@
 ---
-title: "SAP PP: wat het doet en waar het misgaat"
-h1: "SAP PP: wat het doet en waar het misgaat"
+title: "SAP PP: de module voor productieplanning uitgelegd"
+h1: "SAP PP: de module voor productieplanning uitgelegd"
 slug: "sap-pp-production-planning"
 date: "2025-04-02"
-updated: "2026-10-07"
+updated: "2026-10-14"
 hero: "/images/seo-refresh/sap-pp-production-planning.webp"
-heroAlt: "SAP PP-dashboard voor productieplanning met MRP-resultaten en capaciteit van werkcentra"
+heroAlt: "Een lichte productievloer met een planbord voor de productie en een capaciteitsgrafiek op een tablet"
 category: "sap-modules"
 tags: ["sap-technical-decisions", "sap-pp", "sap-manufacturing", "mrp"]
 author: "Noel D'Costa"
-metaTitle: "SAP PP in 2026: wat het doet en waar het faalt"
-metaDescription: "SAP PP productieplanning uitgelegd: MRP Live, stuklijsten, routings, productieversies, S/4HANA-wijzigingen en de stamgegevensfouten die planning breken."
-excerpt: "SAP PP verbindt wat het bedrijf moet produceren met wat de productievloer kan leveren. Deze gids behandelt hoe het werkt in S/4HANA, wat er sinds ECC is veranderd en de stamgegevensfouten die MRP-uitvoer onbruikbaar maken."
-experienceSource: "Noel's SAP PP implementation experience as published in the original article: the packaging plant with over 400 production orders a week, the double PIR upload, the missing PP-view field that blocked production for a week, and the automotive parts company that spent six months after go-live fixing production orders. Product facts (PP-PI, S/4HANA compatibility scope, MRP Live, pMRP) checked against SAP documentation in October 2026."
+metaTitle: "SAP PP betekenis, module en productieplanning in S/4HANA"
+metaDescription: "SAP PP staat voor Production Planning. Wat de SAP PP-module doet: discrete, proces- en serieproductie, MRP Live, PP/DS en wanneer IBP het overneemt."
+primaryKeyword: "sap pp productieplanning"
+excerpt: "SAP PP staat voor Production Planning. Deze gids behandelt wat de module doet, hoe ze discrete, proces- en serieproductie ondersteunt, hoe MRP Live en embedded PP/DS werken in S/4HANA, wanneer IBP het overneemt en de stamgegevensfouten die MRP-uitvoer onbruikbaar maken."
+experienceSource: "Noel's SAP PP implementation experience as published in the original article: the packaging plant with over 400 production orders a week, the double PIR upload, the missing PP-view field that blocked production for a week, and the automotive parts company that spent six months after go-live fixing production orders. Noel confirmed on 14 October 2026 that he has implemented PP in discrete, process (PP-PI) and repetitive manufacturing, has used both embedded PP/DS and MRP Live, and has sent clients to IBP depending on the case. Product facts (MRP Live, PP/DS, repetitive manufacturing, IBP, compatibility scope) checked against SAP Help Portal, SAP Learning and sap.com in October 2026."
 lastReviewed: "2026-05-21"
 keyTakeaways:
-  - "SAP PP zet prognoses en verkooporders via MRP om in productie- en inkoopvoorstellen. Verkeerde stamgegevens betekenen verkeerde MRP-uitvoer"
+  - "SAP PP staat voor Production Planning: de SAP-module die vraag omzet in productie- en inkoopvoorstellen en de productie uitvoert tot en met de afrekening"
+  - "PP ondersteunt drie vormen: discrete productie (productieorders), procesproductie (PP-PI, procesorders en masterrecepten) en serieproductie (periodegebaseerde planning op productielijnen)"
   - "In S/4HANA is MRP Live (MD01N) de aanbevolen planningsrun en zijn productieversies verplicht voor eigen productie"
-  - "Klassieke SOP en prognosegebaseerde planning vallen in S/4HANA onder compatibility scope. De opvolger van SOP bij SAP is IBP"
+  - "Embedded PP/DS voegt in S/4HANA eindige planning toe voor knelpuntmaterialen. IBP is de cloudtool voor sales and operations planning, vraag- en aanbodplanning boven het niveau van de fabriek"
   - "Een verkeerde strategiegroep in de materiaalstam zorgt ervoor dat verkooporders en prognoses worden opgeteld in plaats van tegen elkaar weggestreept, zonder foutmelding"
   - "De meest hardnekkige fout is SAP zo configureren dat het legacyprocessen kopieert in plaats van de standaard planningslogica over te nemen"
-pullQuote: "Overhaast u de stamgegevens bij een SAP PP-implementatie, dan wordt al het andere een noodoplossing. Nauwkeurigheid van stuklijsten, volledigheid van routings, onderhoud van werkcentra. Niets daarvan is optioneel."
+pullQuote: "Overhaast u de stamgegevens bij een SAP PP-implementatie, dan wordt al het andere een noodoplossing. Nauwkeurigheid van stuklijsten, volledigheid van routings, onderhoud van werkplekken. Niets daarvan is optioneel."
 mentions:
   - "SAP S/4HANA"
   - "SAP PP"
@@ -41,176 +43,213 @@ translatedFrom: "en"
 translationSource: "reviewed-en-2026-10"
 ---
 
-SAP PP (Production Planning) is het onderdeel van SAP S/4HANA dat vraag omzet in een productieplan. Het neemt prognoses en verkooporders, toetst ze aan voorraad, stuklijsten, routings en capaciteit, en stelt voor wat u maakt, wat u inkoopt en wanneer. Deze gids is bedoeld voor fabrieksmanagers, planners en projectleiders die willen weten wat PP doet, wat er in S/4HANA is veranderd en waar implementaties vastlopen. Het korte antwoord op dat laatste is stamgegevens. Kloppen de materiaalstam, de stuklijsten, de routings en de werkcentra niet, dan klopt de MRP-uitvoer niet, en geen enkele configuratie lost dat op. De checklist verderop is het beste startpunt.
+SAP PP staat voor Production Planning. Het is de SAP-module die vraag omzet in een productieplan en vervolgens productieorders uitvoert, van vrijgave via terugmelding tot kostenafrekening.
 
-Ik werkte ooit met een team in een verpakkingsfabriek met meer dan 400 productieorders per week. Zonder PP jongleerden ze met spreadsheets en geeltjes. Na de implementatie werden ze niet perfect, maar ze verdronken niet langer.
+PP neemt prognoses en verkooporders, toetst ze aan voorraad, stuklijsten, routings en capaciteit, en stelt voor wat er gemaakt moet worden, wat er ingekocht moet worden en wanneer. In SAP S/4HANA valt het onder productie, naast Materials Management (MM), Quality Management (QM) en Controlling (CO).
 
-## Wat SAP PP beheert
+Deze gids is bedoeld voor fabrieksmanagers, planners en projectleiders. Ik heb PP geïmplementeerd in discrete productie, procesproductie (PP-PI) en serieproductie, dus de gids behandelt alle drie. Het korte antwoord op de vraag waar PP misgaat: stamgegevens.
 
-PP zit in het midden van de logistieke keten. Het vertrekt vanuit de vraag en werkt terug via materialen, capaciteit en timing om productievoorstellen te genereren. De functies, in de volgorde waarin de vraag erdoorheen stroomt:
+Ik werkte ooit met een team in een verpakkingsfabriek met meer dan 400 productieorders per week. Zonder PP jongleerden ze met spreadsheets en plakbriefjes. Na de implementatie werden ze niet perfect, maar ze verdronken er niet meer in.
 
-1. **Sales and Operations Planning (SOP)**: volumes op hoofdlijnen, gebaseerd op prognoses en marktverwachtingen
-2. **Behoeftebeheer**: zet die volumes om in geplande onafhankelijke behoeften (Planned Independent Requirements, PIR's) die MRP aansturen
-3. **Materiaalbehoeftenplanning (MRP)**: bepaalt wat u moet produceren of inkopen, wanneer en in welke hoeveelheid, op basis van voorraad, doorlooptijden en openstaande orders
-4. **Capaciteitsplanning en -nivellering**: laat overbelasting van werkcentra zien voordat die de productievloer bereikt
-5. **Productieorderbeheer**: maakt orders aan, geeft ze vrij, plant ze in en bevestigt ze tot en met afronding
+## Wat de SAP PP-module doet
 
-PP dekt discrete productie (auto-onderdelen, elektronica, industriële goederen) en repetitieve productie (verpakkingen, consumptiegoederen). Batch- en receptgebaseerde productie in de voedingsindustrie, chemie en farmacie gebruikt PP-PI (Production Planning for Process Industries). PP-PI werkt met procesorders en stamrecepten in plaats van productieorders en routings.
+PP staat in het midden van de logistieke keten. Het vertrekt vanuit de vraag en werkt terug via materialen, capaciteit en timing om productievoorstellen te genereren. De functies, in de volgorde waarin de vraag erdoorheen loopt:
 
-## Zo verloopt de planningscyclus
+1. **Sales and operations planning (SOP)**: volumes op hoofdlijnen, gebaseerd op prognoses en marktverwachtingen
+2. **Behoefteplanning**: zet die volumes om in primaire behoeften (PIR's) die MRP aansturen
+3. **Material requirements planning (MRP)**: bepaalt wat er geproduceerd of ingekocht moet worden, wanneer en in welke hoeveelheid, op basis van voorraad, doorlooptijden en openstaande orders
+4. **Capaciteitsplanning en -nivellering**: toont overbelasting van werkplekken voordat die de werkvloer bereikt
+5. **Productie-uitvoering**: maakt orders aan, geeft ze vrij, plant ze in en meldt ze terug tot afronding en afrekening
 
-De weg van vraag naar afronding kent vijf fasen. In de praktijk loopt die zelden zonder onderbreking, maar dit is de structuur waarvoor PP is gebouwd.
+In S/4HANA valt klassieke SOP onder compatibility scope, en SAP verwijst klanten voor die taak naar IBP. Meer over beide hieronder.
 
-<explainer-flow title="Hoe vraag productie wordt in SAP PP" caption="Elke fase voedt de volgende, dus een fout in de PIR's of de stamgegevens keert in elke volgende fase terug." steps="SOP|Behoeftebeheer|MRP|Productie-uitvoering|Bevestiging" notes="Volumedoelen uit prognoses|PIR's die de MRP-run aansturen|Planorders en inkoopaanvragen|Orders vrijgegeven, materialen klaargezet|Uren, hoeveelheden en goederenbewegingen verwerkt" result="SAP toont wat er werkelijk op de productievloer is gebeurd"></explainer-flow>
+## Discrete productie, procesproductie en serieproductie
 
-**SOP** is waar de productiedoelen op hoofdlijnen worden vastgesteld. Sommige bedrijven doen dat nauwgezet aan de hand van marktdata. Andere werken met grove schattingen. In beide gevallen voedt het behoeftebeheer. In S/4HANA vallen de klassieke SOP-transacties onder compatibility scope, waar ik hieronder op terugkom.
+PP is niet één manier om een fabriek te runnen. Het ondersteunt drie productievormen, en die keuze bepaalt welk ordertype, welke stamgegevens en welke kostprijsaanpak u configureert. Veel fabrieken gebruiken er meer dan één.
 
-**Behoeftebeheer** genereert PIR's. Een PIR is een prognose: we verwachten dat we deze hoeveelheid van dit product op dit moment nodig hebben. PIR's zijn de invoer voor MRP, en fouten hier werken door in alles wat volgt. Een klant uploadde ooit dubbele PIR's voor drie maanden. Niemand merkte het op tot de productie alles te veel begon te bestellen.
+De tabel vergelijkt de drie zoals SAP ze levert.
 
-**MRP** is de planningsmotor. Het saldeert PIR's en verkooporders met voorraad en openstaande ontvangsten en maakt daarna planorders voor eigen productie en inkoopaanvragen voor ingekochte onderdelen. Een goed ingerichte run brengt helderheid. Een run op onnauwkeurige stamgegevens levert ruis op waar planners weken achteraan zitten.
+| Vorm | Typische branches | Uitvoeringsobject | Kernstamgegevens | Kostprijsberekening |
+|---|---|---|---|---|
+| Discrete productie | Machinebouw, elektronica, auto-onderdelen, defensiematerieel | Productieorder | Stuklijst, routing, werkplek | Per order, afgerekend bij afsluiting |
+| Procesproductie (PP-PI) | Voeding, dranken, chemie, farmacie | Procesorder | Masterrecept, resources, stuklijst | Per order, met coproducten en bijproducten |
+| Serieproductie | Verpakkingen, consumentengoederen, lijnen met hoge volumes | Geplande orders op een serieschema | Productieversie, productielijn, tarief-routing of routing | Per periode |
 
-**Productie-uitvoering** is waar planorders productieorders worden. Orders worden vrijgegeven, materialen worden klaargezet en bewerkingen draaien op de werkcentra.
+### Discrete productie
 
-**Bevestiging** sluit de cirkel. Uren worden geboekt, hoeveelheden geregistreerd en goederenbewegingen verwerkt. Het systeem toont dan wat er werkelijk op de productievloer is gebeurd, mits mensen op tijd bevestigen.
+Discrete productie is wat de meeste mensen bedoelen als ze "SAP PP" zeggen. MRP maakt geplande orders aan, planners zetten die om in productieorders, en elke order draagt zijn eigen componenten, bewerkingen en kosten. Het past bij producten die in afzonderlijke partijen worden gemaakt, vaak op order, waarbij elke order gevolgd moet worden.
 
-## Stamgegevens: waar de meeste implementaties vastlopen
+### Procesproductie (PP-PI)
 
-Stamgegevens zijn de ruggengraat van SAP PP. Niet als gezegde, maar als feit met gevolgen.
+PP-PI (Production Planning for Process Industries) ondersteunt batch- en receptgebaseerde productie. Productieorders worden procesorders en routings worden masterrecepten, en er komen coproducten, bijproducten en batchtraceerbaarheid bij. In gereguleerde branches zoals farmacie en voeding is dat spoor op batchniveau een compliance-eis, geen extraatje.
 
-**Materiaalstam (MRP-views).** Voor elk geproduceerd materiaal moeten de MRP-views kloppen. MRP-type, partijgrootte, strategiegroep, beschikbaarheidscontrole en planningsmargesleutel veranderen elk wat MRP doet. Eén ontbrekend veld in een materiaalstam blokkeerde op een project waar ik aan werkte de productie een week lang. Eén veld.
+### Serieproductie
 
-**Stuklijsten (BOM).** De stuklijst legt vast wat er in een eindproduct gaat: componenten, hoeveelheden, uitvalpercentages, soms alternatieven. Stuklijsten kunnen varianten hebben, wat past bij configureerbare producten en teams die nieuw zijn met SAP in verwarring brengt. De vraag “hebben we echt vijf stuklijsten nodig voor dit ene artikel?” heeft een echt antwoord. Zoek dat uit vóór de implementatie, niet tijdens MRP-runs.
+Serieproductie past bij dezelfde producten die lange tijd op dezelfde lijnen worden gemaakt. In plaats van afzonderlijke orders loopt de planning in tijdvakken op een serieschema, en operators melden direct terug op geplande orders. De [documentatie van SAP over serieproductie](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/21aead0c98bd4755abdacd91c99e3393/9577b6535fe6b74ce10000000a174cb4.html) beschrijft de periodegebaseerde planning en de retrograde afboeking die het componentverbruik boekt zodra de gereedgemelde hoeveelheid wordt teruggemeld.
 
-**Routings.** Een routing legt vast hoe iets wordt gemaakt: de volgorde van bewerkingen, welke werkcentra ze uitvoeren en hoe lang elke bewerking duurt. Zonder routing kan SAP de productiedoorlooptijd niet berekenen en de capaciteit niet toetsen. Zelfs eenvoudige producten hebben een heldere routing nodig, en gehaaste projecten slaan die over.
+De afweging is detail. Serieproductie schrapt de overhead van orderafhandeling, en kosten worden per periode afgerekend in plaats van per order. Hebt u kosten en traceerbaarheid per partij nodig, dan past discrete productie of PP-PI beter.
 
-**Werkcentra.** Werkcentra zijn de plekken waar de productie plaatsvindt: machines, lijnen, groepen mensen. Ze bevatten planningsformules, koppelingen voor kostprijsberekening en ploegenkalenders. Ze na de go-live actueel houden is de taak die wegvalt. Gebeurt dat, dan wordt de capaciteitsplanning onnauwkeurig en gaan de planners het systeem niet meer vertrouwen.
+## Hoe de planningscyclus verloopt
 
-**Productieversies.** Een productieversie koppelt een geldige stuklijst aan een geldige routing voor een datumbereik en partijgrootte. In S/4HANA zijn ze verplicht voor materialen die u zelf produceert, en MRP Live splitst een stuklijst niet uit zonder productieversie. ECC-klanten die vertrouwden op selectiemethoden voor stuklijsten moeten ze tijdens de conversie aanmaken.
+De stroom van vraag tot afronding kent vijf fasen. In de praktijk verloopt die zelden zonder onderbreking, maar dit is de structuur waarvoor PP is gebouwd.
 
-### Organisatiestructuur
+<explainer-flow title="Hoe vraag in SAP PP productie wordt" caption="Elke fase voedt de volgende, dus een fout in de PIR's of de stamgegevens is zichtbaar in elke fase daarna." steps="SOP|Behoefteplanning|MRP|Productie-uitvoering|Terugmelding" notes="Volumedoelen uit prognoses|PIR's die de MRP-run aansturen|Geplande orders en inkoopaanvragen|Orders vrijgegeven, materialen klaargezet|Arbeid, hoeveelheden en goederenbewegingen geboekt" result="SAP toont wat er echt op de werkvloer is gebeurd"></explainer-flow>
 
-Dit zijn de structuurelementen waarvan PP afhankelijk is en waar elk ervan mee verbonden is.
+**Behoefteplanning** genereert PIR's. Een PIR is een prognose: we verwachten op dit moment deze hoeveelheid van dit product nodig te hebben. PIR's zijn de input voor MRP, en fouten hier werken overal door. Een klant uploadde ooit dubbele PIR's voor drie maanden. Niemand merkte het totdat de productie van alles te veel begon te bestellen.
 
-| Structuurelement | Doel in SAP PP | Belangrijkste koppeling |
+**MRP** is de planningsmotor. Het salderet PIR's en verkooporders met voorraad en openstaande ontvangsten en maakt dan geplande orders aan voor eigen productie en inkoopaanvragen voor ingekochte onderdelen. Een run op onnauwkeurige stamgegevens levert ruis op waar planners wekenlang achteraan lopen.
+
+**Uitvoering en terugmelding** sluiten de cirkel. Orders worden vrijgegeven, materialen klaargezet en bewerkingen uitgevoerd op de werkplekken. Daarna worden arbeid, hoeveelheden en goederenbewegingen geboekt, en het systeem toont wat er op de werkvloer is gebeurd, mits mensen op tijd terugmelden.
+
+## MRP Live en embedded PP/DS in S/4HANA
+
+Stapt u over van ECC, dan zijn dit de planningswijzigingen die ontwerp en data raken. De bredere migratieroutes staan in mijn [gids voor de migratie van ECC naar S/4HANA](/nl/ecc-to-s4hana-migration/).
+
+### MRP Live
+
+MRP Live (transactie MD01N) is de aanbevolen planningsrun van SAP in S/4HANA. Het draait in de SAP HANA-database, kan één of meerdere fabrieken in één run plannen en schrijft geen klassieke MRP-lijsten. De [MRP Live-leermodule van SAP](https://learning.sap.com/courses/exploring-production-planning-in-sap-s-4hana/outlining-material-requirements-planning-with-mrp-live-1) is een goede introductie, en de [SAP Help-pagina over werken met MRP Live](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/f899ce30af9044299d573ea30b533f1c/86e15c58eb021f60e10000000a44147b.html) bevat de configuratiedetails.
+
+Er komen drie andere wijzigingen mee:
+
+1. **Productieversies zijn verplicht** voor materialen uit eigen productie. MRP Live explodeert geen stuklijst zonder productieversie, dus ECC-klanten die op selectiemethoden voor stuklijsten vertrouwden, moeten ze tijdens de conversie aanmaken.
+2. **MRP-gebieden vervangen MRP op opslaglocatieniveau.** Opslaglocaties die in ECC apart werden gepland, hebben in S/4HANA een MRP-gebied nodig.
+3. **SOP, MRP-lijsten en prognosegebaseerde planning vallen onder compatibility scope.** De gebruiksrechten zijn beperkt in de tijd en verschillen per contracttype, en SAP heeft de data al meer dan eens gewijzigd. Toets SAP Note 2269324 aan uw eigen contract voordat u er uw ontwerp op baseert.
+
+### Embedded PP/DS
+
+PP/DS (Production Planning and Detailed Scheduling) is de geavanceerde planningsmotor die vroeger in SAP APO zat. In S/4HANA is het embedded, dus er is geen apart APO-systeem meer nodig. Het voegt eindige planning, omstelvolgordes en pegging over stuklijstniveaus toe.
+
+MRP Live en PP/DS verdelen het werk per materiaal. Materialen die in de materiaalstam zijn gemarkeerd voor geavanceerde planning gaan naar PP/DS, de rest blijft in MRP Live. De [PP/DS-leerinhoud van SAP](https://learning.sap.com/courses/exploring-advanced-production-planning-with-sap-s-4hana-pp-ds/outlining-advanced-planning-pp-ds-in-sap-s-4hana-1) raadt aan kritieke producten op knelpuntresources in PP/DS te plannen, en minder kritieke, verbruiksgestuurde materialen in MRP Live.
+
+Ik heb zowel MRP Live als embedded PP/DS in implementaties gebruikt. Twee praktische punten wegen zwaarder dan de lijst met functies:
+
+1. **Plan alles wat een knelpuntresource deelt in PP/DS.** Blijft de helft van de producten op een beperkte lijn in MRP Live, dan werkt eindige capaciteitsplanning op die lijn niet.
+2. **Sluit PP/DS-materialen uit van de planningsscope van MRP Live.** Anders herplant een latere MRP Live-run ze en gaat het resultaat van de detailplanning verloren.
+
+Controleer wat uw contract dekt voordat u uw ontwerp op PP/DS baseert.
+
+## Wanneer IBP het overneemt
+
+PP plant de fabriek: wat er gemaakt wordt, op welke lijn, in welke week. [SAP Integrated Business Planning (IBP)](https://www.sap.com/products/scm/integrated-business-planning.html) plant het bedrijf daarboven. Het is een cloudproduct voor sales and operations planning, vraagprognoses, voorraadplanning en aanbodplanning over het hele netwerk.
+
+Ik heb klanten naar IBP gestuurd, maar alleen waar de situatie erom vroeg. Sommige fabrieken draaien prima op alleen MRP Live.
+
+Andere hebben PP/DS nodig voor een knelpuntlijn. Een kleinere groep heeft IBP nodig omdat het planningsprobleem helemaal niet op de werkvloer ligt.
+
+De tabel laat zien hoe ik de drie lagen uit elkaar houd.
+
+| Planningsvraag | Tool | Horizon | Typisch signaal om een laag hoger te gaan |
+|---|---|---|---|
+| Wat maak en koop ik, en wanneer? | MRP Live in S/4HANA | Dagen tot maanden | Planners die MRP overrulen op beperkte resources |
+| In welke volgorde draai ik de lijn, bij eindige capaciteit? | Embedded PP/DS | Uren tot weken | Beslissingen over volume en mix over fabrieken of regio's heen |
+| Hoeveel moet het bedrijf verkopen, op voorraad houden en leveren? | SAP IBP | Maanden tot jaren | Netwerken met meerdere locaties, consensusvraag, scenarioplanning |
+
+Signalen die naar IBP wijzen:
+
+1. U hebt een maandelijks sales and operations-proces nodig met finance aan tafel.
+2. De vraag komt uit statistische prognoses over veel klanten en kanalen.
+3. Aanbodbeslissingen beslaan meerdere fabrieken en distributiecentra.
+
+Dat klassieke SOP onder compatibility scope valt, zet een deadline op die beslissing. Mijn gids over [waarom SAP IBP ertoe doet](/nl/why-sap-integrated-business-planning-sap-ibp-matters/) gaat dieper in op de kant van IBP.
+
+Kiest u voor een fabriek nog tussen SAP en andere ERP's, dan zet mijn vergelijking van de [beste ERP voor productiebedrijven](/nl/best-erp-for-manufacturing/) de opties op een rij naar bedrijfsgrootte en type.
+
+## Stamgegevens: waar de meeste implementaties misgaan
+
+Stamgegevens zijn de ruggengraat van SAP PP. Niet als gezegde. Als feit met gevolgen.
+
+**Materiaalstam (MRP-views).** Elk geproduceerd materiaal heeft correct ingestelde MRP-views nodig. MRP-type, partijgrootte, strategiegroep, beschikbaarheidscontrole en planningsmargesleutel veranderen elk wat MRP doet. Eén ontbrekend veld in een materiaalstam blokkeerde op een project waar ik bij betrokken was een week lang de productie. Eén veld.
+
+**Strategiegroep.** De strategiegroep bepaalt of verkooporders PIR's verbruiken. Staat die verkeerd, dan lopen verkooporders en prognoses naast elkaar in plaats van tegen elkaar weggestreept te worden, wat het vraagsignaal verdubbelt zonder foutmelding.
+
+**Stuklijsten.** De stuklijst legt vast wat er in een eindproduct gaat: componenten, hoeveelheden, uitvalpercentages, soms alternatieven. De vraag "hebben we echt vijf stuklijsten nodig voor dit ene artikel?" heeft een echt antwoord. Zoek dat uit vóór de implementatie, niet tijdens MRP-runs.
+
+**Routings en masterrecepten.** Een routing legt vast hoe iets wordt gemaakt: bewerkingen, werkplekken en tijden. Procesindustrieën gebruiken in plaats daarvan masterrecepten. Zonder routing of recept kan SAP de productieduur niet berekenen en de capaciteit niet controleren.
+
+**Werkplekken.** Werkplekken bevatten planningsformules, koppelingen met de kostprijsberekening en ploegenkalenders. Ze actueel houden na de go-live is de taak die blijft liggen. Gebeurt dat, dan wordt de capaciteitsplanning onnauwkeurig en verliezen de planners hun vertrouwen in het systeem.
+
+### Checklist vóór de eerste MRP-run
+
+Doorloop deze volgorde voordat u MRP loslaat op gemigreerde data. De eigenaar tussen haakjes tekent ervoor af.
+
+1. **MRP-views in de materiaalstam compleet** voor elk gepland materiaal, inclusief strategiegroep en partijgrootte (planningsleider)
+2. **Stuklijsten gevalideerd tegen wat er echt gebouwd wordt**, met bevestiging van componenten en uitval door engineering (engineering)
+3. **Routings of masterrecepten bestaan voor elk materiaal uit eigen productie**, met realistische bewerkingstijden (productie-engineering)
+4. **Kalenders en capaciteiten van werkplekken weerspiegelen de huidige ploegen** (fabrieksmanager)
+5. **Eén geldige productieversie per materiaal uit eigen productie**, voor de hele planningshorizon (planningsleider)
+6. **PIR's één keer geladen**, vóór de eerste run afgestemd op het goedgekeurde vraagplan (vraagplanner)
+7. **Openstaande orders en voorraad afgestemd** tussen het legacysysteem en SAP (voorraadbeheerder)
+8. **Een test-MRP-run op één fabriek of één MRP-gebied**, waarbij planners de uitzonderingen beoordelen vóór de volledige run (planningsleider)
+
+## Integratiepunten en faalpatronen
+
+PP werkt niet alleen. MM verwerft wat PP nodig heeft, SD-verkooporders verbruiken prognoses, CO volgt werkelijke kosten tegen standaardkosten, en QM-inspectiepartijen kunnen orders tegenhouden. Elk integratiepunt is ook een faalpunt.
+
+Ik heb door de jaren heen echte rampen gezien, en dit zijn de patronen die u moet vermijden.
+
+1. **De migratie van stamgegevens overhaasten.** Ik herinner me een producent van auto-onderdelen die de migratie van stuklijsten en routings overhaastte. Na de go-live was het bedrijf zes maanden bezig met het herstellen van productieorders die steeds vastliepen op dataproblemen. Mijn stuk over [waarom SAP-datamigratie mislukt](/nl/why-sap-data-migration-fails-and-how-to-fix-it/) gaat verder.
+2. **Legacyprocessen nabouwen.** De meest hardnekkige configuratiefout die ik zie: SAP zo inrichten dat het precies werkt als het oude proces, in plaats van de standaard planningslogica over te nemen. Het resultaat is een overgeconfigureerd systeem dat minder oplevert dan waarvoor PP is ontworpen.
+3. **Integraties te weinig testen.** Teams die elke module afzonderlijk testen, ontdekken integratieproblemen in productie. Test de volledige keten van plannen tot produceren over PP, MM, SD, CO en QM, zoals beschreven in mijn gids over [SAP-testen](/nl/sap-testing-explained/).
+4. **Weerstand van gebruikers.** Ervaren planners verzetten zich vaak tegen PP, omdat het werk overneemt dat ze vroeger met de hand en op gevoel deden. Betrek ze vroeg bij de configuratie en laat zien waar PP ze tijd teruggeeft.
+5. **Bezuinigen op training.** Ik heb bedrijven miljoenen zien uitgeven aan de implementatie en daarna geld zien besparen door op training te bezuinigen. Gebruikers die het systeem niet begrijpen, bedenken noodoplossingen, en noodoplossingen breken de datanauwkeurigheid waar MRP van afhangt.
+
+De tabel koppelt elk risico aan de impact en de maatregel die ik in het plan zou opnemen.
+
+| Risico | Impact | Maatregel |
 |---|---|---|
-| Client | Organisatiestructuur op het hoogste niveau | Gemeenschappelijk voor alle modules |
-| Bedrijfscode | Juridische entiteit voor financiële rapportage | FI-kostenregistratie van de productie |
-| Vestiging | Kerneenheid waar de productie plaatsvindt | Koppelt PP aan MM, SD, PM |
-| Opslaglocatie | Fysieke onderverdeling van de voorraad binnen een vestiging | Klaarzetten en verplaatsen van materiaal |
-| MRP-gebied | Planningsbereik voor aparte MRP-runs | Vervangt MRP op opslaglocatieniveau in S/4HANA |
-| Werkcentrum | Productiemiddel (machine, lijn, groep) | Routing, capaciteitsplanning, CO-kostenplaatsen |
-| Productieversie | Geldige combinatie van stuklijst en routing voor een materiaal | Verplicht voor MRP en het aanmaken van orders in S/4HANA |
-
-### Checklist voor de eerste MRP-run
-
-Doorloop deze reeks voordat u MRP loslaat op gemigreerde data. De eigenaar tussen haakjes tekent het af.
-
-1. **MRP-views van de materiaalstam compleet** voor elk geplande materiaal, inclusief strategiegroep en partijgrootte (planningsverantwoordelijke)
-2. **Stuklijsten gevalideerd aan de hand van wat er daadwerkelijk wordt gebouwd**, waarbij engineering componenten en uitval bevestigt (engineering)
-3. **Routings voor elk materiaal voor eigen productie**, met realistische bewerkingstijden (productie-engineering)
-4. **Kalenders en capaciteiten van werkcentra weerspiegelen de huidige ploegen** (fabrieksmanager)
-5. **Eén geldige productieversie per materiaal voor eigen productie**, voor de volledige planningshorizon (planningsverantwoordelijke)
-6. **PIR's één keer geladen**, afgestemd op het goedgekeurde vraagplan vóór de eerste run (vraagplanner)
-7. **Openstaande orders en voorraad afgestemd** tussen legacy en SAP (voorraadcontroller)
-8. **Een test-MRP-run op één vestiging of MRP-gebied**, waarbij planners de uitzonderingen beoordelen vóór de volledige run (planningsverantwoordelijke)
-
-## Integratiepunten die over succes beslissen
-
-PP werkt niet alleen. Elk integratiepunt is ook een faalpunt.
-
-**MM (Materials Management, materiaalbeheer).** PP genereert materiaalbehoeften en MM zorgt voor de inkoop ervan. Klopt de beschikbaarheid in MM niet, dan lopen productieorders tegen tekorten aan. Een goede integratie van PP en MM maakt een einde aan spoedinkopen.
-
-**SD (Sales and Distribution, verkoop en distributie).** Verkooporders kunnen PIR's in het behoeftebeheer verbruiken. De strategiegroep in de materiaalstam bepaalt hoe. Is die onjuist, dan lopen verkooporders en prognoses naast elkaar in plaats van elkaar op te heffen, en verdubbelt het vraagsignaal zonder enige foutmelding. In mijn [gids over SAP SD](/nl/sap-sd-sales-and-distribution/) komt de orderkant van die koppeling aan bod.
-
-**CO (Controlling).** Productieorders dragen kosten. CO volgt de werkelijke arbeids-, materiaal- en overheadkosten ten opzichte van de standaardkostprijs, en bij de afrekening worden de afwijkingen geboekt. Zonder CO is het financiële beeld van de productie onvolledig.
-
-**QM (Quality Management, kwaliteitsbeheer).** Gebeurtenissen in PP kunnen keuringspartijen in QM activeren, en kwaliteitsresultaten kunnen orders ophouden. Daardoor is kwaliteit een beheersmaatregel in het proces in plaats van een bijzaak achteraf.
-
-## Wat er in S/4HANA is veranderd
-
-Stapt u over van ECC, dan zijn dit de PP-wijzigingen die ontwerp en data raken. De details staan in de vereenvoudigingslijst van SAP en de compatibility scope-matrix (SAP Note 2269324).
-
-1. **MRP Live (transactie MD01N)** is de planningsrun die SAP aanbeveelt. Hij draait binnen de HANA-database, kan meerdere vestigingen in één run plannen en schrijft geen MRP-lijsten weg. De klassieke MD01 tot en met MD03 bestaan nog. De [leermodule over MRP Live](https://learning.sap.com/courses/exploring-production-planning-in-sap-s-4hana/outlining-material-requirements-planning-with-mrp-live-1) van SAP is een goede introductie.
-2. **Productieversies zijn verplicht** voor eigen productie, zoals hierboven beschreven.
-3. **MRP-gebieden vervangen MRP op opslaglocatieniveau.** Opslaglocaties die u in ECC apart plande, hebben in S/4HANA een MRP-gebied nodig.
-4. **SOP, MRP-lijsten en prognosegebaseerde planning (MRP-type VV) vallen onder compatibility scope.** De gebruiksrechten liepen af op 31 december 2025 voor on-premise-systemen. SAP heeft ze verlengd tot 31 december 2030 voor S/4HANA-systemen onder een RISE with SAP- of SAP Cloud ERP Private-contract. De door SAP genoemde opvolger van SOP is [SAP IBP](/nl/why-sap-integrated-business-planning-sap-ibp-matters/).
-5. **Embedded PP/DS** (Production Planning and Detailed Scheduling) draait binnen S/4HANA voor planning op basis van eindige capaciteit. MRP Live draagt materialen die zijn gemarkeerd voor geavanceerde planning over aan PP/DS-heuristieken. Controleer uw licentie voordat u eromheen ontwerpt.
-
-De [SAP Help-pagina over werken met MRP Live](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/f899ce30af9044299d573ea30b533f1c/86e15c58eb021f60e10000000a44147b.html) bevat de configuratiedetails.
-
-## Faalpatronen en risico
-
-Ik heb in de loop der jaren echte rampen gezien, en dit zijn de patronen die u moet vermijden. Onder RISE with SAP beperkt de Clean Core-aanpak de maatwerkcode die deze problemen vroeger aan het oog onttrok. Slechte stamgegevens komen nu sneller aan het licht, en het kost meer om er omheen te werken.
-
-**Gehaaste migratie van stamgegevens.** Ik herinner me een leverancier van auto-onderdelen die zijn migratie van stuklijsten en routings overhaastte. Na de go-live was het bedrijf zes maanden bezig met het herstellen van productieorders die steeds op dataproblemen vastliepen. Validatie van stamgegevens vóór de migratie is geen bijzaak. Het is het project. Mijn artikel over [waarom SAP-datamigratie mislukt](/nl/why-sap-data-migration-fails-and-how-to-fix-it/) gaat daar dieper op in.
-
-**Weerstand van gebruikers.** Ervaren planners verzetten zich vaak tegen PP, omdat het werk overneemt dat ze vroeger met de hand en op ervaring deden. Betrek ze vroeg bij de configuratie. Laat zien waar PP hun tijd teruggeeft. Dat bepaalt de adoptie.
-
-**Legacyprocessen nabouwen.** De meest hardnekkige configuratiefout die ik zie: SAP inrichten om precies zo te werken als het oude proces, in plaats van de standaard planningslogica over te nemen. Het resultaat is een overgeconfigureerd systeem dat minder oplevert dan waarvoor PP is ontworpen.
-
-**Te weinig testen van integraties.** Elke koppeling met MM, SD, CO en QM kan falen. Teams die elke module afzonderlijk testen, ontdekken integratieproblemen pas in productie.
-
-**Bezuinigen op training.** Ik heb bedrijven miljoenen aan implementatie zien uitgeven en vervolgens geld besparen door op training te bezuinigen. Gebruikers die het systeem niet begrijpen, bedenken noodoplossingen. Die noodoplossingen ondermijnen de datanauwkeurigheid waar MRP van afhangt.
-
-De tabel koppelt elk risico aan de impact en aan de beheersmaatregel die ik in het plan zou opnemen.
-
-| Risico | Impact | Beheersmaatregel |
-|---|---|---|
-| Onjuiste MRP-configuratie | Tekorten, overproductie, extra inkoopkosten | Valideer MRP-typen, strategiegroepen en partijgroottebepaling met de business leads |
-| Onnauwkeurige stuklijst of routing | Verkeerde materiaalbehoeften, vertragingen op de productievloer | Betrek engineering bij de beoordeling van stuklijsten en routings vóór de migratie |
-| Slechte capaciteitsplanning | Knelpunten bij werkcentra, gemiste leverdata | Voer capaciteitsevaluatie en -nivellering uit voordat u orders vrijgeeft |
-| Ontbrekende productieversie | MRP kan de stuklijst niet uitsplitsen of geldige orders aanmaken | Eén geldige productieversie per materiaal voor eigen productie |
-| Geen realtime terugkoppeling vanaf de productievloer | Onjuiste productiestatus, late zichtbaarheid van afwijkingen | Dwing tijdige bevestigingen af; integreer SAP Digital Manufacturing of een ander MES |
-| Onvoldoende getrainde gebruikers | Verkeerde bevestigingen, backflushfouten, onopgeloste herbewerking | Rolspecifieke training op echte productiecycli |
-| Variantenconfiguratie niet afgehandeld | Verkeerde orders voor configureerbare producten | Test de configuratielogica in samenhang met stuklijst en routing |
+| Onjuiste MRP-configuratie | Voorraadtekorten, overproductie, te hoge inkoopkosten | Valideer MRP-types, strategiegroepen en partijgroottebepaling met de leiders uit de business |
+| Onnauwkeurige stuklijst, routing of recept | Verkeerde materiaalbehoeften, vertraging op de werkvloer | Betrek engineering bij reviews vóór de migratie |
+| Ontbrekende productieversie | MRP kan de stuklijst niet exploderen of geen geldige orders aanmaken | Eén geldige productieversie per materiaal uit eigen productie |
+| Overlap tussen PP/DS en MRP Live | Detailplanningen overschreven door de volgende MRP-run | Sluit PP/DS-materialen uit van de planningsscope van MRP Live |
+| Geen realtime terugkoppeling van de werkvloer | Onnauwkeurige status, late zichtbaarheid van afwijkingen | Dwing tijdige terugmeldingen af; integreer SAP Digital Manufacturing of een ander MES |
+| Onvoldoende getrainde gebruikers | Verkeerde terugmeldingen, fouten in retrograde afboeking, onopgeloste herbewerking | Rolspecifieke training op echte productiecycli |
 
 ## Veelgestelde vragen
 
 <details>
-<summary>Wat is SAP PP en wat doet het?</summary>
+<summary>Waar staat SAP PP voor?</summary>
 
-SAP PP (Production Planning) is de SAP-module voor productieplanning en -uitvoering. Het beheert stuklijsten, werkcentra, routings en productieorders. De kerntaak is om via MRP de vraag uit prognoses en verkooporders te koppelen aan productiecapaciteit en de productieorder vervolgens te begeleiden van aanmaak tot afrekening.
-
-</details>
-
-<details>
-<summary>Welke stamgegevens heeft SAP PP nodig?</summary>
-
-Vijf objecten: de MRP-views van de materiaalstam, stuklijsten, routings, werkcentra en, in S/4HANA, productieversies. Elk daarvan moet bij de go-live kloppen en daarna worden onderhouden. Eén ontbrekend veld in de materiaalstam kan verhinderen dat er productieorders worden aangemaakt.
+SAP PP staat voor Production Planning. Het is de SAP-module voor het plannen en uitvoeren van productie, van vraag en MRP via productieorders en terugmelding tot kostenafrekening.
 
 </details>
 
 <details>
-<summary>Hoe werkt MRP in SAP S/4HANA?</summary>
+<summary>Waarvoor wordt de SAP PP-module gebruikt?</summary>
 
-MRP saldeert de vraag (PIR's, verkooporders, afhankelijke behoeften) met voorraad en openstaande ontvangsten, op basis van doorlooptijden, partijgroottes en veiligheidsvoorraad uit de materiaalstam. Het levert planorders op voor eigen productie en inkoopaanvragen voor externe inkoop. In S/4HANA beveelt SAP MRP Live (MD01N) aan, dat in de HANA-database draait en geen MRP-lijsten aanmaakt.
-
-</details>
-
-<details>
-<summary>Wat is een productieorder in SAP PP?</summary>
-
-Een productieorder is de opdracht om een bepaalde hoeveelheid van een materiaal vóór een bepaalde datum te maken. Meestal wordt hij omgezet vanuit een MRP-planorder. De levenscyclus loopt van aanmaak en vrijgave via bevestiging en goederenontvangst naar de afrekening, waarbij de werkelijke kosten met de standaardkosten worden vergeleken en de afwijking in CO wordt geboekt.
+De SAP PP-module verbindt de vraag uit prognoses en verkooporders via MRP met de productiecapaciteit. Ze beheert stuklijsten, routings, werkplekken en productieversies, en voert productie- of procesorders uit van aanmaak tot afrekening.
 
 </details>
 
 <details>
 <summary>Wat is het verschil tussen SAP PP en SAP PP-PI?</summary>
 
-SAP PP is gebouwd voor discrete en repetitieve productie, met productieorders op basis van stuklijsten en routings. SAP PP-PI is gebouwd voor batch- en receptgebaseerde productie in voeding, dranken, chemie en farmacie. Het gebruikt procesorders en stamrecepten en voegt co-producten, bijproducten en batchtraceerbaarheid toe. Voor gereguleerde sectoren is dat spoor op batchniveau een compliancevereiste.
+SAP PP in enge zin omvat discrete productie en serieproductie, met productieorders of serieschema's op basis van stuklijsten en routings. PP-PI is bedoeld voor batch- en receptgebaseerde productie in voeding, chemie en farmacie. Het gebruikt procesorders en masterrecepten en voegt coproducten, bijproducten en batchtraceerbaarheid toe.
 
 </details>
 
 <details>
-<summary>Is SOP nog beschikbaar in SAP S/4HANA?</summary>
+<summary>Wat is MRP Live in SAP S/4HANA?</summary>
 
-Klassieke SOP valt onder de compatibility scope van S/4HANA, met beperkte gebruiksrechten. Die rechten liepen af op 31 december 2025 voor on-premise-systemen en lopen tot 31 december 2030 voor systemen onder een RISE with SAP- of SAP Cloud ERP Private-contract. De opvolger die SAP aanbeveelt is SAP Integrated Business Planning (IBP).
+MRP Live (transactie MD01N) is de aanbevolen MRP-run van SAP in S/4HANA. Het draait in de SAP HANA-database, kan meerdere fabrieken in één run plannen en maakt geen klassieke MRP-lijsten aan. Materialen die gemarkeerd zijn voor geavanceerde planning gaan naar PP/DS.
 
 </details>
 
 <details>
-<summary>Wat zijn de meest gemaakte fouten bij een SAP PP-implementatie?</summary>
+<summary>Wat is het verschil tussen SAP PP en PP/DS?</summary>
 
-Stamgegevens overhaasten, de verkeerde strategiegroep instellen, legacyprocessen in de configuratie kopiëren, de volledige integratietest overslaan en bezuinigen op training. De meeste eindigen op dezelfde manier: MRP-uitvoer die niemand vertrouwt en planners die terug zijn bij hun spreadsheets.
+PP met MRP Live plant bij oneindige capaciteit: wat er gemaakt en ingekocht moet worden, en wanneer. PP/DS voegt eindige planning, omstelvolgordes en pegging toe voor kritieke materialen op knelpuntresources. In S/4HANA is PP/DS embedded; vraag bij SAP na hoe uw contract de licentie regelt.
 
 </details>
+
+<details>
+<summary>Vervangt SAP IBP SAP PP?</summary>
+
+Nee. IBP plant sales and operations, vraag, voorraad en aanbod voor het hele bedrijf, meestal in maandelijkse of wekelijkse tijdvakken. PP blijft de productie in de fabriek plannen en uitvoeren.
+
+IBP is de door SAP aangewezen opvolger van klassieke SOP, dat in S/4HANA onder compatibility scope valt.
+
+</details>
+
+## Volgende stap
+
+Bepaalt u de scope van PP voor een S/4HANA-programma, leg dan eerst drie dingen vast: welke productievormen elke fabriek gebruikt, welke materialen PP/DS nodig hebben en of uw planningsprobleem überhaupt in IBP thuishoort. Wilt u een second opinion op dat ontwerp, [bespreek dan uw SAP-programma met mij](/nl/contact-noel-erp-support/).
