@@ -13,7 +13,7 @@ export const SITE_URL = SEO_SITE_URL;
 export const SITE_NAME = "Noel D'Costa";
 export const AUTHOR = {
   name: "Noel D'Costa",
-  url: "https://noeldcosta.com/about",
+  url: "https://noeldcosta.com/about/",
   jobTitle: "ERP, Data & AI Consultant",
   image: "https://noeldcosta.com/headshot.png",
   description:
@@ -21,6 +21,10 @@ export const AUTHOR = {
   sameAs: [
     "https://www.linkedin.com/in/noeldcosta/",
     "https://www.youtube.com/@NoelDCostaERPAI",
+    "https://erpcv.com/",
+    "https://ai.sapopedia.com/",
+    "https://clarity.fm/noeldcosta",
+    "https://www.connectively.us/p/noel-dcosta",
   ],
 };
 

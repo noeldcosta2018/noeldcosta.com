@@ -197,7 +197,7 @@ export default function ToolShell({
     author: {
       "@type": "Person",
       name: "Noel D'Costa",
-      url: "https://noeldcosta.com/about",
+      url: "https://noeldcosta.com/about/",
     },
     url: isEnglish ? `https://noeldcosta.com/${slug}` : pageUrl,
     ...(prefix ? { inLanguage: prefix } : {}),
