@@ -1,0 +1,202 @@
+---
+title: "SAP test data management: masked, production-scale data"
+slug: "sap-test-data-management"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-test-data-management.webp"
+heroAlt: "A laptop showing a masked data table next to a data map of connected databases"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "sap-data-migration", "s4hana-implementation", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "SAP Test Data Management: Copies, Masking and Tools"
+metaDescription: "SAP test data management in practice: masked data at production scale, system and client copies, selective copy tools, and what GDPR means for test systems."
+primaryKeyword: "sap test data management"
+excerpt: "SAP test data has to look like production and must not be production. How to get masked data at production scale into your test systems, which copy methods and tools fit, and where privacy law draws the line."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "My rule for SAP test data: masked, but at production level in volume and realism"
+  - "Small, hand-made test data hides the defects that matter, especially in performance and concurrency tests"
+  - "Under the GDPR, pseudonymised data is still personal data, so a masked copy still needs access control"
+  - "Choose between full copies, client copies and selective copy tools by test phase, not by habit"
+  - "Mask before the data reaches anyone who should not see it, and keep masking consistent across connected systems"
+  - "Give the project landscape and the business as usual landscape their own refresh plan"
+pullQuote: "Test data has to behave like production without being production."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Test Data Migration Server"
+  - "SAP Landscape Transformation"
+  - "EPI-USE Labs Data Sync Manager"
+  - "SNP Kyano Test Data Organizer"
+  - "Natuvion DCS Protect"
+  - "Qlik Gold Client"
+  - "GDPR"
+---
+
+SAP test data management is how you give every test system data that behaves like production without exposing real people's details. My rule is simple: masked data, but at production level, in volume and in realism.
+
+Thin, hand-made data hides the defects that matter. Unmasked production data puts customer, supplier and employee records in systems with weaker controls than production.
+
+Test data is one part of a wider testing plan. My guide to [SAP testing explained](/sap-testing-explained/) covers the test types, who owns them and where they sit in SAP Activate.
+
+## Why test data decides what your tests can find
+
+A test can only find a problem that its data can trigger. A customer with five open items behaves differently from one with fifty thousand, and a pricing condition nobody created in the test client will never fail in the test client.
+
+The most common testing failure I have seen is not enough testing in system integration testing (SIT) and user acceptance testing (UAT). Weak test data is one of the ways that happens quietly. The test cases run, the results look green, and the cases that would have broken simply had no data to break on.
+
+This is why I insist on production-level data. That means four things:
+
+1. **Volume.** Table sizes close to production, so reports, jobs and searches run against realistic row counts.
+2. **Variety.** The odd records production actually holds: blocked vendors, partial deliveries, credit notes, foreign currencies, old open items.
+3. **History.** Enough closed periods for ageing, depreciation and year-end runs to mean something.
+4. **Integrity.** Documents that still link correctly across modules after the copy and after the masking.
+
+Volume matters most for performance. Performance testing has to happen before go-live, and in my experience the concurrency tests, many users working at once, are the important ones.
+
+A concurrency test on a near-empty database proves very little. My guide to [SAP performance testing](/sap-performance-testing-it-leaders/) covers how to set those tests up.
+
+## What privacy law means for SAP test systems
+
+Production data in a test system is still personal data. Test and quality systems usually have wider access than production, which is the risk masking exists to close.
+
+The EU General Data Protection Regulation (GDPR) is the reference most organisations work from, and many national laws follow similar lines. Recital 26 of the [GDPR](https://eur-lex.europa.eu/eli/reg/2016/679/oj) makes a distinction every SAP team should know.
+
+1. **Pseudonymised data is still personal data.** If the data can be linked back to a person with extra information, such as a mapping table, the regulation still applies.
+2. **Anonymous data is outside its scope.** Data that can no longer identify anyone is not covered.
+
+The practical consequence: most masking produces pseudonymised data, not anonymous data. A masked test system still needs access control, a purpose and a retention rule. Ask your data protection officer to agree the masking rules before the first copy, not after an auditor asks.
+
+## The ways to get data into an SAP test system
+
+There are five common routes. Most programmes use more than one, because each test phase needs something different.
+
+The table compares them on the points that decide fit.
+
+| Method | What you get | Volume | Privacy handling | Best fit |
+|---|---|---|---|---|
+| Full system copy | An exact copy of production, every client and table | Full | Masking has to run after the copy, before users get access | Performance tests, mock conversions, cutover rehearsals |
+| Client copy | One client copied within or between systems; the copy profile decides whether master and transaction data come too | Full or customising only | Same as a system copy when application data is copied | Fresh test or training clients, resetting a client to a known state |
+| SAP Test Data Migration Server (TDMS) | A reduced copy, selected by time or organisational unit, with scrambling | Reduced | Scrambling rules within the tool | Existing SAP Business Suite landscapes already licensed for it |
+| Partner selective copy tools | Chosen business objects or slices, copied on demand, masked in flight | Reduced, targeted | Masking rules within the tool, applied during the copy | Regular refreshes, regression data, defect reproduction |
+| Built or migrated data | Data created by scripts, migration loads or manual entry | Whatever you build | No real personal data if built from scratch | Early unit tests, greenfield projects before go-live |
+
+### Full system and client copies
+
+A full system copy gives the most realistic data you will ever test with. It also copies every privacy risk production holds. If you use one, the system stays locked until masking has run and been checked.
+
+A client copy is the everyday tool for creating and resetting clients. The copy profile is the decision that matters, because it sets whether only configuration moves or master and transaction data move with it.
+
+### SAP Test Data Migration Server
+
+SAP Test Data Migration Server (TDMS) creates reduced non-production systems from production data, with scrambling of sensitive fields. It grew up on the SAP Business Suite, and the current documentation set on the [SAP Help Portal](https://help.sap.com/docs/SAP_TEST_DATA_MIGRATION_SERVER) is for release 4.0 SP14.
+
+I could not find an official SAP statement on TDMS coverage for current S/4HANA releases or on a named successor. If you plan to rely on it, ask SAP in writing whether it supports your target release and your deployment model, including RISE with SAP.
+
+### SAP Landscape Transformation and shell copies
+
+SAP Landscape Transformation is a set of analysis and transformation tools that SAP uses in selective data transition. [SAP Learning](https://learning.sap.com/courses/discovering-sap-activate-implementation-tools-and-methodology/illustrating-selective-data-transition_dab03cad-3061-40ed-b690-a0d7a2dccc98) describes a shell conversion as a copy of the production system made without master and transaction data, then converted to S/4HANA.
+
+The same idea helps test data. A shell gives you the repository and configuration of production with no business data, and you then fill it with only the data a test needs.
+
+## Selective test data tools
+
+Several partner products copy selected business data into SAP test systems and mask it on the way. These are the ones whose claims I could check on the vendor's own site, in no order.
+
+1. **EPI-USE Labs Data Sync Manager.** A suite for copying and masking data across SAP ABAP landscapes, including lean clients, object-level copies and masking with predefined rules. EPI-USE Labs states that [Data Sync Manager](https://www.epiuselabs.com/data-sync-manager-dsm-software-suite) is certified for integration with SAP S/4HANA and S/4HANA Cloud and works with RISE with SAP.
+2. **SNP Kyano Test Data Organizer.** Extracts the data a test needs rather than the whole system, and masks sensitive data as it is provisioned. SNP describes the [Test Data Organizer](https://www.snpgroup.com/en/platform/kyano-manage/use-cases/test-management/) as compatible with RISE with SAP Private Cloud Edition.
+3. **Qlik Gold Client.** Copies and synchronises selected transactional data from production to non-production targets, with static masking for existing systems and dynamic masking for data in flight.
+4. **Natuvion DCS Protect.** Finds personal data and applies anonymisation or pseudonymisation in test, quality, development and training systems. [Natuvion](https://natuvion.com/tda) positions it for test migrations and for ongoing operations, and does not mention S/4HANA on that page, so confirm coverage directly.
+
+Before you buy, ask each vendor to answer these on your own systems:
+
+1. Which S/4HANA releases and deployment models does it support today?
+2. Does it mask before the data leaves production, or after it lands in the target?
+3. Does masking stay consistent across connected systems, so a customer masked in S/4HANA matches the same customer in your CRM or data warehouse?
+4. How long does a refresh of one company code take on production volumes?
+5. Who maintains the masking rules when you add custom tables or fields?
+
+## Matching test data to the test phase
+
+Each test phase needs data for a different reason. This is where I start when I plan test data on an S/4HANA programme.
+
+| Test phase | What the data must do | Usual source |
+|---|---|---|
+| Unit testing | Let a developer prove one object works | Built data, or a small masked slice |
+| System integration testing rounds | Run full process chains across modules and interfaces | Masked production-level copy or selective copy |
+| User acceptance testing rounds | Look like the business users' own data, so they recognise their cases | Masked production-level data, refreshed before each round |
+| Regression testing | Stay stable so results compare from run to run | A fixed, resettable data set, plus a refresh plan |
+| Performance testing | Match production volume, so concurrency results mean something | Full masked copy, or production-scale volume |
+| Mock conversions and cutover rehearsals | Prove the migration on the real data shape | Full copies of production, masked where people outside the core team have access |
+
+UAT deserves extra care. The business should own user acceptance testing, and in my view it needs at least 6 to 8 weeks.
+
+Give users data they recognise: their own customers, materials and price lists, even under masked names. My guide to [SAP user acceptance testing](/sap-user-acceptance-testing/) covers how to run it.
+
+Mock conversions follow the same logic. On a brownfield conversion I plan three mock conversions, and each should run on a recent copy of production.
+
+Data migration is 30 to 40 percent of programme effort in my experience, so plan data access for those runs with the migration team. My article on [why SAP data migration fails](/why-sap-data-migration-fails-and-how-to-fix-it/) explains how the mock loads fit together.
+
+### Two landscapes, two refresh plans
+
+During a programme I run two separate landscapes: one for the project and one for business as usual (BAU). Live support changes and project changes are then tested apart.
+
+Each landscape needs its own test data plan. BAU testing needs data close to today's production, because support fixes respond to today's problems.
+
+Project testing needs data that matches the new design, which may be a converted copy or a selective load. Keep a separate refresh calendar for each, so a refresh in one never wipes test data the other still needs.
+
+## How I would set up SAP test data management
+
+Testing takes about 35 percent of programme effort. Plan test data inside that effort, not in the week before SIT.
+
+This is the order I would follow:
+
+1. **Agree the principle in writing.** Masked data at production level, signed off by the programme sponsor, the data protection officer and the business owners.
+2. **Find the personal and sensitive data.** Customers, suppliers, employees, bank details, contacts, free-text fields, attachments and any custom tables that hold them.
+3. **Write the masking rules.** Decide field by field what is replaced, kept or removed, and keep replacements consistent across connected systems.
+4. **Map data to each test phase.** Use the table above as a starting point, and size volume for the performance and concurrency tests first.
+5. **Pick the copy methods and tools.** Full copies where volume matters, selective copies where speed and frequency matter, and check tool support for your release.
+6. **Set the refresh calendar.** One plan per landscape, with refreshes timed before each SIT and UAT round and each mock conversion.
+7. **Lock access until masking is checked.** Nobody outside the core technical team logs on to a fresh copy until a masking check has passed.
+
+Then make it a gate. The strategy, entry criteria and exit criteria for each cycle sit in my [S/4HANA testing strategy](/s4hana-testing-strategy/) guide, and test data readiness belongs in the entry criteria of every round.
+
+The concrete next step: list every non-production system that holds a copy of production data today, and check which ones were masked.
+
+If you want an independent view on a test data approach or a testing plan for an S/4HANA programme, you can [contact me here](/contact-noel-erp-support/).
+
+## Frequently asked questions
+
+<details>
+<summary>What is SAP test data management?</summary>
+
+It is how you plan, create, copy, mask and refresh the data in SAP test systems. The aim is data that behaves like production in volume and realism, without exposing real personal data to people who should not see it.
+
+</details>
+
+<details>
+<summary>Can I use production data for SAP testing?</summary>
+
+Only after it is masked, and even then with access control. Under the GDPR, pseudonymised data is still personal data, so a masked copy still needs a purpose, access rules and a retention rule. Agree the masking rules with your data protection officer before the first copy.
+
+</details>
+
+<details>
+<summary>Is SAP TDMS still available for S/4HANA?</summary>
+
+The current TDMS documentation on the SAP Help Portal is for release 4.0 SP14, and TDMS grew up on the SAP Business Suite. I could not find an official SAP statement on its coverage of current S/4HANA releases. Ask SAP in writing before you plan around it.
+
+</details>
+
+<details>
+<summary>Which tools create selective SAP test data?</summary>
+
+SAP Test Data Migration Server, plus partner products such as EPI-USE Labs Data Sync Manager, SNP Kyano Test Data Organizer and Qlik Gold Client. Natuvion DCS Protect focuses on anonymising and pseudonymising data in test systems. Check each one against your S/4HANA release and deployment model.
+
+</details>
+
+<details>
+<summary>How much test data do I need for SAP performance testing?</summary>
+
+Production-level volume. Performance problems show up under real table sizes and many concurrent users, so a test on a thin data set proves very little. A full masked copy of production is the usual source for performance and concurrency tests.
+
+</details>

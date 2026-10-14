@@ -1,0 +1,198 @@
+---
+title: "SAP regression testing: upgrades, releases and scope"
+slug: "sap-regression-testing"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-regression-testing.webp"
+heroAlt: "Two identical server racks side by side, one for the project and one for business as usual"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "sap-cloud-alm", "s4hana-implementation", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "SAP Regression Testing: Upgrades, Cloud Releases, Scope"
+metaDescription: "SAP regression testing explained: what triggers it, cloud release cycles, impact analysis tools, when to automate, and why to separate project and BAU."
+primaryKeyword: "sap regression testing"
+excerpt: "SAP regression testing proves that a change, an upgrade or a new release has not broken processes that already worked. How to scope it with impact analysis, keep up with cloud releases and stop project and support changes tripping over each other."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "Regression testing proves that a change has not broken processes that already worked"
+  - "SAP Cloud ERP public edition upgrades twice a year, and your regression window sits between the test and production upgrades"
+  - "Private edition follows a two-year release cycle with feature pack stacks every six months; SAP runs the technical upgrade, you own the testing"
+  - "Use impact analysis to scope the run, then test the riskiest business processes first"
+  - "Automate when there are many test cases that need extensive, repeated testing; below that, manual testing is fine"
+  - "During a programme, run separate project and BAU landscapes so each set of changes is regression tested on its own"
+pullQuote: "Keep project changes and live support changes apart, and test each where it belongs."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Cloud ERP"
+  - "SAP Cloud ALM"
+  - "SAP Solution Manager"
+  - "Business Process Change Analyzer"
+  - "Scope and Effort Analyzer"
+  - "Tricentis LiveCompare"
+  - "Tricentis Tosca"
+  - "Panaya"
+  - "Worksoft"
+---
+
+SAP regression testing proves that a change, a support package or a new release has not broken business processes that already worked. You scope it with impact analysis, run the riskiest processes first and repeat it every time the system changes, not just once before go-live.
+
+The triggers are transports, upgrades and cloud releases. On SAP Cloud ERP public edition, SAP sets the upgrade dates, so your regression suite has to be ready before the release arrives.
+
+Regression is one of the test types in my [SAP testing guide](/sap-testing-explained/). This article covers what triggers it, how to scope it, when to automate it and how to keep a programme and live support from breaking each other's work.
+
+## What SAP regression testing covers
+
+SAP is an integrated system. A change to a pricing condition can break billing, and a new field on a sales order can stop an interface. A support package can change a standard program you rely on.
+
+Regression testing reruns tests on processes that were not meant to change. Functional testing asks whether the new thing works, while regression asks whether everything else still does.
+
+It applies across the life of the system, not only during a programme:
+
+1. **Transports.** Every change moved from development to quality is a regression risk for the processes it touches.
+2. **Support packages and feature packs.** SAP corrections and new features change standard code under your configuration.
+3. **Release upgrades.** A move to a new release, or a cloud release you did not schedule, changes far more at once.
+4. **Conversions.** An ECC to S/4HANA conversion keeps your configuration and custom code, so everything you kept has to be retested. My [ECC to S/4HANA migration guide](/ecc-to-s4hana-migration/) explains where that sits in the plan.
+5. **Integrations and extensions.** A change in a connected system or a side-by-side extension can break the SAP side without any SAP transport.
+
+Keep the regression suite separate from the tests written for new functions. The suite is a stable library of the processes the business cannot afford to lose, such as order to cash, procure to pay and the month-end close.
+
+## How cloud releases change regression testing
+
+On premise, you choose when to upgrade. In the cloud editions, SAP sets more of the timetable, and regression testing becomes a recurring calendar commitment.
+
+### Public edition: two upgrades a year
+
+SAP Cloud ERP public edition, formerly S/4HANA Cloud Public Edition, gets two major upgrades a year, in February and August. Smaller feature deliveries arrive between them.
+
+SAP upgrades the test system first and production a few weeks later. That gap is your regression window, and there is no second chance once production is upgraded.
+
+SAP's [Cloud ALM course on post-upgrade and regression testing](https://learning.sap.com/courses/implementing-with-sap-cloud-alm/conducting-post-upgrade-and-regression-testing-for-sap-s-4hana-cloud-public-edition_b6d0c843-9235-4b3a-a6b9-f0a5a62f9360) recommends creating a regression test plan in Cloud ALM and reusing it for each release. Public edition also includes a free test automation tool with predelivered test scripts, so the standard processes have a starting point.
+
+### Private edition: a two-year release cycle
+
+SAP Cloud ERP Private, the private edition sold through RISE with SAP, follows the on-premise release cycle. According to [SAP Learning](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-private-edition/navigating-release-upgrades_ae2d796c-bafd-4e04-8b41-562ebda9eb49), a new base release ships every two years, feature pack stacks follow every six months and each release has seven years of mainstream maintenance.
+
+You must install at least one upgrade every seven years to stay in mainstream maintenance, and RISE lets you request one upgrade a year. SAP runs the technical upgrade, but planning, preparation and testing remain the customer's or partner's job.
+
+That split matters for budgets. The upgrade itself may be in the subscription, while the regression testing around it is not.
+
+This table sets the regression triggers side by side:
+
+| Change | How often | Who sets the date | What the regression run must cover |
+|---|---|---|---|
+| Transport to quality | Daily or weekly | Your team | Processes the changed objects touch |
+| Public edition upgrade | Twice a year, February and August | SAP | Every process in scope, custom logic first, in the window before production |
+| Private edition feature pack stack | Every six months, if you take it | You, within SAP's schedule | Changed standard functions you use, plus custom code |
+| Private edition release upgrade | At least every seven years, up to one a year on request under RISE | You, with SAP | Full suite, custom code and integrations |
+| ECC to S/4HANA conversion | Once | You | Everything you kept |
+
+## Scope it with impact analysis
+
+Running the full suite after every change is slow and expensive. Running too little lets defects through, and the gap shows up in production.
+
+Impact analysis sits between those two. It compares what changed with what you actually use and lists the processes and objects most at risk, so the regression run starts with them.
+
+These are the tools you will meet:
+
+1. **SAP Solution Manager.** The Business Process Change Analyzer, part of the Test Suite, shows which business processes a change affects. The [Scope and Effort Analyzer](https://support.sap.com/en/alm/solution-manager/processes-72/scope-effort-analyzer.html) estimates the impact of a support package or enhancement package before you install it, and SAP calls it a planning tool.
+2. **SAP Cloud ALM.** Cloud ALM manages regression test plans, execution and defects, and connects to automation tools. For public edition upgrades, SAP's Release Assessment and Scope Dependency tool shows which changes in a release affect your scope.
+3. **Tricentis LiveCompare.** According to the [LiveCompare documentation](https://docs.tricentis.com/livecompare-2026.1/content/welcome_to_livecompare.htm), it identifies a minimal set of most-at-risk objects to test, then reports test hits and test gaps against your test repository. SAP resells it as SAP Change Impact Analysis by Tricentis, and it integrates with Tricentis Tosca.
+4. **Panaya.** Panaya's [SAP upgrade product](https://www.panaya.com/sap/sap-upgrades/) combines change impact analysis, code correction, test management and automation, and covers S/4HANA versions, feature pack stacks and support package stacks.
+
+Check where your Solution Manager stands before you build on it. [SAP Support](https://support.sap.com/en/alm/solution-manager.html) says mainstream maintenance for Solution Manager 7.2 ends at the end of 2027. Customers who take Business Suite 7 extended maintenance keep it to the end of 2030, and SAP recommends moving to Cloud ALM before the end of 2027.
+
+Impact analysis narrows the scope. It does not set it alone, so keep a core of business-critical processes that run every time, whatever the tool says.
+
+My comparison of [SAP testing and validation tools](/sap-testing-validation-tools-comparison/) covers how these products fit together and what your SAP support contract already includes.
+
+## Automate when volume and repetition justify it
+
+Regression is where test automation earns its keep, because the same tests run again and again. That does not mean every regression suite should be automated.
+
+My rule is simple. When there is a large number of test cases that need extensive, repeated testing, automate. Below that, manual testing is fine.
+
+A public edition customer running a full suite twice a year, plus transports in between, meets that bar quickly. A small private edition system that changes a few times a year may not.
+
+Ask these questions before you buy:
+
+1. **How many regression test cases do you have,** and how many of them run on every cycle?
+2. **How often do you run them,** counting transports, feature packs and upgrades, not only release upgrades?
+3. **How long does a manual run take,** and does it fit inside the regression window?
+4. **Who will maintain the scripts** when screens and processes change?
+
+Script maintenance is the cost people underestimate. An automated suite that nobody updates fails for reasons that have nothing to do with the system, and the team stops trusting it.
+
+On programmes I have led, my teams have used Tricentis Tosca, Worksoft, Panaya, SAP Cloud ALM, SAP Solution Manager and UiPath. Pick by fit with your systems and your team, not by the demo. My [SAP test automation guide](/sap-test-automation-guide/) covers where to start and how to judge the payback.
+
+## Keep project and BAU changes apart during a programme
+
+The hardest regression problem on an SAP programme is not the tooling. It is two streams of change running through the same systems at once.
+
+While the programme builds new functions, live support keeps fixing production. If both streams share one development and quality path, a support fix can break project testing and a project change can slip into a support release. Then nobody can tell which change caused a failure.
+
+My answer is to run two separate landscapes. One is for the project and one is for business as usual (BAU), so live support changes and project changes are tested apart.
+
+<explainer-compare title="Two landscapes during an SAP programme" caption="Each stream of change gets its own path to production, so a regression failure points to one set of changes." options="Project landscape|BAU landscape" criteria="What moves through it => New functions, configuration and custom code for the programme ; Fixes and small changes to the live system|Regression focus => Processes the programme changes, plus the core suite ; Processes each fix touches, plus the core suite|Goes to production => At go-live or a release wave ; As support releases, on the usual schedule"></explainer-compare>
+
+Two landscapes solve the separation, then create a new job. Every BAU fix also has to reach the project landscape, or the project goes live without it.
+
+Plan for that from the start:
+
+1. **Retrofit every BAU change into the project landscape** on a fixed rhythm, and track each one.
+2. **Rerun the affected project tests** after each retrofit, not only at the end.
+3. **Freeze BAU changes** as cutover approaches, except for urgent fixes that go through both landscapes.
+4. **Run the full regression suite** in the project landscape before go-live, with production-level masked data.
+
+The second landscape costs money, but so does a go-live where nobody can say which change broke billing. My [S/4HANA testing strategy](/s4hana-testing-strategy/) shows where regression cycles sit alongside integration and user acceptance testing.
+
+## Where to start
+
+Build a regression suite before you need it. List the processes the business cannot afford to lose, write a test for each and run them once by hand to see how long a full cycle takes.
+
+That number tells you whether the next upgrade window is realistic and whether automation will pay. If you are mid-programme, check whether project and BAU changes share one path to production.
+
+If you want an independent view on your regression approach or upgrade plan, I help organisations with this. You can [contact me here](/contact-noel-erp-support/).
+
+## Frequently asked questions
+
+<details>
+<summary>What is SAP regression testing?</summary>
+
+It reruns tests on SAP business processes that were not meant to change, to prove a transport, support package, upgrade or new release has not broken them. It covers integrated flows such as order to cash and the month-end close, not only the changed objects.
+
+</details>
+
+<details>
+<summary>How often does SAP Cloud ERP public edition need regression testing?</summary>
+
+At least twice a year, because SAP upgrades public edition in February and August. SAP upgrades the test system first and production a few weeks later, so the regression run has to finish in that gap. Transports between releases need their own, smaller runs.
+
+</details>
+
+<details>
+<summary>Who does regression testing on a RISE with SAP private edition upgrade?</summary>
+
+SAP runs the technical upgrade. Planning, preparation and testing stay with the customer or the implementation partner, so budget for the regression effort separately from the subscription.
+
+</details>
+
+<details>
+<summary>Which tools help scope SAP regression testing?</summary>
+
+Impact analysis tools compare what changed with what you use. Common options are the Business Process Change Analyzer and Scope and Effort Analyzer in SAP Solution Manager, and the Release Assessment and Scope Dependency tool for public edition. Tricentis LiveCompare and Panaya do the same job, while SAP Cloud ALM manages the regression test plans and execution.
+
+</details>
+
+<details>
+<summary>Should SAP regression testing be automated?</summary>
+
+Automate when there is a large number of test cases that need extensive, repeated testing. Below that, manual testing is fine. Count your test cases and how often they run before you buy a tool, and budget for script maintenance.
+
+</details>
+
+<details>
+<summary>How do you regression test during an SAP programme while supporting the live system?</summary>
+
+Run two separate landscapes, one for the project and one for business as usual. Live support changes and project changes are then tested apart. Retrofit every BAU fix into the project landscape and rerun the affected tests.
+
+</details>

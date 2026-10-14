@@ -1,0 +1,205 @@
+---
+title: "SAP user acceptance testing: who owns it and how to run it"
+slug: "sap-user-acceptance-testing"
+date: "2026-10-14"
+updated: "2026-10-14"
+hero: "/images/testing/sap-user-acceptance-testing.webp"
+heroAlt: "Noel D'Costa in a training room set up for user acceptance testing with scripts and sign-off sheets"
+category: "erp-consulting-guide"
+tags: ["sap-testing", "s4hana-implementation", "sap-activate", "sap-governance"]
+author: "Noel D'Costa"
+metaTitle: "SAP User Acceptance Testing (UAT): Roles, Scripts, Sign-Off"
+metaDescription: "SAP user acceptance testing explained: why the business owns UAT, how long to plan, how to prepare, write scripts, triage defects and get a sign-off that holds."
+primaryKeyword: "sap user acceptance testing"
+excerpt: "SAP user acceptance testing is where the business proves the system runs its processes before go-live. Who owns it, how long it takes, and how to run scripts, defect triage and sign-off."
+experienceSource: "Noel's first-person experience leading SAP programmes (confirmed by Noel, 14 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "SAP UAT is the business proving, in its own words, that the system runs its processes before go-live"
+  - "The business owns UAT. IT and the implementation partner prepare, support and fix, but they do not accept"
+  - "Plan at least 6 to 8 weeks for UAT on an S/4HANA programme, after integration testing has finished"
+  - "Write scripts as business scenarios from the signed-off process designs, not as transaction checklists"
+  - "Triage every UAT finding daily into defect, change request, data issue or training need"
+  - "Sign-off is a signed decision by named process owners, and it feeds an extensive cutover checklist agreed in advance"
+pullQuote: "If IT signs off UAT, nobody has accepted anything. The business has to own it."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Activate"
+  - "SAP Cloud ALM"
+  - "SAP Solution Manager"
+  - "SAP Fiori"
+  - "SAP S/4HANA Cloud Private Edition"
+---
+
+SAP user acceptance testing (UAT) is the phase where business users run their own processes in the configured system and formally accept it before go-live. The business owns it, IT and the implementation partner support it, and on an S/4HANA programme I plan at least 6 to 8 weeks for it.
+
+The most common testing failure I see is simple: not enough testing in UAT and in system integration testing (SIT). When a timeline slips, those two phases get squeezed, and the gaps surface after go-live instead.
+
+Below: who does what, preparation, scripts, defect triage and a sign-off that means something. For where UAT sits among the other test types, start with my overview of [SAP testing explained](/sap-testing-explained/).
+
+## Who owns SAP UAT: the business, with IT and the partner in support
+
+The business owns user acceptance testing. That is my position, and it should not move when the schedule gets tight.
+
+The reason is in the name. Acceptance is a business decision about whether the system runs the business, so only the people who run the business can give it. If IT or the partner signs off UAT, nobody has accepted anything.
+
+SAP's own methodology says the same. Its [test strategy guidance for S/4HANA Cloud Private Edition](https://learning.sap.com/courses/implementing-sap-s-4hana-cloud-private-edition/explaining-the-test-strategy_f9e28dee-5e09-49c3-b06c-4c40cfc1f49a) puts UAT in the Realize phase. Partner configuration experts set up the manual test cases, and customer line-of-business experts run them and document the results.
+
+A workable split of the work looks like this:
+
+| Role | Owns in UAT | Does not own |
+|---|---|---|
+| Business process owners | Scope of scenarios, acceptance criteria, final sign-off for their process | Fixing configuration or code |
+| Key users and testers | Running scripts, recording results and evidence, raising findings | Deciding a defect is "not a defect" alone |
+| UAT lead (business side) | Daily plan, progress, triage chair, readiness reports to the sponsor | Technical fixes |
+| Implementation partner | Drafting scripts, test system readiness, fixing defects, retest support | Acceptance |
+| Internal IT | Environments, access, interfaces to other systems, transports | Acceptance |
+| Data team | Loading and refreshing test data, reconciliation support | Business scenario design |
+
+The UAT lead should come from the business, not the partner. A partner-led UAT drifts towards proving the build works, which is a different question from whether the business can run on it.
+
+## Preparing for UAT, and why it needs 6 to 8 weeks
+
+UAT needs at least 6 to 8 weeks. Less than that and the business tests the happy path once, has no time to retest fixes, and never reaches the exceptions where real problems live.
+
+Those weeks only work if UAT starts on a stable system. SAP's guidance is that business processes are tested once integrations are set up and data has been migrated for the process. That means SIT has to finish first, against agreed exit criteria, and my guide to the [S/4HANA testing strategy](/s4hana-testing-strategy/) sets out how those cycles connect.
+
+Before the first tester logs on, these should be in place:
+
+1. **Signed-off process designs.** Scripts are written from them, so unsigned designs mean unsettled scripts.
+2. **Entry criteria met and recorded.** SIT complete, no open critical defects, and the test system frozen apart from controlled fixes.
+3. **A test system that looks like production.** Configuration, interfaces, roles and authorisations as they will be at go-live.
+4. **Realistic test data.** Masked, at production level, loaded and reconciled before testing starts. My guide to [SAP test data management](/sap-test-data-management/) covers how.
+5. **Testers released from their day jobs.** Name them, agree their hours with their managers, and put it in writing.
+6. **Testers trained on the new system.** A short walkthrough of the Fiori apps and transactions they will use, before UAT and not during it.
+7. **One test management tool.** Scripts, results, evidence and defects in one place, not in parallel spreadsheets.
+
+Item 5 is where UAT usually fails quietly. Testers asked to fit UAT around month-end close will put month-end first, and they are right to.
+
+## Writing UAT scripts business users can run
+
+A UAT script is a business scenario, not a list of transactions. "Create a sales order" tests a screen. "Take an order from a new customer on credit hold, release it, deliver it and invoice it" tests the business.
+
+Build scripts from the signed-off process designs, and give each one a clear expected result in business terms. The tester should be able to say pass or fail without asking a consultant.
+
+Cover four kinds of scenario:
+
+1. **Core flows.** The daily processes that keep the business running, such as order to cash, procure to pay and record to report.
+2. **Exceptions.** Returns, credit blocks, partial deliveries, price changes, reversals and approvals that get rejected.
+3. **Period-end.** Month-end and year-end steps the finance team actually runs, in the order they run them.
+4. **Role checks.** Each tester working under the role they will hold at go-live, so authorisation gaps show up now.
+
+Let the partner draft the scripts, then have the key users rewrite them in their own language. If the business cannot follow a script without help, it was written for the build team.
+
+In [SAP Cloud ALM](https://learning.sap.com/courses/implementing-with-sap-cloud-alm/planning-and-executing-testing_ef46a49b-9885-4aaa-841d-5ac9c80a3681), manual test cases start from a process, and test plans group them into cycles. Testers set each step to pass or fail, record the actual result, and raise a defect from the test execution, which keeps the link between script and defect.
+
+On programmes still running SAP Solution Manager 7.2 for test management, note that its mainstream maintenance ends at the end of 2027 ([SAP Support](https://support.sap.com/en/alm/solution-manager.html)). Plan new programmes on Cloud ALM.
+
+## Defect triage during UAT
+
+Not every UAT finding is a defect. Treating them all as defects swamps the partner, and treating them all as change requests hides real failures.
+
+Run a triage meeting every day of UAT. The business UAT lead chairs it, with the partner's functional leads and an IT representative, and every new finding leaves the room with a type, a severity and an owner.
+
+A simple classification covers most findings:
+
+| Finding type | What it means | Who acts | Effect on sign-off |
+|---|---|---|---|
+| Defect | The system does not do what the signed-off design says | Partner fixes, tester retests | Critical and high defects block sign-off |
+| Change request | The design was met, but the business now wants something different | Design authority decides, with cost and timing | Does not block unless the business says the process cannot run without it |
+| Data issue | Wrong or missing master or transactional data | Data team corrects, tester retests | Blocks if the same data will go live |
+| Training or usage issue | The system works, but the tester did not know how to use it | Training lead updates material | Does not block, but feeds the training plan |
+| Authorisation issue | The role is missing access, or has too much | Security team adjusts the role | Blocks for the affected role |
+
+Agree severity definitions before UAT starts, in business terms. A critical defect stops a process with no workaround. A high one has a workaround that the business cannot sustain at volume.
+
+Watch the change request column. A long list of change requests in UAT usually means the business was not properly involved in design, and that is a problem to fix before the next wave.
+
+## Getting a UAT sign-off that holds
+
+SAP's Activate training states that the Realize phase is complete once user acceptance testing is complete and signed off. Make that sign-off a document, not an email thread.
+
+Each business process owner signs for their own process. The sign-off should record:
+
+1. **What was tested.** Scenarios run, passed and failed, with evidence held in the test tool.
+2. **What is still open.** Every open defect, with its severity, owner and target date.
+3. **What was accepted with a workaround.** Each one named, with the workaround the business has agreed to run.
+4. **Who signed and when.** A named person per process, not a committee.
+
+Write the exit criteria before UAT starts and do not change them when results arrive. If the business still wants to go live with gaps, record that as a signed decision. My guide to [SAP quality gates](/sap-quality-gates-implementation/) covers how this gate fits the phase transitions.
+
+UAT sign-off is not the go-live decision. It feeds it.
+
+The go-live criterion I insist on is an extensive cutover checklist agreed in advance. UAT sign-off is one line on it, next to data reconciliation, training and the cutover rehearsal.
+
+After sign-off, protect what was accepted. Every fix and transport from here to go-live needs retesting, and my guide to [SAP regression testing](/sap-regression-testing/) explains how to keep that under control.
+
+## A simple UAT template
+
+You do not need a long document. You need one plan that answers the same questions every time, written before UAT starts and signed by the business.
+
+A simple outline covers it:
+
+| Section | What it contains | Owner |
+|---|---|---|
+| Scope | Processes, organisational units and roles in scope, and what is explicitly out | Business process owners |
+| Schedule | Start and end dates, cycles, retest windows, period-end runs | UAT lead |
+| Team | Testers by process, their release from day jobs, partner and IT support contacts | UAT lead and line managers |
+| Entry criteria | SIT exit met, test system frozen, data loaded and reconciled, testers trained | UAT lead with programme manager |
+| Environment and data | Test system, interfaces in scope, masked production-level data, refresh plan | IT and data team |
+| Scripts | Scenario list per process, expected results, link to process design | Partner drafts, key users approve |
+| Defect process | Finding types, severity definitions, daily triage, retest rules | UAT lead chairs triage |
+| Reporting | Daily progress, open defects by severity, blockers to the sponsor | UAT lead |
+| Exit criteria | Thresholds for open defects by severity, scenarios passed, workarounds agreed | Business process owners |
+| Sign-off | Signature block per process owner, list of accepted workarounds | Business process owners and sponsor |
+
+Keep the template the same across waves. The second rollout should reuse the first wave's scripts and lessons, not start again.
+
+## Where to start
+
+Name your UAT lead from the business this month, and ask each process owner to nominate testers with released time. Then put 6 to 8 weeks for UAT into the plan after SIT, and defend it when the timeline gets tight.
+
+If your UAT is being run by the partner, or keeps getting squeezed, I help programmes set this up properly. You can [contact me here](/contact-noel-erp-support/).
+
+## Frequently asked questions
+
+<details>
+<summary>What is user acceptance testing in SAP?</summary>
+
+It is the phase where business users test the configured SAP system against their real processes and formally accept it before go-live. In SAP Activate it happens in the Realize phase, after integration testing. Key users run scenario scripts, record results and raise findings, and process owners sign off.
+
+</details>
+
+<details>
+<summary>Who is responsible for UAT in an SAP project?</summary>
+
+The business: process owners decide scope and sign off, and key users run the tests. The implementation partner drafts scripts and fixes defects, and internal IT provides environments, access and interfaces. Neither IT nor the partner should accept the system on the business's behalf.
+
+</details>
+
+<details>
+<summary>How long should SAP UAT take?</summary>
+
+Plan at least 6 to 8 weeks on an S/4HANA programme. That leaves time to run core flows, exceptions and period-end steps, then retest fixes. UAT shorter than that usually tests the happy path once and finds the rest after go-live.
+
+</details>
+
+<details>
+<summary>What is the difference between SIT and UAT in SAP?</summary>
+
+System integration testing (SIT) checks that processes and interfaces work together across modules and systems, and is run mainly by the project team. UAT checks that the business can run its processes on the system, and is run by business users. SIT should finish before UAT starts.
+
+</details>
+
+<details>
+<summary>What should a UAT sign-off include?</summary>
+
+The scenarios tested and their results, every open defect with its owner and date, any workarounds the business has accepted, and a named signature per process owner. Agree the exit criteria before UAT starts. A sign-off with gaps should be a recorded business decision.
+
+</details>
+
+<details>
+<summary>Can SAP Cloud ALM be used for UAT?</summary>
+
+Yes. SAP Cloud ALM supports manual test cases built from processes, test plans for each cycle, step-by-step pass or fail recording and defects raised from test execution. SAP's guidance has partner experts set up the test cases and customer business experts run them and document results there.
+
+</details>

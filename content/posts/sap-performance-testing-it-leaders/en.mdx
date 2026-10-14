@@ -1,84 +1,110 @@
 ---
-title: "SAP performance testing: what IT leaders must know"
-metaTitle: "SAP Performance Testing: What IT Leaders Must Know"
-metaDescription: "SAP performance testing for IT leaders: when to start, what to test, how to set acceptance criteria, and who owns what on RISE and S/4HANA Cloud in 2026."
-excerpt: "SAP performance problems are almost always predictable and almost always found after go-live. Test for them from design onwards, against criteria agreed before the first run."
+title: "SAP performance testing: load, concurrency and tools"
+metaTitle: "SAP Performance Testing: Concurrency, Data and Tools"
+metaDescription: "SAP performance testing before go-live: concurrency and load tests, production-level masked data, acceptance criteria, tools and who owns what on RISE with SAP."
+primaryKeyword: "sap performance testing"
+excerpt: "SAP performance testing proves, before go-live, that the system holds up when many users and jobs hit it at once. Concurrency tests on production-level masked data, judged against criteria agreed in advance."
 slug: "sap-performance-testing-it-leaders"
 date: "2025-07-12"
-updated: "2026-10-07"
+updated: "2026-10-14"
 lastReviewed: "2026-05-21"
 hero: "/images/wp/2025/07/1-1.webp"
 heroAlt: "Speedometer gauge labelled performance with the needle pointing towards maximum"
 category: "erp-consulting-guide"
-tags: ["sap-technical-decisions", "performance-testing", "s4hana-implementation", "rise-with-sap"]
+tags: ["sap-testing", "performance-testing", "s4hana-implementation", "rise-with-sap"]
 author: "Noel D'Costa"
-experienceSource: "Direct experience leading and recovering SAP performance testing on 21 S/4HANA and ECC programmes across manufacturing, financial services, public sector, and retail in Europe, GCC, US, and UK markets. The five-background-jobs-clashed story is anchored to a GCC manufacturing programme in 2024. RISE / GROW / Joule coverage reflects 2024-2025 SAP product positioning."
+experienceSource: "Noel's first-person experience leading and rescuing SAP programmes (confirmed by Noel, 14 October 2026: performance testing before go-live with concurrency tests as the priority, production-level masked test data, and the tools his teams have used). No client names. Product facts checked against official SAP, OpenText and Tricentis documentation, October 2026."
 keyTakeaways:
-  - "Performance risk is created in design: report shape, job chains and OData service design decide outcomes before code is written"
-  - "Peak logins at shift change, open-ended Z-reports and overlapping close jobs are the most common failures, and all are predictable"
-  - "Volume testing is the shortcut programmes take most often and regret most"
-  - "Performance ownership needs a programme-level lead with authority to challenge design, not QA alone"
-  - "On RISE, SAP owns infrastructure; the client and partner own application, integration and process performance"
-  - "If the system passed because UAT users said it felt fast, you have an opinion, not an acceptance criterion"
+  - "Performance testing has to finish before go-live, and concurrency tests are the ones that matter most"
+  - "Test on masked data at production volume and realism, or the results will not predict live behaviour"
+  - "Peak logins, month-end job chains, open-ended custom reports and interface queues are the predictable failures"
+  - "Agree pass and fail thresholds per transaction, job and interface before the first run, and do not move them"
+  - "On RISE with SAP, load test execution and SQL tuning stay with the customer unless you buy SAP's extra services"
 pullQuote: "Performance risks are seeded during design, through architecture choices, how reports are structured, how much logic is pushed into ABAP. If you wait until the system is fully built, you are testing consequences. By then, rework is expensive."
 mentions:
   - "SAP S/4HANA"
+  - "SAP HANA"
   - "SAP Fiori"
-  - "SAP CPI"
-  - "SAP BTP"
-  - "SAP Solution Manager"
   - "SAP Cloud ALM"
+  - "SAP Solution Manager"
   - "RISE with SAP"
-  - "GROW with SAP"
-  - "Joule"
-  - "LoadRunner"
+  - "OpenText Professional Performance Engineering"
+  - "OpenText LoadRunner"
   - "Tricentis NeoLoad"
+  - "Apache JMeter"
 ---
 
-SAP performance testing proves, before go-live, that critical transactions, background jobs and interfaces meet agreed response times under production volumes. Start it in design, run volume and load tests in Realize once configuration is stable, finish the cycle before user acceptance testing (UAT), and make the results a cutover gate. This guide is for CIOs, programme directors and test leads on S/4HANA programmes, including RISE with SAP. It covers what to test, who owns it, how to write acceptance criteria and what changes in the cloud. Start with the acceptance criteria table: if you cannot fill it in, you are not ready to test.
+SAP performance testing proves, before go-live, that critical transactions, background jobs and interfaces meet agreed response times when many users and jobs run at once. In my experience the concurrency tests are the ones that matter, run on masked data at production volume, against pass and fail criteria the business agreed before the first run.
 
-Performance issues in SAP programmes are almost always found after go-live. Fiori tiles time out when 300 users log in at shift change. Z-reports freeze because someone ran an open-ended fiscal-year query against a table with 50 million records. Background jobs overlap during month-end close and the posting run aborts.
+This guide is for CIOs, programme directors and test leads on S/4HANA programmes, including RISE with SAP. It covers what to test, the data you need, how to write acceptance criteria, which tools do the job and who owns what. For where performance sits among the other test types, start with my overview of [SAP testing explained](/sap-testing-explained/).
 
-Performance issues in SAP programmes rarely arrive by surprise. Most were predictable, just not planned for. The usual pattern: functional testing was thorough. Volume testing was planned, then pushed out when the timeline compressed. The consequences arrived in the first weeks of live operation.
+Performance problems in SAP programmes are rarely a surprise.
 
-These are not edge cases. They are predictable. The only question is whether the programme tested for them, or whether the business finds them with real orders running.
+Fiori tiles time out when hundreds of users log in at the start of a shift. A custom report freezes because someone ran an open-ended fiscal-year selection against a very large table. Background jobs overlap at month-end and the posting run aborts.
+
+These are predictable. The only question is whether the programme tested for them, or whether the business finds them with real orders running.
 
 ![Data centre infrastructure supporting SAP performance test environments and production workloads under concurrent user load](https://images.pexels.com/photos/5480781/pexels-photo-5480781.jpeg)
 
 <stepper title="Performance testing across SAP Activate" steps="Explore|Realize|Pre-UAT|Cutover|Hypercare" bodies="Identify performance risks in the design. Architecture and report shape decide outcomes before code is written.|Run volume and load tests as configuration stabilises. Partial config produces misleading results.|Complete the full performance cycle before UAT, not as part of it.|Approve cutover against the pre-agreed acceptance criteria, not against opinion.|Watch the live KPIs for 30 to 60 days. Most regressions surface in the first close cycle."></stepper>
 
-## Why S/4HANA changed performance testing
+## Why S/4HANA and SAP HANA changed performance testing
 
-In an ECC system on a traditional database, performance testing meant load-testing the application server and database: ABAP runtime, SQL performance, job scheduling. The front end was SAP GUI, which rarely surprised anyone.
+In an ECC system on a traditional database, performance testing meant load-testing the application server and database: ABAP runtime, SQL performance and job scheduling. The front end was SAP GUI, which rarely surprised anyone.
 
-On S/4HANA, with Fiori front ends, extensions on SAP BTP and integration through SAP Cloud Integration (CPI), performance depends on several layers at once. A slow Fiori tile could be a long ABAP call, a gateway timeout, an OData service not designed for concurrent requests, or network latency in a hybrid set-up. Testing the back end alone will not find it. Testing the whole path will.
+On S/4HANA, with Fiori front ends, extensions on SAP BTP and integration through SAP Cloud Integration, performance depends on several layers at once. A slow Fiori tile could be a long ABAP call, a gateway timeout, an OData service not designed for concurrent requests or network latency in a hybrid set-up. Testing the back end alone will not find it.
 
 <explainer-flow title="Where a slow Fiori tile can hide" caption="Each layer can pass on its own. End-to-end testing follows the whole path, which is what the user actually waits for." steps="Tile launch|OData call|ABAP processing|Database read|Rendering" notes="Login storms at shift start|Gateway timeouts, services not built for concurrency|Long-running ABAP calls|Open-ended selections on large tables|Plus network latency for distant sites" result="One response time, measured end to end"></explainer-flow>
 
-Integration flows add their own risk. Flows that worked in development and QA with single test messages can queue up or fail silently at production volumes. If message queues are not sized for the real load, delays build up. The symptoms look like something else: intermittent order failures, invoice mismatches, data present in one system and missing in another.
+SAP HANA performance testing has its own twist on a conversion. Stable ECC code behaves differently on an in-memory database. Many programs get much faster, while some produce unexpected profiles on particular data patterns, so conversion-specific regression of the heavy custom code is not optional.
 
-## The four tests that matter
+Integration flows add their own risk. Flows that worked in development with single test messages can queue up or fail silently at production volumes. The symptoms look like something else: intermittent order failures, invoice mismatches, data present in one system and missing in another.
 
-1. **Load testing** checks behaviour under expected volume. The key word is expected. You need real transaction volumes, user counts and concurrent sessions. Many load tests fail because they used volume estimates everyone already knew were optimistic.
-2. **Stress testing** pushes past design limits to find where the system breaks. If volumes will double in eighteen months, it tells you whether the architecture will cope, and whether sizing becomes a problem before the next infrastructure review.
-3. **Soak testing** runs steady load for an extended period to expose problems that build over time: memory leaks, fragmentation and job-chain contention across repeated runs. It is the test most often skipped, and the one that would have caught the month-end failure described below.
-4. **End-to-end testing** follows the full path a user takes: tile launch, OData call, ABAP processing, database read, rendering. It is the only way to find problems that are invisible when each layer is tested alone.
+## Concurrency first: the tests that matter
 
-## High-risk scenarios
+Performance testing must happen before go-live. The tests I treat as the important ones are the concurrency tests: many users and jobs hitting the same transactions, tables and services at the same time.
 
-**Shift change and peak login.** When 200 users open the Fiori launchpad at 8am, authentication and launchpad rendering spike. A system that is fine off-peak can be unusable in that window if concurrent logins were never tested. Across manufacturing, retail and financial services, login storms produce the most visible day-one complaints.
+A single user running a sales order in two seconds proves almost nothing. The same order with 150 people entering orders, a delivery run in the background and an interface posting inbound messages is the test that predicts day one.
 
-**Month-end and year-end close.** The highest-risk scenario on most programmes: high-volume postings, job chains with strict sequencing and a finance team racing a fixed deadline. Run the close job chains end to end against closing-period volumes, not average daily counts.
+This table shows what each type of test proves and when to run it:
 
-Batch jobs are usually tested in isolation, which does not reflect reality. At month-end, background processing peaks and many programs run in parallel on the same resources. One poorly optimised job can block five others, and the close runs past its window.
+| Test | What it proves | When to run it | What it usually finds |
+|---|---|---|---|
+| Concurrency | Many users and jobs can work on the same objects at once | Realize, once configuration is stable, and again before UAT | Lock waits, login storms, gateway bottlenecks |
+| Load | The system meets response times at expected peak volume | Realize, after concurrency scripts work | Slow OData services, heavy custom reports |
+| Stress | Where the system breaks above design limits | Before UAT, if growth is expected | Sizing gaps, queue limits |
+| Soak | The system holds steady load for hours | Before UAT, ideally across a simulated close | Memory growth, job-chain contention across repeated runs |
+| End-to-end | The full path a user waits for meets the target | Alongside load tests | Problems invisible when each layer is tested alone |
 
-**ECC to S/4HANA conversion.** Stable ECC code behaves differently on HANA. Many programs get much faster; some produce unexpected profiles on particular data patterns. Conversion-specific regression testing is not optional. My [ECC to S/4HANA migration guide](/ecc-to-s4hana-migration/) covers where this fits in the conversion plan.
+The key word in load testing is expected. You need real transaction volumes, user counts and session patterns. A load test built on volume estimates everyone already knew were optimistic gives a pass that means nothing.
 
-**Multi-region users.** Network latency affects every transaction. A sales order that takes two seconds in the hosting country can feel broken 3,000 miles away if nobody tested from there. RISE moves hosting to SAP, but latency still depends on the region you choose and the routing to your users.
+Soak testing is the one most often skipped. Volume testing in general is the shortcut programmes take most often when the timeline compresses, and regret most.
+
+## High-risk scenarios to script
+
+Script these first. They cover most of the failures that reach production.
+
+1. **Shift change and peak login.** When a few hundred users open the Fiori launchpad at the same time, authentication and launchpad rendering spike. A system that is fine off-peak can be unusable in that window if concurrent logins were never tested.
+2. **Month-end and year-end close.** High-volume postings, job chains with strict sequencing and a finance team racing a fixed deadline. Run the close job chains end to end against closing-period volumes, not average daily counts.
+3. **Overlapping background jobs.** Batch jobs are usually tested one at a time, which does not reflect reality. One poorly optimised job can block several others, and the close runs past its window.
+4. **Open-ended custom reports.** A report that returns instantly on test data can run for minutes on a full fiscal year. Test typical and worst-case selections, and block the open-ended ones.
+5. **Multi-region users.** Network latency affects every transaction. RISE moves hosting to SAP, but latency still depends on the region you choose and the routing to your users, so test from the sites that are furthest away.
+
+My [ECC to S/4HANA migration guide](/ecc-to-s4hana-migration/) covers where conversion testing fits in the wider plan.
+
+### Production-level test data
+
+The data decides whether any of this means anything. I insist on masked data at production level: production volume and production realism, with personal and sensitive fields masked.
+
+A customer with 200,000 open order lines behaves differently from one with 5,000. Filters that return instantly in a thin test client time out in production. Seed volume for the high-risk areas, use a representative transaction mix and make real interface calls where you can.
+
+How to get that data safely, through copies, selective test data tools and masking, is covered in my guide to [SAP test data management](/sap-test-data-management/). Plan the refresh before the first performance cycle, because it takes longer than most test plans assume.
 
 ## Acceptance criteria you can test against
 
-Agree criteria with the business in the Prepare phase, before any test runs. Each one names the transaction or job, the load and the threshold. These examples show the shape; set your own numbers from operational needs:
+Agree criteria with the business in the Prepare phase, before any test runs. Each one names the transaction or job, the load and the threshold.
+
+These examples show the shape. Set your own numbers from operational needs:
 
 | Item | Load condition | Pass threshold | Owner |
 |---|---|---|---|
@@ -90,115 +116,107 @@ Agree criteria with the business in the Prepare phase, before any test runs. Eac
 
 "The system should be fast enough for business operations" cannot be tested or accepted. Changing criteria after results arrive defeats the point of having them.
 
-## What IT leaders should expect from their teams
+If the system passed because UAT users said it felt fast, you have an opinion, not an acceptance criterion. Make the results a formal gate before cutover, the way my guide to [SAP quality gates](/sap-quality-gates-implementation/) describes. The overall cycle plan, with entry and exit criteria for each test phase, belongs in your [S/4HANA testing strategy](/s4hana-testing-strategy/).
 
-Ask for each of these by name:
+## Tools, ownership and the cloud
 
-| Expectation | What should be delivered | Why it matters |
+### SAP performance testing tools
+
+A performance test needs three things: a load generator that can drive SAP protocols, monitoring on the SAP side and a place to manage test cases and results. LoadRunner is the load tool I have had teams use on SAP programmes. Name the tool in the test plan early, because licences, load generators and scripting skills all take time to arrange.
+
+The main options in 2026:
+
+| Tool | Role | What to know |
 |---|---|---|
-| Performance service levels | Thresholds per transaction, interface and job, with pass and fail | Stops UAT opinion overriding evidence |
-| Risk-based scope | Prioritisation by user volume, integration points and data dependency | Puts test cycles on the workloads that matter |
-| Cross-team participation | Basis, infrastructure, functional, security and integration present during runs | Prevents blame-shifting when gaps appear |
-| Tools and environments ready | Load generators (OpenText LoadRunner, Tricentis NeoLoad, Apache JMeter), monitoring and data refreshes in place before cycles start | Makes simulation realistic |
-| Realistic test data | Production-volume master data, real interface calls, representative transaction mix | Makes results predict go-live behaviour |
-| Performance reporting | Load mix, response times, CPU and memory, job runtimes, error rates | Gives cutover approval an evidence base |
-| Post-go-live monitoring plan | KPIs to watch for the first 30 to 60 days | Confirms the live system stays within tested limits |
+| [OpenText Professional Performance Engineering](https://www.opentext.com/products/professional-performance-engineering) | Load generation | The product formerly called LoadRunner Professional. Its protocol bundles cover SAP, SAP GUI and SAP Web |
+| [Tricentis NeoLoad](https://www.tricentis.com/products/performance-testing-neoload) | Load generation | Tricentis lists SAP GUI, Fiori, RFC and IDoc support, and it can reuse Tricentis Tosca assets |
+| Apache JMeter | Load generation | Open source. Drives HTTP traffic such as Fiori and OData calls |
+| [SAP Cloud ALM](https://help.sap.com/docs/cloud-alm/applicationhelp/test-execution) | Test management | Prepares and runs manual and automated test cases and tracks defects. It does not generate load itself |
+| [SAP Solution Manager](https://support.sap.com/en/alm/solution-manager.html) | Test management | Mainstream maintenance ends on 31 December 2027, so plan new work in Cloud ALM |
 
-## Common mistakes
+For a wider view of functional and automation tools, see my [comparison of SAP testing and validation tools](/sap-testing-validation-tools-comparison/). The tool matters less than the scripts, the data and the criteria.
 
-Four mistakes come up most often, even in large enterprises with mature delivery models.
+### RISE with SAP splits the responsibility
 
-**Treating functional testing as performance testing.** Functional tests prove a transaction gives the right result. They say nothing about 150 people running it at once.
+Under RISE with SAP, SAP owns infrastructure: sizing, hyperscaler region, network and platform availability. The client and partner own the application layer.
 
-**Testing with small data volumes.** A customer with 200,000 open order lines behaves differently from one with 5,000. Filters that return instantly in test time out in production. Seed volume for the high-risk areas.
+SAP's [RISE roles and responsibilities document](https://assets.cdn.sap.com/agreements/product-policy/hec/roles-responsibilities/rise-with-sap-s4hana-cloud-private-edition-and-sap-erp-pce-roles-and-responsibilities-english-v7-2024a.pdf) is plain about it. Load test execution and the tuning of expensive SQL statements are SAP Cloud Application Services at additional charge. If you do not buy them, the customer does the work.
 
-**Leaving performance to Basis.** Basis owns sizing and job scheduling. It does not own report design, OData service architecture or integration flow design, and those drive application performance.
-
-**Giving ownership to QA alone.** QA runs tests and reports results. The decisions that cause performance problems are made by functional, technical and Basis teams in design. A programme-level test lead or architect needs the authority to challenge those decisions early, and the RACI should say who can block go-live on performance grounds.
-
-## What changes on RISE, GROW and with AI
-
-### RISE splits the responsibility
-
-Under RISE with SAP, SAP owns infrastructure: sizing, hyperscaler region, network and platform availability. The client and partner own the application layer. SAP's [RISE roles and responsibilities document](https://assets.cdn.sap.com/agreements/product-policy/hec/roles-responsibilities/rise-with-sap-s4hana-cloud-private-edition-and-sap-erp-pce-roles-and-responsibilities-english-v7-2024a.pdf) makes the point plainly: finding and tuning expensive SQL statements stays with the customer unless you buy SAP's additional application services.
-
-A common failure on RISE programmes is the assumption that SAP will catch performance problems because it runs the infrastructure. It will catch infrastructure problems. It will not catch a badly designed OData service, an inefficient ABAP job or an integration flow that does not scale. Write the split into the charter and the test plan:
+A common failure on RISE programmes is the assumption that SAP will catch performance problems because it runs the infrastructure. It will catch infrastructure problems. Write the split into the charter and the test plan:
 
 1. **SAP:** infrastructure availability and platform-level response
 2. **Partner:** application performance under the defined load, including extensions and integration flows
 3. **Client:** process-level outcomes such as close runtime and order throughput, and the acceptance decision
 
-### Public Edition and GROW narrow the scope
+### Public cloud narrows the scope
 
-On S/4HANA Cloud Public Edition, usually bought through GROW with SAP, SAP runs performance testing on its multi-tenant platform as part of its own product standard and does not expect customers to load-test the shared system. Your testing shifts to what is yours: custom integrations, extensions, high-volume reports and analytics, the close and consolidation sequence, and the network path from your sites. Performance problems on the platform itself go to SAP support.
+On the public edition of SAP's cloud ERP, the system runs on a shared, SAP-operated platform. Before you plan any load test against a tenant, ask SAP in writing whether it is permitted and what notice it needs.
 
-### AI helps with scripts, not architecture
+Your testing then shifts to what is yours: custom integrations, extensions, high-volume reports, the close sequence and the network path from your sites. Platform performance problems go to SAP support.
 
-Load-testing vendors are adding AI for script maintenance and results analysis, which helps on programmes where the application changes between cycles. Test the claims on your own landscape before you pay for them. SAP Cloud ALM can help generate test cases and requirements, and AI assistants can draft scenario outlines from process descriptions.
+### Common mistakes
 
-None of it fixes architecture. AI will not tell you the OData service should have been designed differently, or that a report is too heavy for its volumes. Those calls are still made by people, in design, before any test runs.
+1. **Treating functional testing as performance testing.** Functional tests prove a transaction gives the right result. They say nothing about 150 people running it at once.
+2. **Leaving performance to Basis.** Basis owns sizing and job scheduling. It does not own report design, OData service architecture or integration flow design, and those drive application performance.
+3. **Giving ownership to QA alone.** QA runs tests and reports results, but the decisions that cause performance problems are made in design. A programme-level test lead or architect needs the authority to challenge them early, and the RACI should say who can block go-live on performance grounds.
+4. **Accepting gaps as known issues.** Most programmes with performance problems in production did not skip testing. They tested without agreed criteria, or tested and then accepted the failures under schedule pressure.
 
-Most programmes with performance problems in production did not skip testing entirely. They tested without agreed criteria, or tested and then accepted the gaps as known issues under schedule pressure. The discipline is in the criteria and in enforcing them, not in the tool. For where performance fits among other test types, see my [comparison of SAP testing and validation tools](/sap-testing-validation-tools-comparison/) and my guide to [SAP quality gates](/sap-quality-gates-implementation/).
+## Where to start this week
+
+Write the five or six acceptance criteria for your highest-risk transactions and jobs, with a named owner for each. If you cannot fill in the table above, you are not ready to test, and you have found the first gap.
+
+Then check two things: that a masked, production-volume data refresh is in the plan, and that the concurrency cycle finishes before UAT starts.
+
+If you want an independent view on a performance test plan or a go-live decision, I help organisations with this. You can [contact me here](/contact-noel-erp-support/).
 
 ## Frequently asked questions
 
 <details>
-<summary>What is SAP performance testing and why does it matter?</summary>
+<summary>What is SAP performance testing?</summary>
 
-It checks how SAP behaves under realistic load: response times for user transactions, runtimes for background jobs, throughput for interfaces and resource use under concurrent work.
+It checks how SAP behaves under realistic load: response times for user transactions, runtimes for background jobs, throughput for interfaces and resource use when many people work at once. It must be done before go-live.
 
-Functional correctness and performance are different properties. A transaction that is correct for one user can time out for 200. A job that runs in ten minutes on test data can run for hours on production volumes. Finding that after go-live disrupts operations, forces emergency changes and damages user trust when adoption is most fragile.
+Functional correctness and performance are different properties. A transaction that is correct for one user can time out for 200.
 
 </details>
 
 <details>
 <summary>When should performance testing start in an SAP programme?</summary>
 
-Risk identification starts in Explore, because architecture choices set performance outcomes. Active testing starts in Realize, once configuration is stable enough that results mean something. Partial configuration gives misleading numbers.
+Risk identification starts in Explore, because architecture choices set performance outcomes. Active testing starts in Realize, once configuration is stable enough that results mean something.
 
-Finish the final cycle before UAT, not during it. Performance defects found in UAT squeeze the remaining schedule and create pressure to accept them as known issues.
-
-</details>
-
-<details>
-<summary>Who should own SAP performance testing?</summary>
-
-The programme, not QA alone. QA executes and reports, but the decisions that drive performance are made in design across functional, technical and Basis teams. A central architect or programme test lead needs the authority to challenge those decisions early.
-
-Make it explicit in the RACI: who approves the acceptance criteria, who owns remediation when criteria fail, and who can block go-live on performance grounds.
+Finish the final cycle before UAT, not during it. Performance defects found in UAT squeeze the schedule and create pressure to accept them as known issues.
 
 </details>
 
 <details>
-<summary>How does RISE with SAP change performance testing responsibility?</summary>
+<summary>What is the difference between load testing and concurrency testing in SAP?</summary>
 
-SAP owns infrastructure: sizing, region, network and platform availability. The client and partner own application performance: configuration, extensions, OData and Fiori design, integration flows and process KPIs. SAP's RISE roles and responsibilities document leaves SQL tuning with the customer unless additional SAP services are bought.
+Load testing checks response times at the expected peak volume. Concurrency testing checks what happens when many users and jobs work on the same transactions, tables and services at the same moment. That is where lock waits, login storms and gateway bottlenecks show up.
 
-Write the split into the acceptance criteria so each threshold has an owner.
-
-</details>
-
-<details>
-<summary>What are the most common SAP Fiori performance issues?</summary>
-
-Four patterns cover most of them. Login storms at shift start, when authentication and launchpad rendering spike. OData services that return large result sets or make several back-end calls per interaction. The gateway layer becoming a bottleneck in its own right, so it must be monitored during tests. And custom or heavily modified apps, where standard performance assumptions do not apply.
+In my experience concurrency tests are the important ones. Run them first, then build the full load test on top.
 
 </details>
 
 <details>
-<summary>How do you define performance acceptance criteria for SAP?</summary>
+<summary>What test data should SAP performance testing use?</summary>
 
-Name the transaction, the load and the threshold. For example: "Order creation completes in under 3 seconds for 95% of transactions with 150 concurrent users in the order entry role." That is testable.
-
-"The system should be fast enough" is not. Agree criteria with the business in the Prepare phase, based on real operational needs, and do not change them after the results arrive.
+Masked data at production level. That means production volume and realism, with personal and sensitive fields masked. Thin test data hides the slow filters, heavy reports and long job runtimes that appear on day one.
 
 </details>
 
 <details>
-<summary>What happens if performance testing is skipped or compressed?</summary>
+<summary>Which tools are used for SAP performance testing?</summary>
 
-Problems surface in production: jobs overrunning their windows and blocking others, Fiori apps timing out at peak, month-end close taking twice as long and missing reporting deadlines, interface queues backing up.
+Load generators such as OpenText Professional Performance Engineering (formerly LoadRunner Professional), Tricentis NeoLoad and Apache JMeter drive the load. SAP Cloud ALM or SAP Solution Manager manage the test cases and results, and SAP-side monitoring shows what the system did under load.
 
-Users who hit performance problems in their first weeks form a negative view of the system that is hard to reverse. And emergency remediation under live operation costs more than the testing would have, because what was a design decision in Realize becomes an urgent architectural change.
+</details>
+
+<details>
+<summary>Who owns performance testing on RISE with SAP?</summary>
+
+SAP owns infrastructure: sizing, region, network and platform availability. SAP's RISE roles and responsibilities document leaves load test execution and expensive SQL tuning with the customer unless SAP Cloud Application Services are bought at extra charge.
+
+The client and partner own application performance and the acceptance decision. Write the split into the acceptance criteria so each threshold has an owner.
 
 </details>
