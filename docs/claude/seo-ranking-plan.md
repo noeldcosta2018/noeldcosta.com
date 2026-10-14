@@ -81,6 +81,8 @@ Exit check: referring domains growing month on month (Search Console links repor
 3. Track AI answers: pages that keep rankings but lose clicks get a quotable answer block and richer comparison content.
 4. Quarterly review of this plan against the target table.
 
+How it runs (set up 14 October 2026): `scripts/seo-monthly-report.py` pulls Search Console and writes `docs/claude/seo-reports/<date>.md` with all four checks plus target-query and cluster progress. A scheduled task ("noeldcosta.com monthly SEO report") runs it on the 3rd of each month at 09:00 and summarises the actions; the quarterly review is part of the January, April, July and October runs. Baseline: `docs/claude/seo-reports/2026-10-11.md` (data to 11 October, before the migration and Data & analytics pages could show).
+
 ## Working rules
 
 Each step is one batch: build, tests, preview, review, Noel's approval, then push. No URL, slug, canonical or hreflang changes without sign-off. No invented experience, clients or numbers.
