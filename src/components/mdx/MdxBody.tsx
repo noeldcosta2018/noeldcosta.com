@@ -1,5 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkCjkFriendly from "remark-cjk-friendly";
 import rehypeRaw from "rehype-raw";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
@@ -126,7 +127,10 @@ export default function MdxBody({
     <ReactMarkdown
       // singleTilde off: ranges like "18~24" (common in Japanese and Korean)
       // must not become strikethrough; only "~~text~~" strikes through.
-      remarkPlugins={[[remarkGfm, { singleTilde: false }]]}
+      // remarkCjkFriendly: lets "**粗體。**後文" close the bold. Plain
+      // CommonMark refuses when punctuation sits before "**" and a CJK
+      // letter after it, leaving literal asterisks in zh/ja/ko text.
+      remarkPlugins={[[remarkGfm, { singleTilde: false }], remarkCjkFriendly]}
       rehypePlugins={rehypePlugins}
       // The Components type in react-markdown is strict about known HTML
       // element names, but we register custom tag names (compare-split,

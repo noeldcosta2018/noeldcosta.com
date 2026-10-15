@@ -10,6 +10,7 @@ import GithubSlugger from "github-slugger";
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
+import remarkCjkFriendly from "remark-cjk-friendly";
 
 export interface HeadingEntry {
   level: 2 | 3;
@@ -24,7 +25,8 @@ interface MarkdownNode {
   children?: MarkdownNode[];
 }
 
-const headingParser = unified().use(remarkParse).use(remarkGfm);
+// Same CJK emphasis rules as MdxBody, so ToC text matches the rendered heading.
+const headingParser = unified().use(remarkParse).use(remarkGfm).use(remarkCjkFriendly);
 
 // Only remove delimiter characters proven by the full-document parser.
 // Literal/escaped underscores, code and reference identifiers stay intact.
