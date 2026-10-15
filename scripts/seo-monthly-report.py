@@ -2,8 +2,8 @@
 
 Pulls Google Search Console data and writes docs/claude/seo-reports/<YYYY-MM-DD>.md with:
   1. Target queries: position now against the plan's starting point and target.
-  2. Clusters: average position and top-3 / top-10 counts for the S/4HANA migration
-     and Data & analytics clusters.
+  2. Clusters: average position and top-3 / top-10 counts for the S/4HANA migration,
+     Data & analytics, SAP testing, SAP partners and Manufacturing ERP clusters.
   3. Decay: pages that lost more than 30% of clicks, last 90 days against the 90 before.
   4. AI-answer suspects: pages whose position held but whose click-through rate fell.
   5. New pages: whether the cluster pages earn impressions yet, in English and translations.
@@ -57,6 +57,16 @@ CLUSTERS = {
         "sap-testing-explained", "sap-testing-validation-tools-comparison", "sap-performance-testing-it-leaders",
         "sap-test-automation-guide", "sap-regression-testing", "s4hana-testing-strategy",
         "sap-user-acceptance-testing", "sap-test-data-management",
+    ],
+    "SAP partners": [
+        "how-to-choose-sap-implementation-partner", "sap-partner-rfp", "sap-partner-vs-independent-consultant",
+        "sap-statement-of-work", "change-sap-partner-mid-project",
+        "top-sap-implementation-partners-in-the-usa-2025-by-tier",
+    ],
+    "Manufacturing ERP": [
+        "best-erp-for-manufacturing", "sap-discrete-vs-process-manufacturing", "mrp-live-vs-pp-ds-vs-ibp",
+        "erp-for-defence-manufacturing", "manufacturing-erp-cost", "erp-and-mes-manufacturing",
+        "sap-pp-production-planning",
     ],
 }
 
