@@ -1,0 +1,203 @@
+---
+title: "ERP i MES u proizvodnji: tko je vlasnik čega"
+h1: "ERP i MES u proizvodnji: tko je vlasnik čega"
+slug: "erp-and-mes-manufacturing"
+date: "2026-10-15"
+updated: "2026-10-15"
+hero: "/images/manufacturing/erp-and-mes-manufacturing.webp"
+heroAlt: "Terminal u pogonu i praćena kolica s dijelovima u svijetloj tvornici, s tokom od ERP-a do MES-a na zaslonu"
+category: "erp-strategy"
+tags: ["manufacturing-erp", "sap-manufacturing", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "ERP i MES u proizvodnji: što posjeduje koji, gdje je SAP"
+metaDescription: "ERP i MES u proizvodnji: što posjeduje svaki sustav, gdje se uklapaju SAP Digital Manufacturing, Siemens Opcenter i Kinexon te kako radi integracija."
+primaryKeyword: "razlika erp i mes"
+excerpt: "ERP planira proizvodnju, obračunava njezine troškove i knjiži je; MES je vodi u pogonu i izvještava natrag. Što posjeduje svaki od njih, gdje se uklapaju SAP Digital Manufacturing, Siemens Opcenter i praćenje Kinexon te pogreške u integraciji koje treba izbjeći."
+experienceSource: "Noel's first-person experience implementing ERP in plastics, steel and defence manufacturing (confirmed by Noel, 15 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "ERP planira, nabavlja, obračunava troškove i knjiži proizvodnju; MES je izvodi u pogonu i šalje rezultate natrag"
+  - "Dogovorite koji sustav posjeduje koji zapis, primjerice potvrde, otpad, genealogiju i rezultate kvalitete, prije nego što se ijedan sustav konfigurira"
+  - "SAP Digital Manufacturing prima naloge i matične podatke iz S/4HANA ili ECC-a i vraća potvrde, potrošnju i primitke robe"
+  - "Siemens Opcenter je MES izvan SAP-a koji također stoji iznad ERP-a; Kinexon dodaje praćenje lokacije u stvarnom vremenu, a ne izvođenje"
+  - "Svaka potvrda koju MES knjiži postaje trošak u ERP-u, pa financijski dizajn mora biti dogovoren prije izgradnje integracije"
+pullQuote: "Svaka potvrda koju MES pošalje natrag postaje trošak u ERP-u. Ako financije nisu dogovorile dizajn, integracija samo seli raspravu na zatvaranje mjeseca."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Digital Manufacturing"
+  - "SAP Cloud Integration"
+  - "SAP Extended Warehouse Management"
+  - "SAP Manufacturing Execution"
+  - "Siemens Opcenter"
+  - "KINEXON OS"
+  - "ISA-95"
+originalUrl: "https://noeldcosta.com/erp-and-mes-manufacturing/"
+canonicalUrl: "https://noeldcosta.com/hr/erp-and-mes-manufacturing/"
+locale: "hr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Razlika između ERP-a i MES-a svodi se na vrijeme i vlasništvo. ERP planira, nabavlja, obračunava troškove i knjiži proizvodnju u razdoblju od nekoliko dana i tjedana. Sustav za izvođenje proizvodnje (MES) vodi proizvodnju u pogonu u razdoblju od nekoliko sekundi i smjena, a zatim izvještava što se dogodilo.
+
+SAP Digital Manufacturing je SAP-ov MES. Preuzima proizvodne naloge i matične podatke iz SAP S/4HANA ili SAP ECC-a i vraća potvrde, potrošnju i primitke robe.
+
+Ako još birate sam ERP, počnite s mojom usporedbom [najboljeg ERP-a za proizvodnju](/hr/best-erp-for-manufacturing/). Ovaj članak ide jednu razinu niže: što posjeduje svaki sustav, gdje se uklapaju proizvodi za pogon i kako se ta dva sustava povezuju.
+
+Radio sam sa SAP Digital Manufacturingom, Siemens Opcenterom i Kinexonom. SAP-ov MES i Siemens Opcenter oba stoje iznad ERP-a, a granica između njih mjesto je na koje odlazi većina posla oko dizajna.
+
+## Što posjeduje ERP, a što MES
+
+Glavni članak sadrži kratku usporedbu. Ovdje je pitanje uže: za svaki zapis, koji je sustav glavni, a koji samo prima kopiju?
+
+Siemens, koji proizvodi Opcenter, to opisuje pojmovima ISA-95. ERP je sustav Level 4 za poslovnu logistiku, a MES operativni sustav Level 3. ERP prema dolje šalje potražnju, sastavnice i matične podatke; MES prema gore šalje potrošnju, otpad i završene radove.
+
+Ovako se vlasništvo obično dijeli. Vaša podjela može biti drukčija, ali svaki redak treba odgovor prije početka konfiguracije:
+
+| Zapis | Obično ga posjeduje | Uloga drugog sustava |
+|---|---|---|
+| Matični zapis materijala, sastavnica, tehnološki postupak ili recept | ERP | MES prima kopiju s nalogom |
+| Proizvodni ili procesni nalog | ERP ga kreira i oslobađa | MES ga izvodi i prati svaki korak |
+| Redoslijed operacija i radne upute na liniji | MES | ERP drži tehnološki postupak iz kojeg je nastao |
+| Podaci strojeva, zastoji i OEE | MES | ERP-u rijetko trebaju pojedinosti, samo ishod |
+| Potvrde iskorištenja i otpada | MES ih bilježi | ERP ih knjiži na troškove i zalihe |
+| Potrošnja komponenti i primitak robe | MES ih pokreće | ERP knjiži zalihe i vrednuje ih |
+| Genealogija šarži ili serijskih brojeva na liniji | MES | ERP drži matični zapis šarže i zalihe |
+| Rezultati kontrole u procesu | MES ih bilježi | Upravljanje kvalitetom u ERP-u čuva kontrolni lot i odluku o upotrebi |
+| Trošak proizvoda, nedovršena proizvodnja i odstupanja | ERP | MES nema uvid u troškove |
+
+Zadnji redak je onaj koji ljudi zaborave. MES nikad ne vidi novac, a ipak svaki redak iznad njega hrani trošak naloga.
+
+## Gdje se uklapa SAP Digital Manufacturing
+
+SAP Digital Manufacturing je cloud proizvod s četiri dijela prema SAP-ovu aktualnom [opisu opsega funkcija (izdanje 2608)](https://help.sap.com/doc/13c9f83611f94a5ab2c94f23cacfc217/latest/en-US/SAP_DMC_FSD_enUS.pdf):
+
+1. **Izvođenje**: oslobađanje naloga, praćenje nedovršene proizvodnje korak po korak, nadzorne ploče za operatere, radne upute, kontrole kvalitete, genealogija, OEE i zastoji te integracija strojeva putem Production Connectora
+2. **Rješavanje problema**: strukturirano rješavanje problema s dobavljačima, kupcima ili internim timovima
+3. **Uvidi**: praćenje uživo i analitika nad proizvodnim podacima koje prikuplja izvođenje
+4. **Rubno računalstvo (edge computing)**: definiran skup funkcija koje rade na lokaciji, blizu strojeva, kako bi pogon mogao nastaviti raditi i uz nepouzdanu vezu s oblakom
+
+SAP Learning navodi [što teče između S/4HANA i SAP Digital Manufacturinga](https://learning.sap.com/courses/discovering-sap-digital-manufacturing/exploring-the-integration-of-sap-digital-manufacturing-with-sap-s-4hana_b2ffd41c-64b9-4f73-a802-8528562e2cb7). Prema dolje idu materijali, radna mjesta, nalozi sa svojim sastavnicama, tehnološkim postupcima ili receptima, podaci o zalihama i informacije o kontroli. Natrag dolaze potvrde operacija s iskorištenjem, otpadom i vremenom, potrošnja komponenti, primici robe, status naloga, rezultati kontrole i vrijednosti karakteristika šarže.
+
+Tehnički put opisan je u SAP-ovu [vodiču za integraciju Digital Manufacturinga](https://help.sap.com/doc/f6b2ab2222794bebad4c0dcd33138e71/latest/en-US/SAP_DMC_Integration_Guide_enUS.pdf). SAP Cloud Integration i Cloud Connector obvezni su međusloj. Matični podaci i nalozi putuju kao IDoc-ovi, a potvrde se vraćaju kao BAPI pozivi preko RFC-a, uz OData kao mogućnost za neke izravne pozive prema S/4HANA.
+
+Jedna pojedinost važna je za grupe s više pogona. Vodič navodi da jedan globalni sustav SAP Digital Manufacturing može služiti svim pogonima, povezan s više ERP sustava, primjerice po jednim za svaki pogon ili zemlju.
+
+Ako još koristite SAP Manufacturing Execution (SAP ME) ili SAP MII, prijelaz tretirajte kao novu implementaciju, a ne kao nadogradnju. Vodič za integraciju ograničava integraciju sa SAP ME na Resource Orchestration. Provjerite datume održavanja za svoje izdanje u SAP-ovu Product Availability Matrixu prije nego što oko njih izgradite plan.
+
+## Siemens Opcenter i Kinexon: drugi slojevi u pogonu
+
+SAP Digital Manufacturing nije jedini MES koji stoji iznad S/4HANA. Siemens [Opcenter](https://www.siemens.com/global/en/products/automation/topic-areas/opcenter.html) opisuje kao portfelj za upravljanje proizvodnim operacijama, s Opcenter Executionom kao MES-om i zasebnim proizvodima za planiranje i terminiranje (Opcenter APS), kvalitetu i laboratorijski rad.
+
+Arhitektonski je to isti obrazac. ERP planira i obračunava troškove; Opcenter izvodi i izvještava natrag. Integracija se gradi između dva dobavljača, pa je gornja tablica vlasništva još važnija.
+
+Kinexon je drukčija vrsta proizvoda. Ne vodi proizvodne korake.
+
+Kinexon svoju ponudu opisuje kao [softver za lokaciju u stvarnom vremenu uparen s UWB oznakama](https://kinexon.com/sap) ili drugom tehnologijom za lokaciju. KINEXON OS je platforma koja povezuje oznake s proizvodnim nalozima i kretanja kroz definirane zone pretvara u knjiženja i upozorenja.
+
+Kinexon navodi da KINEXON OS radi sa SAP Digital Manufacturingom i SAP Extended Warehouse Managementom. Zato ga zamislite kao sloj lokacije pokraj MES-a. Odgovara na pitanje gdje se nalazi nalog, dio ili vozilo i može pokrenuti transakciju na koju bi MES ili ERP inače čekali da je netko ručno unese.
+
+Ovako se tri proizvoda uspoređuju:
+
+| Proizvod | Što radi | Gdje stoji |
+|---|---|---|
+| SAP Digital Manufacturing | MES: izvođenje, kvaliteta na liniji, genealogija, OEE, analitika | Iznad S/4HANA ili ECC-a, povezan putem SAP Cloud Integration |
+| Siemens Opcenter | MES i portfelj za operacije: izvođenje, terminiranje, kvaliteta, laboratorij | Iznad ERP-a, bilo kojeg dobavljača |
+| Kinexon (KINEXON OS) | Lokacija naloga, dijelova i vozila u stvarnom vremenu; knjiženja temeljena na događajima | Pokraj MES-a i skladišnog sustava, kojima šalje događaje |
+
+## Kako radi integracija ERP-a i MES-a
+
+Koji god MES odabrali, petlja je ista. ERP odlučuje što proizvesti; MES to proizvodi i javlja ERP-u što je potrošio i što je nastalo.
+
+<explainer-flow title="Petlja ERP-a i MES-a" caption="Svaki prolaz petlje završava u ERP-u, gdje rezultat iz pogona postaje zaliha i trošak." steps="Planiranje u ERP-u|Oslobađanje naloga|Izvođenje u MES-u|Potvrda natrag|Trošak u ERP-u" notes="MRP iz potražnje kreira planirane naloge|Nalog, sastavnica i tehnološki postupak idu prema MES-u|Operateri izvode korake, bilježe kvalitetu i genealogiju|Iskorištenje, otpad, potrošnja i primitak robe idu prema gore|Zalihe, nedovršena proizvodnja i odstupanja knjiže se u financijama" result="ERP prikazuje što se dogodilo u pogonu, po trošku"></explainer-flow>
+
+Pet obrazaca integracije pokriva većinu onoga što ćete dizajnirati:
+
+1. **Replikacija matičnih podataka.** Materijali, radna mjesta i klasifikacije idu iz ERP-a u MES prije bilo kojeg naloga. Ako MES odbije nalog, najprije provjerite matične podatke.
+2. **Preuzimanje naloga.** Oslobođeni nalozi putuju sa svojom sastavnicom i tehnološkim postupkom ili receptom. Odlučite jesu li izmjene nakon oslobađanja dopuštene i koji sustav ima prednost kada se dogode.
+3. **Slanje potvrda.** Iskorištenje, otpad i vrijeme vraćaju se po operaciji ili po nalogu. Učestalost je odluka dizajna s posljedicama za troškove, a ne tehnička pojedinost.
+4. **Podaci strojeva i senzora.** Signali strojeva idu u MES ili rubni sloj, a ne izravno u ERP. Dalje bi trebao putovati samo poslovni ishod, primjerice broj komada ili razlog zastoja.
+5. **Okidači događaja iz praćenja.** Događaji lokacije ili senzora iz proizvoda kao što je Kinexon mogu automatski izvršiti knjiženje. Odredite tko ga ispravlja kada je događaj pogrešan.
+
+Planirajte za slučaj pada mreže. Ako linija stane kad se prekine veza s oblakom, ugradite lokalno izvođenje u MES, primjerice uz SAP Digital Manufacturing for edge computing. Dogovorite kako se zaostatak knjiži kada se veza vrati.
+
+Način planiranja prije izvođenja zasebna je odluka. Moj [vodič za SAP PP](/hr/sap-pp-production-planning/) pokriva stranu ERP-a, a članak iz ove skupine o [MRP Live naspram PP/DS-a naspram IBP-a](/hr/mrp-live-vs-pp-ds-vs-ibp/) pokriva kada prijeći na napredniji alat za planiranje.
+
+## Uobičajene pogreške u projektima ERP-a i MES-a
+
+Najčešći razlog zbog kojeg ERP projekti u proizvodnji propadaju, prema mom iskustvu, jest to što dizajn nije dogovoren u cijelosti, osobito u financijama. MES to pogoršava jer umnožava knjiženja s kojima financije moraju živjeti.
+
+Ovo su pogreške protiv kojih treba planirati:
+
+1. **Definiranje opsega ERP-a i MES-a kao zasebnih projekata.** Dva tima, dva dizajna i sučelje koje nitko ne posjeduje. Neka jedno tijelo za dizajn upravlja oboma.
+2. **Neriješeno vlasništvo.** Ako oba sustava mogu mijenjati nalog ili oba bilježe otpad, dobivate dva odgovora. Popunite tablicu vlasništva prije konfiguracije.
+3. **Dizajniranje potvrda bez financija.** Učestalost potvrda, retrogradno knjiženje, razlozi otpada i vrste aktivnosti određuju kako nedovršena proizvodnja i odstupanja izgledaju na zatvaranju mjeseca. Dogovorite ih s kontrolerom, a ne samo s upraviteljem pogona.
+4. **Slanje podataka strojeva u ERP.** ERP nije historian. Sirove signale držite u MES-u ili analitičkoj platformi, a ERP-u šaljite samo ono što knjiži.
+5. **Testiranje svakog sustava zasebno.** Testirajte cijelu petlju od MRP-a do troška, sa stvarnim nalozima, stvarnim otpadom i stvarnim stornima. Testiranje odnosi oko 35 posto truda na programu, a testovi sučelja upravo su oni koje timovi skrate.
+6. **Zaboravljen prijelaz otvorenih naloga.** Nalozi koji su pri puštanju u rad napola izgrađeni trebaju pravila o tome koji ih sustav dovršava. Napišite ta pravila prije migracije, a ne tijekom nje.
+7. **Obuka operatera na ERP-u.** Operateri rade u MES-u. Obučite ih ondje, po smjenama, na njihovim vlastitim linijama.
+
+Matični podaci zaslužuju vlastito upozorenje. Sastavnice, tehnološki postupci i radna mjesta hrane oba sustava, a pogrešan tehnološki postupak u ERP-u postaje pogrešna uputa na liniji. Moj članak o [SAP-u u proizvodnji](/hr/sap-manufacturing-industry-secrets/) pokriva kontrolni popis za matične podatke.
+
+## Gdje početi
+
+Počnite s tablicom vlasništva, a ne s demonstracijom proizvoda. Stavite upravitelja pogona, kontrolera i voditelja IT-a u jednu prostoriju i svaki zapis iz gornje tablice dodijelite jednom sustavu.
+
+Zatim odaberite MES koji odgovara Vašem ERP-u i pogonima te opseg integracije definirajte kao dio ERP programa, s vlastitim ciklusima testiranja. I proračun za nju predvidite unutar programa; članak iz ove skupine o [troškovima ERP-a za proizvodnju](/hr/manufacturing-erp-cost/) pokazuje kamo taj novac odlazi.
+
+Ako želite neovisno mišljenje o dizajnu ERP-a i MES-a prije nego što se obvežete, pomažem proizvođačima u tome. Možete me [kontaktirati ovdje](/hr/contact-noel-erp-support/).
+
+## Česta pitanja
+
+<details>
+<summary>Koja je razlika između ERP-a i MES-a?</summary>
+
+ERP planira, nabavlja, obračunava troškove i knjiži proizvodnju u razdoblju od nekoliko dana i tjedana. MES izvodi proizvodnju u pogonu u razdoblju od nekoliko sekundi i smjena te bilježi korake operatera, podatke strojeva, provjere kvalitete i genealogiju.
+
+Ta dva sustava rade kao petlja. ERP šalje naloge prema dolje, a MES vraća potvrde, potrošnju i primitke robe kako bi ERP mogao proknjižiti zalihe i troškove.
+
+</details>
+
+<details>
+<summary>Što je SAP Digital Manufacturing?</summary>
+
+To je SAP-ov cloud MES. Prema SAP-ovu opisu opsega funkcija pokriva izvođenje proizvodnje, rješavanje problema, uvide i rubno računalstvo.
+
+Matične podatke i proizvodne ili procesne naloge prima iz SAP S/4HANA ili SAP ECC-a putem SAP Cloud Integration i Cloud Connectora. Natrag šalje potvrde, potrošnju, primitke robe i rezultate kontrole.
+
+</details>
+
+<details>
+<summary>Treba li mi MES ako imam SAP S/4HANA?</summary>
+
+Ne uvijek. Jedan pogon s jednostavnom proizvodnjom često može potvrđivati naloge izravno u S/4HANA.
+
+MES Vam treba kada trebate kontrolu na liniji korak po korak, potpunu genealogiju šarži ili serijskih brojeva, podatke strojeva u stvarnom vremenu ili jedan proizvodni standard za više pogona.
+
+</details>
+
+<details>
+<summary>Je li Siemens Opcenter alternativa SAP Digital Manufacturingu?</summary>
+
+Može biti. Oba su MES proizvodi koji stoje iznad ERP-a. Siemens Opcenter je portfelj za upravljanje proizvodnim operacijama s Opcenter Executionom kao MES-om, uz proizvode za terminiranje, kvalitetu i laboratorij.
+
+Izbor ovisi o Vašim pogonima, automatizaciji i ERP-u. U svakom slučaju dogovorite koji sustav posjeduje koji zapis prije izgradnje integracije.
+
+</details>
+
+<details>
+<summary>Što Kinexon radi u proizvodnji?</summary>
+
+Kinexon pruža praćenje lokacije u stvarnom vremenu. Njegova platforma KINEXON OS povezuje oznake za lokaciju s proizvodnim nalozima i može pokrenuti knjiženja i upozorenja kada nalog prođe kroz definiranu zonu.
+
+To nije MES. Kinexon navodi da radi sa SAP Digital Manufacturingom i SAP Extended Warehouse Managementom, kojima šalje događaje lokacije.
+
+</details>
+
+<details>
+<summary>Može li se SAP ME ili SAP MII nadograditi na SAP Digital Manufacturing?</summary>
+
+Planirajte to kao novu implementaciju, a ne kao nadogradnju. SAP-ov vodič za integraciju ograničava integraciju SAP Digital Manufacturinga sa SAP ME na Resource Orchestration.
+
+Provjerite datume održavanja za svoje izdanje SAP ME ili MII u SAP-ovu Product Availability Matrixu i u sklopu prijelaza ponovno dizajnirajte vlasništvo između ERP-a i MES-a.
+
+</details>

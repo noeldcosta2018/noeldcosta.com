@@ -1,0 +1,242 @@
+---
+title: "MRP Live, PP/DS ve IBP: hangi SAP planlama aracı"
+h1: "MRP Live, PP/DS ve IBP: hangi SAP planlama aracı"
+slug: "mrp-live-vs-pp-ds-vs-ibp"
+date: "2026-10-15"
+updated: "2026-10-15"
+hero: "/images/manufacturing/mrp-live-vs-pp-ds-vs-ibp.webp"
+heroAlt: "Ekranında malzeme listesi, üretim çizelgesi ve talep eğrisi bulunan, fabrikaya bakan bir planlama masası"
+category: "erp-strategy"
+tags: ["manufacturing-erp", "mrp", "sap-pp", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "MRP Live, PP/DS ve IBP: SAP Planlama Araçları Kıyaslaması"
+metaDescription: "MRP Live, PP/DS ve IBP: her SAP planlama aracının neyi planladığı, ufku, kapasite mantığı ve bir üreticiye bir üst katmana geçme zamanını gösteren işaretler."
+primaryKeyword: "MRP Live ve PP/DS farkı"
+excerpt: "MRP Live malzemeleri sonsuz kapasiteyle planlar, gömülü PP/DS darboğaz kaynakları sonlu kapasiteyle çizelgeler, SAP IBP ise ağı ve önümüzdeki ayları planlar. Her birinin neyi planladığı ve bir üreticinin ne zaman bir üst katmana geçmesi gerektiği."
+experienceSource: "Noel's first-person experience implementing ERP in plastics, steel and defence manufacturing (confirmed by Noel, 15 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "MRP Live neyin üretileceğini ve satın alınacağını sonsuz kapasiteyle planlar. Gömülü PP/DS sonlu kapasiteyle çizelgeler. SAP IBP ağı ve önümüzdeki ayları planlar"
+  - "Bunlar rakip değil, katmanlardır. Birçok üretici yalnızca MRP Live kullanır, bazıları PP/DS ekler, daha azının IBP'ye ihtiyacı vardır"
+  - "PP/DS'e lisans mevcut olduğu için değil, planlamacılar kısıtlı bir kaynakta MRP'yi sürekli elle düzelttiği için geçin"
+  - "IBP'ye tek bir hat aşırı yüklendiğinde değil, planlama sorunu tesislere, kanallara ve fonksiyonlara yayıldığında geçin"
+  - "S/4HANA içindeki Predictive MRP (pMRP), yeni bir şey satın almadan önce orta vadeli kapasiteyi test eder"
+  - "Üçü de kötü ana verileri düzeltmez. Sonucu temin süreleri, lot büyüklükleri ve üretim versiyonları belirler"
+pullQuote: "Planlama katmanını demonun en iyi cevapladığı soru için değil, bugün cevaplayamadığınız soru için satın alın."
+mentions:
+  - "SAP S/4HANA"
+  - "MRP Live"
+  - "SAP PP/DS"
+  - "SAP IBP"
+  - "Predictive MRP (pMRP)"
+  - "SAP APO"
+  - "SAP PP"
+  - "SAP Integration Suite"
+originalUrl: "https://noeldcosta.com/mrp-live-vs-pp-ds-vs-ibp/"
+canonicalUrl: "https://noeldcosta.com/tr/mrp-live-vs-pp-ds-vs-ibp/"
+locale: "tr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+MRP Live, SAP S/4HANA içinde neyin ne zaman üretileceğini ve satın alınacağını sonsuz kapasiteyle planlar. Gömülü PP/DS kritik malzemeleri darboğaz kaynaklarda sonlu kapasiteyle çizelgeler; SAP IBP ise talebi, stoku ve tedariki tüm işletme genelinde aylar boyunca planlar.
+
+Dolayısıyla MRP Live ile PP/DS arasındaki soru tesisle ilgilidir: kısıtlı bir hatta sonlu çizelgelemeye ihtiyacınız var mı? PP/DS ile IBP arasındaki soru ise kapsamla ilgilidir: planlama sorununuz tek bir tesisin içinde mi, yoksa tüm ağda mı?
+
+Uygulamalarda hem MRP Live'ı hem gömülü PP/DS'i kullandım ve durum gerektirdiğinde müşterileri IBP'ye yönlendirdim. Bu yazı her aracın neyi planladığını ve bir üst katmana geçmeniz gerektiğini gösteren işaretleri ortaya koyuyor. Hâlâ ERP'nin kendisini seçiyorsanız, [üretim için en iyi ERP](/tr/best-erp-for-manufacturing/) karşılaştırmamla başlayın.
+
+## Dört planlama aracı, dört farklı soru
+
+SAP, S/4HANA kullanan bir üreticiye dört planlama seçeneği sunar. Klasik MRP ve MRP Live, aynı malzeme planlamasını çalıştırmanın iki yoludur.
+
+PP/DS aynı sisteme ayrıntılı çizelgeleme ekler. IBP ise bunun üzerinde duran ayrı bir bulut ürünüdür.
+
+Tablo onları yan yana koyuyor.
+
+| Araç | Neyi planlar | Kapasite mantığı | Tipik ufuk | Nerede çalışır |
+|---|---|---|---|---|
+| Klasik MRP (MD01, MD02, MD03) | Planlı siparişler ve satın alma talepleri | Sonsuz | Günlerden aylara | S/4HANA uygulama sunucusu |
+| MRP Live (MD01N) | Aynısı, daha hızlı, bir veya birkaç tesis genelinde | Sonsuz | Günlerden aylara | SAP HANA veritabanının içinde |
+| Gömülü PP/DS | Kaynaklardaki siparişlerin sırası ve zamanlaması | Sonlu, hazırlık ve sıralama mantığıyla | Saatlerden haftalara | S/4HANA'nın içinde |
+| SAP IBP | Ağ genelinde talep, stok ve tedarik | Kısıtlı, zaman dilimlerinde veya sipariş bazında | Haftalardan yıllara | Ayrı bir SAP bulut ürünü |
+
+Önce kapasite sütununu okuyun. Araçlar arasındaki en net ayrım çizgisi odur.
+
+## MRP Live ve klasik MRP: varsayılan
+
+Her SAP üreticisi buradan başlar. MRP tahminleri ve satış siparişlerini stok ve açık girişlerle netleştirir, ürün ağacını patlatır ve neyin üretileceğini, neyin satın alınacağını önerir. [SAP PP rehberim](/tr/sap-pp-production-planning/) modülü, ana verileri ve planlama döngüsünü ayrıntılı olarak anlatıyor.
+
+MRP Live bu çalıştırmanın S/4HANA sürümüdür. SAP'nin [MRP Live eğitim modülü](https://learning.sap.com/courses/exploring-production-planning-in-sap-s-4hana/outlining-material-requirements-planning-with-mrp-live-1), planlama mantığını HANA veritabanına indirdiğini ve bir veya birkaç tesisi çevrimiçi planlayabildiğini açıklar. Aynı ders, klasik planlama modlarının S/4HANA'da hâlâ kullanılabildiğini de teyit eder.
+
+### MRP'nin yapmadığı şey
+
+MRP kapasitenin sınırsız olduğunu varsayar. Yüz saatlik bir haftaya iki yüz saatlik iş çizelgeler.
+
+S/4HANA'da kapasite değerlendirme ve dengeleme vardır, ama MRP çalıştırmasının içinde değil, yanında dururlar. Tek bir hat veya tek bir fırın tüm tesisin çıktısını belirliyorsa, bu boşluk her gün yaşanan bir sorundur.
+
+### Klasik MRP mi, MRP Live mı
+
+Yeni S/4HANA tasarımlarının çoğunda varsayılan MRP Live'dır. Bazı klasik fonksiyonlar farklı davranır veya HANA için optimize edilmemiştir; SAP Knowledge Base Article 2640393, MRP Live ile klasik MRP arasındaki farkları ortaya koyar.
+
+Karar vermeden önce bu notu kendi tasarımınızla karşılaştırın. Kontrol edilecek pratik noktalar:
+
+1. Lot büyüklüğü belirleme prosedürlerinizin ve MRP türlerinizin MRP Live'da desteklenip desteklenmediği
+2. Kısıtlı bir planlama kapsamına veya anlık görüntü olarak MRP listelerine dayanıp dayanmadığınız
+3. Çok seviyeli siparişe göre üretim veya proje planlama çalıştırmalarının sürecinizin parçası olup olmadığı
+4. MRP Live'ın ihtiyaç duyduğu geçerli bir üretim versiyonunun her şirket içi üretilen malzemede bulunup bulunmadığı
+
+### Predictive MRP: bir üst katmandan önceki adım
+
+Predictive material and resource planning (pMRP, öngörücü malzeme ve kaynak planlama), S/4HANA içinde bir simülasyon aracıdır. SAP'nin [pMRP dersi](https://learning.sap.com/courses/exploring-production-planning-in-sap-s-4hana/introducing-predictive-mrp-pmrp-) onu ECC'deki uzun vadeli planlamanın halefi olarak, basitleştirilmiş bir plan üzerinde kapasite sorunlarını erkenden bulmak için kullanılan bir araç olarak tanımlar.
+
+Planlamacılar bir simülasyonda talebi, kapasiteyi veya tedarik kaynaklarını değiştirir ve bunu referans planla karşılaştırır. Bir simülasyon serbest bırakılana kadar operatif MRP'de hiçbir şey değişmez.
+
+Yalnızca PP/DS'in veya IBP'nin işe yarayacağına karar vermeden önce, orta vadeli bir kapasite sorusunda pMRP çalıştırın.
+
+## Gömülü PP/DS: sonlu kapasitenin önemli olduğu durumlar
+
+PP/DS (Production Planning and Detailed Scheduling, üretim planlama ve ayrıntılı çizelgeleme), eskiden SAP APO'da çalışan gelişmiş planlama motorudur. S/4HANA'da gömülüdür; yani çalıştırılacak ayrı bir planlama sunucusu ve aktarılacak veri yoktur.
+
+SAP'nin [PP/DS eğitim içeriği](https://learning.sap.com/courses/exploring-advanced-production-planning-with-sap-s-4hana-pp-ds/outlining-advanced-planning-pp-ds-in-sap-s-4hana-1), tesiste kesin zamanlarla sonlu planlamayı anlatır. Kaynaklar sonlu olarak tanımlanabilir, standart sezgisel yöntemler planlama adımlarını biçimlendirir ve ayrıntılı çizelgelemedeki bir optimize edici, mevcut siparişlerin sırasını ve kaynağını değiştirerek hazırlık sürelerini, hazırlık maliyetlerini ve gecikmeleri azaltabilir.
+
+### PP/DS ve MRP Live işi nasıl paylaşır
+
+Ayrım malzeme bazındadır. Gelişmiş planlama için işaretlenen malzemeler PP/DS'e gider, geri kalanlar MRP Live'da kalır. SAP'nin kendi önerisi, darboğaz kaynaklardaki kritik ürünleri PP/DS'te, daha az kritik ve tüketime dayalı malzemeleri MRP Live'da planlamaktır.
+
+Bundan iki tasarım kuralı çıkar:
+
+1. Darboğaz kaynağı yükleyen her malzemeyi PP/DS'e alın. Ürünlerinin yarısı sonsuz kapasiteyle planlanan kısıtlı bir hat, sonlu planlanmış sayılmaz.
+2. PP/DS malzemelerini MRP Live planlama kapsamının dışında tutun; aksi halde bir sonraki MRP çalıştırması ayrıntılı çizelgenin üzerine yazabilir.
+
+### PP/DS size neye mal olur
+
+PP/DS, MRP'den daha fazla ana veri ve bunu güncel tutmak için daha fazla disiplin ister. Çizelgenin bir anlam ifade etmesi için kaynakların, hazırlık gruplarının, hazırlık matrislerinin ve gerçekçi operasyon sürelerinin hepsinin doğru olması gerekir.
+
+Diğer kontrol lisanslamadır. Tasarım PP/DS'e bağımlı hale gelmeden önce, sözleşmenizin PP/DS'i nasıl kapsadığını SAP'den yazılı olarak teyit etmesini isteyin.
+
+PP/DS, maliyeti sıralamanın belirlediği tesislerde yerini hak eder: renkler, kalite sınıfları, ebatlar veya formülasyonlar arasındaki geçişler. Genel olarak bakıldığında plastik ve çelik bu tür üretimin tipik örnekleridir. Kesikli, proses ve seri üretim kurulumlarının ayrıntısı [SAP'de kesikli ve proses üretim](/tr/sap-discrete-vs-process-manufacturing/) rehberimde.
+
+## SAP IBP: sorun ağ olduğunda
+
+[SAP Integrated Business Planning for Supply Chain](https://help.sap.com/docs/SAP_INTEGRATED_BUSINESS_PLANNING/6b0a6820ebf94ff4a15d68af6db7745b/b48f855725308a1be10000000a44147b.html) ayrı bir bulut ürünüdür. Satış ve operasyon planlamayı, talep, stok, yanıt ve tedarik planlamayı ve talep odaklı ikmali kapsar.
+
+IBP, MRP'nin ve PP/DS'in hiç sormadığı soruları cevaplar. İşletme ne kadar satmalı, ne kadar stok tutmalı, ne kadar tedarik etmeli ve hangi tesis neyi üretmeli?
+
+### Zaman serisi ve sipariş bazlı planlama
+
+IBP yanıt ve tedarik iki şekilde planlar. Zaman serisi planlama zaman dilimleriyle çalışır; sezgisel yöntemler ve bir optimize edici, orta ve uzun vadede kısıtlı, maliyet bazlı bir tedarik planı oluşturur.
+
+Sipariş bazlı planlama ise daha kısa bir ufukta tek tek siparişler üzerinde çalışır. SAP'nin [sipariş bazlı planlama kursu](https://learning.sap.com/courses/discovering-order-based-supply-planning-response-with-sap-ibp) kaba kapasite planlamayı, operasyonel bir tedarik planını, dağıtımı ve üretim planlamayla gerçek zamanlı entegrasyonu kapsar. IBP'nin tesise en çok yaklaştığı ve PP/DS ile örtüşmelerin tartışıldığı yer burasıdır.
+
+### IBP'nin S/4HANA'dan hâlâ ihtiyaç duyduğu şeyler
+
+IBP planlar. S/4HANA yürütür. Ana veriler ve işlemler S/4HANA'dan yukarı akar, planlar geri iner ve MRP veya PP/DS bunları tesisin çalıştırabileceği siparişlere dönüştürmeye devam eder.
+
+IBP, sahiplenmeniz gereken ikinci bir sistem ve bir entegrasyon ekler. [SAP IBP'nin neden önemli olduğunu](/tr/why-sap-integrated-business-planning-sap-ibp-matters/) anlatan rehberim uygulamaları ve entegrasyon yollarını derinlemesine ele alıyor.
+
+Savunma üretimi için IBP uyguladım. Buna değip değmeyeceği planlamanın ne kadar karmaşık olduğuna bağlıdır ve birçok tesiste değmez.
+
+<explainer-layers title="Her SAP planlama aracının yeri" caption="Her katman farklı bir soruyu cevaplar. Çoğu üreticinin en alt katmana, bazılarının ortadakine, daha azının en üsttekine ihtiyacı vardır." layers="SAP IBP => Tesisler ve aylar boyunca ne kadar satılacağı, stok tutulacağı ve tedarik edileceği|Gömülü PP/DS => Her darboğaz kaynağın hangi sırayla, sonlu kapasiteyle çalışacağı|MRP Live veya klasik MRP => Neyin ne zaman üretileceği ve satın alınacağı, sonsuz kapasiteyle|Ana veriler => Ürün ağaçları, rotalar, üretim versiyonları, temin süreleri, lot büyüklükleri" tones="|accent||"></explainer-layers>
+
+## Ne zaman bir üst katmana geçilir: karar kriterleri
+
+Belirli büyüklükteki bir üreticinin PP/DS'e veya IBP'ye ihtiyaç duyduğuna dair bir kural yoktur. Karar, sahip olduğunuz planlama sorununu izlemelidir; aşağıdaki işaretler onu bulmak için genel bir yol göstericidir.
+
+Tablo yaygın işaretleri, genellikle onları karşılayan araçla eşleştiriyor.
+
+| Tesisinizdeki veya işletmenizdeki işaret | Genellikle işaret ettiği araç |
+|---|---|
+| Planlamacılar MRP önerilerinin çoğunu kabul ediyor ve kapasite nadiren kısıt oluyor | Yalnızca MRP Live |
+| Taahhüt vermeden önce orta vadeli kapasite sorunlarını görmeniz gerekiyor | S/4HANA içinde pMRP |
+| Planlamacılar her hafta bir hattın çizelgesini elle yeniden kuruyor | Gömülü PP/DS |
+| Maliyeti ürün geçişleri belirliyor ve sıralama önemli | Gömülü PP/DS |
+| Siparişler birkaç ürün ağacı seviyesi boyunca bağlı ve gecikmeler zincirleme yayılıyor | Gömülü PP/DS |
+| Tedarik kararları birkaç tesise ve dağıtım merkezine yayılıyor | SAP IBP |
+| Talep, birçok müşteri ve kanal genelinde istatistiksel tahmin gerektiriyor | SAP IBP |
+| Aylık satış ve operasyon süreci finansın masada olmasını gerektiriyor | SAP IBP |
+| Kıt tedarikin müşteri önceliğine göre dağıtılması gerekiyor | SAP IBP yanıt ve tedarik |
+
+Tek darboğazı olan tek bir tesis çoğu zaman MRP Live ve PP/DS'e ihtiyaç duyar, fazlasına değil. Mevsimsel talebi olan çok tesisli bir grup ise ağ planı için IBP'ye, çıktıyı gerçekten kısıtlayan hatlar için de PP/DS'e ihtiyaç duyabilir.
+
+### Satın almadan önce cevaplanması gereken sorular
+
+Bunları planlamacılarla birlikte ele alın:
+
+1. Planlamacılar bugün sistemi nerede elle düzeltiyor ve bu haftada kaç saat sürüyor?
+2. Kısıt tek bir tesisteki bir kaynak mı, yoksa tesisler ve kanallar arasında verilen bir karar mı?
+3. Sıralama, hazırlık, temizlik veya fire yoluyla maliyeti değiştiriyor mu?
+4. Üzerinde anlaşılmış bir satış ve operasyon süreci var mı, yoksa her fonksiyon kendi rakamlarını mı getiriyor?
+5. Ana veriler bugün MRP için yeterince iyi mi? Değilse, daha gelişmiş bir araç aynı hataları daha hızlı planlar.
+
+5. sorunun cevabı hayırsa, önce onu düzeltin.
+
+Klasik SOP, S/4HANA'da uyumluluk kapsamındadır ve SAP'nin belirlediği halefi IBP'dir; bu yüzden bu son tarih, IBP sorusunu planlama sorununun gerektireceğinden daha erken gündeme getirebilir. Bunu acil saymadan önce kendi sözleşmenizdeki kullanım haklarını kontrol edin.
+
+### Katmanlar birlikte nasıl çalışır
+
+Bir üst katmana geçen üreticiler bir katman ekler; alttakini değiştirmezler.
+
+PP/DS ve MRP Live aynı S/4HANA sisteminde aynı veriler üzerinde çalışır; bu yüzden asıl risk örtüşmedir: aynı malzemeyi planlayan iki motor. IBP kendi bulut tenant'ında çalışır; bu yüzden risk entegrasyona ve iki sistem çeliştiğinde planın sahibinin kim olduğuna kayar.
+
+Sorunların çoğunu üç sahiplik kararı önler:
+
+1. Her malzeme grubunu ve her ufku hangi aracın planladığını belirleyin ve bunu tasarıma yazın.
+2. IBP tedarik planı ile S/4HANA çizelgesi arasındaki bir çelişkiyi kimin çözeceğini belirleyin.
+3. Planlama araçlarının kullandığı her ana veri alanı için tek bir sahip belirleyin.
+
+Planlama tasarımı finansa da dokunur. Planlı siparişler, üretim versiyonları ve kapasite, ürün maliyetlemesini ve stok değerlemesini belirler. Üretim ERP projelerinin başarısız olmasında en sık gördüğüm neden, tasarımın bütünüyle, özellikle de finansta, üzerinde anlaşılmamış olmasıdır; bu yüzden kontrolörü planlama tasarımına erkenden dahil edin.
+
+## Nereden başlamalı
+
+Elinizdeki planla başlayın. MRP Live'ı temiz ana veriler üzerinde çalıştırın, planlamacıların onu nerede elle düzelttiğini ölçün ve orta vadeli kapasiteyi pMRP'de test edin.
+
+Elle düzeltmeler birkaç kaynakta yoğunlaşıyorsa, PP/DS'i yalnızca o kaynaklar için kapsamlandırın. Tesisler, kanallar veya fonksiyonlar arasındaki kararlarda yoğunlaşıyorsa, bu bir IBP konuşmasıdır ve yazılımla değil, planlama süreciyle başlar.
+
+Savunma ve havacılık planlamasında sözleşme maliyetlemesi ve proje sistemleri, tasarımı genellikle planlama motoru kadar şekillendirir. [Savunma üretimi için ERP](/tr/erp-for-defence-manufacturing/) rehberim bu tarafı anlatıyor. Tesislerinizin gerçekte hangi planlama katmanına ihtiyaç duyduğuna dair ikinci bir görüş isterseniz, [SAP programınız hakkında benimle konuşun](/tr/contact-noel-erp-support/).
+
+## Sıkça sorulan sorular
+
+<details>
+<summary>MRP Live ile PP/DS arasındaki fark nedir?</summary>
+
+MRP Live neyin ne zaman üretileceğini ve satın alınacağını sonsuz kapasiteyle planlar. Gömülü PP/DS ise kritik malzemeleri darboğaz kaynaklarda, hazırlık ve sıralama mantığıyla, sonlu kapasiteyle çizelgeler.
+
+İkisi de S/4HANA içinde çalışır. Gelişmiş planlama için işaretlenen malzemeler PP/DS'e gider, geri kalanlar MRP Live'da kalır.
+
+</details>
+
+<details>
+<summary>PP/DS ile IBP arasındaki fark nedir?</summary>
+
+PP/DS tesisi S/4HANA içinde saatlerden haftalara uzanan bir ufukta çizelgeler. SAP IBP ise tesisler ve kanallar genelinde talebi, stoku ve tedariki haftalardan yıllara uzanan bir ufukta planlayan ayrı bir bulut ürünüdür.
+
+Farklı soruları cevaplarlar ve bazı üreticiler ikisini birden kullanır: ağ planı için IBP, çıktıyı kısıtlayan hatlar için PP/DS.
+
+</details>
+
+<details>
+<summary>SAP IBP, S/4HANA'daki MRP'nin yerini alır mı?</summary>
+
+Hayır. IBP ağ seviyesinde planlar ve planları S/4HANA'ya geri gönderir. Bu planları tesisin yürütebileceği planlı siparişlere ve satın alma taleplerine dönüştüren yine MRP Live veya PP/DS'tir.
+
+</details>
+
+<details>
+<summary>Klasik MRP S/4HANA'da hâlâ kullanılabilir mi?</summary>
+
+Evet. SAP'nin eğitim içeriği klasik planlama modlarının hâlâ kullanılabildiğini teyit eder ve önerilen çalıştırma MRP Live'dır (MD01N). SAP Knowledge Base Article 2640393 ikisi arasındaki farkları listeler; bunu lot büyüklüğü belirleme prosedürleriniz ve MRP türlerinizle karşılaştırın.
+
+</details>
+
+<details>
+<summary>MRP Live varsa PP/DS'e ihtiyacım var mı?</summary>
+
+Yalnızca sonlu kapasite çıktınız için önemliyse. Planlamacılar bir darboğaz hattın çizelgesini sürekli elle yeniden kuruyorsa veya maliyeti ürün geçişleri belirliyorsa, PP/DS değerlendirmeye değer. Kapasite nadiren kısıt oluyorsa, kapasite değerlendirmeli MRP Live genellikle yeterlidir.
+
+</details>
+
+<details>
+<summary>SAP S/4HANA'da pMRP nedir?</summary>
+
+Predictive material and resource planning (pMRP), S/4HANA'da basitleştirilmiş bir plan üzerinde kapasite sorunlarını erkenden bulmaya yarayan bir simülasyon aracıdır. SAP onu ECC'deki uzun vadeli planlamanın halefi olarak tanımlar. Simülasyonlar, bir planlamacı onları serbest bırakana kadar operatif MRP'yi değiştirmez.
+
+</details>

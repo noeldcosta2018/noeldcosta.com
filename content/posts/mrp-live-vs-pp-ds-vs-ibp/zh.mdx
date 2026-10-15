@@ -1,0 +1,242 @@
+---
+title: "MRP Live、PP/DS 与 IBP：该选哪个 SAP 计划工具"
+h1: "MRP Live、PP/DS 与 IBP：该选哪个 SAP 计划工具"
+slug: "mrp-live-vs-pp-ds-vs-ibp"
+date: "2026-10-15"
+updated: "2026-10-15"
+hero: "/images/manufacturing/mrp-live-vs-pp-ds-vs-ibp.webp"
+heroAlt: "俯瞰工厂的计划工作台，屏幕上显示物料清单、生产排程和需求曲线"
+category: "erp-strategy"
+tags: ["manufacturing-erp", "mrp", "sap-pp", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "MRP Live、PP/DS 与 IBP：SAP 计划工具对比"
+metaDescription: "MRP Live、PP/DS 与 IBP 对比：每个 SAP 计划工具计划什么、计划期间和产能逻辑如何，以及哪些信号说明制造商该升级到更高一层的计划工具。"
+primaryKeyword: "MRP Live 与 PP/DS"
+excerpt: "MRP Live 按无限产能计划物料，嵌入式 PP/DS 按有限产能排程瓶颈资源，SAP IBP 计划整个网络和未来几个月。本文说明每个工具计划什么，以及制造商何时应该升级。"
+experienceSource: "Noel's first-person experience implementing ERP in plastics, steel and defence manufacturing (confirmed by Noel, 15 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "MRP Live 按无限产能计划生产什么、采购什么。嵌入式 PP/DS 按有限产能排程。SAP IBP 计划整个网络和未来几个月"
+  - "它们是层级关系，不是竞争关系。很多制造商只用 MRP Live，一部分加上 PP/DS，需要 IBP 的更少"
+  - "当计划员在受约束资源上不断推翻 MRP 结果时，再升级到 PP/DS，而不是因为有许可就用"
+  - "当计划问题跨越工厂、渠道和职能时，再升级到 IBP，而不是因为某一条产线超负荷"
+  - "S/4HANA 内的预测性 MRP（pMRP）可以在您购买任何新工具之前测试中期产能"
+  - "三者都修复不了糟糕的主数据。提前期、批量和生产版本决定了输出结果"
+pullQuote: "为您今天回答不了的问题购买计划层，而不是为演示中回答得最漂亮的那个问题。"
+mentions:
+  - "SAP S/4HANA"
+  - "MRP Live"
+  - "SAP PP/DS"
+  - "SAP IBP"
+  - "Predictive MRP (pMRP)"
+  - "SAP APO"
+  - "SAP PP"
+  - "SAP Integration Suite"
+originalUrl: "https://noeldcosta.com/mrp-live-vs-pp-ds-vs-ibp/"
+canonicalUrl: "https://noeldcosta.com/zh-CN/mrp-live-vs-pp-ds-vs-ibp/"
+locale: "zh"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+MRP Live 在 SAP S/4HANA 内按无限产能计划生产什么、采购什么以及何时进行。嵌入式 PP/DS 按有限产能在瓶颈资源上排程关键物料，SAP IBP 则以月为单位计划整个企业的需求、库存和供应。
+
+所以 MRP Live 与 PP/DS 之争关乎工厂：您是否需要在受约束的产线上做有限产能排程？PP/DS 与 IBP 之争关乎范围：您的计划问题是在一个工厂之内，还是跨越整个网络？
+
+我在实施项目中用过 MRP Live 和嵌入式 PP/DS，在情况需要时也建议过客户上 IBP。本文说明每个工具计划什么，以及哪些信号说明您该升级。如果您还在选择 ERP 本身，请先看我对[制造业最佳 ERP](/zh-CN/best-erp-for-manufacturing/) 的对比。
+
+## 四个计划工具，四个不同的问题
+
+对于 S/4HANA 上的制造商，SAP 提供四种计划选项。经典 MRP 和 MRP Live 是运行同一套物料计划的两种方式。
+
+PP/DS 在同一系统中增加详细排程。IBP 是位于其上的独立云产品。
+
+下表把它们并列比较。
+
+| 工具 | 计划什么 | 产能逻辑 | 典型计划期间 | 运行位置 |
+|---|---|---|---|---|
+| 经典 MRP（MD01、MD02、MD03） | 计划订单和采购申请 | 无限产能 | 数天到数月 | S/4HANA 应用服务器 |
+| MRP Live（MD01N） | 同上，更快，可覆盖一个或多个工厂 | 无限产能 | 数天到数月 | SAP HANA 数据库内部 |
+| 嵌入式 PP/DS | 订单在资源上的顺序和时间 | 有限产能，带换产和顺序逻辑 | 数小时到数周 | S/4HANA 内部 |
+| SAP IBP | 整个网络的需求、库存和供应 | 受约束，按时间段或按订单 | 数周到数年 | 独立的 SAP 云产品 |
+
+先看产能逻辑这一列。它是区分这些工具最清楚的界线。
+
+## MRP Live 和经典 MRP：默认选项
+
+每个 SAP 制造商都从这里开始。MRP 用库存和未清收货冲抵预测和销售订单，展开物料清单，并建议生产什么、采购什么。我的 [SAP PP 指南](/zh-CN/sap-pp-production-planning/)详细介绍了这个模块、主数据和计划周期。
+
+MRP Live 是这项运行的 S/4HANA 版本。SAP 的 [MRP Live 学习模块](https://learning.sap.com/courses/exploring-production-planning-in-sap-s-4hana/outlining-material-requirements-planning-with-mrp-live-1)解释说，它把计划逻辑下推到 HANA 数据库中，可以在线计划一个或多个工厂。同一课程也确认，经典计划模式在 S/4HANA 中仍然可用。
+
+### MRP 做不到什么
+
+MRP 假定产能无限。它会把两百小时的工作排进一个只有一百小时的星期。
+
+S/4HANA 中有产能评估和产能平衡，但它们位于 MRP 运行之外，而不是之内。当一条产线或一台炉子决定整个工厂的产出时，这个缺口就是每天都要面对的问题。
+
+### 经典 MRP 还是 MRP Live
+
+对大多数新的 S/4HANA 设计而言，MRP Live 是默认选项。一些经典功能的表现有所不同，或者没有针对 HANA 优化，SAP 知识库文章 2640393 列出了 MRP Live 与经典 MRP 的差异。
+
+在做决定之前，请对照您自己的设计阅读这篇说明。需要检查的实际要点：
+
+1. 您的批量程序和 MRP 类型在 MRP Live 中是否受支持
+2. 您是否依赖受限的计划范围，或者把 MRP 清单当作快照使用
+3. 多层按订单生产或项目计划运行是否属于您的流程
+4. 每个自制物料是否都有有效的生产版本，这是 MRP Live 所需要的
+
+### 预测性 MRP：升级之前的一步
+
+预测性物料和资源计划（pMRP）是 S/4HANA 内的一个模拟工具。SAP 的 [pMRP 课程](https://learning.sap.com/courses/exploring-production-planning-in-sap-s-4hana/introducing-predictive-mrp-pmrp-)把它描述为 ECC 中长期计划的后继功能，用于在简化计划上及早发现产能问题。
+
+计划员在模拟中修改需求、产能或供应来源，并与参考计划比较。在模拟被发布之前，操作层面的 MRP 不会有任何变化。
+
+在您认定只有 PP/DS 或 IBP 才能解决问题之前，先用 pMRP 处理中期产能问题。
+
+## 嵌入式 PP/DS：当有限产能很重要时
+
+PP/DS（生产计划和详细排程）是过去运行在 SAP APO 中的高级计划引擎。在 S/4HANA 中它是嵌入式的，因此无需运行单独的计划服务器，也无需复制数据。
+
+SAP 的 [PP/DS 学习内容](https://learning.sap.com/courses/exploring-advanced-production-planning-with-sap-s-4hana-pp-ds/outlining-advanced-planning-pp-ds-in-sap-s-4hana-1)描述了在工厂中按精确时间进行的有限产能计划。资源可以设为有限产能，标准启发式决定计划步骤，详细排程中的优化器可以通过改变现有订单的顺序和资源来减少换产时间、换产成本和延误。
+
+### PP/DS 与 MRP Live 如何分工
+
+按物料划分。标记为高级计划的物料交给 PP/DS，其余的留在 MRP Live。SAP 自己的建议是：在 PP/DS 中计划瓶颈资源上的关键产品，在 MRP Live 中计划不太关键、基于消耗的物料。
+
+由此得出两条设计规则：
+
+1. 把所有占用瓶颈资源的物料都放进 PP/DS。一条受约束的产线，如果一半产品按无限产能计划，就不算有限产能计划。
+2. 把 PP/DS 物料排除在 MRP Live 的计划范围之外，否则下一次 MRP 运行可能覆盖详细排程。
+
+### PP/DS 的代价
+
+PP/DS 比 MRP 需要更多主数据，也需要更多纪律来保持数据最新。资源、换产组、换产矩阵和真实的工序时间都必须正确，排程才有意义。
+
+许可是另一项检查。在设计依赖 PP/DS 之前，请 SAP 书面确认您的合同如何涵盖 PP/DS。
+
+PP/DS 在顺序决定成本的工厂里最有价值：颜色、牌号、尺寸或配方之间的换产。一般来说，塑料和钢铁就是这类生产的典型例子。离散、流程和重复制造设置的细节，见我的 [SAP 离散制造与流程制造](/zh-CN/sap-discrete-vs-process-manufacturing/)指南。
+
+## SAP IBP：当问题在于网络时
+
+[SAP Integrated Business Planning for Supply Chain](https://help.sap.com/docs/SAP_INTEGRATED_BUSINESS_PLANNING/6b0a6820ebf94ff4a15d68af6db7745b/b48f855725308a1be10000000a44147b.html) 是一个独立的云产品。它涵盖销售与运营计划、需求、库存、响应与供应，以及需求驱动的补货。
+
+IBP 回答的是 MRP 和 PP/DS 从不提出的问题。企业应该销售、储备和供应多少，哪个工厂应该生产什么？
+
+### 时间序列计划和基于订单的计划
+
+IBP 响应与供应有两种计划方式。时间序列计划按时间段工作，用启发式和优化器在中长期内建立受约束、基于成本的供应计划。
+
+基于订单的计划在较短的计划期间内处理单个订单。SAP 的[基于订单的计划课程](https://learning.sap.com/courses/discovering-order-based-supply-planning-response-with-sap-ibp)涵盖粗能力计划、运营供应计划、部署以及与生产计划的实时集成。这是 IBP 最接近工厂的地方，也是与 PP/DS 的重叠最容易引起争论的地方。
+
+### IBP 仍然需要 S/4HANA 提供什么
+
+IBP 负责计划，S/4HANA 负责执行。主数据和业务交易从 S/4HANA 向上流动，计划向下回流，再由 MRP 或 PP/DS 把计划转换成工厂可以执行的订单。
+
+IBP 会增加第二个系统和一个需要负责的集成。我关于[为什么 SAP IBP 很重要](/zh-CN/why-sap-integrated-business-planning-sap-ibp-matters/)的指南深入介绍了其应用和集成方式。
+
+我为国防制造业实施过 IBP。是否值得，取决于计划有多复杂，而在很多工厂里并不值得。
+
+<explainer-layers title="每个 SAP 计划工具的位置" caption="每一层回答不同的问题。大多数制造商需要最底层，一部分需要中间层，需要最上层的更少。" layers="SAP IBP => 跨工厂、跨月份决定销售、储备和供应多少|嵌入式 PP/DS => 按有限产能决定每个瓶颈资源的运行顺序|MRP Live 或经典 MRP => 按无限产能决定生产什么、采购什么以及何时进行|主数据 => BOM、工艺路线、生产版本、提前期、批量" tones="|accent||"></explainer-layers>
+
+## 何时升级：决策标准
+
+并没有规定说某种规模的制造商就需要 PP/DS 或 IBP。决策应当跟随您实际面对的计划问题，下面这些信号是帮助您找到它的一般指引。
+
+下表把常见信号对应到通常能解决它们的工具。
+
+| 您的工厂或企业中的信号 | 通常指向 |
+|---|---|
+| 计划员接受大部分 MRP 建议，产能很少成为约束 | 只用 MRP Live |
+| 您需要在承诺之前看到中期产能问题 | S/4HANA 内的 pMRP |
+| 计划员每周都要手工重排某条产线的排程 | 嵌入式 PP/DS |
+| 换产决定成本，顺序很重要 | 嵌入式 PP/DS |
+| 订单跨多个 BOM 层级关联，延误会层层传导 | 嵌入式 PP/DS |
+| 供应决策跨越多个工厂和配送中心 | SAP IBP |
+| 需求需要跨众多客户和渠道做统计预测 | SAP IBP |
+| 每月的销售与运营流程需要财务参与 | SAP IBP |
+| 稀缺供应必须按客户优先级分配 | SAP IBP 响应与供应 |
+
+只有一个瓶颈的单个工厂，往往只需要 MRP Live 和 PP/DS，别无其他。需求有季节性的多工厂集团，可能需要用 IBP 做网络计划，再用 PP/DS 管理真正约束产出的产线。
+
+### 购买之前要回答的问题
+
+与计划员一起逐一过一遍：
+
+1. 计划员今天在哪些地方推翻系统结果，每周要花多少小时？
+2. 约束是某个工厂里的一项资源，还是跨工厂和渠道的决策？
+3. 顺序是否会通过换产、清洗或报废改变成本？
+4. 是否有一个达成共识的销售与运营流程，还是每个职能各自带着自己的数字来？
+5. 主数据今天是否足以支撑 MRP？如果不能，更高级的工具只会更快地计划出同样的错误。
+
+如果第 5 个问题的答案是否，先解决它。
+
+经典 SOP 在 S/4HANA 中属于兼容性范围，SAP 指定的后继产品是 IBP，所以这个截止日期可能会比计划问题本身更早地把 IBP 问题摆上桌面。在把它当作紧急事项之前，请先核对您自己合同中的使用权。
+
+### 各层如何协同工作
+
+升级的制造商是增加一层，而不是替换下面那一层。
+
+PP/DS 和 MRP Live 在同一个 S/4HANA 系统中基于同一份数据运行，所以主要风险是重叠：两个引擎计划同一个物料。IBP 运行在自己的云租户中，所以风险转移到集成上，以及当两个系统不一致时由谁负责计划。
+
+三项责任决策能避免大部分麻烦：
+
+1. 明确每个物料组和每个计划期间由哪个工具计划，并写进设计。
+2. 明确由谁解决 IBP 供应计划与 S/4HANA 排程之间的冲突。
+3. 为计划工具使用的每个主数据领域指定一名负责人。
+
+计划设计也会影响财务。计划订单、生产版本和产能驱动产品成本核算和存货计价。我看到制造业 ERP 项目失败最常见的原因，是设计没有被整体确认，尤其是在财务方面，所以要尽早请财务控制人员参与计划设计。
+
+## 从哪里开始
+
+从您已有的计划开始。在干净的主数据上运行 MRP Live，衡量计划员在哪里推翻它，并在 pMRP 中测试中期产能。
+
+如果推翻集中在少数几项资源上，就只为这些资源规划 PP/DS。如果集中在工厂、渠道或职能之间的决策上，那就是 IBP 的话题了，而且要从计划流程开始，而不是从软件开始。
+
+对于国防和航空航天的计划，合同成本核算和项目系统对设计的影响通常不亚于计划引擎。我的[国防制造业 ERP](/zh-CN/erp-for-defence-manufacturing/) 指南讲的就是这一面。如果您想请人再看一遍您的工厂到底需要哪一个计划层，[与我聊聊您的 SAP 项目](/zh-CN/contact-noel-erp-support/)。
+
+## 常见问题
+
+<details>
+<summary>MRP Live 和 PP/DS 有什么区别？</summary>
+
+MRP Live 按无限产能计划生产什么、采购什么以及何时进行。嵌入式 PP/DS 按有限产能在瓶颈资源上排程关键物料，带有换产和顺序逻辑。
+
+两者都在 S/4HANA 内运行。标记为高级计划的物料交给 PP/DS，其余的留在 MRP Live。
+
+</details>
+
+<details>
+<summary>PP/DS 和 IBP 有什么区别？</summary>
+
+PP/DS 在 S/4HANA 内以数小时到数周为期间对工厂进行排程。SAP IBP 是一个独立的云产品，以数周到数年为期间计划跨工厂和渠道的需求、库存和供应。
+
+它们回答不同的问题，有些制造商两者都用：IBP 做网络计划，PP/DS 管理约束产出的产线。
+
+</details>
+
+<details>
+<summary>SAP IBP 会取代 S/4HANA 中的 MRP 吗？</summary>
+
+不会。IBP 在网络层面做计划，并把计划送回 S/4HANA。仍然由 MRP Live 或 PP/DS 把这些计划转换成工厂可以执行的计划订单和采购申请。
+
+</details>
+
+<details>
+<summary>S/4HANA 中还能使用经典 MRP 吗？</summary>
+
+可以。SAP 的学习内容确认经典计划模式仍然可用，而 MRP Live（MD01N）是推荐的运行方式。SAP 知识库文章 2640393 列出了两者的差异，请对照您的批量程序和 MRP 类型进行检查。
+
+</details>
+
+<details>
+<summary>有了 MRP Live 还需要 PP/DS 吗？</summary>
+
+只有当有限产能对您的产出很重要时才需要。如果计划员不断手工重排瓶颈产线的排程，或者换产决定成本，PP/DS 就值得评估。如果产能很少成为约束，MRP Live 加上产能评估通常就够了。
+
+</details>
+
+<details>
+<summary>SAP S/4HANA 中的 pMRP 是什么？</summary>
+
+预测性物料和资源计划（pMRP）是 S/4HANA 中的一个模拟工具，用于在简化计划上及早发现产能问题。SAP 把它描述为 ECC 中长期计划的后继功能。在计划员发布模拟之前，模拟不会改变操作层面的 MRP。
+
+</details>

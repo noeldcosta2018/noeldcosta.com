@@ -1,0 +1,196 @@
+---
+title: "SAP diskretna i procesna proizvodnja: što se mijenja"
+h1: "SAP diskretna i procesna proizvodnja: što se mijenja"
+slug: "sap-discrete-vs-process-manufacturing"
+date: "2026-10-15"
+updated: "2026-10-15"
+hero: "/images/manufacturing/sap-discrete-vs-process-manufacturing.webp"
+heroAlt: "Svijetla tvornica s linijom za diskretnu montažu pokraj procesnih spremnika i lijevka s plastičnim granulatom"
+category: "erp-strategy"
+tags: ["manufacturing-erp", "sap-manufacturing", "sap-pp", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "SAP diskretna i procesna proizvodnja: PP, PP-PI i REM"
+metaDescription: "SAP diskretna i procesna proizvodnja: proizvodni nalozi, PP-PI procesni nalozi i serijska proizvodnja, sastavnice i glavni recepti, šarže, kvaliteta i troškovi."
+primaryKeyword: "sap diskretna i procesna proizvodnja"
+excerpt: "U SAP-u diskretna proizvodnja radi na proizvodnim nalozima, sastavnicama i tehnološkim postupcima, procesna proizvodnja (PP-PI) na procesnim nalozima i glavnim receptima, a serijska proizvodnja na planiranju po razdobljima. Što svaka od njih mijenja u matičnim podacima, šaržama, kvaliteti i kalkulaciji troškova te kako ih kombiniraju pogoni mješovitog tipa, poput onih za plastiku i čelik."
+experienceSource: "Noel's first-person experience implementing ERP in plastics, steel and defence manufacturing (confirmed by Noel, 15 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "Diskretna proizvodnja radi na proizvodnim nalozima sa sastavnicama i tehnološkim postupcima, PP-PI na procesnim nalozima s glavnim receptima, a serijska proizvodnja na planiranju po razdobljima za svaku proizvodnu verziju"
+  - "Izbor se donosi po materijalu i proizvodnoj liniji, a ne za cijelu tvrtku, pa mnogi pogoni paralelno vode dva načina rada"
+  - "Upravljanje šaržama i spregnuti proizvodi mjesta su na kojima se procesna proizvodnja najviše razlikuje, a oboje seže do financija"
+  - "Serijska proizvodnja skuplja troškove po razdobljima na nositelju troškova proizvoda, a ne po nalogu, pa gubite uvid u trošak pojedinačne serije"
+  - "Pogoni za plastiku i čelik često su mješovitog tipa: procesni na početku linije, diskretni ili serijski na kraju"
+  - "Dizajn kalkulacije troškova dogovorite s financijama prije nego što konfigurirate vrste naloga"
+pullQuote: "Način proizvodnje koji odaberete u SAP-u odluka je o troškovima jednako koliko i o planiranju. Financije ga moraju odobriti prije nego što itko konfigurira vrstu naloga."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP PP"
+  - "SAP PP-PI"
+  - "SAP QM"
+  - "SAP CO"
+  - "Material Ledger"
+  - "SAP Digital Manufacturing"
+originalUrl: "https://noeldcosta.com/sap-discrete-vs-process-manufacturing/"
+canonicalUrl: "https://noeldcosta.com/hr/sap-discrete-vs-process-manufacturing/"
+locale: "hr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Razlika između diskretne i procesne proizvodnje u SAP-u svodi se na nalog na kojem vodite proizvodnju. Diskretna proizvodnja koristi proizvodne naloge izgrađene iz sastavnica i tehnoloških postupaka, a procesna proizvodnja (PP-PI) koristi procesne naloge izgrađene iz glavnih recepata.
+
+Serijska proizvodnja (REM) treća je mogućnost: uopće nema pojedinačnih naloga, samo planirane količine po proizvodnoj liniji i razdoblju. Izbor mijenja Vaše matične podatke, rukovanje šaržama, kontrolu kvalitete i, prije svega, način na koji financije vide troškove.
+
+Implementirao sam ERP u proizvodnji plastike i čelika. Obje industrije često kombiniraju procesne i diskretne korake, pa ih u nastavku koristim kao opće primjere. Ovaj članak pokriva što se stvarno mijenja između tih triju načina rada u SAP S/4HANA i kako odlučiti za pogon koji je pomalo od svakoga.
+
+Ako još birate sam ERP, počnite s mojom usporedbom [najboljeg ERP-a za proizvodnju](/hr/best-erp-for-manufacturing/). Za modul Production Planning (PP) u cjelini pročitajte moj [vodič za SAP PP](/hr/sap-pp-production-planning/).
+
+## Diskretna, procesna i serijska proizvodnja u SAP-u ukratko
+
+Sva tri načina rada žive u istom sustavu S/4HANA i dijele isti matični zapis materijala, isto izvođenje MRP-a i iste financije. Razlikuju se objekt izvođenja, matični podaci iza njega i način na koji se skupljaju troškovi.
+
+Ovako se tri načina rada uspoređuju kada ih konfigurirate:
+
+| Što se mijenja | Diskretna (PP) | Procesna (PP-PI) | Serijska (REM) |
+|---|---|---|---|
+| Objekt izvođenja | Proizvodni nalog | Procesni nalog | Planirani nalozi u planu izvođenja, potvrđeni po razdoblju |
+| Kako se proizvodi | Tehnološki postupak s operacijama na radnim mjestima | Glavni recept s operacijama i fazama na resursima | Tehnološki postupak ili postupak s taktom na proizvodnoj liniji |
+| Što ulazi | Sastavnica | Sastavnica, često sa spregnutim proizvodima i nusproizvodima | Sastavnica, komponente se retrogradno knjiže (backflush) |
+| Nositelj troškova | Nalog | Nalog, raspodijeljen na spregnute proizvode | Nositelj troškova proizvoda po proizvodnoj verziji |
+| Uobičajena sljedivost | Serijski brojevi ili lot po nalogu | Genealogija šarži | Šarže moguće, troškovi po razdoblju |
+| Odgovara za | Sastavljene ili strojno obrađene proizvode, proizvodnju po narudžbi | Formule, miješanje, reakcije, promjenjivo iskorištenje | Isti proizvod na istoj liniji u dugim serijama |
+
+Dvije stvari važnije su od tablice. Način rada bira se po materijalu i proizvodnoj liniji, a ne za cijelu tvrtku, pa jedan pogon može voditi sva tri. Način rada ujedno je i odluka o troškovima, zbog čega financije moraju biti u prostoriji kada se donosi.
+
+## Matični podaci: sastavnice i tehnološki postupci naspram glavnih recepata
+
+Diskretna proizvodnja opisuje proizvod sastavnicom i tehnološkim postupkom. Tehnološki postupak navodi operacije, svaku na radnom mjestu sa standardnim vremenima koja određuju terminiranje, kapacitet i troškove.
+
+PP-PI zamjenjuje tehnološki postupak glavnim receptom. Prema SAP-ovoj [dokumentaciji o glavnom receptu](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/21aead0c98bd4755abdacd91c99e3393/9741b753128eb44ce10000000a174cb4.html), recept ima zaglavlje i operacije koje se izvode na primarnom resursu, a operacije se dalje dijele na faze. Standardne vrijednosti na tim fazama izračunavaju datume, kapacitet i troškove.
+
+Proizvodna verzija u oba načina rada sve povezuje. Ona povezuje materijal s alternativom sastavnice i s tehnološkim postupkom ili receptom koji se koristi za MRP, kalkulaciju troškova i kreiranje naloga. Jedan materijal može imati više verzija za različite veličine serije ili datume valjanosti.
+
+Tri razlike u matičnim podacima iznenade timove:
+
+1. **Faze i procesne upute.** Recept može nositi procesne upute koje se prosljeđuju u pogon kao kontrolni recept. Diskretni tehnološki postupci nemaju ništa slično, pa je to novi posao dizajna, a ne konverzija.
+2. **Negativne komponente.** U procesnim sastavnicama nusproizvodi se unose kao komponente s negativnom količinom. Naslijeđeni sustavi rijetko ih tako drže, pa ih treba ponovno izgraditi.
+3. **Resursi umjesto radnih mjesta.** Koncept je isti, ali procesni timovi razmišljaju u posudama, spremnicima i linijama. Dogovorite nazive prije početka migracije podataka.
+
+Prema mom iskustvu migracija podataka odnosi 30 do 40 posto truda na SAP programu. U procesnom pogonu recepti i klasifikacije šarži velik su dio toga i obično su u lošijem stanju nego što itko očekuje.
+
+## Upravljanje šaržama i spregnuti proizvodi
+
+Upravljanje šaržama mjesto je na kojem se procesna proizvodnja najviše razlikuje od diskretne. Svaki primitak, potrošnja i kretanje zaliha materijala kojim se upravlja po šaržama nosi broj šarže, a šarža nosi svoja svojstva.
+
+SAP ta svojstva sprema u sustav klasifikacije, uz [klase šarži](https://help.sap.com/docs/SAP_S4HANA_CLOUD/32da8359c8ee4e8b8e8c5e15cacba5aa/546ac23df1254af3baca5d9afe99ed04.html). Određivanje šarže zatim ih koristi kako bi odabralo zalihu koja ispunjava zahtjev, primjerice prvi ulaz, prvi izlaz ili minimalnu čistoću. Popis upotrebe šarže prati šaržu unatrag do njezinih ulaza i unaprijed do kupaca, a upravo to traži revizor ili reklamacija kupca.
+
+Spregnuti proizvodi druga su razlika. U SAP-ovoj logici [spregnute proizvodnje](https://help.sap.com/docs/SAP_S4HANA_CLOUD/4032610758dc437089f0c28320eec93f/753b77a7bb224b5dac3c80ebc0f57b13.html) svaki spregnuti proizvod dobiva vlastitu stavku naloga, a troškovi skupljeni na nalogu raspodjeljuju se među njima pomoću ekvivalentnih brojeva u strukturi raspodjele. Nusproizvodi ne dobivaju stavku naloga; njihova vrijednost umanjuje trošak glavnog proizvoda.
+
+Ekvivalentni brojevi odluka su financija, obično na temelju tržišnih cijena. Ako ih nitko ne dogovori prije puštanja u rad, svaki se nalog obračunava s brojevima koje je konzultant upisao tijekom izgradnje.
+
+I diskretni pogoni mogu koristiti šarže. Mnogi to čine za nabavljene sirovine, a neki i za gotove proizvode kada kupci trebaju sljedivost po lotu, ali logika naloga i troškova ostaje diskretna.
+
+## Kvaliteta: kontrola u procesu i kontrola pri primitku robe
+
+Upravljanje kvalitetom (QM) radi jednako u sva tri načina rada, ali procesni pogoni obično ga koriste više. Dvije vrste kontrole obavljaju većinu posla u proizvodnji, kako opisuje SAP-ov [sadržaj za učenje o QM-u u proizvodnji](https://learning.sap.com/courses/performing-quality-management-in-production/processing-of-inspection-lots-for-the-goods-receipt-for-the-production-order_df917051-61e8-48a4-b0c9-9e5eb5678406).
+
+Kontrola u procesu (podrijetlo 03) kreira kontrolni lot kada se nalog oslobodi, s koracima kontrole preuzetima iz tehnološkog postupka ili recepta. Ne utječe na zalihe. Kontrola pri primitku robe (podrijetlo 04) kreira lot kada se zaprime gotovi proizvodi, zaliha stoji u kontroli kvalitete, a odluka o upotrebi je oslobađa ili blokira.
+
+Rano odlučite koje provjere žive u SAP-u, a koje u sustavu za izvođenje proizvodnje (MES) ili laboratorijskom sustavu. Dva sustava koja drže isti rezultat način su na koji pogon završi sa šaržom oslobođenom u jednom i blokiranom u drugom.
+
+## Kalkulacija troškova: po nalogu, po spregnutom proizvodu ili po razdoblju
+
+Ovo je odjeljak koji trebate podijeliti sa svojim CFO-om. Način proizvodnje odlučuje što financije mogu vidjeti.
+
+Diskretni i procesni nalozi oboje su nositelji troškova. Stvarni troškovi knjiže se na nalog, nalog se uspoređuje sa svojim standardom, a odstupanja se obračunavaju na kraju razdoblja, po nalogu. Kod procesnih naloga sa spregnutim proizvodima trošak se prije obračuna raspodjeljuje na spregnute proizvode.
+
+Serijska proizvodnja radi drukčije. SAP-ove [napomene za okruženja serijske proizvodnje](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/48b24fbadbee4e0b9dae0e2b72762e68/d3a4b9537cceb44ce10000000a174cb4.html) preporučuju nositelja troškova proizvoda po proizvodnoj verziji. Troškovi iz kretanja robe i potvrda knjiže se na nositelja, a ne na neki nalog, a odstupanja se izračunavaju po razdoblju.
+
+Taj kompromis cijela je odluka. Dobivate daleko manje transakcijskog opterećenja u pogonu, a gubite trošak bilo koje pojedinačne serije.
+
+Za svaki način rada vrijede još dvije financijske stavke:
+
+- **Material Ledger je u S/4HANA uključen prema zadanim postavkama.** Stvarna kalkulacija troškova s njim nije obvezna i uključuje se po pogonu, pa odlučite trebate li stvarne troškove proizvoda prije nego što dizajnirate zatvaranje razdoblja.
+- **Nedovršena proizvodnja i otpad trebaju vlastite postavke.** Na nositeljima troškova proizvoda nedovršena proizvodnja izračunava se ključem analize rezultata, a lako ga je izostaviti tijekom izgradnje i otkriti tek na prvom zatvaranju mjeseca.
+
+Najčešći razlog zbog kojeg vidim da ERP projekti u proizvodnji propadaju jest to što dizajn nije dogovoren u cijelosti, osobito u financijama. Način proizvodnje, nositelji troškova i raspodjela na spregnute proizvode upravo su odluke koje se prepuste PP konzultantu, a onda se oko njih vodi borba na prvom zatvaranju.
+
+## Plastika i čelik: zašto je mješoviti način rada normalan
+
+Većina pogona ne uklapa se u jednu kategoriju. Plastika i čelik, dvije procesno zahtjevne industrije u kojima sam implementirao ERP, dobri su primjeri zašto.
+
+Točke u nastavku opisuju te industrije općenito, a ne nekog određenog klijenta.
+
+1. **Početak linije ponaša se kao procesna proizvodnja.** Miješanje smola, taljenje i lijevanje proizvode šarže, s promjenjivim iskorištenjem i svojstvima koja treba zabilježiti.
+2. **Kraj linije često se ponaša kao diskretna ili serijska proizvodnja.** Brizgani dijelovi, ekstrudirani profili, rezani limovi ili koluti broje se, pakiraju i otpremaju kao jedinice, često u dugim serijama istog proizvoda.
+3. **Materijal se ponovno koristi.** Regranulat u plastici i otpad u čeliku vraćaju se u proces, što otvara pitanje je li to u sastavnici nusproizvod, spregnuti proizvod ili jednostavno otpad.
+4. **Kupci specificiraju svojstva, a ne samo brojeve dijelova.** Kvaliteta, debljina, boja ili svojstva taline nalaze se u karakteristikama šarže koje moraju pratiti materijal od narudžbe do otpreme.
+
+Ne postoji jedan predložak. Prema mom iskustvu izgled diskretne postavke ovisi o tome što klijentu treba, a mješoviti pogon dodaje više izbora, ne manje.
+
+Uobičajen obrazac je PP-PI za faze koje proizvode šarže te serijska ili diskretna proizvodnja za preradu i pakiranje, povezane poluproizvodom kojim se upravlja po šaržama. Je li to pravo rješenje za Vas, ovisi o tome gdje trebate trošak po seriji, gdje trebate sljedivost i koliki obujam transakcija pogon može podnijeti.
+
+Planiranje dodaje još jedan sloj. Ako Vaš raspored određuju karakteristike ili linija koja je usko grlo, pročitajte moju usporedbu [MRP Live naspram PP/DS-a naspram IBP-a](/hr/mrp-live-vs-pp-ds-vs-ibp/) prije nego što pretpostavite da će sam MRP biti dovoljan.
+
+## Kako odabrati način rada za svaku liniju
+
+Odluku donosite liniju po liniju, zajedno s proizvodnjom, kvalitetom i financijama. Ova pitanja rješavaju većinu toga:
+
+1. **Nastaje li proizvod iz formule, reakcije ili miješanja s promjenjivim iskorištenjem?** Koristite PP-PI.
+2. **Daje li jedna serija više proizvoda za prodaju?** Koristite PP-PI sa spregnutim proizvodima i neka financije dogovore raspodjelu.
+3. **Trebate li trošak svake serije ili prodajnog naloga?** Koristite proizvodne ili procesne naloge, a ne serijsku proizvodnju.
+4. **Radi li se o istom proizvodu na istoj liniji tjednima, sa stabilnim tehnološkim postupcima?** Serijsku proizvodnju vrijedi razmotriti.
+5. **Očekuju li kupci ili regulatori genealogiju šarži?** Materijalima upravljajte po šaržama, koju god vrstu naloga odabrali.
+6. **Hoće li pogonom upravljati MES?** Odlučite koji sustav posjeduje potvrde, rezultate kvalitete i genealogiju prije nego što konfigurirate bilo koji od njih. Moj članak o [ERP-u i MES-u u proizvodnji](/hr/erp-and-mes-manufacturing/) pokriva tu podjelu.
+
+Zatim odluku testirajte od početka do kraja. Prema mom iskustvu testiranje odnosi oko 35 posto truda na SAP programu. U pogonima mješovitog tipa nedostatke treba tražiti na predajama između načina rada: kod poluproizvoda u šaržama, retrogradnog knjiženja i obračuna na kraju razdoblja.
+
+## Sljedeći korak
+
+Uzmite jednu obitelj proizvoda, od sirovine do otpreme, i zapišite u kojem bi načinu rada išla svaka faza, po čemu se obračunava trošak i tko odobrava raspodjelu troškova. Ako se financije i proizvodnja ne mogu složiti na jednoj stranici, neće se složiti ni u sustavu.
+
+Ako želite drugo mišljenje o tom dizajnu prije početka konfiguracije, možete [razgovarati sa mnom o svom SAP programu](/hr/contact-noel-erp-support/).
+
+## Česta pitanja
+
+<details>
+<summary>Koja je razlika između diskretne i procesne proizvodnje u SAP-u?</summary>
+
+Diskretna proizvodnja radi na proizvodnim nalozima izgrađenima iz sastavnice i tehnološkog postupka i odgovara proizvodima koji se sastavljaju ili strojno obrađuju. Procesna proizvodnja koristi PP-PI procesne naloge izgrađene iz glavnih recepata i odgovara formulama i šaržama s promjenjivim iskorištenjem, spregnutim proizvodima i nusproizvodima. Obje rade u istom sustavu S/4HANA, a mnogi pogoni koriste obje.
+
+</details>
+
+<details>
+<summary>Za što se koristi SAP PP-PI?</summary>
+
+PP-PI (Production Planning for Process Industries) pokriva proizvodnju temeljenu na šaržama i receptima u industrijama kao što su kemijska, prehrambena, farmaceutska, plastika i metali. Koristi glavne recepte s operacijama i fazama, procesne naloge, spregnute proizvode i nusproizvode te procesne upute prosljeđuje u pogon kao kontrolne recepte.
+
+</details>
+
+<details>
+<summary>Kada koristiti serijsku proizvodnju u SAP-u?</summary>
+
+Koristite je kada isti proizvod dugo radi na istoj liniji, a ne trebate trošak svake serije. Troškovi se skupljaju po razdoblju na nositelju troškova proizvoda po proizvodnoj verziji, što smanjuje transakcijski napor, ali uklanja uvid u troškove po nalogu.
+
+</details>
+
+<details>
+<summary>Može li jedan SAP pogon istodobno voditi diskretnu i procesnu proizvodnju?</summary>
+
+Da. Način rada bira se po materijalu i proizvodnoj liniji, a ne po pogonu. Uobičajen obrazac je PP-PI za faze koje proizvode šarže te diskretna ili serijska proizvodnja za preradu i pakiranje, povezane poluproizvodom kojim se upravlja po šaržama.
+
+</details>
+
+<details>
+<summary>Kako se u SAP-u obračunavaju troškovi spregnutih proizvoda?</summary>
+
+Troškovi se skupljaju na nalogu i raspodjeljuju na spregnute proizvode pomoću ekvivalentnih brojeva u strukturi raspodjele, obično na temelju tržišnih cijena. Nusproizvodi ne dobivaju stavku naloga, a njihova vrijednost umanjuje trošak glavnog proizvoda. Financije bi ekvivalentne brojeve trebale dogovoriti prije puštanja u rad.
+
+</details>
+
+<details>
+<summary>Treba li mi upravljanje šaržama za diskretnu proizvodnju?</summary>
+
+Ne uvijek. Diskretni pogoni često upravljaju po šaržama nabavljenim sirovinama, a gotovim proizvodima onda kada kupci trebaju sljedivost po lotu. Ako nitko ne treba pratiti ili birati zalihu po svojstvima, upravljanje šaržama dodaje transakcijski napor bez povrata.
+
+</details>

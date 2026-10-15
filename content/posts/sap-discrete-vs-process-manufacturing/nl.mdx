@@ -1,0 +1,196 @@
+---
+title: "SAP discrete productie vs procesproductie: wat er verandert"
+h1: "SAP discrete productie vs procesproductie: wat er verandert"
+slug: "sap-discrete-vs-process-manufacturing"
+date: "2026-10-15"
+updated: "2026-10-15"
+hero: "/images/manufacturing/sap-discrete-vs-process-manufacturing.webp"
+heroAlt: "Een lichte fabriek met een discrete assemblagelijn naast procestanks en een trechter met kunststofkorrels"
+category: "erp-strategy"
+tags: ["manufacturing-erp", "sap-manufacturing", "sap-pp", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "SAP discrete productie vs procesproductie: PP, PP-PI en REM"
+metaDescription: "SAP discrete productie vs procesproductie: productieorders, PP-PI-procesorders en serieproductie, plus stuklijsten, masterrecepten, batches en kosten."
+primaryKeyword: "sap discrete productie vs procesproductie"
+excerpt: "In SAP draait discrete productie op productieorders, stuklijsten en routings, procesproductie (PP-PI) op procesorders en masterrecepten, en serieproductie op periodegebaseerde planning. Wat elke vorm verandert in stamgegevens, batches, kwaliteit en kostprijsberekening, en hoe gemengde fabrieken zoals kunststof en staal ze combineren."
+experienceSource: "Noel's first-person experience implementing ERP in plastics, steel and defence manufacturing (confirmed by Noel, 15 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "Discrete productie draait op productieorders met stuklijsten en routings; PP-PI op procesorders met masterrecepten; serieproductie op periodegebaseerde planning per productieversie"
+  - "De keuze wordt per materiaal en productielijn gemaakt, niet per bedrijf, dus veel fabrieken draaien twee vormen naast elkaar"
+  - "Batchbeheer en coproducten zijn de punten waarop procesproductie het meest verschilt, en beide reiken tot in finance"
+  - "Serieproductie verzamelt kosten per periode op een productkostendrager, niet per order, dus u verliest het zicht op de kosten per lot"
+  - "Kunststof- en staalfabrieken zijn vaak gemengd: proces aan het begin van de lijn, discreet of serie aan het eind"
+  - "Spreek het ontwerp van de kostprijsberekening af met finance voordat u de ordersoorten configureert"
+pullQuote: "De productievorm die u in SAP kiest, is evengoed een beslissing over kosten als over planning. Finance moet die goedkeuren voordat iemand een ordersoort configureert."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP PP"
+  - "SAP PP-PI"
+  - "SAP QM"
+  - "SAP CO"
+  - "Material Ledger"
+  - "SAP Digital Manufacturing"
+originalUrl: "https://noeldcosta.com/sap-discrete-vs-process-manufacturing/"
+canonicalUrl: "https://noeldcosta.com/nl/sap-discrete-vs-process-manufacturing/"
+locale: "nl"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Bij SAP discrete productie vs procesproductie draait het om de order waarop u de productie draait. Discrete productie gebruikt productieorders die zijn opgebouwd uit stuklijsten en routings, en procesproductie (PP-PI) gebruikt procesorders die zijn opgebouwd uit masterrecepten.
+
+Serieproductie (REM) is de derde optie: helemaal geen afzonderlijke orders, alleen geplande hoeveelheden per productielijn en periode. De keuze verandert uw stamgegevens, batchafhandeling, kwaliteitsinspectie en vooral hoe finance de kosten ziet.
+
+Ik heb ERP geïmplementeerd in de kunststof- en staalindustrie. Beide branches combineren vaak proces- en discrete stappen, dus ik gebruik ze hieronder als algemene voorbeelden. Dit artikel behandelt wat er werkelijk verandert tussen de drie vormen in SAP S/4HANA, en hoe u beslist voor een fabriek die van alles een beetje is.
+
+Kiest u het ERP zelf nog, begin dan met mijn vergelijking van het [beste ERP voor de maakindustrie](/nl/best-erp-for-manufacturing/). Voor de module Production Planning (PP) als geheel leest u mijn [gids over SAP PP](/nl/sap-pp-production-planning/).
+
+## Discreet, proces en serie in SAP in één oogopslag
+
+Alle drie de vormen leven in hetzelfde S/4HANA-systeem en delen dezelfde materiaalstam, dezelfde MRP-run en dezelfde finance. Wat verschilt, is het uitvoeringsobject, de stamgegevens erachter en de manier waarop kosten worden verzameld.
+
+Zo verhouden de drie zich tot elkaar als u ze configureert:
+
+| Wat er verandert | Discreet (PP) | Proces (PP-PI) | Serie (REM) |
+|---|---|---|---|
+| Uitvoeringsobject | Productieorder | Procesorder | Geplande orders op een serieschema, per periode bevestigd |
+| Hoe het wordt gemaakt | Routing met bewerkingen op werkplekken | Masterrecept met bewerkingen en fasen op resources | Routing of rate routing op een productielijn |
+| Wat erin gaat | Stuklijst | Stuklijst, vaak met coproducten en bijproducten | Stuklijst, componenten via backflush afgeboekt |
+| Kostendrager | De order | De order, verdeeld over coproducten | Productkostendrager per productieversie |
+| Typische traceerbaarheid | Serienummers of lot per order | Batchgenealogie | Batches mogelijk, kosten per periode |
+| Past bij | Geassembleerde of verspaande producten, make-to-order | Formules, mengen, reacties, variabele opbrengst | Hetzelfde product op dezelfde lijn voor lange runs |
+
+Twee punten wegen zwaarder dan de tabel. De vorm wordt gekozen per materiaal en productielijn, niet per bedrijf, dus één fabriek kan alle drie draaien. De vorm is ook een beslissing over kosten, en daarom moet finance aan tafel zitten als die wordt genomen.
+
+## Stamgegevens: stuklijsten en routings vs masterrecepten
+
+Discrete productie beschrijft een product als een stuklijst en een routing. De routing somt bewerkingen op, elk op een werkplek met normtijden die de planning, de capaciteit en de kosten bepalen.
+
+PP-PI vervangt de routing door een masterrecept. Volgens de [documentatie van SAP over masterrecepten](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/21aead0c98bd4755abdacd91c99e3393/9741b753128eb44ce10000000a174cb4.html) heeft een recept een kop en bewerkingen die op een primaire resource worden uitgevoerd, en bewerkingen zijn verder opgedeeld in fasen. De normwaarden op die fasen berekenen datums, capaciteit en kosten.
+
+De productieversie verbindt het geheel in beide vormen. Die koppelt een materiaal aan het stuklijstalternatief en de routing of het recept die worden gebruikt voor MRP, kostprijsberekening en het aanmaken van orders. Eén materiaal kan meerdere versies hebben voor verschillende lotgroottes of geldigheidsdata.
+
+Drie verschillen in stamgegevens overvallen teams:
+
+1. **Fasen en procesinstructies.** Een recept kan procesinstructies bevatten die als besturingsrecept naar de werkvloer gaan. Discrete routings hebben niets vergelijkbaars, dus dit is nieuw ontwerpwerk, geen conversie.
+2. **Negatieve componenten.** In processtuklijsten worden bijproducten ingevoerd als componenten met een negatieve hoeveelheid. Oude systemen leggen ze zelden zo vast, dus ze moeten opnieuw worden opgebouwd.
+3. **Resources in plaats van werkplekken.** Het concept is hetzelfde, maar procesteams denken in vaten, tanks en lijnen. Spreek de naamgeving af voordat de datamigratie begint.
+
+In mijn ervaring kost datamigratie 30 tot 40 procent van de inspanning in een SAP-programma. In een procesfabriek zijn recepten en batchclassificaties daar een groot deel van, en ze zijn meestal in slechtere staat dan iemand verwacht.
+
+## Batchbeheer en coproducten
+
+Batchbeheer is het punt waarop procesproductie het meest verschilt van discrete productie. Elke ontvangst, elk verbruik en elke voorraadbeweging van een batchgestuurd materiaal draagt een batchnummer, en de batch draagt zijn eigenschappen.
+
+SAP slaat die eigenschappen op in het classificatiesysteem, tegen [batchklassen](https://help.sap.com/docs/SAP_S4HANA_CLOUD/32da8359c8ee4e8b8e8c5e15cacba5aa/546ac23df1254af3baca5d9afe99ed04.html). Batchbepaling gebruikt ze vervolgens om voorraad te kiezen die aan een eis voldoet, zoals first-in first-out of een minimale zuiverheid. De batchgebruikslijst traceert een batch terug naar zijn input en vooruit naar klanten, en dat is precies waar een auditor of een klantklacht om vraagt.
+
+Coproducten zijn het tweede verschil. In de logica van SAP voor [koppelproductie](https://help.sap.com/docs/SAP_S4HANA_CLOUD/4032610758dc437089f0c28320eec93f/753b77a7bb224b5dac3c80ebc0f57b13.html) krijgt elk coproduct een eigen orderpositie, en de kosten die op de order zijn verzameld, worden over die posities verdeeld met equivalentiegetallen in een verdelingsstructuur. Bijproducten krijgen geen orderpositie; hun waarde verlaagt de kosten van het hoofdproduct.
+
+De equivalentiegetallen zijn een beslissing van finance, meestal op basis van marktprijzen. Spreekt niemand ze af vóór de go-live, dan wordt elke order afgerekend met getallen die een consultant tijdens de bouw heeft ingetypt.
+
+Discrete fabrieken kunnen ook batches gebruiken. Veel doen dat voor ingekochte grondstoffen, en sommige voor gereed product waar klanten lottraceerbaarheid nodig hebben, maar de order- en kostenlogica blijft discreet.
+
+## Kwaliteit: inspectie tijdens het proces en bij goederenontvangst
+
+Kwaliteitsbeheer (QM) werkt in alle drie de vormen op dezelfde manier, maar procesfabrieken gebruiken er meestal meer van. Twee inspectiesoorten doen het meeste werk in de productie, zoals de [leerinhoud van SAP over QM in de productie](https://learning.sap.com/courses/performing-quality-management-in-production/processing-of-inspection-lots-for-the-goods-receipt-for-the-production-order_df917051-61e8-48a4-b0c9-9e5eb5678406) beschrijft.
+
+Inspectie tijdens het proces (herkomst 03) maakt een inspectiepartij aan wanneer de order wordt vrijgegeven, met inspectiestappen uit de routing of het recept. Die is niet voorraadrelevant. Inspectie bij goederenontvangst (herkomst 04) maakt een partij aan wanneer het gereed product wordt ontvangen, de voorraad staat in kwaliteitsinspectie en het gebruiksbesluit geeft die vrij of blokkeert ze.
+
+Beslis vroeg welke controles in SAP leven en welke in een manufacturing execution system (MES) of laboratoriumsysteem. Twee systemen met hetzelfde resultaat is de manier waarop een fabriek eindigt met een batch die in het ene systeem is vrijgegeven en in het andere geblokkeerd.
+
+## Kostprijsberekening: per order, per coproduct of per periode
+
+Dit is het deel om met uw CFO te delen. De productievorm bepaalt wat finance kan zien.
+
+Productie- en procesorders zijn allebei kostendragers. Werkelijke kosten worden op de order geboekt, de order wordt vergeleken met de standaard, en afwijkingen worden aan het eind van de periode afgerekend, per order. Bij procesorders met coproducten worden de kosten vóór de afrekening over de coproducten verdeeld.
+
+Serieproductie werkt anders. De [aanwijzingen van SAP voor omgevingen met serieproductie](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/48b24fbadbee4e0b9dae0e2b72762e68/d3a4b9537cceb44ce10000000a174cb4.html) raden een productkostendrager per productieversie aan. Kosten uit goederenbewegingen en bevestigingen worden op de kostendrager geboekt, niet op een order, en afwijkingen worden per periode bepaald.
+
+Die afweging is de hele beslissing. U krijgt veel minder transactielast op de werkvloer, en u verliest de kosten van elk afzonderlijk lot.
+
+Nog twee financiële punten gelden voor elke vorm:
+
+- **Het Material Ledger staat in S/4HANA standaard aan.** Werkelijke kostprijsberekening ermee is optioneel en wordt per fabriek ingeschakeld, dus beslis of u werkelijke productkosten nodig hebt voordat u de periodeafsluiting ontwerpt.
+- **Onderhanden werk en uitval hebben eigen instellingen nodig.** Op productkostendragers wordt onderhanden werk berekend met een sleutel voor resultaatanalyse, en die vergeet men makkelijk tijdens de bouw en ontdekt men pas bij de eerste maandafsluiting.
+
+De meest voorkomende reden die ik zie waarom ERP-projecten in de maakindustrie mislukken, is dat het ontwerp niet in zijn geheel is afgesproken, vooral in finance. De productievorm, de kostendragers en de verdeling over coproducten zijn precies de beslissingen die bij de PP-consultant blijven liggen en waarover dan bij de eerste afsluiting wordt gestreden.
+
+## Kunststof en staal: waarom gemengd normaal is
+
+De meeste fabrieken passen niet in één categorie. Kunststof en staal, de twee proceszware branches waarin ik ERP heb geïmplementeerd, laten goed zien waarom.
+
+De punten hieronder beschrijven deze branches in algemene termen, niet één specifieke klant.
+
+1. **Het begin van de lijn gedraagt zich als procesproductie.** Het mengen van hars, smelten en gieten levert batches op, met een variabele opbrengst en eigenschappen die moeten worden vastgelegd.
+2. **Het eind van de lijn gedraagt zich vaak als discrete productie of serieproductie.** Spuitgietdelen, geëxtrudeerde profielen, gesneden platen of coils worden als eenheden geteld, verpakt en verzonden, vaak in lange runs van hetzelfde product.
+3. **Materiaal wordt hergebruikt.** Maalgoed in kunststof en schroot in staal gaan terug in het proces, en dat roept de vraag op of het in de stuklijst een bijproduct, een coproduct of gewone uitval is.
+4. **Klanten specificeren eigenschappen, niet alleen artikelnummers.** Kwaliteit, dikte, kleur of smelteigenschappen staan in batchkenmerken die het materiaal moeten volgen van order tot verzending.
+
+Er bestaat geen enkel sjabloon. In mijn ervaring hangt de opzet van een discrete omgeving af van wat de klant nodig heeft, en een gemengde fabriek voegt meer keuzes toe, niet minder.
+
+Een gebruikelijk patroon is PP-PI voor de stappen die batches produceren en serieproductie of discrete productie voor verwerking en verpakking, verbonden door een batchgestuurd tussenproduct. Of dat voor u klopt, hangt af van waar u kosten per lot nodig hebt, waar u traceerbaarheid nodig hebt en hoeveel transactievolume de werkvloer aankan.
+
+Planning voegt nog een laag toe. Bepalen kenmerken of een knelpuntlijn uw planning, lees dan mijn vergelijking van [MRP Live vs PP/DS vs IBP](/nl/mrp-live-vs-pp-ds-vs-ibp/) voordat u aanneemt dat MRP alleen volstaat.
+
+## Hoe u de vorm per lijn kiest
+
+Neem de beslissing lijn voor lijn, met productie, kwaliteit en finance samen. Deze vragen beslechten het meeste:
+
+1. **Komt het product uit een formule, een reactie of een menging met variabele opbrengst?** Gebruik PP-PI.
+2. **Levert één run meerdere verkoopbare producten op?** Gebruik PP-PI met coproducten, en laat finance de verdeling afspreken.
+3. **Hebt u de kosten van elk lot of elke klantorder nodig?** Gebruik productie- of procesorders, geen serieproductie.
+4. **Gaat het om hetzelfde product op dezelfde lijn gedurende weken, met stabiele routings?** Dan is serieproductie het overwegen waard.
+5. **Verwachten klanten of toezichthouders batchgenealogie?** Beheer de materialen in batches, welke ordersoort u ook kiest.
+6. **Gaat een MES de werkvloer aansturen?** Beslis welk systeem eigenaar is van bevestigingen, kwaliteitsresultaten en genealogie voordat u een van beide configureert. Mijn artikel over [ERP en MES in de maakindustrie](/nl/erp-and-mes-manufacturing/) behandelt die verdeling.
+
+Test de beslissing daarna van begin tot eind. In mijn ervaring kost testen ongeveer 35 procent van de inspanning in een SAP-programma. In gemengde fabrieken zitten de fouten die u moet zoeken bij de overdrachten tussen vormen: de tussenbatch, de backflush en de afrekening aan het eind van de periode.
+
+## Volgende stap
+
+Neem één productfamilie, van grondstof tot verzending, en schrijf op in welke vorm elke stap zou draaien, waarop de kosten worden berekend en wie de kostenverdeling goedkeurt. Als finance en productie het op één pagina niet eens worden, worden ze het in het systeem ook niet eens.
+
+Wilt u een tweede blik op dat ontwerp voordat de configuratie begint, dan kunt u [met mij praten over uw SAP-programma](/nl/contact-noel-erp-support/).
+
+## Veelgestelde vragen
+
+<details>
+<summary>Wat is het verschil tussen discrete productie en procesproductie in SAP?</summary>
+
+Discrete productie draait op productieorders die zijn opgebouwd uit een stuklijst en een routing, en past bij producten die worden geassembleerd of verspaand. Procesproductie gebruikt PP-PI-procesorders die zijn opgebouwd uit masterrecepten, en past bij formules en batches met variabele opbrengst, coproducten en bijproducten. Beide draaien in hetzelfde S/4HANA-systeem, en veel fabrieken gebruiken ze allebei.
+
+</details>
+
+<details>
+<summary>Waarvoor wordt SAP PP-PI gebruikt?</summary>
+
+PP-PI (Production Planning for Process Industries) ondersteunt batch- en receptgebaseerde productie in branches zoals chemie, voeding, farmacie, kunststof en metaal. Het gebruikt masterrecepten met bewerkingen en fasen, procesorders, coproducten en bijproducten, en geeft procesinstructies als besturingsrecepten door aan de werkvloer.
+
+</details>
+
+<details>
+<summary>Wanneer gebruik ik serieproductie in SAP?</summary>
+
+Gebruik het wanneer hetzelfde product lange tijd op dezelfde lijn draait en u de kosten van elk lot niet nodig hebt. Kosten worden per periode verzameld op een productkostendrager per productieversie, wat de transactielast verlaagt maar het zicht op de kosten per order wegneemt.
+
+</details>
+
+<details>
+<summary>Kan één SAP-fabriek discrete productie en procesproductie samen draaien?</summary>
+
+Ja. De vorm wordt gekozen per materiaal en productielijn, niet per fabriek. Een gebruikelijk patroon is PP-PI voor de stappen die batches produceren en discrete productie of serieproductie voor verwerking en verpakking, verbonden door een batchgestuurd tussenproduct.
+
+</details>
+
+<details>
+<summary>Hoe worden coproducten in SAP gecalculeerd?</summary>
+
+Kosten worden op de order verzameld en over de coproducten verdeeld met equivalentiegetallen in een verdelingsstructuur, meestal op basis van marktprijzen. Bijproducten krijgen geen orderpositie, en hun waarde verlaagt de kosten van het hoofdproduct. Finance moet de equivalentiegetallen vóór de go-live afspreken.
+
+</details>
+
+<details>
+<summary>Heb ik batchbeheer nodig voor discrete productie?</summary>
+
+Niet altijd. Discrete fabrieken beheren vaak ingekochte grondstoffen in batches, en gereed product waar klanten lottraceerbaarheid nodig hebben. Als niemand voorraad hoeft te traceren of op eigenschappen hoeft te selecteren, voegt batchbeheer transactielast toe zonder dat er iets tegenover staat.
+
+</details>

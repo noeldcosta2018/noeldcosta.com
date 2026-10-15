@@ -1,0 +1,196 @@
+---
+title: "SAP'de kesikli ve proses üretim: neler değişir"
+h1: "SAP'de kesikli ve proses üretim: neler değişir"
+slug: "sap-discrete-vs-process-manufacturing"
+date: "2026-10-15"
+updated: "2026-10-15"
+hero: "/images/manufacturing/sap-discrete-vs-process-manufacturing.webp"
+heroAlt: "Proses tankları ve plastik granül dolu bir besleme hunisinin yanında kesikli montaj hattı bulunan aydınlık bir fabrika"
+category: "erp-strategy"
+tags: ["manufacturing-erp", "sap-manufacturing", "sap-pp", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "SAP'de Kesikli ve Proses Üretim: PP, PP-PI ve REM"
+metaDescription: "SAP'de kesikli ve proses üretim: üretim siparişi, PP-PI proses siparişi ve seri üretim; ürün ağacı ile ana reçete, parti, kalite ve maliyetleme farkları."
+primaryKeyword: "SAP kesikli ve proses üretim"
+excerpt: "SAP'de kesikli üretim üretim siparişleri, ürün ağaçları ve rotalarla; proses üretimi (PP-PI) proses siparişleri ve ana reçetelerle; seri üretim ise dönem bazlı planlamayla çalışır. Her birinin ana verilerde, partilerde, kalitede ve maliyetlemede neyi değiştirdiği ve plastik ile çelik gibi karma tesislerin bunları nasıl birleştirdiği."
+experienceSource: "Noel's first-person experience implementing ERP in plastics, steel and defence manufacturing (confirmed by Noel, 15 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "Kesikli üretim ürün ağacı ve rotalı üretim siparişleriyle, PP-PI ana reçeteli proses siparişleriyle, seri üretim ise üretim versiyonu başına dönem bazlı planlamayla çalışır"
+  - "Seçim şirket bazında değil, malzeme ve üretim hattı bazında yapılır; bu yüzden birçok tesis iki üretim tipini yan yana çalıştırır"
+  - "Proses üretiminin en çok ayrıştığı yer parti yönetimi ve ortak ürünlerdir; ikisi de finansı doğrudan etkiler"
+  - "Seri üretim maliyeti sipariş bazında değil, ürün maliyet toplayıcısı üzerinde dönem bazında toplar; parti başına maliyet görünürlüğünü kaybedersiniz"
+  - "Plastik ve çelik tesisleri çoğunlukla karmadır: hattın başında proses, sonunda kesikli veya seri üretim"
+  - "Sipariş türlerini yapılandırmadan önce maliyetleme tasarımını finansla mutabık kalın"
+pullQuote: "SAP'de seçtiğiniz üretim tipi, planlama kararı olduğu kadar bir maliyetleme kararıdır. Kimse bir sipariş türünü yapılandırmadan önce finansın onay vermesi gerekir."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP PP"
+  - "SAP PP-PI"
+  - "SAP QM"
+  - "SAP CO"
+  - "Material Ledger"
+  - "SAP Digital Manufacturing"
+originalUrl: "https://noeldcosta.com/sap-discrete-vs-process-manufacturing/"
+canonicalUrl: "https://noeldcosta.com/tr/sap-discrete-vs-process-manufacturing/"
+locale: "tr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+SAP'de kesikli ve proses üretim arasındaki fark, üretimi hangi sipariş üzerinden yürüttüğünüze dayanır. Kesikli üretim, ürün ağaçları (BOM) ve rotalardan oluşturulan üretim siparişlerini kullanır; proses üretimi (PP-PI) ise ana reçetelerden oluşturulan proses siparişlerini kullanır.
+
+Seri üretim (REM) üçüncü seçenektir: tekil sipariş yoktur, yalnızca üretim hattı ve dönem başına planlanan miktarlar vardır. Bu seçim ana verilerinizi, parti yönetiminizi, kalite kontrolünüzü ve hepsinden önemlisi finansın maliyeti nasıl gördüğünü değiştirir.
+
+Plastik ve çelik üretiminde ERP uyguladım. Bu iki sektör çoğunlukla proses ve kesikli adımları bir arada kullanır, bu yüzden aşağıda onları genel örnek olarak kullanıyorum. Bu yazı, SAP S/4HANA'da üç üretim tipi arasında gerçekte neyin değiştiğini ve biraz her birinden olan bir tesis için nasıl karar verileceğini anlatıyor.
+
+Hâlâ ERP'nin kendisini seçiyorsanız, [üretim için en iyi ERP](/tr/best-erp-for-manufacturing/) karşılaştırmamla başlayın. Üretim Planlama (PP) modülünün tamamı için [SAP PP rehberimi](/tr/sap-pp-production-planning/) okuyun.
+
+## SAP'de kesikli, proses ve seri üretime genel bakış
+
+Üç üretim tipi de aynı S/4HANA sisteminde yaşar ve aynı malzeme ana kaydını, aynı MRP çalıştırmasını ve aynı finansı paylaşır. Farklı olan, yürütme nesnesi, arkasındaki ana veriler ve maliyetlerin toplanma şeklidir.
+
+Yapılandırırken üçü şöyle karşılaştırılır:
+
+| Ne değişir | Kesikli (PP) | Proses (PP-PI) | Seri (REM) |
+|---|---|---|---|
+| Yürütme nesnesi | Üretim siparişi | Proses siparişi | Çalışma çizelgesindeki planlı siparişler, dönem bazında teyit edilir |
+| Nasıl üretilir | İş yerlerindeki operasyonlardan oluşan rota | Kaynaklardaki operasyon ve fazlardan oluşan ana reçete | Üretim hattında rota veya oran rotası |
+| Girdiler | Ürün ağacı | Ürün ağacı, çoğunlukla ortak ürün ve yan ürünlerle | Ürün ağacı, bileşenler geriye dönük kayıtla düşülür |
+| Maliyet nesnesi | Sipariş | Sipariş, ortak ürünlere bölünür | Üretim versiyonu başına ürün maliyet toplayıcısı |
+| Tipik izlenebilirlik | Sipariş başına seri numarası veya lot | Parti soy ağacı | Parti mümkün, maliyet dönem bazında |
+| Uygun olduğu durum | Montajlı veya talaşlı imalat ürünleri, siparişe göre üretim | Formüller, karıştırma, reaksiyonlar, değişken verim | Aynı hatta uzun süre aynı ürün |
+
+İki nokta tablodan daha önemlidir. Üretim tipi şirket bazında değil, malzeme ve üretim hattı bazında seçilir; yani tek bir tesis üçünü birden çalıştırabilir. Üretim tipi aynı zamanda bir maliyetleme kararıdır; karar verilirken finansın masada olması bu yüzden şarttır.
+
+## Ana veriler: ürün ağacı ve rota ile ana reçete
+
+Kesikli üretim bir ürünü ürün ağacı ve rota olarak tanımlar. Rota, her biri bir iş yerinde yapılan operasyonları listeler; bu operasyonların standart süreleri çizelgelemeyi, kapasiteyi ve maliyeti belirler.
+
+PP-PI rotanın yerine ana reçeteyi koyar. SAP'nin [ana reçete dokümantasyonuna](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/21aead0c98bd4755abdacd91c99e3393/9741b753128eb44ce10000000a174cb4.html) göre bir reçetenin bir başlığı ve birincil kaynakta yürütülen operasyonları vardır; operasyonlar da fazlara ayrılır. Bu fazlardaki standart değerler tarihleri, kapasiteyi ve maliyetleri hesaplar.
+
+Her iki tipte de bunları birbirine üretim versiyonu bağlar. Üretim versiyonu bir malzemeyi MRP, maliyetleme ve sipariş oluşturmada kullanılan ürün ağacı alternatifine ve rotaya ya da reçeteye bağlar. Bir malzemenin farklı lot büyüklükleri veya geçerlilik tarihleri için birden fazla versiyonu olabilir.
+
+Ekipleri en çok üç ana veri farkı şaşırtır:
+
+1. **Fazlar ve proses talimatları.** Bir reçete, atölyeye kontrol reçetesi olarak iletilen proses talimatları taşıyabilir. Kesikli rotalarda bunun bir karşılığı yoktur; bu yüzden bu bir dönüştürme değil, yeni bir tasarım işidir.
+2. **Negatif bileşenler.** Proses ürün ağaçlarında yan ürünler negatif miktarlı bileşen olarak girilir. Eski sistemler bunları nadiren bu şekilde tutar, dolayısıyla yeniden kurulmaları gerekir.
+3. **İş yeri yerine kaynaklar.** Kavram aynıdır, ama proses ekipleri kazanlar, tanklar ve hatlar üzerinden düşünür. Veri taşıma başlamadan önce isimlendirmede anlaşın.
+
+Deneyimime göre bir SAP programında veri taşıma, eforun yüzde 30 ila 40'ını alır. Bir proses tesisinde bunun büyük kısmını reçeteler ve parti sınıflandırmaları oluşturur ve bunlar genellikle herkesin beklediğinden daha kötü durumdadır.
+
+## Parti yönetimi ve ortak ürünler
+
+Proses üretiminin kesikli üretimden en çok ayrıştığı yer parti yönetimidir. Partiyle yönetilen bir malzemenin her girişi, tüketimi ve stok hareketi bir parti numarası taşır, parti de kendi özelliklerini taşır.
+
+SAP bu özellikleri sınıflandırma sisteminde, [parti sınıflarına](https://help.sap.com/docs/SAP_S4HANA_CLOUD/32da8359c8ee4e8b8e8c5e15cacba5aa/546ac23df1254af3baca5d9afe99ed04.html) bağlı olarak saklar. Parti belirleme daha sonra bu özellikleri kullanarak bir ihtiyacı karşılayan stoku seçer; örneğin ilk giren ilk çıkar ya da asgari saflık. Parti kullanım yeri listesi bir partiyi geriye doğru girdilerine, ileriye doğru müşterilere kadar izler; bir denetçinin ya da müşteri şikâyetinin isteyeceği de tam olarak budur.
+
+İkinci fark ortak ürünlerdir. SAP'nin [birleşik üretim](https://help.sap.com/docs/SAP_S4HANA_CLOUD/4032610758dc437089f0c28320eec93f/753b77a7bb224b5dac3c80ebc0f57b13.html) mantığında her ortak ürün kendi sipariş kalemini alır ve siparişte toplanan maliyetler bir dağıtım yapısındaki eşdeğer sayılarıyla bunlara bölünür. Yan ürünler sipariş kalemi almaz; değerleri ana ürünün maliyetini düşürür.
+
+Eşdeğer sayıları, genellikle piyasa fiyatlarına dayanan bir finans kararıdır. Canlıya geçişten önce kimse bunlarda anlaşmazsa, her sipariş bir danışmanın kurulum sırasında girdiği rakamlarla mahsup edilir.
+
+Kesikli tesisler de parti kullanabilir. Birçoğu satın alınan hammaddeler için, bazıları da müşterilerin lot izlenebilirliği istediği mamuller için kullanır; ancak sipariş ve maliyetleme mantığı kesikli kalır.
+
+## Kalite: üretim içi kontrol ve mal girişi kontrolü
+
+Kalite Yönetimi (QM) üç üretim tipinde de aynı şekilde çalışır, ama proses tesisleri onu daha yoğun kullanma eğilimindedir. SAP'nin [üretimde QM eğitim içeriğinde](https://learning.sap.com/courses/performing-quality-management-in-production/processing-of-inspection-lots-for-the-goods-receipt-for-the-production-order_df917051-61e8-48a4-b0c9-9e5eb5678406) anlatıldığı gibi, üretimdeki işin çoğunu iki kontrol türü yapar.
+
+Üretim içi kontrol (kaynak 03), sipariş serbest bırakıldığında rota veya reçeteden alınan kontrol adımlarıyla bir kontrol partisi oluşturur. Stokla ilgili değildir. Mal girişi kontrolü (kaynak 04) ise mamuller teslim alındığında bir parti oluşturur; stok kalite kontrolde bekler ve kullanım kararı onu serbest bırakır ya da bloke eder.
+
+Hangi kontrollerin SAP'de, hangilerinin bir üretim yürütme sisteminde (MES) veya laboratuvar sisteminde yaşayacağına erkenden karar verin. Aynı sonucu iki sistemin tutması, bir partinin birinde serbest, diğerinde bloke kalmasıyla sonuçlanır.
+
+## Maliyetleme: sipariş, ortak ürün veya dönem bazında
+
+Bu bölümü CFO'nuzla paylaşın. Finansın neyi görebileceğine üretim tipi karar verir.
+
+Kesikli ve proses siparişlerinin ikisi de maliyet nesnesidir. Fiili maliyetler siparişe kaydedilir, sipariş standardıyla karşılaştırılır ve farklar dönem sonunda sipariş bazında mahsup edilir. Ortak ürünlü proses siparişlerinde maliyet, mahsuptan önce ortak ürünlere bölünür.
+
+Seri üretim farklı çalışır. SAP'nin [seri üretim ortamlarına ilişkin notları](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/48b24fbadbee4e0b9dae0e2b72762e68/d3a4b9537cceb44ce10000000a174cb4.html) üretim versiyonu başına bir ürün maliyet toplayıcısı önerir. Mal hareketleri ve teyitlerden gelen maliyetler herhangi bir siparişe değil, toplayıcıya kaydedilir ve farklar dönem bazında hesaplanır.
+
+Kararın tamamı bu ödünleşimdir. Atölyede çok daha az işlem yükünüz olur, ama tek tek lotların maliyetini kaybedersiniz.
+
+Her üretim tipi için geçerli iki finans noktası daha var:
+
+- **Material Ledger, S/4HANA'da varsayılan olarak açıktır.** Onunla fiili maliyetleme isteğe bağlıdır ve tesis bazında açılır; bu yüzden dönem sonu kapanışını tasarlamadan önce fiili ürün maliyetlerine ihtiyacınız olup olmadığına karar verin.
+- **Yarı mamul ve fire kendi ayarlarını ister.** Ürün maliyet toplayıcılarında yarı mamul, bir sonuç analizi anahtarıyla hesaplanır; kurulum sırasında atlanması ve ilk ay sonunda fark edilmesi çok kolaydır.
+
+Üretim ERP projelerinin başarısız olmasında en sık gördüğüm neden, tasarımın bütünüyle, özellikle de finansta, üzerinde anlaşılmamış olmasıdır. Üretim tipi, maliyet nesneleri ve ortak ürün dağılımı, tam da PP danışmanına bırakılan ve sonra ilk kapanışta tartışılan kararlardır.
+
+## Plastik ve çelik: karma yapı neden normaldir
+
+Çoğu tesis tek bir kategoriye uymaz. ERP uyguladığım iki proses ağırlıklı sektör olan plastik ve çelik, bunun nedenini iyi gösterir.
+
+Aşağıdaki noktalar bu sektörleri genel olarak anlatır, herhangi bir müşteriyi değil.
+
+1. **Hattın başı proses üretimi gibi davranır.** Reçine karıştırma, ergitme ve döküm; değişken verimli ve kaydedilmesi gereken özelliklere sahip partiler üretir.
+2. **Hattın sonu çoğunlukla kesikli veya seri üretim gibi davranır.** Kalıplanmış parçalar, ekstrüde profiller, kesilmiş levhalar veya bobinler adet olarak sayılır, paketlenir ve sevk edilir; çoğu zaman aynı ürünün uzun üretim koşularıyla.
+3. **Malzeme yeniden kullanılır.** Plastikte öğütülmüş geri dönüş malzemesi, çelikte hurda prosese geri döner; bu da ürün ağacında bunun yan ürün mü, ortak ürün mü yoksa basit fire mi olduğu sorusunu doğurur.
+4. **Müşteriler yalnızca parça numarası değil, özellik belirtir.** Kalite sınıfı, kalınlık, renk veya eriyik özellikleri, malzemeyi siparişten sevkiyata kadar izlemesi gereken parti karakteristiklerinde durur.
+
+Tek bir şablon yoktur. Deneyimime göre kesikli bir kurulumun nasıl görüneceği müşterinin ihtiyacına bağlıdır; karma bir tesis ise seçenekleri azaltmaz, artırır.
+
+Yaygın bir model, parti üreten aşamalar için PP-PI, dönüştürme ve paketleme için seri veya kesikli üretim kullanmak ve bunları partiyle yönetilen bir ara malzemeyle bağlamaktır. Bunun sizin için doğru olup olmadığı, lot bazında maliyete nerede ihtiyacınız olduğuna, izlenebilirliğe nerede ihtiyacınız olduğuna ve atölyenin ne kadar işlem hacmi taşıyabileceğine bağlıdır.
+
+Planlama bir katman daha ekler. Çizelgenizi karakteristikler veya bir darboğaz hattı belirliyorsa, MRP'nin tek başına yeteceğini varsaymadan önce [MRP Live, PP/DS ve IBP](/tr/mrp-live-vs-pp-ds-vs-ibp/) karşılaştırmamı okuyun.
+
+## Her hat için üretim tipi nasıl seçilir
+
+Kararı üretim, kalite ve finansla birlikte, hat hat verin. Şu sorular işin çoğunu çözer:
+
+1. **Ürün bir formülden, bir reaksiyondan veya değişken verimli bir karıştırmadan mı çıkıyor?** PP-PI kullanın.
+2. **Tek bir üretim koşusu birden fazla satılabilir ürün mü çıkarıyor?** Ortak ürünlü PP-PI kullanın ve dağıtım üzerinde finansın onayını alın.
+3. **Her lotun veya müşteri siparişinin maliyetine ihtiyacınız var mı?** Seri üretim değil, üretim veya proses siparişleri kullanın.
+4. **Aynı hatta haftalarca, sabit rotalarla aynı ürün mü üretiliyor?** Seri üretim düşünülmeye değer.
+5. **Müşteriler veya düzenleyiciler parti soy ağacı bekliyor mu?** Hangi sipariş türünü seçerseniz seçin, malzemeleri partiyle yönetin.
+6. **Atölyeyi bir MES mi yönetecek?** Herhangi birini yapılandırmadan önce teyitlerin, kalite sonuçlarının ve soy ağacının sahibinin hangi sistem olduğuna karar verin. [Üretimde ERP ve MES](/tr/erp-and-mes-manufacturing/) yazım bu ayrımı anlatıyor.
+
+Ardından kararı uçtan uca test edin. Deneyimime göre test, bir SAP programında eforun yaklaşık yüzde 35'ini alır. Karma tesislerde aranacak hatalar üretim tipleri arasındaki geçişlerdedir: ara parti, geriye dönük kayıt ve dönem sonu mahsubu.
+
+## Sonraki adım
+
+Hammaddeden sevkiyata kadar bir ürün ailesi seçin ve her aşamanın hangi üretim tipinde çalışacağını, maliyetin neye göre toplanacağını ve maliyet dağılımını kimin onaylayacağını yazın. Finans ve üretim tek bir sayfada anlaşamıyorsa, sistemde de anlaşamazlar.
+
+Yapılandırma başlamadan önce bu tasarıma ikinci bir göz isterseniz, [SAP programınız hakkında benimle konuşabilirsiniz](/tr/contact-noel-erp-support/).
+
+## Sıkça sorulan sorular
+
+<details>
+<summary>SAP'de kesikli ve proses üretim arasındaki fark nedir?</summary>
+
+Kesikli üretim, bir ürün ağacı ve rotadan oluşturulan üretim siparişleriyle çalışır ve montajlı veya talaşlı imalat ürünlerine uygundur. Proses üretimi ana reçetelerden oluşturulan PP-PI proses siparişlerini kullanır ve değişken verimli, ortak ürünlü ve yan ürünlü formüllere ve partilere uygundur. İkisi de aynı S/4HANA sisteminde çalışır ve birçok tesis ikisini birden kullanır.
+
+</details>
+
+<details>
+<summary>SAP PP-PI ne için kullanılır?</summary>
+
+PP-PI (Production Planning for Process Industries, proses endüstrileri için üretim planlama), kimya, gıda, ilaç, plastik ve metal gibi sektörlerde parti ve reçete bazlı üretimi yönetir. Operasyon ve fazlardan oluşan ana reçeteleri, proses siparişlerini, ortak ürünleri ve yan ürünleri kullanır ve proses talimatlarını atölyeye kontrol reçetesi olarak iletir.
+
+</details>
+
+<details>
+<summary>SAP'de seri üretimi ne zaman kullanmalıyım?</summary>
+
+Aynı ürün aynı hatta uzun süre üretiliyorsa ve her lotun maliyetine ihtiyacınız yoksa kullanın. Maliyetler üretim versiyonu başına bir ürün maliyet toplayıcısında dönem bazında toplanır; bu işlem eforunu azaltır ama sipariş bazında maliyet görünürlüğünü ortadan kaldırır.
+
+</details>
+
+<details>
+<summary>Tek bir SAP tesisi kesikli ve proses üretimi birlikte çalıştırabilir mi?</summary>
+
+Evet. Üretim tipi tesis bazında değil, malzeme ve üretim hattı bazında seçilir. Yaygın bir model, parti üreten aşamalar için PP-PI, dönüştürme ve paketleme için kesikli veya seri üretim kullanmak ve bunları partiyle yönetilen bir ara malzemeyle bağlamaktır.
+
+</details>
+
+<details>
+<summary>SAP'de ortak ürünler nasıl maliyetlendirilir?</summary>
+
+Maliyetler siparişte toplanır ve bir dağıtım yapısındaki, genellikle piyasa fiyatlarına dayanan eşdeğer sayılarıyla ortak ürünlere bölünür. Yan ürünler sipariş kalemi almaz ve değerleri ana ürünün maliyetini düşürür. Finans, eşdeğer sayılarında canlıya geçişten önce anlaşmalıdır.
+
+</details>
+
+<details>
+<summary>Kesikli üretim için parti yönetimine ihtiyacım var mı?</summary>
+
+Her zaman değil. Kesikli tesisler satın alınan hammaddeleri ve müşterilerin lot izlenebilirliği istediği mamulleri sıklıkla partiyle yönetir. Stoku özelliğe göre izlemeye veya seçmeye kimsenin ihtiyacı yoksa, parti yönetimi karşılığı olmayan bir işlem eforu ekler.
+
+</details>

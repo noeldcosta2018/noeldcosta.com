@@ -1,0 +1,203 @@
+---
+title: "ERP vs. MES en la fabricación: quién es dueño de qué"
+h1: "ERP vs. MES en la fabricación: quién es dueño de qué"
+slug: "erp-and-mes-manufacturing"
+date: "2026-10-15"
+updated: "2026-10-15"
+hero: "/images/manufacturing/erp-and-mes-manufacturing.webp"
+heroAlt: "Un terminal de planta y carros de piezas rastreados en una fábrica luminosa, con un flujo de ERP a MES en pantalla"
+category: "erp-strategy"
+tags: ["manufacturing-erp", "sap-manufacturing", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "ERP vs. MES en la fabricación: qué gestiona cada uno y SAP"
+metaDescription: "ERP vs. MES en la fabricación: de qué es dueño cada sistema, dónde encajan SAP Digital Manufacturing, Siemens Opcenter y Kinexon, y cómo funciona la integración."
+primaryKeyword: "ERP vs MES"
+excerpt: "Un ERP planifica, costea y contabiliza la producción; un MES la ejecuta en la planta e informa de vuelta. De qué es dueño cada uno, dónde encajan SAP Digital Manufacturing, Siemens Opcenter y el seguimiento de Kinexon, y los errores de integración que conviene evitar."
+experienceSource: "Noel's first-person experience implementing ERP in plastics, steel and defence manufacturing (confirmed by Noel, 15 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "El ERP planifica, compra, costea y contabiliza la producción; el MES la ejecuta en la planta y devuelve los resultados"
+  - "Acuerde qué sistema es dueño de cada registro, como notificaciones, desperdicio, genealogía y resultados de calidad, antes de configurar ninguno de los dos"
+  - "SAP Digital Manufacturing recibe órdenes y datos maestros de S/4HANA o ECC y devuelve notificaciones, consumos y entradas de mercancías"
+  - "Siemens Opcenter es un MES ajeno a SAP que también se sitúa por encima del ERP; Kinexon añade localización en tiempo real, no ejecución"
+  - "Cada notificación que contabiliza el MES se convierte en un costo en el ERP, así que el diseño financiero tiene que acordarse antes de construir la integración"
+pullQuote: "Cada notificación que devuelve el MES se convierte en un costo en el ERP. Si finanzas no ha acordado el diseño, la integración solo traslada la discusión al cierre de mes."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Digital Manufacturing"
+  - "SAP Cloud Integration"
+  - "SAP Extended Warehouse Management"
+  - "SAP Manufacturing Execution"
+  - "Siemens Opcenter"
+  - "KINEXON OS"
+  - "ISA-95"
+originalUrl: "https://noeldcosta.com/erp-and-mes-manufacturing/"
+canonicalUrl: "https://noeldcosta.com/es/erp-and-mes-manufacturing/"
+locale: "es"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+ERP vs. MES se reduce a tiempo y propiedad. El ERP planifica, compra, costea y contabiliza la producción a lo largo de días y semanas. El sistema de ejecución de la fabricación (MES) dirige la producción en la planta a lo largo de segundos y turnos, y después informa de lo que ha pasado.
+
+SAP Digital Manufacturing es el MES de SAP. Recibe órdenes de fabricación y datos maestros de SAP S/4HANA o SAP ECC y devuelve notificaciones, consumos y entradas de mercancías.
+
+Si todavía está eligiendo el ERP, empiece por mi comparativa del [mejor ERP para fabricación](/es/best-erp-for-manufacturing/). Este artículo baja una capa: de qué es dueño cada sistema, dónde encajan los productos de planta y cómo se unen los dos.
+
+He trabajado con SAP Digital Manufacturing, Siemens Opcenter y Kinexon. Tanto el MES de SAP como Siemens Opcenter se sitúan por encima del ERP, y la frontera entre ambos es donde se va la mayor parte del trabajo de diseño.
+
+## De qué es dueño el ERP y de qué es dueño el MES
+
+El artículo principal tiene la comparación breve. Aquí la pregunta es más concreta: para cada registro, ¿qué sistema es el maestro y cuál solo recibe una copia?
+
+Siemens, que fabrica Opcenter, lo plantea en términos de ISA-95. El ERP es un sistema de nivel 4 para la logística del negocio y el MES un sistema de operaciones de nivel 3. El ERP envía hacia abajo la demanda, las listas de materiales y los datos maestros; el MES envía hacia arriba los consumos, el desperdicio y las finalizaciones.
+
+Así suele repartirse la propiedad. Su reparto puede ser distinto, pero cada fila necesita una respuesta antes de empezar la configuración:
+
+| Registro | Dueño habitual | Papel del otro sistema |
+|---|---|---|
+| Maestro de materiales, lista de materiales, hoja de ruta o receta | ERP | El MES recibe una copia con la orden |
+| Orden de fabricación o de proceso | El ERP la crea y la libera | El MES la ejecuta y sigue cada paso |
+| Secuencia de operaciones e instrucciones de trabajo en la línea | MES | El ERP guarda la hoja de ruta de la que salió |
+| Datos de máquina, tiempos de inactividad y OEE | MES | El ERP rara vez necesita el detalle, solo el resultado |
+| Notificaciones de cantidad buena y desperdicio | El MES las registra | El ERP las contabiliza en costos y stock |
+| Consumo de componentes y entrada de mercancías | El MES los dispara | El ERP contabiliza el inventario y lo valora |
+| Genealogía de lotes o números de serie en la línea | MES | El ERP guarda el maestro de lotes y el stock |
+| Resultados de la inspección en proceso | El MES los registra | La gestión de calidad del ERP mantiene el lote de inspección y la decisión de empleo |
+| Costo del producto, productos en curso y desviaciones | ERP | El MES no ve el costo |
+
+La última fila es la que se olvida. El MES nunca ve dinero, y sin embargo cada fila anterior alimenta el costo de la orden.
+
+## Dónde encaja SAP Digital Manufacturing
+
+SAP Digital Manufacturing es un producto en la nube con cuatro partes según la actual [descripción del alcance funcional de SAP (versión 2608)](https://help.sap.com/doc/13c9f83611f94a5ab2c94f23cacfc217/latest/en-US/SAP_DMC_FSD_enUS.pdf):
+
+1. **Ejecución**: liberación de órdenes, trabajo en curso paso a paso, paneles para operarios, instrucciones de trabajo, inspecciones de calidad, genealogía, OEE y tiempos de inactividad, e integración de máquinas mediante su Production Connector
+2. **Resolución de incidencias**: resolución estructurada de problemas con proveedores, clientes o equipos internos
+3. **Análisis**: supervisión en tiempo real y analítica sobre los datos de producción que recoge la ejecución
+4. **Edge computing**: un conjunto definido de funciones que se ejecutan en la propia planta, cerca de las máquinas, para que la planta pueda seguir trabajando con una conectividad irregular con la nube
+
+SAP Learning detalla [qué fluye entre S/4HANA y SAP Digital Manufacturing](https://learning.sap.com/courses/discovering-sap-digital-manufacturing/exploring-the-integration-of-sap-digital-manufacturing-with-sap-s-4hana_b2ffd41c-64b9-4f73-a802-8528562e2cb7). Hacia abajo van materiales, puestos de trabajo, órdenes con sus listas de materiales, hojas de ruta o recetas, datos de inventario e información de inspección. De vuelta llegan notificaciones de operación con cantidad buena, desperdicio y tiempo, consumos de componentes, entradas de mercancías, estado de las órdenes, resultados de inspección y valores de características de lote.
+
+La vía técnica está en la [guía de integración de Digital Manufacturing de SAP](https://help.sap.com/doc/f6b2ab2222794bebad4c0dcd33138e71/latest/en-US/SAP_DMC_Integration_Guide_enUS.pdf). SAP Cloud Integration y Cloud Connector son el middleware necesario. Los datos maestros y las órdenes viajan como IDocs, y las notificaciones vuelven como llamadas BAPI por RFC, con OData como opción para algunas llamadas directas a S/4HANA.
+
+Un detalle importa a los grupos con varias plantas. La guía dice que un único sistema global de SAP Digital Manufacturing puede dar servicio a todas las plantas, conectado a varios sistemas ERP, por ejemplo uno por planta o por país.
+
+Si todavía usa SAP Manufacturing Execution (SAP ME) o SAP MII, trate el paso como una implementación nueva y no como una actualización. La guía de integración limita la integración con SAP ME a Resource Orchestration. Compruebe las fechas de mantenimiento de su versión en la Product Availability Matrix de SAP antes de construir un plan en torno a ellas.
+
+## Siemens Opcenter y Kinexon: otras capas en la planta
+
+SAP Digital Manufacturing no es el único MES que se sitúa por encima de S/4HANA. Siemens describe [Opcenter](https://www.siemens.com/global/en/products/automation/topic-areas/opcenter.html) como una cartera de gestión de operaciones de fabricación, con Opcenter Execution como MES y productos aparte para planificación y programación (Opcenter APS), calidad y trabajo de laboratorio.
+
+En arquitectura es el mismo patrón. El ERP planifica y costea; Opcenter ejecuta e informa de vuelta. La integración se construye entre dos proveedores, así que la tabla de propiedad de arriba importa todavía más.
+
+Kinexon es otro tipo de producto. No ejecuta pasos de producción.
+
+Kinexon describe su oferta como [software de localización en tiempo real combinado con etiquetas UWB](https://kinexon.com/sap) u otra tecnología de localización. KINEXON OS es la plataforma que vincula las etiquetas con las órdenes de fabricación y convierte los movimientos por zonas definidas en contabilizaciones y alertas.
+
+Kinexon afirma que KINEXON OS funciona con SAP Digital Manufacturing y SAP Extended Warehouse Management. Así que piense en él como una capa de localización junto al MES. Responde dónde está una orden, una pieza o un vehículo, y puede disparar la transacción que el MES o el ERP, de otro modo, esperarían a que alguien tecleara.
+
+Así se comparan los tres:
+
+| Producto | Qué hace | Dónde se sitúa |
+|---|---|---|
+| SAP Digital Manufacturing | MES: ejecución, calidad en la línea, genealogía, OEE, analítica | Por encima de S/4HANA o ECC, conectado mediante SAP Cloud Integration |
+| Siemens Opcenter | MES y cartera de operaciones: ejecución, programación, calidad, laboratorio | Por encima del ERP, de cualquier proveedor |
+| Kinexon (KINEXON OS) | Localización en tiempo real de órdenes, piezas y vehículos; contabilizaciones basadas en eventos | Junto al MES y al sistema de almacén, alimentándolos con eventos |
+
+## Cómo funciona la integración entre ERP y MES
+
+Elija el MES que elija, el ciclo es el mismo. El ERP decide qué fabricar; el MES lo fabrica y le dice al ERP qué ha consumido y qué ha salido.
+
+<explainer-flow title="El ciclo entre ERP y MES" caption="Cada vuelta del ciclo termina en el ERP, donde el resultado de la planta se convierte en stock y costo." steps="Planificar en el ERP|Liberar la orden|Ejecutar en el MES|Notificar de vuelta|Costear en el ERP" notes="El MRP crea órdenes previsionales a partir de la demanda|Orden, lista de materiales y hoja de ruta bajan al MES|Los operarios ejecutan los pasos y registran calidad y genealogía|Cantidad buena, desperdicio, consumos y entrada de mercancías suben|Stock, productos en curso y desviaciones se contabilizan en finanzas" result="El ERP muestra lo que pasó en la planta, valorado al costo"></explainer-flow>
+
+Cinco patrones de integración cubren casi todo lo que tendrá que diseñar:
+
+1. **Replicación de datos maestros.** Materiales, puestos de trabajo y clasificaciones pasan del ERP al MES antes que cualquier orden. Si el MES rechaza una orden, revise primero los datos maestros.
+2. **Descarga de órdenes.** Las órdenes liberadas viajan con su lista de materiales y su hoja de ruta o receta. Decida si se permiten cambios después de la liberación, y qué sistema prevalece cuando ocurren.
+3. **Carga de notificaciones.** La cantidad buena, el desperdicio y el tiempo vuelven por operación o por orden. La frecuencia es una decisión de diseño con consecuencias de costo, no un detalle técnico.
+4. **Datos de máquinas y sensores.** Las señales de las máquinas van al MES o a una capa edge, no directamente al ERP. Solo el resultado de negocio, como un recuento o un motivo de parada, debería ir más allá.
+5. **Disparadores por eventos de seguimiento.** Los eventos de localización o de sensores de un producto como Kinexon pueden contabilizar una operación automáticamente. Defina quién la corrige cuando el evento es erróneo.
+
+Planifique para cuando caiga la red. Si la línea se detiene cuando se corta la conexión con la nube, diseñe ejecución local en el MES, por ejemplo con SAP Digital Manufacturing for edge computing. Acuerde cómo se contabiliza lo pendiente cuando vuelva la conexión.
+
+Cómo planifica antes de la ejecución es una decisión aparte. Mi [guía de SAP PP](/es/sap-pp-production-planning/) trata el lado del ERP, y el artículo de esta serie sobre [MRP Live vs. PP/DS vs. IBP](/es/mrp-live-vs-pp-ds-vs-ibp/) explica cuándo dar el salto en la herramienta de planificación.
+
+## Errores comunes en proyectos de ERP y MES
+
+En mi experiencia, el motivo más común por el que fracasan los proyectos de ERP para fabricación es que el diseño no se acuerda en su totalidad, sobre todo en finanzas. Un MES lo empeora, porque multiplica las contabilizaciones con las que finanzas tiene que convivir.
+
+Estos son los errores contra los que hay que planificar:
+
+1. **Definir el ERP y el MES como proyectos separados.** Dos equipos, dos diseños y una interfaz de la que nadie es dueño. Ponga una única autoridad de diseño sobre ambos.
+2. **Dejar abierta la propiedad.** Si los dos sistemas pueden cambiar una orden, o los dos registran el desperdicio, obtendrá dos respuestas. Complete la tabla de propiedad antes de la configuración.
+3. **Diseñar las notificaciones sin finanzas.** La frecuencia de las notificaciones, la notificación retroactiva, los motivos de desperdicio y las clases de actividad deciden cómo se ven los productos en curso y las desviaciones al cierre de mes. Acuérdelos con el controller, no solo con el director de planta.
+4. **Enviar datos de máquina al ERP.** El ERP no es un historiador de datos. Guarde las señales en bruto en el MES o en una plataforma analítica, y envíe al ERP solo lo que contabiliza.
+5. **Probar cada sistema por separado.** Pruebe el ciclo completo del MRP al costo, con órdenes reales, desperdicio real y anulaciones reales. Las pruebas suponen alrededor del 35 por ciento del esfuerzo del programa, y las pruebas de interfaz son las que los equipos recortan.
+6. **Olvidar el cutover de las órdenes abiertas.** Las órdenes que están a medio fabricar en el go-live necesitan reglas sobre qué sistema las termina. Escriba esas reglas antes de la migración, no durante.
+7. **Formar a los operarios en el ERP.** Los operarios trabajan en el MES. Fórmelos ahí, por turnos, en sus propias líneas.
+
+Los datos maestros merecen su propia advertencia. Las listas de materiales, las hojas de ruta y los puestos de trabajo alimentan los dos sistemas, y una hoja de ruta errónea en el ERP se convierte en una instrucción errónea en la línea. Mi artículo sobre [SAP en la fabricación](/es/sap-manufacturing-industry-secrets/) incluye la lista de comprobación de datos maestros.
+
+## Por dónde empezar
+
+Empiece por la tabla de propiedad, no por la demo del producto. Reúna en una sala al director de planta, al controller y al responsable de TI, y asigne cada registro de la tabla de arriba a un solo sistema.
+
+Después elija el MES que encaje con su ERP y sus plantas, y defina la integración como parte del programa ERP, con sus propios ciclos de prueba. Presupuéstela también dentro del programa; el artículo de esta serie sobre el [costo de un ERP para fabricación](/es/manufacturing-erp-cost/) muestra adónde va ese dinero.
+
+Si quiere una opinión independiente sobre un diseño de ERP y MES antes de comprometerse, ayudo a fabricantes con esto. Puede [contactarme aquí](/es/contact-noel-erp-support/).
+
+## Preguntas frecuentes
+
+<details>
+<summary>¿Cuál es la diferencia entre ERP y MES?</summary>
+
+Un ERP planifica, compra, costea y contabiliza la producción a lo largo de días y semanas. Un MES ejecuta la producción en la planta a lo largo de segundos y turnos, y registra los pasos de los operarios, los datos de máquina, los controles de calidad y la genealogía.
+
+Los dos funcionan como un ciclo. El ERP envía órdenes hacia abajo, y el MES devuelve notificaciones, consumos y entradas de mercancías para que el ERP pueda contabilizar stock y costo.
+
+</details>
+
+<details>
+<summary>¿Qué es SAP Digital Manufacturing?</summary>
+
+Es el MES en la nube de SAP. Cubre la ejecución de la producción, la resolución de incidencias, el análisis y el edge computing, según la descripción del alcance funcional de SAP.
+
+Recibe datos maestros y órdenes de fabricación o de proceso de SAP S/4HANA o SAP ECC mediante SAP Cloud Integration y Cloud Connector. Devuelve notificaciones, consumos, entradas de mercancías y resultados de inspección.
+
+</details>
+
+<details>
+<summary>¿Necesito un MES si tengo SAP S/4HANA?</summary>
+
+No siempre. Una sola planta con una producción sencilla a menudo puede notificar las órdenes directamente en S/4HANA.
+
+Necesita un MES cuando requiere control paso a paso en la línea, genealogía completa de lotes o números de serie, datos de máquina en tiempo real, o un único estándar de producción en varias plantas.
+
+</details>
+
+<details>
+<summary>¿Siemens Opcenter es una alternativa a SAP Digital Manufacturing?</summary>
+
+Puede serlo. Ambos son productos MES que se sitúan por encima del ERP. Siemens Opcenter es una cartera de gestión de operaciones de fabricación con Opcenter Execution como MES, más productos de programación, calidad y laboratorio.
+
+La elección depende de sus plantas, su automatización y su ERP. En cualquier caso, acuerde qué sistema es dueño de cada registro antes de construir la integración.
+
+</details>
+
+<details>
+<summary>¿Qué hace Kinexon en la fabricación?</summary>
+
+Kinexon ofrece localización en tiempo real. Su plataforma KINEXON OS vincula etiquetas de localización con órdenes de fabricación y puede disparar contabilizaciones y alertas cuando una orden pasa por una zona definida.
+
+No es un MES. Kinexon afirma que funciona con SAP Digital Manufacturing y SAP Extended Warehouse Management, a los que alimenta con eventos de localización.
+
+</details>
+
+<details>
+<summary>¿Se puede actualizar SAP ME o SAP MII a SAP Digital Manufacturing?</summary>
+
+Planifíquelo como una implementación nueva, no como una actualización. La guía de integración de SAP limita la integración de SAP Digital Manufacturing con SAP ME a Resource Orchestration.
+
+Compruebe las fechas de mantenimiento de su versión de SAP ME o MII en la Product Availability Matrix de SAP, y rediseñe la propiedad entre ERP y MES como parte del cambio.
+
+</details>

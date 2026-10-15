@@ -1,0 +1,196 @@
+---
+title: "SAP diskrete Fertigung vs. Prozessfertigung: was sich ändert"
+h1: "SAP diskrete Fertigung vs. Prozessfertigung: was sich ändert"
+slug: "sap-discrete-vs-process-manufacturing"
+date: "2026-10-15"
+updated: "2026-10-15"
+hero: "/images/manufacturing/sap-discrete-vs-process-manufacturing.webp"
+heroAlt: "Eine helle Fabrikhalle mit einer Montagelinie für diskrete Fertigung neben Prozesstanks und einem Trichter mit Kunststoffgranulat"
+category: "erp-strategy"
+tags: ["manufacturing-erp", "sap-manufacturing", "sap-pp", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "SAP diskrete Fertigung vs. Prozessfertigung: PP, PP-PI, REM"
+metaDescription: "SAP diskrete Fertigung vs. Prozessfertigung: Fertigungsauftrag, PP-PI-Prozessauftrag oder Serienfertigung, Stückliste vs. Leitrezept, Chargen, Qualität, Kosten."
+primaryKeyword: "sap diskrete fertigung vs prozessfertigung"
+excerpt: "In SAP läuft die diskrete Fertigung über Fertigungsaufträge, Stücklisten und Arbeitspläne, die Prozessfertigung (PP-PI) über Prozessaufträge und Leitrezepte und die Serienfertigung über periodenbezogene Planung. Was jede Variante bei Stammdaten, Chargen, Qualität und Kalkulation verändert und wie Werke mit Mischfertigung wie Kunststoff und Stahl sie kombinieren."
+experienceSource: "Noel's first-person experience implementing ERP in plastics, steel and defence manufacturing (confirmed by Noel, 15 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "Die diskrete Fertigung läuft über Fertigungsaufträge mit Stücklisten und Arbeitsplänen, PP-PI über Prozessaufträge mit Leitrezepten, die Serienfertigung über periodenbezogene Planung je Fertigungsversion"
+  - "Die Wahl fällt je Material und Fertigungslinie, nicht je Unternehmen, deshalb fahren viele Werke zwei Varianten nebeneinander"
+  - "Chargenverwaltung und Kuppelprodukte sind die größten Unterschiede der Prozessfertigung, und beide reichen bis ins Finanzwesen"
+  - "Die Serienfertigung sammelt Kosten periodenweise auf einem Produktkostensammler statt je Auftrag, damit verlieren Sie die Kostensicht je Los"
+  - "Kunststoff- und Stahlwerke sind oft Mischfertiger: Prozessfertigung am Anfang der Linie, diskrete oder Serienfertigung am Ende"
+  - "Stimmen Sie das Kalkulationsdesign mit dem Finanzwesen ab, bevor Sie die Auftragsarten konfigurieren"
+pullQuote: "Die Fertigungsart, die Sie in SAP wählen, ist ebenso eine Kalkulationsentscheidung wie eine Planungsentscheidung. Das Finanzwesen muss sie freigeben, bevor jemand eine Auftragsart konfiguriert."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP PP"
+  - "SAP PP-PI"
+  - "SAP QM"
+  - "SAP CO"
+  - "Material Ledger"
+  - "SAP Digital Manufacturing"
+originalUrl: "https://noeldcosta.com/sap-discrete-vs-process-manufacturing/"
+canonicalUrl: "https://noeldcosta.com/de/sap-discrete-vs-process-manufacturing/"
+locale: "de"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Bei SAP diskrete Fertigung vs. Prozessfertigung geht es um das Objekt, über das Sie die Produktion steuern. Die diskrete Fertigung nutzt Fertigungsaufträge, die aus Stücklisten und Arbeitsplänen entstehen, die Prozessfertigung (PP-PI) Prozessaufträge, die aus Leitrezepten entstehen.
+
+Die Serienfertigung (REM) ist die dritte Option: gar keine Einzelaufträge, nur geplante Mengen je Fertigungslinie und Periode. Die Wahl verändert Ihre Stammdaten, die Chargenführung, die Qualitätsprüfung und vor allem, wie das Finanzwesen die Kosten sieht.
+
+Ich habe ERP in der Kunststoff- und in der Stahlfertigung eingeführt. Beide Branchen mischen oft Prozess- und diskrete Schritte, deshalb nutze ich sie unten als allgemeine Beispiele. Dieser Beitrag zeigt, was sich zwischen den drei Varianten in SAP S/4HANA tatsächlich ändert und wie Sie für ein Werk entscheiden, das von allem etwas hat.
+
+Wenn Sie das ERP selbst noch auswählen, beginnen Sie mit meinem Vergleich zum [besten ERP für die Fertigung](/de/best-erp-for-manufacturing/). Für das Modul Produktionsplanung (PP) insgesamt lesen Sie meinen [Leitfaden zu SAP PP](/de/sap-pp-production-planning/).
+
+## Diskrete, Prozess- und Serienfertigung in SAP im Überblick
+
+Alle drei Varianten laufen im selben S/4HANA-System und teilen sich denselben Materialstamm, denselben MRP-Lauf und dasselbe Finanzwesen. Unterschiedlich sind das Ausführungsobjekt, die Stammdaten dahinter und die Art, wie Kosten gesammelt werden.
+
+So unterscheiden sich die drei, wenn Sie sie konfigurieren:
+
+| Was sich ändert | Diskret (PP) | Prozess (PP-PI) | Serie (REM) |
+|---|---|---|---|
+| Ausführungsobjekt | Fertigungsauftrag | Prozessauftrag | Planaufträge in der Serienplanung, periodenweise rückgemeldet |
+| Wie gefertigt wird | Arbeitsplan mit Vorgängen an Arbeitsplätzen | Leitrezept mit Vorgängen und Phasen an Ressourcen | Arbeitsplan oder Ratenplan auf einer Fertigungslinie |
+| Was eingeht | Stückliste | Stückliste, oft mit Kuppel- und Nebenprodukten | Stückliste, Komponenten retrograd entnommen |
+| Kostenträger | Der Auftrag | Der Auftrag, aufgeteilt auf die Kuppelprodukte | Produktkostensammler je Fertigungsversion |
+| Typische Rückverfolgung | Seriennummern oder Los je Auftrag | Chargengenealogie | Chargen möglich, Kosten je Periode |
+| Passt zu | Montierten oder spanend bearbeiteten Produkten, Kundeneinzelfertigung | Rezepturen, Mischen, Reaktionen, schwankender Ausbeute | Demselben Produkt auf derselben Linie über lange Läufe |
+
+Zwei Punkte zählen mehr als die Tabelle. Die Variante wird je Material und Fertigungslinie gewählt, nicht je Unternehmen, sodass ein Werk alle drei fahren kann. Die Variante ist außerdem eine Kalkulationsentscheidung, und deshalb muss das Finanzwesen mit am Tisch sitzen, wenn sie fällt.
+
+## Stammdaten: Stücklisten und Arbeitspläne vs. Leitrezepte
+
+Die diskrete Fertigung beschreibt ein Produkt als Stückliste und Arbeitsplan. Der Arbeitsplan listet Vorgänge, jeder an einem Arbeitsplatz mit Vorgabezeiten, die Terminierung, Kapazität und Kosten bestimmen.
+
+PP-PI ersetzt den Arbeitsplan durch ein Leitrezept. Laut SAPs [Dokumentation zum Leitrezept](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/21aead0c98bd4755abdacd91c99e3393/9741b753128eb44ce10000000a174cb4.html) hat ein Rezept einen Kopf und Vorgänge, die an einer Primärressource ausgeführt werden, und die Vorgänge gliedern sich weiter in Phasen. Mit den Vorgabewerten dieser Phasen werden Termine, Kapazitäten und Kosten berechnet.
+
+In beiden Varianten verbindet die Fertigungsversion alles. Sie verknüpft ein Material mit der Stücklistenalternative und dem Arbeitsplan oder Rezept, die für MRP, Kalkulation und Auftragsanlage genutzt werden. Ein Material kann mehrere Versionen für unterschiedliche Losgrößen oder Gültigkeitszeiträume haben.
+
+Drei Unterschiede in den Stammdaten bringen Teams ins Stolpern:
+
+1. **Phasen und Prozessvorgaben.** Ein Rezept kann Prozessvorgaben enthalten, die als Steuerrezept an die Werkstatt gehen. Diskrete Arbeitspläne haben nichts Vergleichbares, das ist also neue Designarbeit, keine Konvertierung.
+2. **Negative Komponenten.** In Prozessstücklisten werden Nebenprodukte als Komponenten mit negativer Menge erfasst. Altsysteme führen sie selten so, also müssen sie neu aufgebaut werden.
+3. **Ressourcen statt Arbeitsplätze.** Das Konzept ist dasselbe, aber Prozessteams denken in Behältern, Tanks und Linien. Einigen Sie sich auf die Benennung, bevor die Datenmigration beginnt.
+
+Nach meiner Erfahrung macht die Datenmigration 30 bis 40 Prozent des Aufwands in einem SAP-Programm aus. In einem Prozesswerk sind Rezepte und Chargenklassifizierungen ein großer Teil davon, und sie sind meist in schlechterem Zustand, als irgendjemand erwartet.
+
+## Chargenverwaltung und Kuppelprodukte
+
+Bei der Chargenverwaltung unterscheidet sich die Prozessfertigung am stärksten von der diskreten. Jeder Zugang, jeder Verbrauch und jede Bestandsbewegung eines chargenpflichtigen Materials trägt eine Chargennummer, und die Charge trägt ihre Eigenschaften.
+
+SAP speichert diese Eigenschaften im Klassensystem, an [Chargenklassen](https://help.sap.com/docs/SAP_S4HANA_CLOUD/32da8359c8ee4e8b8e8c5e15cacba5aa/546ac23df1254af3baca5d9afe99ed04.html). Die Chargenfindung nutzt sie dann, um Bestand auszuwählen, der eine Anforderung erfüllt, etwa First-in-first-out oder eine Mindestreinheit. Der Chargenverwendungsnachweis verfolgt eine Charge rückwärts zu ihren Einsatzstoffen und vorwärts bis zu den Kunden, und genau das verlangt ein Prüfer oder eine Kundenreklamation.
+
+Kuppelprodukte sind der zweite Unterschied. In SAPs Logik der [Kuppelproduktion](https://help.sap.com/docs/SAP_S4HANA_CLOUD/4032610758dc437089f0c28320eec93f/753b77a7bb224b5dac3c80ebc0f57b13.html) erhält jedes Kuppelprodukt eine eigene Auftragsposition, und die auf dem Auftrag gesammelten Kosten werden über Äquivalenzziffern in einer Aufteilungsstruktur auf sie verteilt. Nebenprodukte erhalten keine Auftragsposition; ihr Wert mindert die Kosten des Hauptprodukts.
+
+Die Äquivalenzziffern sind eine Entscheidung des Finanzwesens, meist auf Basis von Marktpreisen. Wenn niemand sie vor dem Go-live abstimmt, wird jeder Auftrag mit Zahlen abgerechnet, die ein Berater während des Aufbaus eingetippt hat.
+
+Auch diskrete Werke können Chargen nutzen. Viele tun es für zugekaufte Rohstoffe und manche für Fertigerzeugnisse, bei denen Kunden eine Losrückverfolgung brauchen, aber die Auftrags- und Kalkulationslogik bleibt diskret.
+
+## Qualität: Prüfung in der Fertigung und Wareneingangsprüfung
+
+Das Qualitätsmanagement (QM) funktioniert in allen drei Varianten gleich, aber Prozesswerke nutzen meist mehr davon. Zwei Prüfarten leisten den Großteil der Arbeit in der Produktion, wie SAPs [Lerninhalte zu QM in der Produktion](https://learning.sap.com/courses/performing-quality-management-in-production/processing-of-inspection-lots-for-the-goods-receipt-for-the-production-order_df917051-61e8-48a4-b0c9-9e5eb5678406) beschreiben.
+
+Die Prüfung in der Fertigung (Herkunft 03) erzeugt bei der Freigabe des Auftrags ein Prüflos, mit Prüfschritten aus dem Arbeitsplan oder Rezept. Sie ist nicht bestandsrelevant. Die Wareneingangsprüfung (Herkunft 04) erzeugt ein Los beim Wareneingang der Fertigerzeugnisse, der Bestand liegt im Qualitätsprüfbestand, und der Verwendungsentscheid gibt ihn frei oder sperrt ihn.
+
+Entscheiden Sie früh, welche Prüfungen in SAP liegen und welche in einem Manufacturing Execution System (MES) oder Laborsystem. Zwei Systeme mit demselben Ergebnis sind der Weg, auf dem ein Werk am Ende eine Charge hat, die in einem System freigegeben und im anderen gesperrt ist.
+
+## Kalkulation: je Auftrag, je Kuppelprodukt oder je Periode
+
+Diesen Abschnitt sollten Sie mit Ihrem CFO teilen. Die Fertigungsart entscheidet, was das Finanzwesen sehen kann.
+
+Fertigungs- und Prozessaufträge sind beide Kostenträger. Istkosten werden auf den Auftrag gebucht, der Auftrag wird mit seinem Standard verglichen, und Abweichungen werden zum Periodenende abgerechnet, je Auftrag. Bei Prozessaufträgen mit Kuppelprodukten werden die Kosten vor der Abrechnung auf die Kuppelprodukte verteilt.
+
+Die Serienfertigung funktioniert anders. SAPs [Hinweise für Umgebungen mit Serienfertigung](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/48b24fbadbee4e0b9dae0e2b72762e68/d3a4b9537cceb44ce10000000a174cb4.html) empfehlen einen Produktkostensammler je Fertigungsversion. Kosten aus Warenbewegungen und Rückmeldungen werden auf den Kostensammler gebucht, nicht auf einen Auftrag, und Abweichungen werden je Periode ermittelt.
+
+Dieser Zielkonflikt ist die ganze Entscheidung. Sie haben in der Werkstatt deutlich weniger Buchungsaufwand und verlieren die Kosten jedes einzelnen Loses.
+
+Zwei weitere Punkte des Finanzwesens gelten für jede Variante:
+
+- **Der Material-Ledger ist in S/4HANA standardmäßig aktiv.** Die Istkalkulation damit ist optional und wird je Werk eingeschaltet, also entscheiden Sie, ob Sie Ist-Produktkosten brauchen, bevor Sie den Periodenabschluss gestalten.
+- **Ware in Arbeit und Ausschuss brauchen eigene Einstellungen.** Auf Produktkostensammlern wird die Ware in Arbeit mit einem Ergebnisermittlungsschlüssel berechnet, und sie wird beim Aufbau leicht vergessen und erst beim ersten Monatsabschluss entdeckt.
+
+Der häufigste Grund, warum ERP-Projekte in der Fertigung scheitern, ist nach meiner Beobachtung, dass das Design nicht in seiner Gesamtheit abgestimmt ist, vor allem im Finanzwesen. Fertigungsart, Kostenträger und Aufteilung der Kuppelprodukte sind genau die Entscheidungen, die dem PP-Berater überlassen und dann beim ersten Abschluss ausgefochten werden.
+
+## Kunststoff und Stahl: warum Mischfertigung normal ist
+
+Die meisten Werke passen in keine einzelne Kategorie. Kunststoff und Stahl, die beiden prozesslastigen Branchen, in denen ich ERP eingeführt habe, zeigen gut, warum.
+
+Die folgenden Punkte beschreiben diese Branchen allgemein, nicht einen bestimmten Kunden.
+
+1. **Der Anfang der Linie verhält sich wie Prozessfertigung.** Mischen von Harzen, Schmelzen und Gießen erzeugen Chargen mit schwankender Ausbeute und Eigenschaften, die erfasst werden müssen.
+2. **Das Ende der Linie verhält sich oft wie diskrete oder Serienfertigung.** Spritzgussteile, Extrusionsprofile, Zuschnitte oder Coils werden als Einheiten gezählt, verpackt und versandt, oft in langen Läufen desselben Produkts.
+3. **Material wird wiederverwendet.** Mahlgut im Kunststoff und Schrott im Stahl gehen zurück in den Prozess, und damit stellt sich die Frage: Nebenprodukt, Kuppelprodukt oder einfacher Ausschuss in der Stückliste?
+4. **Kunden spezifizieren Eigenschaften, nicht nur Teilenummern.** Güte, Dicke, Farbe oder Schmelzeigenschaften stehen in Chargenmerkmalen, die dem Material vom Auftrag bis zum Versand folgen müssen.
+
+Es gibt keine einheitliche Vorlage. Nach meiner Erfahrung hängt die Ausgestaltung einer diskreten Fertigung davon ab, was der Kunde braucht, und ein gemischtes Werk bringt mehr Entscheidungen mit sich, nicht weniger.
+
+Ein häufiges Muster ist PP-PI für die chargenerzeugenden Stufen und Serien- oder diskrete Fertigung für Weiterverarbeitung und Verpackung, verbunden über ein chargenpflichtiges Zwischenprodukt. Ob das für Sie richtig ist, hängt davon ab, wo Sie Kosten je Los brauchen, wo Sie Rückverfolgbarkeit brauchen und wie viel Buchungsvolumen die Werkstatt tragen kann.
+
+Die Planung fügt eine weitere Ebene hinzu. Wenn Merkmale oder eine Engpasslinie Ihren Plan bestimmen, lesen Sie meinen Vergleich [MRP Live vs. PP/DS vs. IBP](/de/mrp-live-vs-pp-ds-vs-ibp/), bevor Sie annehmen, dass MRP allein genügt.
+
+## Wie Sie die Variante für jede Linie wählen
+
+Treffen Sie die Entscheidung Linie für Linie, mit Produktion, Qualität und Finanzwesen gemeinsam. Diese Fragen klären das meiste:
+
+1. **Entsteht das Produkt aus einer Rezeptur, einer Reaktion oder einer Mischung mit schwankender Ausbeute?** Nutzen Sie PP-PI.
+2. **Erzeugt ein Lauf mehrere verkaufsfähige Produkte?** Nutzen Sie PP-PI mit Kuppelprodukten und lassen Sie das Finanzwesen die Aufteilung abstimmen.
+3. **Brauchen Sie die Kosten jedes Loses oder Kundenauftrags?** Nutzen Sie Fertigungs- oder Prozessaufträge, keine Serienfertigung.
+4. **Läuft wochenlang dasselbe Produkt auf derselben Linie, mit stabilen Arbeitsplänen?** Dann lohnt es sich, die Serienfertigung zu prüfen.
+5. **Erwarten Kunden oder Behörden eine Chargengenealogie?** Führen Sie die Materialien chargenpflichtig, egal welche Auftragsart Sie wählen.
+6. **Wird ein MES die Werkstatt steuern?** Legen Sie fest, welches System Rückmeldungen, Qualitätsergebnisse und Genealogie führt, bevor Sie eines von beiden konfigurieren. Mein Beitrag zu [ERP und MES in der Fertigung](/de/erp-and-mes-manufacturing/) behandelt diese Aufteilung.
+
+Testen Sie die Entscheidung dann durchgängig. Nach meiner Erfahrung macht das Testen etwa 35 Prozent des Aufwands in einem SAP-Programm aus. In Werken mit Mischfertigung sitzen die Fehler, nach denen Sie suchen sollten, an den Übergaben zwischen den Varianten: beim Zwischenprodukt mit Charge, bei der retrograden Entnahme und bei der Abrechnung zum Periodenende.
+
+## Nächster Schritt
+
+Nehmen Sie eine Produktfamilie, vom Rohstoff bis zum Versand, und schreiben Sie auf, in welcher Variante jede Stufe laufen würde, worauf sie Kosten sammelt und wer die Kostenaufteilung freigibt. Wenn sich Finanzwesen und Produktion nicht auf einer Seite einigen können, werden sie sich auch im System nicht einigen.
+
+Wenn Sie eine zweite Meinung zu diesem Design möchten, bevor die Konfiguration beginnt, können Sie [mit mir über Ihr SAP-Programm sprechen](/de/contact-noel-erp-support/).
+
+## Häufig gestellte Fragen
+
+<details>
+<summary>Was ist der Unterschied zwischen diskreter Fertigung und Prozessfertigung in SAP?</summary>
+
+Die diskrete Fertigung läuft über Fertigungsaufträge, die aus einer Stückliste und einem Arbeitsplan entstehen, und passt zu Produkten, die montiert oder spanend bearbeitet werden. Die Prozessfertigung nutzt PP-PI-Prozessaufträge, die aus Leitrezepten entstehen, und passt zu Rezepturen und Chargen mit schwankender Ausbeute, Kuppel- und Nebenprodukten. Beide laufen im selben S/4HANA-System, und viele Werke nutzen beide.
+
+</details>
+
+<details>
+<summary>Wofür wird SAP PP-PI verwendet?</summary>
+
+PP-PI (Production Planning for Process Industries, Produktionsplanung für die Prozessindustrie) bildet chargen- und rezeptbasierte Produktion in Branchen wie Chemie, Lebensmittel, Pharma, Kunststoff und Metall ab. Es nutzt Leitrezepte mit Vorgängen und Phasen, Prozessaufträge, Kuppel- und Nebenprodukte und gibt Prozessvorgaben als Steuerrezepte an die Werkstatt weiter.
+
+</details>
+
+<details>
+<summary>Wann sollte ich in SAP die Serienfertigung nutzen?</summary>
+
+Nutzen Sie sie, wenn dasselbe Produkt über lange Zeiträume auf derselben Linie läuft und Sie die Kosten der einzelnen Lose nicht brauchen. Die Kosten sammeln sich periodenweise auf einem Produktkostensammler je Fertigungsversion. Das senkt den Buchungsaufwand, nimmt Ihnen aber die Kostensicht je Auftrag.
+
+</details>
+
+<details>
+<summary>Kann ein SAP-Werk diskrete Fertigung und Prozessfertigung gemeinsam fahren?</summary>
+
+Ja. Die Variante wird je Material und Fertigungslinie gewählt, nicht je Werk. Ein häufiges Muster ist PP-PI für die chargenerzeugenden Stufen und diskrete oder Serienfertigung für Weiterverarbeitung und Verpackung, verbunden über ein chargenpflichtiges Zwischenprodukt.
+
+</details>
+
+<details>
+<summary>Wie werden Kuppelprodukte in SAP kalkuliert?</summary>
+
+Die Kosten werden auf dem Auftrag gesammelt und über Äquivalenzziffern in einer Aufteilungsstruktur auf die Kuppelprodukte verteilt, meist auf Basis von Marktpreisen. Nebenprodukte erhalten keine Auftragsposition, und ihr Wert mindert die Kosten des Hauptprodukts. Das Finanzwesen sollte die Äquivalenzziffern vor dem Go-live abstimmen.
+
+</details>
+
+<details>
+<summary>Brauche ich Chargenverwaltung in der diskreten Fertigung?</summary>
+
+Nicht immer. Diskrete Werke führen oft zugekaufte Rohstoffe chargenpflichtig, dazu Fertigerzeugnisse, bei denen Kunden eine Losrückverfolgung brauchen. Wenn niemand Bestand nach Eigenschaften verfolgen oder auswählen muss, bringt die Chargenverwaltung zusätzlichen Buchungsaufwand ohne Gegenwert.
+
+</details>

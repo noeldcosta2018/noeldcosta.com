@@ -1,0 +1,196 @@
+---
+title: "SAP produzione discreta vs di processo: cosa cambia"
+h1: "SAP produzione discreta vs di processo: cosa cambia"
+slug: "sap-discrete-vs-process-manufacturing"
+date: "2026-10-15"
+updated: "2026-10-15"
+hero: "/images/manufacturing/sap-discrete-vs-process-manufacturing.webp"
+heroAlt: "Uno stabilimento luminoso con una linea di assemblaggio discreta accanto a serbatoi di processo e a una tramoggia di granuli di plastica"
+category: "erp-strategy"
+tags: ["manufacturing-erp", "sap-manufacturing", "sap-pp", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "SAP produzione discreta vs di processo: PP, PP-PI e REM"
+metaDescription: "SAP produzione discreta vs di processo: ordini di produzione, ordini di processo PP-PI e produzione ripetitiva, con distinte base, ricette master, lotti e costi."
+primaryKeyword: "SAP produzione discreta vs produzione di processo"
+excerpt: "In SAP la produzione discreta si basa su ordini di produzione, distinte base e cicli di lavoro, la produzione di processo (PP-PI) su ordini di processo e ricette master, la produzione ripetitiva su una pianificazione per periodo. Cosa cambia ciascuna in dati anagrafici, lotti, qualità e costing, e come gli stabilimenti misti, per esempio nella plastica e nell'acciaio, le combinano."
+experienceSource: "Noel's first-person experience implementing ERP in plastics, steel and defence manufacturing (confirmed by Noel, 15 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "La produzione discreta lavora con ordini di produzione, distinte base e cicli di lavoro; PP-PI con ordini di processo e ricette master; la produzione ripetitiva con una pianificazione per periodo per versione di produzione"
+  - "La scelta si fa per materiale e per linea di produzione, non per società, per cui molti stabilimenti usano due modalità in parallelo"
+  - "Gestione dei lotti e coprodotti sono i punti in cui la produzione di processo si differenzia di più, ed entrambi arrivano fino alla contabilità"
+  - "La produzione ripetitiva raccoglie i costi per periodo su un collettore costi di prodotto, non per ordine, e così si perde la visibilità del costo per singolo lotto"
+  - "Gli stabilimenti di plastica e acciaio sono spesso misti: processo a inizio linea, discreta o ripetitiva a fine linea"
+  - "Concordi il disegno del costing con la funzione finance prima di configurare i tipi ordine"
+pullQuote: "La modalità di produzione che sceglie in SAP è una decisione di costing tanto quanto di pianificazione. La funzione finance deve approvarla prima che qualcuno configuri un tipo ordine."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP PP"
+  - "SAP PP-PI"
+  - "SAP QM"
+  - "SAP CO"
+  - "Material Ledger"
+  - "SAP Digital Manufacturing"
+originalUrl: "https://noeldcosta.com/sap-discrete-vs-process-manufacturing/"
+canonicalUrl: "https://noeldcosta.com/it/sap-discrete-vs-process-manufacturing/"
+locale: "it"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+In SAP, la differenza tra produzione discreta e produzione di processo si riduce all'ordine su cui gira la produzione. La produzione discreta usa ordini di produzione costruiti a partire da distinte base e cicli di lavoro, la produzione di processo (PP-PI) usa ordini di processo costruiti a partire da ricette master.
+
+La produzione ripetitiva (REM) è la terza opzione: nessun ordine singolo, solo quantità pianificate per linea di produzione e per periodo. La scelta cambia i dati anagrafici, la gestione dei lotti, il controllo qualità e, soprattutto, il modo in cui la funzione finance vede i costi.
+
+Ho implementato ERP nella produzione di plastica e di acciaio. Entrambi i settori combinano spesso fasi di processo e fasi discrete, quindi li uso qui sotto come esempi generali. Questo articolo spiega cosa cambia davvero tra le tre modalità in SAP S/4HANA e come decidere per uno stabilimento che ha un po' di ciascuna.
+
+Se sta ancora scegliendo l'ERP stesso, parta dal mio confronto sul [miglior ERP per la produzione](/it/best-erp-for-manufacturing/). Per il modulo Production Planning (PP) nel suo insieme, legga la mia [guida a SAP PP](/it/sap-pp-production-planning/).
+
+## Produzione discreta, di processo e ripetitiva in SAP in sintesi
+
+Tutte e tre le modalità convivono nello stesso sistema S/4HANA e condividono la stessa anagrafica materiale, la stessa esecuzione MRP e la stessa contabilità. Cambiano l'oggetto di esecuzione, i dati anagrafici che lo sostengono e il modo in cui si raccolgono i costi.
+
+Ecco come si confrontano quando le configura:
+
+| Cosa cambia | Discreta (PP) | Di processo (PP-PI) | Ripetitiva (REM) |
+|---|---|---|---|
+| Oggetto di esecuzione | Ordine di produzione | Ordine di processo | Ordini pianificati su un programma di produzione, confermati per periodo |
+| Come si produce | Ciclo di lavoro con operazioni presso centri di lavoro | Ricetta master con operazioni e fasi presso risorse | Ciclo di lavoro o ciclo di lavoro a cadenza su una linea di produzione |
+| Cosa entra | Distinta base | Distinta base, spesso con coprodotti e sottoprodotti | Distinta base, componenti in backflush |
+| Oggetto di costo | L'ordine | L'ordine, ripartito tra i coprodotti | Collettore costi di prodotto per versione di produzione |
+| Tracciabilità tipica | Numeri di serie o lotto per ordine | Genealogia dei lotti | Lotti possibili, costi per periodo |
+| Adatta a | Prodotti assemblati o lavorati a macchina, produzione su commessa | Formule, miscelazione, reazioni, resa variabile | Stesso prodotto sulla stessa linea per lunghe tirature |
+
+Due punti contano più della tabella. La modalità si sceglie per materiale e per linea di produzione, non per società, quindi un solo stabilimento può usarle tutte e tre. La modalità è anche una decisione di costing, ed è per questo che la funzione finance deve essere presente quando la si prende.
+
+## Dati anagrafici: distinte base e cicli di lavoro vs ricette master
+
+La produzione discreta descrive un prodotto con una distinta base e un ciclo di lavoro. Il ciclo elenca le operazioni, ciascuna presso un centro di lavoro con tempi standard che guidano schedulazione, capacità e costi.
+
+PP-PI sostituisce il ciclo di lavoro con una ricetta master. Secondo la [documentazione SAP sulla ricetta master](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/21aead0c98bd4755abdacd91c99e3393/9741b753128eb44ce10000000a174cb4.html), una ricetta ha una testata e operazioni eseguite presso una risorsa primaria, e le operazioni si suddividono ulteriormente in fasi. I valori standard di quelle fasi calcolano date, capacità e costi.
+
+In entrambe le modalità è la versione di produzione a tenere tutto insieme. Collega un materiale alla distinta base alternativa e al ciclo di lavoro o alla ricetta usati per MRP, costing e creazione degli ordini. Un materiale può avere più versioni per lotti di dimensioni diverse o per date di validità diverse.
+
+Tre differenze nei dati anagrafici colgono i team impreparati:
+
+1. **Fasi e istruzioni di processo.** Una ricetta può contenere istruzioni di processo che arrivano in reparto come ricetta di controllo. I cicli di lavoro discreti non hanno nulla di equivalente, quindi si tratta di nuovo lavoro di disegno, non di una conversione.
+2. **Componenti negativi.** Nelle distinte base di processo, i sottoprodotti si inseriscono come componenti con quantità negativa. I sistemi legacy li gestiscono raramente in questo modo, quindi vanno ricostruiti.
+3. **Risorse al posto dei centri di lavoro.** Il concetto è lo stesso, ma i team di processo ragionano in recipienti, serbatoi e linee. Concordi la nomenclatura prima che inizi la migrazione dei dati.
+
+Nella mia esperienza la migrazione dei dati assorbe dal 30 al 40 percento dell'impegno in un programma SAP. In uno stabilimento di processo, ricette e classificazioni dei lotti ne sono una parte consistente, e di solito sono in condizioni peggiori di quanto chiunque si aspetti.
+
+## Gestione dei lotti e coprodotti
+
+La gestione dei lotti (in SAP, gestione partite) è il punto in cui la produzione di processo si differenzia di più da quella discreta. Ogni entrata, consumo e movimento di magazzino di un materiale gestito a lotti porta un numero di lotto, e il lotto porta con sé le sue proprietà.
+
+SAP memorizza quelle proprietà nel sistema di classificazione, sulle [classi di lotto](https://help.sap.com/docs/SAP_S4HANA_CLOUD/32da8359c8ee4e8b8e8c5e15cacba5aa/546ac23df1254af3baca5d9afe99ed04.html). La determinazione lotto le usa poi per scegliere giacenze che soddisfino un requisito, come il first-in first-out o una purezza minima. La lista d'impiego del lotto traccia un lotto all'indietro fino ai suoi input e in avanti fino ai clienti, ed è esattamente ciò che chiederanno un revisore o un reclamo cliente.
+
+I coprodotti sono la seconda differenza. Nella logica SAP della [produzione congiunta](https://help.sap.com/docs/SAP_S4HANA_CLOUD/4032610758dc437089f0c28320eec93f/753b77a7bb224b5dac3c80ebc0f57b13.html), ogni coprodotto ha una propria posizione d'ordine, e i costi raccolti sull'ordine vengono ripartiti tra i coprodotti con numeri di equivalenza in una struttura di ripartizione. I sottoprodotti non hanno una posizione d'ordine; il loro valore riduce il costo del prodotto principale.
+
+I numeri di equivalenza sono una decisione della funzione finance, di solito basata sui prezzi di mercato. Se nessuno li concorda prima del go-live, ogni ordine viene liquidato con i numeri che un consulente ha digitato durante la realizzazione.
+
+Anche gli stabilimenti discreti possono usare i lotti. Molti lo fanno per le materie prime acquistate e alcuni per i prodotti finiti quando i clienti richiedono la tracciabilità per lotto, ma la logica di ordine e di costing resta discreta.
+
+## Qualità: controllo in processo e al ricevimento merci
+
+Il Quality Management (QM) funziona allo stesso modo in tutte e tre le modalità, ma gli stabilimenti di processo tendono a usarne di più. In produzione sono due tipi di controllo a fare la maggior parte del lavoro, come descrivono i [contenuti formativi SAP su QM in produzione](https://learning.sap.com/courses/performing-quality-management-in-production/processing-of-inspection-lots-for-the-goods-receipt-for-the-production-order_df917051-61e8-48a4-b0c9-9e5eb5678406).
+
+Il controllo in processo (origine 03) crea un lotto di controllo al rilascio dell'ordine, con fasi di controllo prese dal ciclo di lavoro o dalla ricetta. Non è rilevante per le giacenze. Il controllo al ricevimento merci (origine 04) crea un lotto quando si riceve il prodotto finito, la giacenza resta in controllo qualità e la decisione d'impiego la rilascia o la blocca.
+
+Decida presto quali controlli vivono in SAP e quali in un sistema di esecuzione della produzione (MES) o in un sistema di laboratorio. Due sistemi che contengono lo stesso risultato sono il modo in cui uno stabilimento si ritrova con un lotto rilasciato in uno e bloccato nell'altro.
+
+## Costing: per ordine, per coprodotto o per periodo
+
+Questa è la sezione da condividere con il Suo CFO. La modalità di produzione decide cosa può vedere la funzione finance.
+
+Ordini di produzione e ordini di processo sono entrambi oggetti di costo. I costi effettivi vengono registrati sull'ordine, l'ordine viene confrontato con il suo standard e gli scostamenti vengono liquidati a fine periodo, per ordine. Negli ordini di processo con coprodotti, il costo viene ripartito tra i coprodotti prima della liquidazione.
+
+La produzione ripetitiva funziona diversamente. Le [note SAP per gli ambienti di produzione ripetitiva](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/48b24fbadbee4e0b9dae0e2b72762e68/d3a4b9537cceb44ce10000000a174cb4.html) raccomandano un collettore costi di prodotto per versione di produzione. I costi di movimenti merci e conferme vengono registrati sul collettore, non su un ordine, e gli scostamenti si calcolano per periodo.
+
+Quel compromesso è tutta la decisione. Ha molto meno carico transazionale in reparto, e perde il costo di ogni singolo lotto.
+
+Altri due punti di contabilità valgono per ogni modalità:
+
+- **Il Material Ledger è attivo di default in S/4HANA.** Il costing effettivo con il Material Ledger è opzionale e si attiva per stabilimento, quindi decida se le servono costi di prodotto effettivi prima di disegnare la chiusura di periodo.
+- **Semilavorati in corso e scarti richiedono impostazioni proprie.** Sui collettori costi di prodotto, i semilavorati in corso si calcolano con una chiave di analisi dei risultati, ed è facile dimenticarla durante la realizzazione e scoprirlo alla prima chiusura mensile.
+
+Il motivo più comune per cui vedo fallire i progetti ERP nel manifatturiero è che il disegno non viene concordato nella sua totalità, soprattutto in contabilità. La modalità di produzione, gli oggetti di costo e la ripartizione tra coprodotti sono esattamente le decisioni che vengono lasciate al consulente PP e poi contestate alla prima chiusura.
+
+## Plastica e acciaio: perché lo stabilimento misto è la norma
+
+La maggior parte degli stabilimenti non rientra in una sola categoria. Plastica e acciaio, i due settori a forte componente di processo in cui ho implementato ERP, mostrano bene il perché.
+
+I punti qui sotto descrivono questi settori in termini generali, non un cliente specifico.
+
+1. **L'inizio della linea si comporta come la produzione di processo.** Miscelazione delle resine, fusione e colata producono lotti, con rese variabili e proprietà che vanno registrate.
+2. **La fine della linea si comporta spesso come la produzione discreta o ripetitiva.** Pezzi stampati, profili estrusi, lamiere tagliate o coils vengono contati, imballati e spediti come unità, spesso su lunghe tirature dello stesso prodotto.
+3. **Il materiale viene riutilizzato.** Il macinato nella plastica e i rottami nell'acciaio rientrano nel processo, e questo pone la domanda se trattarli nella distinta base come sottoprodotto, coprodotto o semplice scarto.
+4. **I clienti specificano proprietà, non solo codici articolo.** Qualità, spessore, colore o proprietà di fusione stanno nelle caratteristiche del lotto, che devono seguire il materiale dall'ordine alla spedizione.
+
+Non esiste un modello unico. Nella mia esperienza l'aspetto di un'impostazione discreta dipende da ciò di cui il cliente ha bisogno, e uno stabilimento misto aggiunge scelte, non le riduce.
+
+Uno schema frequente è PP-PI per le fasi che producono lotti e produzione ripetitiva o discreta per trasformazione e imballaggio, collegate da un semilavorato gestito a lotti. Se sia la scelta giusta per Lei dipende da dove le serve il costo per lotto, da dove le serve la tracciabilità e da quanto volume di transazioni il reparto riesce a sostenere.
+
+La pianificazione aggiunge un altro livello. Se caratteristiche o una linea collo di bottiglia guidano la Sua schedulazione, legga il mio confronto [MRP Live vs PP/DS vs IBP](/it/mrp-live-vs-pp-ds-vs-ibp/) prima di dare per scontato che basti l'MRP.
+
+## Come scegliere la modalità per ogni linea
+
+Prenda la decisione linea per linea, con produzione, qualità e finance insieme. Queste domande ne risolvono la maggior parte:
+
+1. **Il prodotto nasce da una formula, una reazione o una miscelazione con resa variabile?** Usi PP-PI.
+2. **Una sola tiratura produce più prodotti vendibili?** Usi PP-PI con coprodotti e faccia concordare la ripartizione alla funzione finance.
+3. **Le serve il costo di ogni lotto o di ogni ordine cliente?** Usi ordini di produzione o di processo, non la produzione ripetitiva.
+4. **È lo stesso prodotto sulla stessa linea per settimane, con cicli di lavoro stabili?** Vale la pena considerare la produzione ripetitiva.
+5. **Clienti o autorità di controllo si aspettano la genealogia dei lotti?** Gestisca i materiali a lotti, qualunque tipo ordine scelga.
+6. **Il reparto sarà gestito da un MES?** Decida quale sistema è responsabile di conferme, risultati qualità e genealogia prima di configurare l'uno o l'altro. Il mio articolo su [ERP e MES nel manifatturiero](/it/erp-and-mes-manufacturing/) tratta questa suddivisione.
+
+Poi collaudi la decisione da un capo all'altro. Nella mia esperienza i test assorbono circa il 35 percento dell'impegno in un programma SAP. Negli stabilimenti misti, i difetti da cercare stanno nei passaggi tra una modalità e l'altra: il lotto del semilavorato, il backflush e la liquidazione di fine periodo.
+
+## Il passo successivo
+
+Prenda una famiglia di prodotti, dalla materia prima alla spedizione, e scriva in quale modalità girerebbe ogni fase, su quale base ne calcola il costo e chi approva la ripartizione dei costi. Se finance e produzione non riescono a mettersi d'accordo su una pagina, non si metteranno d'accordo nel sistema.
+
+Se desidera un secondo parere su quel disegno prima che inizi la configurazione, può [parlarmi del Suo programma SAP](/it/contact-noel-erp-support/).
+
+## Domande frequenti
+
+<details>
+<summary>Qual è la differenza tra produzione discreta e produzione di processo in SAP?</summary>
+
+La produzione discreta si basa su ordini di produzione costruiti da una distinta base e da un ciclo di lavoro, ed è adatta a prodotti assemblati o lavorati a macchina. La produzione di processo usa ordini di processo PP-PI costruiti da ricette master, ed è adatta a formule e lotti con resa variabile, coprodotti e sottoprodotti. Entrambe girano nello stesso sistema S/4HANA, e molti stabilimenti le usano tutte e due.
+
+</details>
+
+<details>
+<summary>A cosa serve SAP PP-PI?</summary>
+
+PP-PI (Production Planning for Process Industries) gestisce la produzione a lotti e basata su ricette in settori come chimica, alimentare, farmaceutica, plastica e metalli. Usa ricette master con operazioni e fasi, ordini di processo, coprodotti e sottoprodotti, e trasmette le istruzioni di processo al reparto come ricette di controllo.
+
+</details>
+
+<details>
+<summary>Quando conviene usare la produzione ripetitiva in SAP?</summary>
+
+La usi quando lo stesso prodotto gira sulla stessa linea per lunghi periodi e non le serve il costo di ogni lotto. I costi si raccolgono per periodo su un collettore costi di prodotto per versione di produzione, il che riduce l'impegno transazionale ma elimina la visibilità dei costi per ordine.
+
+</details>
+
+<details>
+<summary>Uno stabilimento SAP può gestire insieme produzione discreta e di processo?</summary>
+
+Sì. La modalità si sceglie per materiale e per linea di produzione, non per stabilimento. Uno schema frequente è PP-PI per le fasi che producono lotti e produzione discreta o ripetitiva per trasformazione e imballaggio, collegate da un semilavorato gestito a lotti.
+
+</details>
+
+<details>
+<summary>Come si calcolano i costi dei coprodotti in SAP?</summary>
+
+I costi si raccolgono sull'ordine e si ripartiscono tra i coprodotti con numeri di equivalenza in una struttura di ripartizione, di solito basata sui prezzi di mercato. I sottoprodotti non hanno una posizione d'ordine e il loro valore riduce il costo del prodotto principale. La funzione finance dovrebbe concordare i numeri di equivalenza prima del go-live.
+
+</details>
+
+<details>
+<summary>Serve la gestione dei lotti nella produzione discreta?</summary>
+
+Non sempre. Gli stabilimenti discreti gestiscono spesso a lotti le materie prime acquistate, e i prodotti finiti quando i clienti richiedono la tracciabilità per lotto. Se nessuno ha bisogno di tracciare o selezionare le giacenze in base alle proprietà, la gestione dei lotti aggiunge impegno transazionale senza un ritorno.
+
+</details>

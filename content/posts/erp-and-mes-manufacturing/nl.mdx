@@ -1,0 +1,203 @@
+---
+title: "ERP vs MES in de maakindustrie: wie is eigenaar van wat"
+h1: "ERP vs MES in de maakindustrie: wie is eigenaar van wat"
+slug: "erp-and-mes-manufacturing"
+date: "2026-10-15"
+updated: "2026-10-15"
+hero: "/images/manufacturing/erp-and-mes-manufacturing.webp"
+heroAlt: "Een werkvloerterminal en getraceerde onderdelenkarren in een lichte fabriek met een stroom van ERP naar MES op het scherm"
+category: "erp-strategy"
+tags: ["manufacturing-erp", "sap-manufacturing", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "ERP vs MES in de maakindustrie: wie doet wat, waar SAP past"
+metaDescription: "ERP vs MES in de maakindustrie: waarvan elk systeem eigenaar is, waar SAP Digital Manufacturing, Siemens Opcenter en Kinexon passen, en hoe de integratie werkt."
+primaryKeyword: "erp vs mes"
+excerpt: "Een ERP plant, calculeert en verantwoordt de productie; een MES voert die uit op de werkvloer en rapporteert terug. Waarvan elk systeem eigenaar is, waar SAP Digital Manufacturing, Siemens Opcenter en tracking met Kinexon passen, en welke integratiefouten u moet vermijden."
+experienceSource: "Noel's first-person experience implementing ERP in plastics, steel and defence manufacturing (confirmed by Noel, 15 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "Het ERP plant, koopt in, calculeert en verantwoordt de productie; het MES voert die uit op de werkvloer en stuurt de resultaten terug"
+  - "Spreek af welk systeem eigenaar is van elk record, zoals bevestigingen, uitval, genealogie en kwaliteitsresultaten, voordat een van beide systemen wordt geconfigureerd"
+  - "SAP Digital Manufacturing ontvangt orders en stamgegevens uit S/4HANA of ECC en stuurt bevestigingen, verbruik en goederenontvangsten terug"
+  - "Siemens Opcenter is een MES buiten SAP dat ook bovenop het ERP zit; Kinexon voegt realtime locatietracking toe, geen uitvoering"
+  - "Elke bevestiging die het MES boekt, wordt een kostenpost in het ERP, dus het financiële ontwerp moet zijn afgesproken voordat de integratie wordt gebouwd"
+pullQuote: "Elke bevestiging die het MES terugstuurt, wordt een kostenpost in het ERP. Heeft finance het ontwerp niet afgesproken, dan verplaatst de integratie de discussie alleen naar de maandafsluiting."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Digital Manufacturing"
+  - "SAP Cloud Integration"
+  - "SAP Extended Warehouse Management"
+  - "SAP Manufacturing Execution"
+  - "Siemens Opcenter"
+  - "KINEXON OS"
+  - "ISA-95"
+originalUrl: "https://noeldcosta.com/erp-and-mes-manufacturing/"
+canonicalUrl: "https://noeldcosta.com/nl/erp-and-mes-manufacturing/"
+locale: "nl"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Bij ERP vs MES draait het om tijd en eigenaarschap. Het ERP plant, koopt in, calculeert en verantwoordt de productie over dagen en weken. Het manufacturing execution system (MES) voert de productie uit op de werkvloer over seconden en ploegen, en rapporteert daarna wat er is gebeurd.
+
+SAP Digital Manufacturing is het MES van SAP. Het neemt productieorders en stamgegevens over uit SAP S/4HANA of SAP ECC en stuurt bevestigingen, verbruik en goederenontvangsten terug.
+
+Kiest u het ERP zelf nog, begin dan met mijn vergelijking van het [beste ERP voor de maakindustrie](/nl/best-erp-for-manufacturing/). Dit artikel gaat een laag dieper: waarvan elk systeem eigenaar is, waar de werkvloerproducten passen en hoe de twee worden verbonden.
+
+Ik heb gewerkt met SAP Digital Manufacturing, Siemens Opcenter en Kinexon. Het MES van SAP en Siemens Opcenter zitten allebei bovenop het ERP, en de grens daartussen is waar het meeste ontwerpwerk naartoe gaat.
+
+## Waarvan het ERP eigenaar is en waarvan het MES
+
+Het hoofdartikel heeft de korte vergelijking. Hier is de vraag smaller: welk systeem is voor elk record de master, en welk systeem ontvangt alleen een kopie?
+
+Siemens, de maker van Opcenter, zegt het in ISA-95-termen. ERP is een systeem op niveau 4 voor de bedrijfslogistiek en MES een operationeel systeem op niveau 3. Het ERP stuurt vraag, stuklijsten en stamgegevens naar beneden; het MES stuurt verbruik, uitval en gereedmeldingen naar boven.
+
+Zo verdeelt het eigenaarschap zich meestal. Uw verdeling kan anders zijn, maar elke rij heeft een antwoord nodig voordat de configuratie begint:
+
+| Record | Meestal eigenaar | Rol van het andere systeem |
+|---|---|---|
+| Materiaalstam, stuklijst, routing of recept | ERP | MES ontvangt een kopie met de order |
+| Productie- of procesorder | ERP maakt aan en geeft vrij | MES voert uit en volgt elke stap |
+| Bewerkingsvolgorde en werkinstructies aan de lijn | MES | ERP houdt de routing waaruit die is opgebouwd |
+| Machinegegevens, stilstand en OEE | MES | ERP heeft zelden het detail nodig, alleen de uitkomst |
+| Bevestigingen van opbrengst en uitval | MES legt ze vast | ERP boekt ze naar kosten en voorraad |
+| Componentverbruik en goederenontvangst | MES activeert ze | ERP boekt de voorraad en waardeert die |
+| Batch- of serienummergenealogie aan de lijn | MES | ERP houdt de batchstam en de voorraad |
+| Resultaten van inspectie tijdens het proces | MES legt ze vast | Kwaliteitsbeheer in het ERP houdt de inspectiepartij en het gebruiksbesluit |
+| Productkosten, onderhanden werk en afwijkingen | ERP | MES heeft geen zicht op kosten |
+
+De onderste rij is de rij die mensen vergeten. Het MES ziet nooit geld, maar elke rij erboven voedt de kosten van de order.
+
+## Waar SAP Digital Manufacturing past
+
+SAP Digital Manufacturing is een cloudproduct met vier delen in de huidige [beschrijving van de functiescope van SAP (release 2608)](https://help.sap.com/doc/13c9f83611f94a5ab2c94f23cacfc217/latest/en-US/SAP_DMC_FSD_enUS.pdf):
+
+1. **Uitvoering**: vrijgave van orders, stapsgewijs onderhanden werk, operatordashboards, werkinstructies, kwaliteitsinspecties, genealogie, OEE en stilstand, en machine-integratie via de Production Connector
+2. **Probleemoplossing**: gestructureerde probleemoplossing met leveranciers, klanten of interne teams
+3. **Inzichten**: live monitoring en analyses op de productiegegevens die de uitvoering verzamelt
+4. **Edge computing**: een vastgestelde set functies die lokaal draait, dicht bij de machines, zodat de fabriek kan doorwerken bij een haperende verbinding met de cloud
+
+SAP Learning zet uiteen [wat er tussen S/4HANA en SAP Digital Manufacturing stroomt](https://learning.sap.com/courses/discovering-sap-digital-manufacturing/exploring-the-integration-of-sap-digital-manufacturing-with-sap-s-4hana_b2ffd41c-64b9-4f73-a802-8528562e2cb7). Naar beneden gaan materialen, werkplekken, orders met hun stuklijsten, routings of recepten, voorraadgegevens en inspectie-informatie. Terug komen bewerkingsbevestigingen met opbrengst, uitval en tijd, componentverbruik, goederenontvangsten, orderstatus, inspectieresultaten en waarden van batchkenmerken.
+
+De technische route staat in de [integratiegids van SAP voor Digital Manufacturing](https://help.sap.com/doc/f6b2ab2222794bebad4c0dcd33138e71/latest/en-US/SAP_DMC_Integration_Guide_enUS.pdf). SAP Cloud Integration en Cloud Connector zijn de vereiste middleware. Stamgegevens en orders reizen als IDocs, en bevestigingen komen terug als BAPI-aanroepen via RFC, met OData als optie voor sommige directe aanroepen naar S/4HANA.
+
+Eén detail telt voor groepen met meerdere fabrieken. De gids zegt dat één wereldwijd SAP Digital Manufacturing-systeem alle fabrieken kan bedienen, gekoppeld aan meerdere ERP-systemen, bijvoorbeeld één per fabriek of per land.
+
+Draait u nog SAP Manufacturing Execution (SAP ME) of SAP MII, behandel de overstap dan als een nieuwe implementatie in plaats van een upgrade. De integratiegids beperkt de integratie met SAP ME tot Resource Orchestration. Controleer de onderhoudsdata voor uw release in de Product Availability Matrix van SAP voordat u er een plan omheen bouwt.
+
+## Siemens Opcenter en Kinexon: andere lagen op de werkvloer
+
+SAP Digital Manufacturing is niet het enige MES dat bovenop S/4HANA zit. Siemens beschrijft [Opcenter](https://www.siemens.com/global/en/products/automation/topic-areas/opcenter.html) als een portfolio voor manufacturing operations management, met Opcenter Execution als MES en aparte producten voor planning en detailplanning (Opcenter APS), kwaliteit en laboratoriumwerk.
+
+Architectonisch is het hetzelfde patroon. Het ERP plant en calculeert; Opcenter voert uit en rapporteert terug. De integratie wordt gebouwd tussen twee leveranciers, dus de eigenaarschapstabel hierboven telt nog zwaarder.
+
+Kinexon is een ander soort product. Het voert geen productiestappen uit.
+
+Kinexon beschrijft zijn aanbod als [realtime locatiesoftware in combinatie met UWB-tags](https://kinexon.com/sap) of andere locatietechnologie. KINEXON OS is het platform dat tags aan productieorders koppelt en bewegingen door vastgelegde zones omzet in boekingen en meldingen.
+
+Kinexon zegt dat KINEXON OS werkt met SAP Digital Manufacturing en SAP Extended Warehouse Management. Zie het dus als een locatielaag naast het MES. Het beantwoordt waar een order, een onderdeel of een voertuig is, en het kan de transactie activeren waarop het MES of het ERP anders wacht tot iemand die intypt.
+
+Zo verhouden de drie zich tot elkaar:
+
+| Product | Wat het doet | Waar het zit |
+|---|---|---|
+| SAP Digital Manufacturing | MES: uitvoering, kwaliteit aan de lijn, genealogie, OEE, analyses | Bovenop S/4HANA of ECC, gekoppeld via SAP Cloud Integration |
+| Siemens Opcenter | MES- en operationsportfolio: uitvoering, detailplanning, kwaliteit, laboratorium | Bovenop het ERP, van elke leverancier |
+| Kinexon (KINEXON OS) | Realtime locatie van orders, onderdelen en voertuigen; gebeurtenisgestuurde boekingen | Naast het MES en het magazijnsysteem, die het van gebeurtenissen voorziet |
+
+## Hoe de integratie tussen ERP en MES werkt
+
+Welk MES u ook kiest, de lus is dezelfde. Het ERP beslist wat er gemaakt wordt; het MES maakt het en vertelt het ERP wat het heeft verbruikt en wat eruit is gekomen.
+
+<explainer-flow title="De lus tussen ERP en MES" caption="Elke ronde van de lus eindigt in het ERP, waar het resultaat van de werkvloer voorraad en kosten wordt." steps="Plannen in ERP|Order vrijgeven|Uitvoeren in MES|Terugmelden|Calculeren in ERP" notes="MRP maakt geplande orders aan uit de vraag|Order, stuklijst en routing gaan naar het MES|Operators voeren stappen uit, leggen kwaliteit en genealogie vast|Opbrengst, uitval, verbruik en goederenontvangst gaan omhoog|Voorraad, onderhanden werk en afwijkingen worden in finance geboekt" result="Het ERP laat zien wat er op de vloer is gebeurd, tegen kostprijs"></explainer-flow>
+
+Vijf integratiepatronen dekken het meeste van wat u gaat ontwerpen:
+
+1. **Replicatie van stamgegevens.** Materialen, werkplekken en classificaties gaan van ERP naar MES voordat er een order gaat. Weigert het MES een order, controleer dan eerst de stamgegevens.
+2. **Downloaden van orders.** Vrijgegeven orders reizen met hun stuklijst en routing of recept. Beslis of wijzigingen na vrijgave zijn toegestaan, en welk systeem wint als ze gebeuren.
+3. **Uploaden van bevestigingen.** Opbrengst, uitval en tijd gaan terug per bewerking of per order. De frequentie is een ontwerpkeuze met gevolgen voor de kosten, geen technisch detail.
+4. **Machine- en sensorgegevens.** Machinesignalen gaan naar het MES of een edgelaag, niet rechtstreeks naar het ERP. Alleen de zakelijke uitkomst, zoals een telling of een stilstandreden, hoort verder te reizen.
+5. **Gebeurtenistriggers uit tracking.** Locatie- of sensorgebeurtenissen uit een product zoals Kinexon kunnen automatisch een boeking doen. Leg vast wie die corrigeert als de gebeurtenis niet klopt.
+
+Plan voor het moment dat het netwerk uitvalt. Als de lijn stilvalt wanneer de verbinding met de cloud wegvalt, ontwerp dan lokale uitvoering in het MES, bijvoorbeeld met SAP Digital Manufacturing for edge computing. Spreek af hoe de achterstand wordt geboekt als de verbinding terugkomt.
+
+Hoe u plant vóór de uitvoering, is een aparte beslissing. Mijn [gids over SAP PP](/nl/sap-pp-production-planning/) behandelt de ERP-kant, en het clusterartikel over [MRP Live vs PP/DS vs IBP](/nl/mrp-live-vs-pp-ds-vs-ibp/) behandelt wanneer u de planningstool een stap hoger brengt.
+
+## Veelgemaakte fouten in ERP- en MES-projecten
+
+De meest voorkomende reden dat ERP-projecten in de maakindustrie mislukken, is in mijn ervaring dat het ontwerp niet in zijn geheel is afgesproken, vooral in finance. Een MES maakt dat erger, omdat het de boekingen vermenigvuldigt waarmee finance moet leven.
+
+Dit zijn de fouten om tegen te plannen:
+
+1. **Het ERP en het MES als aparte projecten scopen.** Twee teams, twee ontwerpen en een interface waarvan niemand eigenaar is. Zet één ontwerpautoriteit over allebei.
+2. **Eigenaarschap open laten.** Als beide systemen een order kunnen wijzigen, of beide uitval vastleggen, krijgt u twee antwoorden. Vul de eigenaarschapstabel in vóór de configuratie.
+3. **Bevestigingen ontwerpen zonder finance.** Frequentie van bevestigingen, backflush, uitvalredenen en activiteitensoorten bepalen hoe onderhanden werk en afwijkingen er bij de maandafsluiting uitzien. Spreek ze af met de controller, niet alleen met de fabrieksmanager.
+4. **Machinegegevens naar het ERP sturen.** Het ERP is geen historian. Houd ruwe signalen in het MES of een analyseplatform, en stuur het ERP alleen wat het boekt.
+5. **Elk systeem apart testen.** Test de volledige lus van MRP tot kosten, met echte orders, echte uitval en echte stornoboekingen. Testen kost ongeveer 35 procent van de programma-inspanning, en de interfacetests zijn de tests die teams schrappen.
+6. **De cutover van openstaande orders vergeten.** Orders die bij de go-live half gebouwd zijn, hebben regels nodig voor welk systeem ze afmaakt. Schrijf die regels vóór de migratie, niet tijdens.
+7. **Operators trainen op het ERP.** Operators werken in het MES. Train ze daar, per ploeg, op hun eigen lijnen.
+
+Stamgegevens verdienen een eigen waarschuwing. Stuklijsten, routings en werkplekken voeden beide systemen, en een verkeerde routing in het ERP wordt een verkeerde instructie aan de lijn. Mijn artikel over [SAP in de maakindustrie](/nl/sap-manufacturing-industry-secrets/) behandelt de checklist voor stamgegevens.
+
+## Waar u begint
+
+Begin met de eigenaarschapstabel, niet met de productdemo. Zet de fabrieksmanager, de controller en de IT-lead in één ruimte en wijs elk record in de tabel hierboven toe aan één systeem.
+
+Kies daarna het MES dat past bij uw ERP en uw fabrieken, en scope de integratie als onderdeel van het ERP-programma, met eigen testcycli. Budgetteer het ook binnen het programma; het clusterartikel over de [kosten van een ERP voor de maakindustrie](/nl/manufacturing-erp-cost/) laat zien waar dat geld naartoe gaat.
+
+Wilt u een onafhankelijke blik op een ontwerp voor ERP en MES voordat u zich vastlegt, ik help producenten hiermee. U kunt [hier contact met mij opnemen](/nl/contact-noel-erp-support/).
+
+## Veelgestelde vragen
+
+<details>
+<summary>Wat is het verschil tussen ERP en MES?</summary>
+
+Een ERP plant, koopt in, calculeert en verantwoordt de productie over dagen en weken. Een MES voert de productie uit op de werkvloer over seconden en ploegen, en legt stappen van operators, machinegegevens, kwaliteitscontroles en genealogie vast.
+
+De twee werken als een lus. Het ERP stuurt orders naar beneden, en het MES stuurt bevestigingen, verbruik en goederenontvangsten terug, zodat het ERP voorraad en kosten kan boeken.
+
+</details>
+
+<details>
+<summary>Wat is SAP Digital Manufacturing?</summary>
+
+Het is het cloud-MES van SAP. Het dekt productie-uitvoering, probleemoplossing, inzichten en edge computing, volgens de beschrijving van de functiescope van SAP.
+
+Het ontvangt stamgegevens en productie- of procesorders uit SAP S/4HANA of SAP ECC via SAP Cloud Integration en Cloud Connector. Het stuurt bevestigingen, verbruik, goederenontvangsten en inspectieresultaten terug.
+
+</details>
+
+<details>
+<summary>Heb ik een MES nodig als ik SAP S/4HANA heb?</summary>
+
+Niet altijd. Eén fabriek met eenvoudige productie kan orders vaak rechtstreeks in S/4HANA bevestigen.
+
+U hebt een MES nodig als u stapsgewijze aansturing aan de lijn nodig hebt, volledige batch- of serienummergenealogie, realtime machinegegevens of één productiestandaard voor meerdere fabrieken.
+
+</details>
+
+<details>
+<summary>Is Siemens Opcenter een alternatief voor SAP Digital Manufacturing?</summary>
+
+Dat kan. Beide zijn MES-producten die bovenop het ERP zitten. Siemens Opcenter is een portfolio voor manufacturing operations management met Opcenter Execution als MES, plus producten voor detailplanning, kwaliteit en laboratorium.
+
+De keuze hangt af van uw fabrieken, uw automatisering en uw ERP. Hoe dan ook: spreek af welk systeem eigenaar is van elk record voordat de integratie wordt gebouwd.
+
+</details>
+
+<details>
+<summary>Wat doet Kinexon in de maakindustrie?</summary>
+
+Kinexon levert realtime locatietracking. Het platform KINEXON OS koppelt locatietags aan productieorders en kan boekingen en meldingen activeren wanneer een order door een vastgelegde zone beweegt.
+
+Het is geen MES. Kinexon zegt dat het werkt met SAP Digital Manufacturing en SAP Extended Warehouse Management, die het van locatiegebeurtenissen voorziet.
+
+</details>
+
+<details>
+<summary>Kan SAP ME of SAP MII worden geüpgraded naar SAP Digital Manufacturing?</summary>
+
+Plan het als een nieuwe implementatie, niet als een upgrade. De integratiegids van SAP beperkt de integratie van SAP Digital Manufacturing met SAP ME tot Resource Orchestration.
+
+Controleer de onderhoudsdata voor uw release van SAP ME of MII in de Product Availability Matrix van SAP, en ontwerp het eigenaarschap tussen ERP en MES opnieuw als onderdeel van de overstap.
+
+</details>

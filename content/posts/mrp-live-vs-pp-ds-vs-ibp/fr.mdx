@@ -1,0 +1,242 @@
+---
+title: "MRP Live, PP/DS ou IBP : quel outil de planification SAP"
+h1: "MRP Live, PP/DS ou IBP : quel outil de planification SAP"
+slug: "mrp-live-vs-pp-ds-vs-ibp"
+date: "2026-10-15"
+updated: "2026-10-15"
+hero: "/images/manufacturing/mrp-live-vs-pp-ds-vs-ibp.webp"
+heroAlt: "Un poste de planification dominant une usine, avec à l'écran une liste d'articles, un ordonnancement de production et une courbe de demande"
+category: "erp-strategy"
+tags: ["manufacturing-erp", "mrp", "sap-pp", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "MRP Live vs PP/DS vs IBP : outils de planification SAP"
+metaDescription: "MRP Live, PP/DS ou IBP : ce que planifie chaque outil SAP, son horizon, sa logique de capacité, et les signaux qui disent à un industriel quand monter en gamme."
+primaryKeyword: "MRP Live vs PP/DS"
+excerpt: "MRP Live planifie les articles à capacité infinie, PP/DS intégré ordonnance les ressources goulots à capacité finie, et SAP IBP planifie le réseau et les mois à venir. Ce que chacun planifie, et quand un industriel doit passer au niveau supérieur."
+experienceSource: "Noel's first-person experience implementing ERP in plastics, steel and defence manufacturing (confirmed by Noel, 15 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "MRP Live planifie quoi fabriquer et acheter à capacité infinie. PP/DS intégré ordonnance à capacité finie. SAP IBP planifie le réseau et les mois à venir"
+  - "Ce sont des couches, pas des concurrents. Beaucoup d'industriels utilisent MRP Live seul, certains ajoutent PP/DS, moins nombreux sont ceux qui ont besoin d'IBP"
+  - "Passez à PP/DS quand les planificateurs corrigent sans cesse le MRP sur une ressource contrainte, pas parce que la licence est disponible"
+  - "Passez à IBP quand le problème de planification couvre plusieurs usines, canaux et fonctions, pas quand une seule ligne est surchargée"
+  - "Le MRP prédictif (pMRP) dans S/4HANA teste la capacité à moyen terme avant que vous n'achetiez quoi que ce soit de nouveau"
+  - "Aucun des trois ne corrige de mauvaises données de base. Délais, tailles de lot et versions de fabrication déterminent le résultat"
+pullQuote: "Achetez la couche de planification pour la question à laquelle vous ne savez pas répondre aujourd'hui, pas pour celle à laquelle la démonstration a le mieux répondu."
+mentions:
+  - "SAP S/4HANA"
+  - "MRP Live"
+  - "SAP PP/DS"
+  - "SAP IBP"
+  - "Predictive MRP (pMRP)"
+  - "SAP APO"
+  - "SAP PP"
+  - "SAP Integration Suite"
+originalUrl: "https://noeldcosta.com/mrp-live-vs-pp-ds-vs-ibp/"
+canonicalUrl: "https://noeldcosta.com/fr/mrp-live-vs-pp-ds-vs-ibp/"
+locale: "fr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+MRP Live planifie quoi fabriquer et acheter, et quand, à capacité infinie dans SAP S/4HANA. PP/DS intégré ordonnance les articles critiques sur les ressources goulots à capacité finie, et SAP IBP planifie la demande, les stocks et l'approvisionnement de toute l'entreprise sur plusieurs mois.
+
+La question MRP Live vs PP/DS porte donc sur l'usine : avez-vous besoin d'un ordonnancement à capacité finie sur une ligne contrainte ? La question PP/DS vs IBP porte sur le périmètre : votre problème de planification se situe-t-il dans une usine ou dans tout le réseau ?
+
+J'ai utilisé MRP Live et PP/DS intégré sur des projets, et j'ai orienté des clients vers IBP quand le cas l'exigeait. Cet article explique ce que planifie chaque outil et les signaux qui indiquent qu'il est temps de passer au niveau supérieur. Si vous choisissez encore l'ERP lui-même, commencez par mon comparatif du [meilleur ERP pour l'industrie](/fr/best-erp-for-manufacturing/).
+
+## Quatre outils de planification, quatre questions différentes
+
+SAP propose à un industriel sur S/4HANA quatre options de planification. Le MRP classique et MRP Live sont deux façons d'exécuter la même planification des besoins.
+
+PP/DS ajoute l'ordonnancement détaillé dans le même système. IBP est un produit cloud distinct, au-dessus.
+
+Le tableau les met côte à côte.
+
+| Outil | Ce qu'il planifie | Logique de capacité | Horizon habituel | Où il tourne |
+|---|---|---|---|---|
+| MRP classique (MD01, MD02, MD03) | Ordres planifiés et demandes d'achat | Infinie | De quelques jours à quelques mois | Serveur d'application S/4HANA |
+| MRP Live (MD01N) | La même chose, plus vite, sur une ou plusieurs divisions | Infinie | De quelques jours à quelques mois | Dans la base de données SAP HANA |
+| PP/DS intégré | Séquence et calendrier des ordres sur les ressources | Finie, avec logique de réglage et de séquence | De quelques heures à quelques semaines | Dans S/4HANA |
+| SAP IBP | Demande, stocks et approvisionnement sur tout le réseau | Contrainte, par tranches de temps ou par ordre | De quelques semaines à plusieurs années | Produit cloud SAP distinct |
+
+Lisez d'abord la colonne de capacité. C'est la ligne de partage la plus nette entre les outils.
+
+## MRP Live et MRP classique : le point de départ
+
+Tout industriel sous SAP commence ici. Le MRP compense les prévisions et les commandes clients avec le stock et les entrées prévues, éclate la nomenclature et propose quoi produire et quoi acheter. Mon [guide SAP PP](/fr/sap-pp-production-planning/) détaille le module, les données de base et le cycle de planification.
+
+MRP Live est la version S/4HANA de ce calcul. Le [module de formation SAP sur MRP Live](https://learning.sap.com/courses/exploring-production-planning-in-sap-s-4hana/outlining-material-requirements-planning-with-mrp-live-1) explique qu'il descend la logique de planification dans la base de données HANA et peut planifier une ou plusieurs divisions en ligne. La même leçon confirme que les modes de planification classiques restent disponibles dans S/4HANA.
+
+### Ce que le MRP ne fait pas
+
+Le MRP suppose une capacité illimitée. Il programmera deux cents heures de travail dans une semaine de cent heures.
+
+L'évaluation et le lissage de capacité existent dans S/4HANA, mais ils se trouvent à côté du calcul MRP, pas dedans. Cet écart devient un problème quotidien quand une seule ligne ou un seul four détermine la production de toute l'usine.
+
+### MRP classique ou MRP Live
+
+Pour la plupart des nouvelles conceptions S/4HANA, MRP Live est le choix par défaut. Certaines fonctions classiques se comportent différemment ou ne sont pas optimisées pour HANA, et l'article 2640393 de la base de connaissances SAP détaille les différences entre MRP Live et le MRP classique.
+
+Lisez cette note au regard de votre propre conception avant de vous engager. Les points pratiques à vérifier :
+
+1. Si vos procédures de calcul de la taille de lot et vos types de planification sont pris en charge dans MRP Live
+2. Si vous vous appuyez sur un périmètre de planification restreint ou sur les listes MRP comme instantané
+3. Si des calculs de fabrication à la commande multiniveaux ou de planification de projet font partie de votre processus
+4. Si chaque article fabriqué en interne a une version de fabrication valide, dont MRP Live a besoin
+
+### MRP prédictif : une étape avant de monter en gamme
+
+La planification prédictive des articles et des ressources (pMRP) est un outil de simulation dans S/4HANA. La [leçon SAP sur pMRP](https://learning.sap.com/courses/exploring-production-planning-in-sap-s-4hana/introducing-predictive-mrp-pmrp-) la présente comme le successeur de la planification à long terme d'ECC, utilisé pour repérer tôt les problèmes de capacité sur un plan simplifié.
+
+Les planificateurs modifient la demande, la capacité ou les sources d'approvisionnement dans une simulation et la comparent au plan de référence. Rien ne change dans le MRP opérationnel tant qu'une simulation n'est pas validée.
+
+Lancez pMRP sur une question de capacité à moyen terme avant de conclure que seuls PP/DS ou IBP feront l'affaire.
+
+## PP/DS intégré : quand la capacité finie compte
+
+PP/DS (Production Planning and Detailed Scheduling) est le moteur de planification avancée qui tournait autrefois dans SAP APO. Dans S/4HANA, il est intégré : plus de serveur de planification séparé à exploiter, plus de données à copier de l'un à l'autre.
+
+Les [contenus de formation SAP sur PP/DS](https://learning.sap.com/courses/exploring-advanced-production-planning-with-sap-s-4hana-pp-ds/outlining-advanced-planning-pp-ds-in-sap-s-4hana-1) décrivent une planification finie avec des heures exactes dans l'usine. Les ressources peuvent être définies comme finies, des heuristiques standard structurent les étapes de planification, et un optimiseur d'ordonnancement détaillé peut réduire les temps de réglage, les coûts de réglage et les retards en modifiant la séquence et la ressource des ordres existants.
+
+### Comment PP/DS et MRP Live se partagent le travail
+
+Le partage se fait par article. Les articles marqués pour la planification avancée vont dans PP/DS, et les autres restent dans MRP Live. La recommandation de SAP est de planifier dans PP/DS les produits critiques sur des ressources goulots, et dans MRP Live les articles moins critiques pilotés par la consommation.
+
+Deux règles de conception en découlent :
+
+1. Mettez dans PP/DS tous les articles qui chargent la ressource goulot. Une ligne contrainte dont la moitié des produits est planifiée à capacité infinie n'est pas planifiée à capacité finie.
+2. Gardez les articles PP/DS hors du périmètre de planification de MRP Live, sinon le calcul MRP suivant peut écraser l'ordonnancement détaillé.
+
+### Ce que PP/DS vous coûte
+
+PP/DS demande plus de données de base que le MRP, et plus de discipline pour les tenir à jour. Ressources, groupes de réglage, matrices de réglage et temps d'opération réalistes doivent tous être justes avant que l'ordonnancement ait un sens.
+
+La licence est l'autre point à vérifier. Demandez à SAP de confirmer par écrit comment votre contrat couvre PP/DS avant que la conception n'en dépende.
+
+PP/DS trouve sa place dans les usines où la séquence détermine le coût : changements de série entre couleurs, nuances, dimensions ou formulations. La plasturgie et la sidérurgie sont des exemples typiques de ce type de production, en termes généraux. Le détail des paramétrages discrets, process et répétitifs se trouve dans mon guide [SAP, fabrication discrète ou en process](/fr/sap-discrete-vs-process-manufacturing/).
+
+## SAP IBP : quand le problème est le réseau
+
+[SAP Integrated Business Planning for Supply Chain](https://help.sap.com/docs/SAP_INTEGRATED_BUSINESS_PLANNING/6b0a6820ebf94ff4a15d68af6db7745b/b48f855725308a1be10000000a44147b.html) est un produit cloud distinct. Il couvre la planification des ventes et des opérations, la demande, les stocks, la réponse et l'approvisionnement, ainsi que le réapprovisionnement piloté par la demande.
+
+IBP répond à des questions que le MRP et PP/DS ne posent jamais. Combien l'entreprise doit-elle vendre, stocker et approvisionner, et quelle usine doit fabriquer quoi ?
+
+### Planification par séries chronologiques et par ordres
+
+IBP Response and Supply planifie de deux manières. La planification par séries chronologiques travaille par tranches de temps, avec des heuristiques et un optimiseur qui construisent un plan d'approvisionnement contraint et fondé sur les coûts à moyen et long terme.
+
+La planification par ordres travaille sur des ordres individuels, sur un horizon plus court. Le [cours SAP sur la planification par ordres](https://learning.sap.com/courses/discovering-order-based-supply-planning-response-with-sap-ibp) couvre la planification globale des capacités, un plan d'approvisionnement opérationnel, le déploiement et l'intégration en temps réel avec la planification de la production. C'est là qu'IBP se rapproche le plus de l'usine, et là que se discutent les chevauchements avec PP/DS.
+
+### Ce dont IBP a toujours besoin de S/4HANA
+
+IBP planifie. S/4HANA exécute. Les données de base et les transactions remontent de S/4HANA, les plans redescendent, et le MRP ou PP/DS les transforment toujours en ordres que l'usine peut exécuter.
+
+IBP ajoute un second système et une intégration à prendre en charge. Mon guide sur [l'importance de SAP IBP](/fr/why-sap-integrated-business-planning-sap-ibp-matters/) détaille les applications et les voies d'intégration.
+
+J'ai mis en œuvre IBP pour l'industrie de défense. Que cela en vaille la peine dépend de la complexité de la planification, et dans beaucoup d'usines, ce n'est pas le cas.
+
+<explainer-layers title="Où se situe chaque outil de planification SAP" caption="Chaque couche répond à une question différente. La plupart des industriels ont besoin de la couche du bas, certains de celle du milieu, et moins nombreux sont ceux qui ont besoin de celle du haut." layers="SAP IBP => Combien vendre, stocker et approvisionner, sur plusieurs usines et plusieurs mois|PP/DS intégré => Dans quel ordre tourne chaque ressource goulot, à capacité finie|MRP Live ou MRP classique => Quoi fabriquer et acheter, et quand, à capacité infinie|Données de base => Nomenclatures, gammes, versions de fabrication, délais, tailles de lot" tones="|accent||"></explainer-layers>
+
+## Quand monter en gamme : les critères de décision
+
+Aucune règle ne dit qu'un industriel d'une certaine taille a besoin de PP/DS ou d'IBP. La décision doit suivre le problème de planification que vous avez réellement, et les signaux ci-dessous sont des repères généraux pour l'identifier.
+
+Le tableau associe des signaux courants à l'outil qui y répond habituellement.
+
+| Signal dans votre usine ou votre entreprise | Pointe généralement vers |
+|---|---|
+| Les planificateurs acceptent la plupart des propositions MRP et la capacité est rarement limitante | MRP Live seul |
+| Vous devez voir les problèmes de capacité à moyen terme avant de vous engager | pMRP dans S/4HANA |
+| Les planificateurs refont à la main l'ordonnancement d'une ligne chaque semaine | PP/DS intégré |
+| Les changements de série déterminent le coût et la séquence compte | PP/DS intégré |
+| Les ordres sont liés sur plusieurs niveaux de nomenclature et les retards se propagent | PP/DS intégré |
+| Les décisions d'approvisionnement couvrent plusieurs usines et centres de distribution | SAP IBP |
+| La demande exige des prévisions statistiques sur de nombreux clients et canaux | SAP IBP |
+| Un processus mensuel de planification des ventes et des opérations exige la présence de la finance | SAP IBP |
+| Un approvisionnement rare doit être alloué selon la priorité des clients | SAP IBP Response and Supply |
+
+Une usine unique avec un seul goulot a souvent besoin de MRP Live et de PP/DS, et de rien d'autre. Un groupe multisite à demande saisonnière peut avoir besoin d'IBP pour le plan réseau et de PP/DS pour les lignes qui limitent réellement la production.
+
+### Les questions à trancher avant d'acheter
+
+Passez-les en revue avec les planificateurs :
+
+1. Où les planificateurs corrigent-ils le système aujourd'hui, et combien d'heures par semaine cela leur prend-il ?
+2. La contrainte est-elle une ressource dans une usine, ou une décision entre usines et canaux ?
+3. La séquence change-t-elle le coût, par les réglages, le nettoyage ou les rebuts ?
+4. Existe-t-il un processus validé de planification des ventes et des opérations, ou chaque fonction arrive-t-elle avec ses propres chiffres ?
+5. Les données de base sont-elles assez bonnes pour le MRP aujourd'hui ? Sinon, un outil plus avancé planifiera les mêmes erreurs plus vite.
+
+Si la réponse à la question 5 est non, corrigez cela d'abord.
+
+Le SOP classique relève du périmètre de compatibilité dans S/4HANA, avec IBP comme successeur désigné par SAP : cette échéance peut donc imposer la question IBP plus tôt que le problème de planification ne le ferait. Vérifiez les droits d'utilisation de votre propre contrat avant de la traiter comme une urgence.
+
+### Comment les couches fonctionnent ensemble
+
+Les industriels qui montent en gamme ajoutent une couche ; ils ne remplacent pas celle du dessous.
+
+PP/DS et MRP Live tournent dans le même système S/4HANA sur les mêmes données, donc le risque principal est le chevauchement : deux moteurs qui planifient le même article. IBP tourne dans son propre tenant cloud, donc le risque se déplace vers l'intégration et vers la question de savoir à qui appartient le plan quand les deux systèmes divergent.
+
+Trois décisions de responsabilité évitent l'essentiel des problèmes :
+
+1. Désignez quel outil planifie chaque groupe d'articles et chaque horizon, et inscrivez-le dans la conception.
+2. Désignez qui arbitre un conflit entre le plan d'approvisionnement IBP et l'ordonnancement S/4HANA.
+3. Désignez un responsable unique pour chaque domaine de données de base utilisé par les outils de planification.
+
+La conception de la planification touche aussi la finance. Les ordres planifiés, les versions de fabrication et la capacité alimentent le calcul du coût de revient et la valorisation des stocks. La raison la plus fréquente d'échec des projets d'ERP industriels que je constate, c'est une conception qui n'est pas validée dans sa totalité, en particulier côté finance : impliquez donc le contrôleur de gestion tôt dans la conception de la planification.
+
+## Par où commencer
+
+Commencez par le plan que vous avez déjà. Faites tourner MRP Live sur des données de base propres, mesurez où les planificateurs le corrigent, et testez la capacité à moyen terme dans pMRP.
+
+Si les corrections se concentrent sur quelques ressources, cadrez PP/DS pour ces ressources uniquement. Si elles se concentrent sur des décisions entre usines, canaux ou fonctions, c'est une discussion IBP, et elle commence par le processus de planification plutôt que par le logiciel.
+
+Pour la planification dans la défense et l'aéronautique, le calcul des coûts par contrat et la gestion de projets façonnent généralement la conception autant que le moteur de planification. Mon guide sur [l'ERP pour l'industrie de défense](/fr/erp-for-defence-manufacturing/) traite de cet aspect. Si vous voulez un second avis sur la couche de planification dont vos usines ont réellement besoin, [parlez-moi de votre programme SAP](/fr/contact-noel-erp-support/).
+
+## Questions fréquentes
+
+<details>
+<summary>Quelle est la différence entre MRP Live et PP/DS ?</summary>
+
+MRP Live planifie quoi fabriquer et acheter, et quand, à capacité infinie. PP/DS intégré ordonnance les articles critiques sur les ressources goulots à capacité finie, avec une logique de réglage et de séquence.
+
+Les deux tournent dans S/4HANA. Les articles marqués pour la planification avancée vont dans PP/DS, et les autres restent dans MRP Live.
+
+</details>
+
+<details>
+<summary>Quelle est la différence entre PP/DS et IBP ?</summary>
+
+PP/DS ordonnance l'usine sur des heures ou des semaines, dans S/4HANA. SAP IBP est un produit cloud distinct qui planifie la demande, les stocks et l'approvisionnement sur plusieurs usines et canaux, sur des semaines ou des années.
+
+Ils répondent à des questions différentes, et certains industriels utilisent les deux : IBP pour le plan réseau, PP/DS pour les lignes qui limitent la production.
+
+</details>
+
+<details>
+<summary>SAP IBP remplace-t-il le MRP dans S/4HANA ?</summary>
+
+Non. IBP planifie au niveau du réseau et renvoie les plans à S/4HANA. MRP Live ou PP/DS transforment toujours ces plans en ordres planifiés et en demandes d'achat que l'usine peut exécuter.
+
+</details>
+
+<details>
+<summary>Le MRP classique est-il toujours disponible dans S/4HANA ?</summary>
+
+Oui. Les contenus de formation SAP confirment que les modes de planification classiques restent disponibles, et MRP Live (MD01N) est le calcul recommandé. L'article 2640393 de la base de connaissances SAP liste les différences entre les deux : vérifiez-le au regard de vos procédures de calcul de la taille de lot et de vos types de planification.
+
+</details>
+
+<details>
+<summary>Ai-je besoin de PP/DS si j'ai MRP Live ?</summary>
+
+Seulement si la capacité finie compte pour votre production. Si les planificateurs refont sans cesse à la main l'ordonnancement d'une ligne goulot, ou si les changements de série déterminent le coût, PP/DS mérite d'être évalué. Si la capacité est rarement limitante, MRP Live avec l'évaluation de capacité suffit généralement.
+
+</details>
+
+<details>
+<summary>Qu'est-ce que pMRP dans SAP S/4HANA ?</summary>
+
+La planification prédictive des articles et des ressources (pMRP) est un outil de simulation de S/4HANA qui sert à repérer tôt les problèmes de capacité sur un plan simplifié. SAP la présente comme le successeur de la planification à long terme d'ECC. Les simulations ne modifient pas le MRP opérationnel tant qu'un planificateur ne les a pas validées.
+
+</details>

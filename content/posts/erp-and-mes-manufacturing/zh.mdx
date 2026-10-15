@@ -1,0 +1,203 @@
+---
+title: "制造业中的 ERP 与 MES：谁负责什么"
+h1: "制造业中的 ERP 与 MES：谁负责什么"
+slug: "erp-and-mes-manufacturing"
+date: "2026-10-15"
+updated: "2026-10-15"
+hero: "/images/manufacturing/erp-and-mes-manufacturing.webp"
+heroAlt: "明亮的工厂里有一台车间终端和带追踪标签的零件推车，屏幕上显示 ERP 到 MES 的流程"
+category: "erp-strategy"
+tags: ["manufacturing-erp", "sap-manufacturing", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "ERP 与 MES 的区别：各自负责什么，SAP 处于什么位置"
+metaDescription: "制造业中 ERP 与 MES 的区别：每个系统负责什么，SAP Digital Manufacturing、Siemens Opcenter 和 Kinexon 处于什么位置，以及两者如何集成。"
+primaryKeyword: "ERP 与 MES 的区别"
+excerpt: "ERP 负责计划生产、核算成本和记账；MES 在车间执行生产并回报结果。本文说明各自负责什么，SAP Digital Manufacturing、Siemens Opcenter 和 Kinexon 追踪处于什么位置，以及要避免的集成错误。"
+experienceSource: "Noel's first-person experience implementing ERP in plastics, steel and defence manufacturing (confirmed by Noel, 15 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "ERP 负责计划、采购、成本核算和生产记账；MES 在车间执行生产并把结果发回"
+  - "在配置任何一个系统之前，先确定由哪个系统负责每一类记录，例如确认、报废、谱系和质量结果"
+  - "SAP Digital Manufacturing 从 S/4HANA 或 ECC 接收订单和主数据，并返回确认、消耗和收货"
+  - "Siemens Opcenter 是一个同样位于 ERP 之上的非 SAP MES；Kinexon 增加的是实时定位追踪，而不是执行"
+  - "MES 过账的每一笔确认都会成为 ERP 中的一笔成本，所以必须在构建集成之前确认财务设计"
+pullQuote: "MES 发回的每一笔确认都会成为 ERP 中的一笔成本。如果财务没有确认设计，集成只会把争论推到月末。"
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Digital Manufacturing"
+  - "SAP Cloud Integration"
+  - "SAP Extended Warehouse Management"
+  - "SAP Manufacturing Execution"
+  - "Siemens Opcenter"
+  - "KINEXON OS"
+  - "ISA-95"
+originalUrl: "https://noeldcosta.com/erp-and-mes-manufacturing/"
+canonicalUrl: "https://noeldcosta.com/zh-CN/erp-and-mes-manufacturing/"
+locale: "zh"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+ERP 与 MES 的区别归根结底在于时间尺度和归属。ERP 以天和周为单位计划、采购、核算成本并为生产记账。制造执行系统（MES）以秒和班次为单位在车间运行生产，然后报告发生了什么。
+
+SAP Digital Manufacturing 是 SAP 的 MES。它从 SAP S/4HANA 或 SAP ECC 获取生产订单和主数据，并把确认、消耗和收货发送回去。
+
+如果您还在选择 ERP 本身，请先看我对[制造业最佳 ERP](/zh-CN/best-erp-for-manufacturing/) 的对比。本文再往下走一层：每个系统负责什么，车间产品处于什么位置，以及两者如何连接。
+
+我用过 SAP Digital Manufacturing、Siemens Opcenter 和 Kinexon。SAP 的 MES 和 Siemens Opcenter 都位于 ERP 之上，而它们之间的那条界线，正是大部分设计工作所在。
+
+## ERP 负责什么，MES 负责什么
+
+总览文章里有简短的对比。这里的问题更具体：对于每一类记录，哪个系统是主数据源，哪个系统只接收一份副本？
+
+开发 Opcenter 的 Siemens 用 ISA-95 的术语来界定。ERP 是负责业务物流的第 4 层系统，MES 是第 3 层的运营系统。ERP 向下发送需求、物料清单和主数据；MES 向上发送消耗、报废和完工信息。
+
+下面是通常的归属划分。您的划分可能不同，但在开始配置之前，每一行都需要有答案：
+
+| 记录 | 通常归属于 | 另一个系统的角色 |
+|---|---|---|
+| 物料主数据、BOM、工艺路线或配方 | ERP | MES 随订单接收一份副本 |
+| 生产订单或流程订单 | ERP 创建并下达 | MES 执行并追踪每一步 |
+| 产线上的工序顺序和作业指导 | MES | ERP 保存其所依据的工艺路线 |
+| 设备数据、停机和 OEE | MES | ERP 很少需要细节，只需要结果 |
+| 产量和报废确认 | MES 记录 | ERP 把它们过账到成本和库存 |
+| 组件消耗和收货 | MES 触发 | ERP 过账库存并计价 |
+| 产线上的批次或序列号谱系 | MES | ERP 保存批次主数据和库存 |
+| 过程检验结果 | MES 记录 | ERP 质量管理保留检验批和使用决策 |
+| 产品成本、在制品和差异 | ERP | MES 看不到成本 |
+
+最后一行是大家容易忘记的。MES 从不接触金额，但它上面的每一行都会计入订单的成本。
+
+## SAP Digital Manufacturing 处于什么位置
+
+根据 SAP 当前的[功能范围说明（版本 2608）](https://help.sap.com/doc/13c9f83611f94a5ab2c94f23cacfc217/latest/en-US/SAP_DMC_FSD_enUS.pdf)，SAP Digital Manufacturing 是一个由四部分组成的云产品：
+
+1. **执行**：订单下达、逐步的在制品管理、操作员看板、作业指导、质量检验、谱系、OEE 和停机，以及通过其 Production Connector 实现的设备集成
+2. **问题解决**：与供应商、客户或内部团队进行结构化的问题处理
+3. **洞察**：对执行过程采集的生产数据进行实时监控和分析
+4. **边缘计算**：一组限定的功能在现场、靠近设备的地方运行，这样即使与云端的连接时断时续，工厂也能继续运转
+
+SAP Learning 列出了 [S/4HANA 与 SAP Digital Manufacturing 之间流转的内容](https://learning.sap.com/courses/discovering-sap-digital-manufacturing/exploring-the-integration-of-sap-digital-manufacturing-with-sap-s-4hana_b2ffd41c-64b9-4f73-a802-8528562e2cb7)。向下传递的是物料、工作中心、带 BOM 和工艺路线或配方的订单、库存数据和检验信息。回传的是带产量、报废和工时的工序确认、组件消耗、收货、订单状态、检验结果和批次特性值。
+
+技术路径见 SAP 的 [Digital Manufacturing 集成指南](https://help.sap.com/doc/f6b2ab2222794bebad4c0dcd33138e71/latest/en-US/SAP_DMC_Integration_Guide_enUS.pdf)。SAP Cloud Integration 和 Cloud Connector 是必需的中间件。主数据和订单以 IDoc 形式传输，确认则通过 RFC 以 BAPI 调用的方式返回，对 S/4HANA 的部分直接调用也可以选用 OData。
+
+对多工厂集团来说，有一个细节很重要。指南说明，一个全局的 SAP Digital Manufacturing 系统可以服务所有工厂，并连接多个 ERP 系统，例如每个工厂或每个国家一个。
+
+如果您仍在运行 SAP Manufacturing Execution（SAP ME）或 SAP MII，请把迁移当作一次新的实施，而不是升级。集成指南把与 SAP ME 的集成限定在 Resource Orchestration。在围绕维护日期制定计划之前，先在 SAP 的产品可用性矩阵（Product Availability Matrix）中核对您所用版本的维护日期。
+
+## Siemens Opcenter 和 Kinexon：车间的其他层
+
+SAP Digital Manufacturing 并不是唯一位于 S/4HANA 之上的 MES。Siemens 把 [Opcenter](https://www.siemens.com/global/en/products/automation/topic-areas/opcenter.html) 描述为一个制造运营管理产品组合，其中 Opcenter Execution 是 MES，另有用于计划与排程（Opcenter APS）、质量和实验室工作的独立产品。
+
+从架构上看，模式是一样的。ERP 负责计划和成本核算；Opcenter 负责执行并回报。集成是在两家厂商之间构建的，所以上面的归属表更加重要。
+
+Kinexon 是另一类产品。它不运行生产步骤。
+
+Kinexon 把自己的产品描述为[与 UWB 标签配套的实时定位软件](https://kinexon.com/sap)或其他定位技术。KINEXON OS 是一个平台，它把标签与生产订单关联起来，并把经过指定区域的移动转换为过账和警报。
+
+Kinexon 表示 KINEXON OS 可以与 SAP Digital Manufacturing 和 SAP Extended Warehouse Management 配合使用。所以可以把它看作 MES 旁边的一个定位层。它回答一张订单、一个零件或一辆车在哪里，并且可以触发原本要等人手工录入的 MES 或 ERP 事务。
+
+三者的对比如下：
+
+| 产品 | 做什么 | 处于什么位置 |
+|---|---|---|
+| SAP Digital Manufacturing | MES：执行、产线质量、谱系、OEE、分析 | 位于 S/4HANA 或 ECC 之上，通过 SAP Cloud Integration 连接 |
+| Siemens Opcenter | MES 和运营产品组合：执行、排程、质量、实验室 | 位于 ERP 之上，不限厂商 |
+| Kinexon（KINEXON OS） | 订单、零件和车辆的实时定位；基于事件的过账 | 位于 MES 和仓库系统旁边，为它们提供事件 |
+
+## ERP 与 MES 如何集成
+
+无论您选择哪个 MES，循环都是一样的。ERP 决定生产什么；MES 完成生产，并告诉 ERP 用了什么、产出了什么。
+
+<explainer-flow title="ERP 与 MES 的循环" caption="每一轮循环都在 ERP 中结束，车间的结果在那里变成库存和成本。" steps="在 ERP 中计划|下达订单|在 MES 中执行|回传确认|在 ERP 中核算成本" notes="MRP 根据需求创建计划订单|订单、BOM 和工艺路线下发到 MES|操作员执行各步骤，记录质量和谱系|产量、报废、消耗和收货向上回传|库存、在制品和差异在财务中过账" result="ERP 按成本显示车间里发生了什么"></explainer-flow>
+
+五种集成模式涵盖了您要设计的大部分内容：
+
+1. **主数据复制。** 物料、工作中心和分类要先于任何订单从 ERP 传到 MES。如果 MES 拒收一张订单，先检查主数据。
+2. **订单下载。** 已下达的订单连同其 BOM 和工艺路线或配方一起传输。决定下达后是否允许变更，以及发生变更时以哪个系统为准。
+3. **确认上传。** 产量、报废和工时按工序或按订单回传。频率是一个会带来成本后果的设计选择，而不是技术细节。
+4. **设备和传感器数据。** 设备信号进入 MES 或边缘层，而不是直接进入 ERP。只有业务结果，例如数量或停机原因，才应该继续往上传。
+5. **来自追踪的事件触发。** 来自 Kinexon 这类产品的定位或传感器事件可以自动过账。规定事件出错时由谁来纠正。
+
+要为网络中断做好计划。如果与云端的连接一断，产线就停，那就要在 MES 中设计本地执行，例如使用 SAP Digital Manufacturing 的边缘计算。并确定连接恢复后积压的数据如何过账。
+
+执行之前如何计划，是另一项决策。我的 [SAP PP 指南](/zh-CN/sap-pp-production-planning/)讲的是 ERP 这一侧，本系列中关于 [MRP Live、PP/DS 与 IBP](/zh-CN/mrp-live-vs-pp-ds-vs-ibp/) 的文章讲的是何时升级计划工具。
+
+## ERP 与 MES 项目中的常见错误
+
+根据我的经验，制造业 ERP 项目失败最常见的原因，是设计没有被整体确认，尤其是在财务方面。MES 会让这个问题更严重，因为它成倍增加了财务必须承受的过账。
+
+下面是需要提前防范的错误：
+
+1. **把 ERP 和 MES 作为两个独立项目来定范围。** 两个团队、两套设计，以及一个没人负责的接口。用一个设计权威机构统管两者。
+2. **归属悬而未决。** 如果两个系统都能修改订单，或者都记录报废，您就会得到两个答案。在配置之前填好归属表。
+3. **没有财务参与就设计确认。** 确认频率、反冲、报废原因和作业类型决定了月末在制品和差异的样子。要与财务控制人员确认，而不仅仅是与厂长确认。
+4. **把设备数据发送到 ERP。** ERP 不是历史数据库。把原始信号留在 MES 或分析平台中，只把 ERP 要过账的内容发给它。
+5. **单独测试每个系统。** 用真实的订单、真实的报废和真实的冲销，测试从 MRP 到成本的完整循环。测试约占项目工作量的 35%，而接口测试恰恰是团队最常砍掉的。
+6. **忘记未结订单的切换。** 上线时做了一半的订单，需要规则来决定由哪个系统完成。在迁移之前写好这些规则，而不是在迁移过程中。
+7. **在 ERP 上培训操作工。** 操作工在 MES 里工作。就在 MES 上按班次、在他们自己的产线上培训他们。
+
+主数据值得单独提醒。BOM、工艺路线和工作中心同时供给两个系统，ERP 中一条错误的工艺路线，就会变成产线上一条错误的指令。我关于[制造业中的 SAP](/zh-CN/sap-manufacturing-industry-secrets/) 的文章列出了主数据检查清单。
+
+## 从哪里开始
+
+从归属表开始，而不是从产品演示开始。让厂长、财务控制人员和 IT 负责人坐到一个房间里，把上表中的每一类记录分配给一个系统。
+
+然后选择与您的 ERP 和工厂相匹配的 MES，并把集成作为 ERP 项目的一部分来定范围，配有自己的测试周期。预算也要放在项目之内；本系列中关于[制造业 ERP 成本](/zh-CN/manufacturing-erp-cost/)的文章说明了这笔钱花在哪里。
+
+如果您希望在做出承诺之前，就 ERP 与 MES 设计获得独立的意见，我可以帮助制造商做这件事。您可以[在这里联系我](/zh-CN/contact-noel-erp-support/)。
+
+## 常见问题
+
+<details>
+<summary>ERP 和 MES 有什么区别？</summary>
+
+ERP 以天和周为单位计划、采购、核算成本并为生产记账。MES 以秒和班次为单位在车间执行生产，记录操作步骤、设备数据、质量检查和谱系。
+
+两者形成一个循环。ERP 向下发送订单，MES 把确认、消耗和收货发送回来，以便 ERP 过账库存和成本。
+
+</details>
+
+<details>
+<summary>SAP Digital Manufacturing 是什么？</summary>
+
+它是 SAP 的云端 MES。根据 SAP 的功能范围说明，它涵盖生产执行、问题解决、洞察和边缘计算。
+
+它通过 SAP Cloud Integration 和 Cloud Connector，从 SAP S/4HANA 或 SAP ECC 接收主数据以及生产订单或流程订单，并把确认、消耗、收货和检验结果发送回去。
+
+</details>
+
+<details>
+<summary>有了 SAP S/4HANA 还需要 MES 吗？</summary>
+
+不一定。生产比较简单的单个工厂，往往可以直接在 S/4HANA 中确认订单。
+
+当您需要在产线上进行逐步控制、完整的批次或序列号谱系、实时设备数据，或者在多个工厂之间统一生产标准时，就需要 MES。
+
+</details>
+
+<details>
+<summary>Siemens Opcenter 可以替代 SAP Digital Manufacturing 吗？</summary>
+
+可以。两者都是位于 ERP 之上的 MES 产品。Siemens Opcenter 是一个制造运营管理产品组合，以 Opcenter Execution 作为 MES，另有排程、质量和实验室产品。
+
+选择取决于您的工厂、自动化水平和 ERP。无论选哪个，都要在构建集成之前确定由哪个系统负责每一类记录。
+
+</details>
+
+<details>
+<summary>Kinexon 在制造业中做什么？</summary>
+
+Kinexon 提供实时定位追踪。它的 KINEXON OS 平台把定位标签与生产订单关联起来，当订单经过指定区域时，可以触发过账和警报。
+
+它不是 MES。Kinexon 表示它可以与 SAP Digital Manufacturing 和 SAP Extended Warehouse Management 配合使用，为它们提供定位事件。
+
+</details>
+
+<details>
+<summary>SAP ME 或 SAP MII 能升级到 SAP Digital Manufacturing 吗？</summary>
+
+请把它当作一次新的实施来规划，而不是升级。SAP 的集成指南把 SAP Digital Manufacturing 与 SAP ME 的集成限定在 Resource Orchestration。
+
+请在 SAP 的产品可用性矩阵中核对您的 SAP ME 或 MII 版本的维护日期，并在迁移过程中重新设计 ERP 与 MES 的归属。
+
+</details>

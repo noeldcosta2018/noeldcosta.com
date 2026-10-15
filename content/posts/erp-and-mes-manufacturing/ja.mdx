@@ -1,0 +1,203 @@
+---
+title: "製造業におけるERPとMESの違い：どちらが何を持つのか"
+h1: "製造業におけるERPとMESの違い：どちらが何を持つのか"
+slug: "erp-and-mes-manufacturing"
+date: "2026-10-15"
+updated: "2026-10-15"
+hero: "/images/manufacturing/erp-and-mes-manufacturing.webp"
+heroAlt: "明るい工場にある製造現場の端末と追跡中の部品カート。画面にはERPからMESへの流れが表示されている"
+category: "erp-strategy"
+tags: ["manufacturing-erp", "sap-manufacturing", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "ERPとMESの違い：それぞれが持つものとSAPの位置づけ"
+metaDescription: "製造業におけるERPとMESの違いを解説。それぞれのシステムが何を持つのか、SAP Digital Manufacturing、Siemens Opcenter、Kinexonの位置づけ、そして連携の仕組みを整理します。"
+primaryKeyword: "ERP MES 違い"
+excerpt: "ERPは生産を計画し、原価を計算し、会計処理します。MESは製造現場で生産を動かし、結果を報告します。それぞれが何を持つのか、SAP Digital Manufacturing、Siemens Opcenter、Kinexonの追跡がどこに位置するのか、そして避けるべき連携の誤りを解説します。"
+experienceSource: "Noel's first-person experience implementing ERP in plastics, steel and defence manufacturing (confirmed by Noel, 15 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "ERPは生産を計画し、購買し、原価を計算し、会計処理します。MESは製造現場で生産を実行し、結果を送り返します"
+  - "確認、仕損、製造履歴、品質結果など、各記録をどのシステムが持つかを、どちらかのシステムを設定する前に合意してください"
+  - "SAP Digital Manufacturingは、S/4HANAまたはECCから指図とマスタデータを受け取り、確認、消費、入庫を返します"
+  - "Siemens OpcenterはSAP以外のMESで、同じくERPの上に位置します。Kinexonが加えるのはリアルタイムの位置追跡であり、実行ではありません"
+  - "MESが転記するすべての確認はERPで原価になるため、連携を構築する前に財務設計を合意しなければなりません"
+pullQuote: "MESが送り返すすべての確認は、ERPで原価になります。財務部門が設計に合意していなければ、連携は議論を月末に先送りするだけです。"
+mentions:
+  - "SAP S/4HANA"
+  - "SAP Digital Manufacturing"
+  - "SAP Cloud Integration"
+  - "SAP Extended Warehouse Management"
+  - "SAP Manufacturing Execution"
+  - "Siemens Opcenter"
+  - "KINEXON OS"
+  - "ISA-95"
+originalUrl: "https://noeldcosta.com/erp-and-mes-manufacturing/"
+canonicalUrl: "https://noeldcosta.com/ja/erp-and-mes-manufacturing/"
+locale: "ja"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+ERPとMESの違いは、時間軸と責任範囲に尽きます。ERPは、日や週の単位で生産を計画し、購買し、原価を計算し、会計処理します。製造実行システム（MES）は、秒やシフトの単位で製造現場の生産を動かし、何が起きたかを報告します。
+
+SAP Digital Manufacturingは、SAPのMESです。SAP S/4HANAまたはSAP ECCから製造指図とマスタデータを受け取り、確認、消費、入庫を送り返します。
+
+ERPそのものをまだ選んでいる段階なら、まず私の「[製造業向けERPのおすすめ](/ja/best-erp-for-manufacturing/)」の比較をご覧ください。この記事は1つ下の層を扱います。それぞれのシステムが何を持つのか、製造現場の製品がどこに位置するのか、そして2つがどうつながるのかです。
+
+私はSAP Digital Manufacturing、Siemens Opcenter、Kinexonを扱ってきました。SAPのMESとSiemens OpcenterはどちらもERPの上に位置し、その境界線こそ、設計作業の大半が費やされる場所です。
+
+## ERPが持つもの、MESが持つもの
+
+ハブ記事には簡単な比較があります。ここでの問いはもっと狭いものです。記録ごとに、どちらのシステムがマスタで、どちらがコピーを受け取るだけなのか。
+
+Opcenterを提供するSiemensは、これをISA-95の用語で整理しています。ERPはビジネスロジスティクスのためのレベル4のシステムで、MESはレベル3のオペレーションシステムです。ERPは需要、部品表、マスタデータを下に送り、MESは消費、仕損、完了を上に送ります。
+
+責任範囲の分け方は通常次のとおりです。分け方は異なるかもしれませんが、設定が始まる前に、すべての行に答えが必要です。
+
+| 記録 | 通常持つシステム | もう一方のシステムの役割 |
+|---|---|---|
+| 品目マスタ、部品表、作業手順またはレシピ | ERP | MESは指図とともにコピーを受け取る |
+| 製造指図またはプロセス指図 | ERPが作成してリリース | MESが実行し、各工程を追跡 |
+| ライン上の作業順序と作業指示 | MES | ERPはその元になった作業手順を持つ |
+| 機械データ、停止時間、OEE | MES | ERPが詳細を必要とすることはまれで、結果だけで足りる |
+| 歩留りと仕損の確認 | MESが記録 | ERPが原価と在庫に転記 |
+| 構成品目の消費と入庫 | MESがトリガー | ERPが在庫を転記して評価 |
+| ラインでのバッチまたはシリアルの製造履歴 | MES | ERPはバッチマスタと在庫を持つ |
+| 工程内検査の結果 | MESが記録 | ERPの品質管理が検査ロットと使用決定を持つ |
+| 製品原価、仕掛品、差異 | ERP | MESには原価の視点がない |
+
+忘れられがちなのは一番下の行です。MESはお金を見ることはありませんが、その上のすべての行が指図の原価に流れ込みます。
+
+## SAP Digital Manufacturingの位置づけ
+
+SAP Digital Manufacturingはクラウド製品で、SAPの現行の[機能範囲説明書（リリース2608）](https://help.sap.com/doc/13c9f83611f94a5ab2c94f23cacfc217/latest/en-US/SAP_DMC_FSD_enUS.pdf)によると、4つの部分から成ります。
+
+1. **実行**：指図のリリース、工程ごとの仕掛管理、オペレーター向けダッシュボード、作業指示、品質検査、製造履歴、OEEと停止時間、そしてProduction Connectorによる機械連携
+2. **問題解決**：サプライヤー、顧客、社内チームとの構造化された問題解決
+3. **インサイト**：実行で収集した生産データのライブ監視と分析
+4. **エッジコンピューティング**：定められた一連の機能を、機械に近い現場で動かします。クラウドへの接続が不安定でも工場が稼働を続けられます
+
+SAP Learningは、[S/4HANAとSAP Digital Manufacturingの間で何が流れるか](https://learning.sap.com/courses/discovering-sap-digital-manufacturing/exploring-the-integration-of-sap-digital-manufacturing-with-sap-s-4hana_b2ffd41c-64b9-4f73-a802-8528562e2cb7)を説明しています。下に流れるのは、品目、作業区、部品表と作業手順またはレシピを伴う指図、在庫データ、検査情報です。戻ってくるのは、歩留り、仕損、時間を含む作業確認、構成品目の消費、入庫、指図のステータス、検査結果、バッチの特性値です。
+
+技術的な経路は、SAPの[Digital Manufacturingの連携ガイド](https://help.sap.com/doc/f6b2ab2222794bebad4c0dcd33138e71/latest/en-US/SAP_DMC_Integration_Guide_enUS.pdf)にあります。必須のミドルウェアはSAP Cloud IntegrationとCloud Connectorです。マスタデータと指図はIDocで送られ、確認はRFC経由のBAPI呼び出しで戻り、S/4HANAへの一部の直接呼び出しにはODataも選べます。
+
+複数工場のグループにとって重要な点が1つあります。ガイドによると、1つのグローバルなSAP Digital Manufacturingシステムで、すべての工場に対応でき、たとえば工場ごとや国ごとの複数のERPシステムに接続できます。
+
+まだSAP Manufacturing Execution（SAP ME）やSAP MIIを使っているなら、移行はアップグレードではなく新規導入として扱ってください。連携ガイドでは、SAP MEとの連携はResource Orchestrationに限られています。計画を立てる前に、SAPのProduct Availability Matrixで、ご自身のリリースの保守期限を確認してください。
+
+## Siemens OpcenterとKinexon：製造現場のほかの層
+
+S/4HANAの上に位置するMESは、SAP Digital Manufacturingだけではありません。Siemensは[Opcenter](https://www.siemens.com/global/en/products/automation/topic-areas/opcenter.html)を製造オペレーション管理のポートフォリオと説明しており、MESとしてのOpcenter Executionのほかに、計画とスケジューリング（Opcenter APS）、品質、試験室業務のための個別の製品があります。
+
+アーキテクチャとしては同じパターンです。ERPが計画して原価を計算し、Opcenterが実行して報告を返します。連携は2社のベンダーの間で構築されるため、上の責任範囲の表はさらに重要になります。
+
+Kinexonは別の種類の製品です。生産の工程を動かすことはしません。
+
+Kinexonは自社の製品を、[UWBタグと組み合わせたリアルタイム位置情報ソフトウェア](https://kinexon.com/sap)、またはほかの位置情報技術と説明しています。KINEXON OSは、タグを製造指図に結び付け、定められたゾーンを通過する動きを転記とアラートに変えるプラットフォームです。
+
+Kinexonによると、KINEXON OSはSAP Digital ManufacturingやSAP Extended Warehouse Managementと連携します。ですから、MESの横にある位置情報の層と考えてください。指図、部品、車両がどこにあるかに答え、本来ならMESやERPが誰かの入力を待つはずのトランザクションをトリガーできます。
+
+3つを比べると次のようになります。
+
+| 製品 | 何をするか | どこに位置するか |
+|---|---|---|
+| SAP Digital Manufacturing | MES：実行、ラインでの品質、製造履歴、OEE、分析 | S/4HANAまたはECCの上、SAP Cloud Integrationで接続 |
+| Siemens Opcenter | MESとオペレーションのポートフォリオ：実行、スケジューリング、品質、試験室 | ERPの上、ベンダーを問わない |
+| Kinexon（KINEXON OS） | 指図、部品、車両のリアルタイムの位置、イベントに基づく転記 | MESと倉庫システムの横で、イベントを供給 |
+
+## ERPとMESの連携の仕組み
+
+どのMESを選んでも、ループは同じです。ERPが何を作るかを決め、MESがそれを作り、何を使って何ができたかをERPに伝えます。
+
+<explainer-flow title="ERPとMESのループ" caption="ループの各周回はERPで終わり、製造現場の結果がそこで在庫と原価になります。" steps="ERPで計画|指図をリリース|MESで実行|確認を返す|ERPで原価計算" notes="MRPが需要から計画手配を作成|指図、部品表、作業手順がMESに下りる|オペレーターが工程を進め、品質と製造履歴を記録|歩留り、仕損、消費、入庫が上がる|在庫、仕掛品、差異が財務に転記される" result="ERPが現場で起きたことを原価で示す"></explainer-flow>
+
+設計することになるもののほとんどは、5つの連携パターンでカバーできます。
+
+1. **マスタデータの複製。** 品目、作業区、分類は、どの指図よりも先にERPからMESへ送ります。MESが指図を受け付けないときは、まずマスタデータを確認してください。
+2. **指図のダウンロード。** リリースされた指図は、部品表と作業手順またはレシピとともに送られます。リリース後の変更を許可するかどうか、そして変更が起きたときにどちらのシステムが優先するかを決めてください。
+3. **確認のアップロード。** 歩留り、仕損、時間は、作業ごとまたは指図ごとに戻ります。頻度は技術的な細部ではなく、原価に影響する設計上の選択です。
+4. **機械とセンサーのデータ。** 機械の信号は、ERPに直接ではなく、MESかエッジの層に送ります。それより先に送るべきなのは、数量や停止理由のようなビジネス上の結果だけです。
+5. **追跡からのイベントトリガー。** Kinexonのような製品からの位置やセンサーのイベントは、転記を自動的に行うことができます。イベントが誤っていたときに誰が修正するかを決めてください。
+
+ネットワークが落ちる事態に備えてください。クラウドへの接続が切れるとラインが止まるなら、たとえばエッジコンピューティングを使うSAP Digital Manufacturingのように、MESにローカル実行を組み込んでください。接続が戻ったときに、たまった処理をどう転記するかを合意してください。
+
+実行の前にどう計画するかは、別の判断です。ERP側は私の「[SAP PPガイド](/ja/sap-pp-production-planning/)」で、計画ツールをいつ上位に進めるべきかは、同じシリーズの記事「[MRP Live、PP/DS、IBPの比較](/ja/mrp-live-vs-pp-ds-vs-ibp/)」で取り上げています。
+
+## ERPとMESのプロジェクトでよくある誤り
+
+私の経験では、製造業のERPプロジェクトが失敗する最もよくある理由は、設計が全体として、特に財務面で合意されていないことです。MESはそれを悪化させます。財務部門が付き合わなければならない転記を増やすからです。
+
+計画の段階で備えるべき誤りは次のとおりです。
+
+1. **ERPとMESを別々のプロジェクトとしてスコープを決める。** 2つのチーム、2つの設計、そして誰も責任を持たないインターフェース。両方の上に1つの設計責任者を置いてください。
+2. **責任範囲を未決のままにする。** 両方のシステムが指図を変更できたり、両方が仕損を記録したりすれば、答えが2つになります。設定の前に責任範囲の表を埋めてください。
+3. **財務部門抜きで確認を設計する。** 確認の頻度、バックフラッシュ、仕損理由、活動タイプが、月末に仕掛品と差異がどう見えるかを決めます。工場長だけでなく、管理会計の責任者と合意してください。
+4. **機械データをERPに送る。** ERPはヒストリアンではありません。生の信号はMESや分析プラットフォームに残し、ERPには転記するものだけを送ってください。
+5. **各システムを単独でテストする。** 実際の指図、実際の仕損、実際の取消を使って、MRPから原価までのループ全体をテストしてください。テストはプログラム工数の約35パーセントを占め、チームが削るのはインターフェースのテストです。
+6. **未完了の指図の切替を忘れる。** 本稼働時に作りかけの指図には、どちらのシステムで完了させるかのルールが必要です。そのルールは、移行の最中ではなく、移行の前に書いてください。
+7. **オペレーターにERPのトレーニングをする。** オペレーターが作業するのはMESです。MESで、シフトごとに、自分たちのラインでトレーニングしてください。
+
+マスタデータには独自の警告が必要です。部品表、作業手順、作業区は両方のシステムに流れ込み、ERPの作業手順の誤りはラインでの誤った指示になります。マスタデータのチェックリストは、私の記事「[製造業におけるSAP](/ja/sap-manufacturing-industry-secrets/)」で取り上げています。
+
+## どこから始めるか
+
+製品デモではなく、責任範囲の表から始めてください。工場長、管理会計の責任者、ITリーダーを1つの部屋に集め、上の表のすべての記録を1つのシステムに割り当ててください。
+
+そのうえで、ERPと工場に合うMESを選び、独自のテストサイクルを持つERPプログラムの一部として連携のスコープを決めてください。予算もプログラムの中に組み込んでください。同じシリーズの記事「[製造業向けERPの費用](/ja/manufacturing-erp-cost/)」で、そのお金がどこに消えるかを示しています。
+
+確定する前にERPとMESの設計について独立した視点が必要なら、私は製造業のお手伝いをしています。[こちらからご連絡ください](/ja/contact-noel-erp-support/)。
+
+## よくある質問
+
+<details>
+<summary>ERPとMESの違いは何ですか？</summary>
+
+ERPは、日や週の単位で生産を計画し、購買し、原価を計算し、会計処理します。MESは、秒やシフトの単位で製造現場の生産を実行し、オペレーターの工程、機械データ、品質チェック、製造履歴を記録します。
+
+2つはループとして動きます。ERPが指図を下に送り、MESが確認、消費、入庫を送り返すことで、ERPが在庫と原価を転記できます。
+
+</details>
+
+<details>
+<summary>SAP Digital Manufacturingとは何ですか？</summary>
+
+SAPのクラウドMESです。SAPの機能範囲説明書によると、生産の実行、問題解決、インサイト、エッジコンピューティングをカバーします。
+
+SAP Cloud IntegrationとCloud Connectorを通じて、SAP S/4HANAまたはSAP ECCからマスタデータと製造指図またはプロセス指図を受け取ります。そして、確認、消費、入庫、検査結果を送り返します。
+
+</details>
+
+<details>
+<summary>SAP S/4HANAがあればMESは必要ですか？</summary>
+
+必ずしも必要ではありません。生産が単純な単一の工場なら、多くの場合S/4HANAで直接指図を確認できます。
+
+MESが必要になるのは、ラインでの工程ごとの管理、完全なバッチまたはシリアルの製造履歴、リアルタイムの機械データ、または複数工場にわたる1つの生産標準が必要なときです。
+
+</details>
+
+<details>
+<summary>Siemens OpcenterはSAP Digital Manufacturingの代わりになりますか？</summary>
+
+なり得ます。どちらもERPの上に位置するMES製品です。Siemens Opcenterは製造オペレーション管理のポートフォリオで、MESとしてのOpcenter Executionに加えて、スケジューリング、品質、試験室の製品があります。
+
+選択は、工場、自動化の状況、ERPによります。いずれにしても、連携を構築する前に、各記録をどのシステムが持つかを合意してください。
+
+</details>
+
+<details>
+<summary>製造業でKinexonは何をしますか？</summary>
+
+Kinexonはリアルタイムの位置追跡を提供します。そのKINEXON OSプラットフォームは、位置タグを製造指図に結び付け、指図が定められたゾーンを通過したときに転記とアラートをトリガーできます。
+
+MESではありません。Kinexonによると、SAP Digital ManufacturingやSAP Extended Warehouse Managementと連携し、位置のイベントを供給します。
+
+</details>
+
+<details>
+<summary>SAP MEやSAP MIIはSAP Digital Manufacturingにアップグレードできますか？</summary>
+
+アップグレードではなく、新規導入として計画してください。SAPの連携ガイドでは、SAP Digital ManufacturingとSAP MEの連携はResource Orchestrationに限られています。
+
+SAPのProduct Availability Matrixで、ご自身のSAP MEまたはMIIのリリースの保守期限を確認し、移行の一環としてERPとMESの責任範囲を設計し直してください。
+
+</details>

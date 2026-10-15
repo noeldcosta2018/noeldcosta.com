@@ -1,0 +1,196 @@
+---
+title: "SAP, fabrication discrète ou en process : ce qui change"
+h1: "SAP, fabrication discrète ou en process : ce qui change"
+slug: "sap-discrete-vs-process-manufacturing"
+date: "2026-10-15"
+updated: "2026-10-15"
+hero: "/images/manufacturing/sap-discrete-vs-process-manufacturing.webp"
+heroAlt: "Une usine lumineuse avec une ligne d'assemblage discrète à côté de cuves de process et d'une trémie de granulés plastiques"
+category: "erp-strategy"
+tags: ["manufacturing-erp", "sap-manufacturing", "sap-pp", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "SAP fabrication discrète vs process : PP, PP-PI et REM"
+metaDescription: "SAP, fabrication discrète ou en process : ordres de fabrication, ordres de process PP-PI ou répétitive, nomenclatures ou recettes, lots, qualité et coûts."
+primaryKeyword: "fabrication discrète vs process SAP"
+excerpt: "Dans SAP, la fabrication discrète repose sur des ordres de fabrication, des nomenclatures et des gammes, la fabrication en process (PP-PI) sur des ordres de process et des recettes de référence, et la fabrication répétitive sur une planification par période. Ce que chacune change dans les données de base, les lots, la qualité et le calcul des coûts, et comment les usines mixtes, comme dans la plasturgie et la sidérurgie, les combinent."
+experienceSource: "Noel's first-person experience implementing ERP in plastics, steel and defence manufacturing (confirmed by Noel, 15 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "La fabrication discrète repose sur des ordres de fabrication avec nomenclatures et gammes, PP-PI sur des ordres de process avec recettes de référence, la fabrication répétitive sur une planification par période et par version de fabrication"
+  - "Le choix se fait par article et par ligne de production, pas par entreprise : beaucoup d'usines font tourner deux modes côte à côte"
+  - "La gestion des lots et les coproduits sont les deux points où la fabrication en process diffère le plus, et tous deux touchent la finance"
+  - "La fabrication répétitive collecte les coûts par période sur un collecteur de coûts de produit, pas par ordre : vous perdez la visibilité du coût de chaque lot"
+  - "Les usines de plasturgie et de sidérurgie sont souvent mixtes : process en amont de la ligne, discret ou répétitif en aval"
+  - "Mettez-vous d'accord avec la finance sur la conception du calcul des coûts avant de paramétrer les types d'ordre"
+pullQuote: "Le mode de production que vous choisissez dans SAP est une décision de calcul des coûts autant qu'une décision de planification. La finance doit la valider avant que quiconque paramètre un type d'ordre."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP PP"
+  - "SAP PP-PI"
+  - "SAP QM"
+  - "SAP CO"
+  - "Material Ledger"
+  - "SAP Digital Manufacturing"
+originalUrl: "https://noeldcosta.com/sap-discrete-vs-process-manufacturing/"
+canonicalUrl: "https://noeldcosta.com/fr/sap-discrete-vs-process-manufacturing/"
+locale: "fr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-10"
+---
+
+Dans SAP, fabrication discrète ou en process, tout se joue sur l'ordre qui porte la production. La fabrication discrète utilise des ordres de fabrication construits à partir de nomenclatures et de gammes, et la fabrication en process (PP-PI) utilise des ordres de process construits à partir de recettes de référence.
+
+La fabrication répétitive (REM) est la troisième option : aucun ordre individuel, seulement des quantités planifiées par ligne de production et par période. Le choix modifie vos données de base, la gestion des lots, le contrôle qualité et, surtout, la façon dont la finance voit les coûts.
+
+J'ai mis en œuvre des ERP dans la plasturgie et la sidérurgie. Ces deux industries mélangent souvent des étapes de process et des étapes discrètes, je les utilise donc ci-dessous comme exemples généraux. Cet article explique ce qui change réellement entre les trois modes dans SAP S/4HANA, et comment trancher pour une usine qui relève un peu de chacun.
+
+Si vous choisissez encore l'ERP lui-même, commencez par mon comparatif du [meilleur ERP pour l'industrie](/fr/best-erp-for-manufacturing/). Pour le module de planification de la production (PP) dans son ensemble, lisez mon [guide SAP PP](/fr/sap-pp-production-planning/).
+
+## Discret, process et répétitif dans SAP en un coup d'œil
+
+Les trois modes vivent dans le même système S/4HANA et partagent les mêmes données de base article, le même calcul MRP et la même finance. Ce qui diffère, c'est l'objet d'exécution, les données de base qui le sous-tendent et la façon dont les coûts sont collectés.
+
+Voici comment les trois se comparent au moment du paramétrage :
+
+| Ce qui change | Discret (PP) | Process (PP-PI) | Répétitif (REM) |
+|---|---|---|---|
+| Objet d'exécution | Ordre de fabrication | Ordre de process | Ordres planifiés sur un programme de cadence, confirmés par période |
+| Mode de fabrication | Gamme avec opérations sur des postes de travail | Recette de référence avec opérations et phases sur des ressources | Gamme ou gamme de cadence sur une ligne de production |
+| Ce qui entre | Nomenclature | Nomenclature, souvent avec coproduits et sous-produits | Nomenclature, composants en prélèvement rétroactif |
+| Objet de coûts | L'ordre | L'ordre, réparti entre les coproduits | Collecteur de coûts de produit par version de fabrication |
+| Traçabilité habituelle | Numéros de série ou lot par ordre | Généalogie des lots | Lots possibles, coûts par période |
+| Convient à | Produits assemblés ou usinés, fabrication à la commande | Formules, mélanges, réactions, rendement variable | Même produit sur la même ligne en longues séries |
+
+Deux points comptent plus que le tableau. Le mode se choisit par article et par ligne de production, pas par entreprise : une même usine peut donc faire tourner les trois. Le mode est aussi une décision de calcul des coûts, et c'est pourquoi la finance doit être présente quand elle est prise.
+
+## Données de base : nomenclatures et gammes ou recettes de référence
+
+La fabrication discrète décrit un produit par une nomenclature et une gamme. La gamme liste les opérations, chacune sur un poste de travail avec des temps standard qui pilotent l'ordonnancement, la capacité et les coûts.
+
+PP-PI remplace la gamme par une recette de référence. Selon la [documentation SAP sur les recettes de référence](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/21aead0c98bd4755abdacd91c99e3393/9741b753128eb44ce10000000a174cb4.html), une recette comporte un en-tête et des opérations exécutées sur une ressource principale, et les opérations se décomposent à leur tour en phases. Les valeurs standard de ces phases servent à calculer les dates, la capacité et les coûts.
+
+Dans les deux modes, c'est la version de fabrication qui fait le lien. Elle relie un article à la nomenclature alternative et à la gamme ou à la recette utilisées pour le MRP, le calcul des coûts et la création des ordres. Un même article peut avoir plusieurs versions selon les tailles de lot ou les dates de validité.
+
+Trois différences de données de base prennent les équipes au dépourvu :
+
+1. **Phases et instructions de process.** Une recette peut porter des instructions de process transmises à l'atelier sous forme de recette de contrôle. Les gammes discrètes n'ont rien d'équivalent : c'est donc un nouveau travail de conception, pas une conversion.
+2. **Composants négatifs.** Dans les nomenclatures de process, les sous-produits sont saisis comme des composants à quantité négative. Les anciens systèmes les gèrent rarement ainsi, il faut donc les reconstruire.
+3. **Des ressources au lieu de postes de travail.** Le principe est le même, mais les équipes de process raisonnent en cuves, réservoirs et lignes. Mettez-vous d'accord sur la nomenclature des noms avant le début de la migration des données.
+
+D'après mon expérience, la migration des données représente 30 à 40 % de l'effort d'un programme SAP. Dans une usine de process, les recettes et les classifications de lots en sont une grande part, et elles sont généralement en plus mauvais état que ce que tout le monde imagine.
+
+## Gestion des lots et coproduits
+
+La gestion des lots est le point où la fabrication en process diffère le plus de la fabrication discrète. Chaque entrée, consommation et mouvement de stock d'un article géré en lots porte un numéro de lot, et le lot porte ses caractéristiques.
+
+SAP stocke ces caractéristiques dans le système de classification, rattachées à des [classes de lots](https://help.sap.com/docs/SAP_S4HANA_CLOUD/32da8359c8ee4e8b8e8c5e15cacba5aa/546ac23df1254af3baca5d9afe99ed04.html). La détermination de lot s'en sert ensuite pour choisir un stock qui satisfait un besoin, par exemple premier entré, premier sorti, ou une pureté minimale. La liste d'utilisation des lots remonte un lot jusqu'à ses intrants et le suit jusqu'aux clients, et c'est exactement ce que demandera un auditeur ou une réclamation client.
+
+Les coproduits sont la seconde différence. Dans la logique de [production conjointe](https://help.sap.com/docs/SAP_S4HANA_CLOUD/4032610758dc437089f0c28320eec93f/753b77a7bb224b5dac3c80ebc0f57b13.html) de SAP, chaque coproduit reçoit son propre poste d'ordre, et les coûts collectés sur l'ordre sont répartis entre eux à l'aide de coefficients d'équivalence dans une structure de répartition. Les sous-produits n'ont pas de poste d'ordre ; leur valeur vient réduire le coût du produit principal.
+
+Les coefficients d'équivalence sont une décision de la finance, généralement fondée sur les prix du marché. Si personne ne les valide avant le go-live, chaque ordre est imputé avec des valeurs saisies par un consultant pendant la réalisation.
+
+Les usines discrètes peuvent aussi utiliser des lots. Beaucoup le font pour les matières premières achetées, et certaines pour les produits finis quand les clients exigent une traçabilité par lot, mais la logique d'ordre et de calcul des coûts reste discrète.
+
+## Qualité : contrôle en cours de fabrication et à la réception
+
+La gestion de la qualité (QM) fonctionne de la même manière dans les trois modes, mais les usines de process en utilisent généralement davantage. Deux types de contrôle font l'essentiel du travail en production, comme le décrivent les [contenus de formation SAP sur QM en production](https://learning.sap.com/courses/performing-quality-management-in-production/processing-of-inspection-lots-for-the-goods-receipt-for-the-production-order_df917051-61e8-48a4-b0c9-9e5eb5678406).
+
+Le contrôle en cours de fabrication (origine 03) crée un lot de contrôle au lancement de l'ordre, avec des étapes de contrôle reprises de la gamme ou de la recette. Il n'a pas d'incidence sur le stock. Le contrôle à la réception (origine 04) crée un lot de contrôle à l'entrée des produits finis : le stock est placé en contrôle qualité, et la décision d'emploi le libère ou le bloque.
+
+Décidez tôt quels contrôles vivent dans SAP et lesquels vivent dans un système d'exécution de la production (MES) ou un système de laboratoire. Deux systèmes qui détiennent le même résultat, c'est ainsi qu'une usine se retrouve avec un lot libéré dans l'un et bloqué dans l'autre.
+
+## Calcul des coûts : par ordre, par coproduit ou par période
+
+C'est la section à partager avec votre directeur financier. Le mode de production détermine ce que la finance peut voir.
+
+Les ordres de fabrication et les ordres de process sont tous deux des objets de coûts. Les coûts réels sont imputés sur l'ordre, l'ordre est comparé à son standard, et les écarts sont imputés en fin de période, ordre par ordre. Dans les ordres de process avec coproduits, le coût est réparti entre les coproduits avant l'imputation.
+
+La fabrication répétitive fonctionne autrement. Les [remarques de SAP sur les environnements de fabrication répétitive](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/48b24fbadbee4e0b9dae0e2b72762e68/d3a4b9537cceb44ce10000000a174cb4.html) recommandent un collecteur de coûts de produit par version de fabrication. Les coûts issus des mouvements de stock et des confirmations sont imputés sur le collecteur, pas sur un ordre, et les écarts sont calculés par période.
+
+Tout l'arbitrage est là. Vous avez beaucoup moins de saisies dans l'atelier, et vous perdez le coût de chaque lot.
+
+Deux autres points financiers s'appliquent à tous les modes :
+
+- **Le Material Ledger est activé par défaut dans S/4HANA.** Le calcul des coûts réels qu'il permet est optionnel et s'active par division : décidez si vous avez besoin des coûts réels des produits avant de concevoir la clôture de fin de période.
+- **Les encours et les rebuts ont besoin de leur propre paramétrage.** Sur les collecteurs de coûts de produit, les encours sont calculés avec une clé d'analyse des résultats, et il est facile de l'oublier pendant la réalisation pour le découvrir à la première clôture mensuelle.
+
+La raison la plus fréquente d'échec des projets d'ERP industriels que je constate, c'est une conception qui n'est pas validée dans sa totalité, en particulier côté finance. Le mode de production, les objets de coûts et la répartition des coproduits sont exactement les décisions que l'on laisse au consultant PP, puis que l'on se dispute à la première clôture.
+
+## Plasturgie et sidérurgie : pourquoi le mode mixte est la norme
+
+La plupart des usines n'entrent pas dans une seule catégorie. La plasturgie et la sidérurgie, les deux industries à forte composante process dans lesquelles j'ai mis en œuvre des ERP, montrent bien pourquoi.
+
+Les points ci-dessous décrivent ces industries en termes généraux, pas un client en particulier.
+
+1. **L'amont de la ligne se comporte comme une fabrication en process.** Le mélange de résines, la fusion et la coulée produisent des lots, avec un rendement variable et des caractéristiques qu'il faut enregistrer.
+2. **L'aval de la ligne se comporte souvent comme une fabrication discrète ou répétitive.** Pièces moulées, profilés extrudés, tôles découpées ou bobines sont comptés, emballés et expédiés à l'unité, souvent en longues séries du même produit.
+3. **La matière est réutilisée.** Le rebroyé en plasturgie et les chutes en sidérurgie retournent dans le process, ce qui pose la question : sous-produit, coproduit ou simple rebut dans la nomenclature ?
+4. **Les clients spécifient des caractéristiques, pas seulement des références.** La nuance, l'épaisseur, la couleur ou les propriétés de fusion sont des caractéristiques de lot qui doivent suivre la matière de la commande à l'expédition.
+
+Il n'existe pas de modèle unique. D'après mon expérience, la forme d'un paramétrage discret dépend de ce dont le client a besoin, et une usine mixte ajoute des choix au lieu d'en retirer.
+
+Un schéma courant associe PP-PI pour les étapes qui produisent des lots et la fabrication répétitive ou discrète pour la transformation et l'emballage, reliées par un article intermédiaire géré en lots. Que ce soit le bon choix pour vous dépend de l'endroit où vous avez besoin d'un coût par lot, de l'endroit où vous avez besoin de traçabilité, et du volume de saisies que l'atelier peut absorber.
+
+La planification ajoute une couche de plus. Si des caractéristiques ou une ligne goulot pilotent votre ordonnancement, lisez mon comparatif [MRP Live, PP/DS ou IBP](/fr/mrp-live-vs-pp-ds-vs-ibp/) avant de supposer que le MRP seul suffira.
+
+## Comment choisir le mode de chaque ligne
+
+Prenez la décision ligne par ligne, avec la production, la qualité et la finance réunies. Ces questions règlent l'essentiel :
+
+1. **Le produit vient-il d'une formule, d'une réaction ou d'un mélange à rendement variable ?** Utilisez PP-PI.
+2. **Une même campagne produit-elle plusieurs produits vendables ?** Utilisez PP-PI avec coproduits, et faites valider la répartition par la finance.
+3. **Avez-vous besoin du coût de chaque lot ou de chaque commande client ?** Utilisez des ordres de fabrication ou de process, pas la fabrication répétitive.
+4. **S'agit-il du même produit sur la même ligne pendant des semaines, avec des gammes stables ?** La fabrication répétitive mérite d'être étudiée.
+5. **Les clients ou les autorités attendent-ils une généalogie des lots ?** Gérez les articles en lots, quel que soit le type d'ordre choisi.
+6. **Un MES pilotera-t-il l'atelier ?** Décidez quel système est responsable des confirmations, des résultats qualité et de la généalogie avant de paramétrer l'un ou l'autre. Mon article sur [l'ERP et le MES dans l'industrie](/fr/erp-and-mes-manufacturing/) traite de ce partage.
+
+Testez ensuite la décision de bout en bout. D'après mon expérience, les tests représentent environ 35 % de l'effort d'un programme SAP. Dans les usines mixtes, les anomalies à chercher se trouvent aux points de passage entre modes : le lot intermédiaire, le prélèvement rétroactif et l'imputation de fin de période.
+
+## Prochaine étape
+
+Prenez une famille de produits, de la matière première à l'expédition, et notez dans quel mode chaque étape tournerait, sur quelle base elle est valorisée et qui valide la répartition des coûts. Si la finance et la production ne peuvent pas se mettre d'accord sur une page, elles ne se mettront pas d'accord dans le système.
+
+Si vous voulez un second avis sur cette conception avant le début du paramétrage, vous pouvez [me parler de votre programme SAP](/fr/contact-noel-erp-support/).
+
+## Questions fréquentes
+
+<details>
+<summary>Quelle est la différence entre fabrication discrète et fabrication en process dans SAP ?</summary>
+
+La fabrication discrète repose sur des ordres de fabrication construits à partir d'une nomenclature et d'une gamme, et convient aux produits assemblés ou usinés. La fabrication en process utilise des ordres de process PP-PI construits à partir de recettes de référence, et convient aux formules et aux lots à rendement variable, avec coproduits et sous-produits. Les deux tournent dans le même système S/4HANA, et beaucoup d'usines utilisent les deux.
+
+</details>
+
+<details>
+<summary>À quoi sert SAP PP-PI ?</summary>
+
+PP-PI (Production Planning for Process Industries) gère la production par lots et par recettes dans des industries comme la chimie, l'agroalimentaire, la pharmacie, la plasturgie et la métallurgie. Il utilise des recettes de référence avec opérations et phases, des ordres de process, des coproduits et des sous-produits, et transmet des instructions de process à l'atelier sous forme de recettes de contrôle.
+
+</details>
+
+<details>
+<summary>Quand utiliser la fabrication répétitive dans SAP ?</summary>
+
+Utilisez-la quand le même produit tourne sur la même ligne pendant de longues périodes et que vous n'avez pas besoin du coût de chaque lot. Les coûts sont collectés par période sur un collecteur de coûts de produit par version de fabrication, ce qui réduit les saisies mais supprime la visibilité des coûts par ordre.
+
+</details>
+
+<details>
+<summary>Une même usine SAP peut-elle combiner fabrication discrète et fabrication en process ?</summary>
+
+Oui. Le mode se choisit par article et par ligne de production, pas par usine. Un schéma courant associe PP-PI pour les étapes qui produisent des lots et la fabrication discrète ou répétitive pour la transformation et l'emballage, reliées par un article intermédiaire géré en lots.
+
+</details>
+
+<details>
+<summary>Comment les coproduits sont-ils valorisés dans SAP ?</summary>
+
+Les coûts sont collectés sur l'ordre et répartis entre les coproduits à l'aide de coefficients d'équivalence dans une structure de répartition, généralement fondés sur les prix du marché. Les sous-produits n'ont pas de poste d'ordre, et leur valeur réduit le coût du produit principal. La finance doit valider les coefficients d'équivalence avant le go-live.
+
+</details>
+
+<details>
+<summary>Ai-je besoin de la gestion des lots en fabrication discrète ?</summary>
+
+Pas toujours. Les usines discrètes gèrent souvent en lots les matières premières achetées, et les produits finis quand les clients exigent une traçabilité par lot. Si personne n'a besoin de tracer ou de sélectionner le stock selon ses caractéristiques, la gestion des lots ajoute des saisies sans contrepartie.
+
+</details>
