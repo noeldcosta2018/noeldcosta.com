@@ -31,8 +31,8 @@ const CALENDLY_URL = "https://calendly.com/noeldcosta/30min";
 const SCRIPT_SRC = "https://assets.calendly.com/assets/external/widget.js";
 const STYLE_HREF = "https://assets.calendly.com/assets/external/widget.css";
 
-export default function CalendlyEmbed() {
-  const [shouldLoad, setShouldLoad] = useState(false);
+export default function CalendlyEmbed({ url = CALENDLY_URL, eager = false }: { url?: string; eager?: boolean } = {}) {
+  const [shouldLoad, setShouldLoad] = useState(eager);
 
   // Decide when to load.
   useEffect(() => {
@@ -93,7 +93,7 @@ export default function CalendlyEmbed() {
           <div className="wait">
             <p>Loading the scheduler</p>
             <a
-              href={CALENDLY_URL}
+              href={url}
               target="_blank"
               rel="noopener noreferrer"
               className="nd-btn nd-btn-primary"
@@ -106,7 +106,7 @@ export default function CalendlyEmbed() {
           // data-url attribute when the script first runs.
           <div
             className="calendly-inline-widget"
-            data-url={CALENDLY_URL}
+            data-url={url}
             style={{ minWidth: "320px", height: "680px" }}
           />
         )}

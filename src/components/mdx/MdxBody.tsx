@@ -35,6 +35,9 @@ import YouTubeVideo from "@/components/article/video/YouTubeVideo";
 import TestimonialsGrid from "@/components/article/testimonials/TestimonialsGrid";
 import ContactBlock from "@/components/article/contact/ContactBlock";
 import CalendlyEmbed from "@/components/article/contact/CalendlyEmbed";
+import BookingFlow from "@/components/article/contact/BookingFlow";
+import { bookingCopy } from "@/components/article/contact/booking-copy";
+import type { Locale } from "@/lib/locales";
 import ContactHero from "@/components/article/contact/ContactHero";
 import FeaturedOn from "@/components/article/featured/FeaturedOn";
 import AboutHero from "@/components/article/hero/AboutHero";
@@ -268,6 +271,7 @@ export default function MdxBody({
             "capabilities-row",
             "safeguard-band",
             "calendly-embed",
+            "booking-flow",
             "youtube-video",
             "contact-hero",
             ...EXPLAINER_TAGS,
@@ -405,11 +409,13 @@ export default function MdxBody({
         // Lazy-loaded Calendly inline widget for the Contact page.
         // Loads on first user interaction or after a 2s delay.
         "calendly-embed": (() => <CalendlyEmbed />) as never,
+        // Contact page booking flow: questions, slot picker, details, booking.
+        "booking-flow": (() => <BookingFlow copy={bookingCopy(locale as Locale | undefined)} locale={locale ?? "en"} />) as never,
         // Click-to-load YouTube video with VideoObject schema.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         "youtube-video": ((props: any) => <YouTubeVideo {...playLabel(locale)} {...props} />) as never,
         // Contact-page hero (eyebrow, one-line display headline, lede).
-        "contact-hero": (() => <ContactHero />) as never,
+        "contact-hero": (() => <ContactHero locale={locale as Locale | undefined} />) as never,
         // FAQ accordion. Articles use <details><summary>Q</summary>A</details>
         // inline HTML (passed through by rehype-raw) for their FAQ sections.
         // PostPage reads the same markup for FAQPage JSON-LD.
