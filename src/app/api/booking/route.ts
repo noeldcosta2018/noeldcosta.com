@@ -3,8 +3,7 @@ export const runtime = "nodejs";
 import type { NextRequest } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { EMAIL_RE, allow, clean, clientIp, json } from "@/lib/forms";
-import { bookSlot, calendlyConfigured } from "@/lib/calendly";
-import { CALENDLY_URL } from "@/data/site-menu";
+import { CAL_BOOKING_URL, SlotTakenError, bookSlot } from "@/lib/cal";
 import { NEED_LABELS, SIZE_LABELS, STAGE_LABELS } from "@/components/article/contact/booking-options";
 
 /**
@@ -12,9 +11,9 @@ import { NEED_LABELS, SIZE_LABELS, STAGE_LABELS } from "@/components/article/con
  * Body: { need, stage, size, goal?, name, email, company?, startTime, timezone, locale?, website? }
  * The contact page's booking flow. Records the request (nd_meeting_requests,
  * source "contact"), links or creates the contact (nd_contacts, no marketing
- * consent implied), then books the slot through Calendly. If Calendly is not
- * configured or refuses the slot, the request is still saved and the visitor
- * gets the booking link instead.
+ * consent implied), then books the slot through Cal.com. If Cal.com refuses
+ * the slot or is unreachable, the request is still saved and the visitor gets
+ * the booking link instead.
  */
 export async function POST(request: NextRequest) {
   const ip = clientIp(request);
@@ -28,7 +27,7 @@ export async function POST(request: NextRequest) {
   } catch {
     return json({ ok: false, error: "invalid" }, 400);
   }
-  if (clean(body.website, 200)) return json({ ok: true, booked: false, bookingUrl: CALENDLY_URL });
+  if (clean(body.website, 200)) return json({ ok: true, booked: false, bookingUrl: CAL_BOOKING_URL });
 
   const name = clean(body.name, 120);
   const email = clean(body.email, 254).toLowerCase();
@@ -89,19 +88,20 @@ export async function POST(request: NextRequest) {
     console.error("booking save", error);
   }
 
-  if (!calendlyConfigured() || !startTime) {
-    return json({ ok: true, booked: false, bookingUrl: CALENDLY_URL });
+  if (!startTime) {
+    return json({ ok: true, booked: false, bookingUrl: CAL_BOOKING_URL });
   }
 
   try {
-    const result = await bookSlot({ startTime, name, email, timezone, summary: summary || "Intro call" });
+    const result = await bookSlot({ startTime, name, email, timezone, summary: summary || "Intro call", language: clean(body.locale, 10) || "en" });
     if (supabase && requestId) {
       await supabase.from("nd_meeting_requests").update({ status: "booked" }).eq("id", requestId);
     }
     return json({ ok: true, booked: true, startTime, ...result });
   } catch (error) {
-    console.error("booking calendly", error);
-    // Usually the slot was taken a moment ago. The page offers fresh slots.
-    return json({ ok: false, error: "slot", bookingUrl: CALENDLY_URL }, 409);
+    console.error("booking cal.com", error);
+    // A taken slot sends the visitor back to fresh times; anything else to the booking page.
+    if (error instanceof SlotTakenError) return json({ ok: false, error: "slot", bookingUrl: CAL_BOOKING_URL }, 409);
+    return json({ ok: true, booked: false, bookingUrl: CAL_BOOKING_URL });
   }
 }

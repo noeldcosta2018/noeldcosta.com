@@ -1,15 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import CalendlyEmbed from "./CalendlyEmbed";
 import type { BookingCopy } from "./booking-copy";
 
 /**
  * Contact page booking flow: four short questions, a slot picker fed by
- * Calendly's free times (/api/booking/slots), name and email, then the
- * booking itself (/api/booking). Calendly still sends the invite. When the
- * Calendly token is not configured, the slot step falls back to the embedded
- * Calendly widget with the answers prefilled.
+ * Cal.com's free times (/api/booking/slots), name and email, then the
+ * booking itself (/api/booking). Cal.com sends the invite with the Google Meet
+ * link. If Cal.com cannot be reached, the visitor gets a link to the Cal.com
+ * booking page with the answers prefilled.
  */
 
 type Answers = { need: string; stage: string; size: string; goal: string };
@@ -17,7 +16,7 @@ type Slots = { state: "loading" } | { state: "ready"; slots: string[]; from: num
 type Done = { email: string; startTime: string; cancelUrl: string | null; rescheduleUrl: string | null };
 
 const QUESTIONS = ["need", "stage", "size", "goal"] as const;
-const CALENDLY = "https://calendly.com/noeldcosta/30min";
+const CAL = "https://cal.com/noel-benjamin-dcosta-xay9yo/30min";
 
 function dayKey(iso: string, tz: string): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
@@ -54,9 +53,9 @@ export default function BookingFlow({ copy, locale: contentLocale = "en" }: { co
         } catch {
           /* keep UTC */
         }
-        setSlots(d.configured ? { state: "ready", slots: d.slots as string[], from: Date.now() } : { state: "fallback", url: d.bookingUrl || CALENDLY });
+        setSlots(d.configured ? { state: "ready", slots: d.slots as string[], from: Date.now() } : { state: "fallback", url: d.bookingUrl || CAL });
       })
-      .catch(() => setSlots({ state: "fallback", url: CALENDLY }));
+      .catch(() => setSlots({ state: "fallback", url: CAL }));
   };
   const reloadSlots = () => {
     setSlots({ state: "loading" });
@@ -152,6 +151,7 @@ export default function BookingFlow({ copy, locale: contentLocale = "en" }: { co
           company,
           startTime: slots.state === "ready" ? slot : "",
           timezone: tz,
+          locale: contentLocale,
           page: window.location.pathname,
           website: trap,
         }),
@@ -161,8 +161,8 @@ export default function BookingFlow({ copy, locale: contentLocale = "en" }: { co
         setDone({ email: email.trim(), startTime: slot, cancelUrl: data.cancelUrl ?? null, rescheduleUrl: data.rescheduleUrl ?? null });
         setStep(3);
       } else if (data.ok) {
-        // Saved, but no direct booking: show the prefilled Calendly widget.
-        setSlots({ state: "fallback", url: data.bookingUrl || CALENDLY });
+        // Saved, but not booked directly: offer the prefilled Cal.com page.
+        setSlots({ state: "fallback", url: data.bookingUrl || CAL });
         setStep(3);
       } else if (data.error === "slot") {
         setError(copy.errSlot);
@@ -183,7 +183,7 @@ export default function BookingFlow({ copy, locale: contentLocale = "en" }: { co
     const u = new URL(base);
     if (name) u.searchParams.set("name", name);
     if (email) u.searchParams.set("email", email);
-    if (summary) u.searchParams.set("a1", summary);
+    if (summary) u.searchParams.set("notes", summary);
     u.searchParams.set("utm_source", "noeldcosta.com");
     return u.toString();
   };
@@ -281,7 +281,9 @@ export default function BookingFlow({ copy, locale: contentLocale = "en" }: { co
             {slots.state === "fallback" && (
               <>
                 <p className="nd-book-hint">{copy.fallbackBody}</p>
-                <CalendlyEmbed url={fallbackUrl(slots.url)} eager />
+                <a className="nd-btn nd-btn-accent" href={fallbackUrl(slots.url)} target="_blank" rel="noopener noreferrer">
+                  {copy.useCalendar}
+                </a>
               </>
             )}
 
@@ -433,7 +435,11 @@ export default function BookingFlow({ copy, locale: contentLocale = "en" }: { co
                   {copy.fallbackTitle}
                 </h2>
                 <p className="nd-book-hint">{copy.fallbackBody}</p>
-                <CalendlyEmbed url={fallbackUrl(slots.state === "fallback" ? slots.url : CALENDLY)} eager />
+                <div className="nd-book-actions">
+                  <a className="nd-btn nd-btn-accent" href={fallbackUrl(slots.state === "fallback" ? slots.url : CAL)} target="_blank" rel="noopener noreferrer">
+                    {copy.useCalendar}
+                  </a>
+                </div>
               </>
             )}
           </div>
