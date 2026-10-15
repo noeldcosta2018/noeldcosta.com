@@ -1,0 +1,190 @@
+---
+title: "SAP discrete vs process manufacturing: what changes"
+slug: "sap-discrete-vs-process-manufacturing"
+date: "2026-10-15"
+updated: "2026-10-15"
+hero: "/images/manufacturing/sap-discrete-vs-process-manufacturing.webp"
+heroAlt: "A bright factory with a discrete assembly line beside process tanks and a hopper of plastic pellets"
+category: "erp-strategy"
+tags: ["manufacturing-erp", "sap-manufacturing", "sap-pp", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "SAP Discrete vs Process Manufacturing: PP, PP-PI and REM"
+metaDescription: "SAP discrete vs process manufacturing: production orders vs PP-PI process orders vs repetitive, plus BOMs vs master recipes, batches, quality and costing."
+primaryKeyword: "sap discrete vs process manufacturing"
+excerpt: "In SAP, discrete manufacturing runs on production orders, BOMs and routings, process manufacturing (PP-PI) on process orders and master recipes, and repetitive manufacturing on period-based planning. What each one changes in master data, batches, quality and costing, and how mixed-mode plants such as plastics and steel combine them."
+experienceSource: "Noel's first-person experience implementing ERP in plastics, steel and defence manufacturing (confirmed by Noel, 15 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "Discrete runs on production orders with BOMs and routings; PP-PI on process orders with master recipes; repetitive on period-based planning per production version"
+  - "The choice is made per material and production line, not per company, so many plants run two styles side by side"
+  - "Batch management and co-products are where process manufacturing differs most, and both reach into finance"
+  - "Repetitive manufacturing collects cost by period on a product cost collector, not by order, so you lose per-lot cost visibility"
+  - "Plastics and steel plants are often mixed-mode: process at the front of the line, discrete or repetitive at the back"
+  - "Agree the costing design with finance before you configure the order types"
+pullQuote: "The production style you pick in SAP is a costing decision as much as a planning one. Finance has to sign it off before anyone configures an order type."
+mentions:
+  - "SAP S/4HANA"
+  - "SAP PP"
+  - "SAP PP-PI"
+  - "SAP QM"
+  - "SAP CO"
+  - "Material Ledger"
+  - "SAP Digital Manufacturing"
+---
+
+SAP discrete vs process manufacturing comes down to the order you run production on. Discrete manufacturing uses production orders built from bills of materials (BOMs) and routings, and process manufacturing (PP-PI) uses process orders built from master recipes.
+
+Repetitive manufacturing (REM) is the third option: no individual orders at all, just planned quantities per production line and period. The choice changes your master data, batch handling, quality inspection and, above all, how finance sees cost.
+
+I have implemented ERP in plastics and steel manufacturing. Both industries often mix process and discrete steps, so I use them below as general examples. This article covers what actually changes between the three styles in SAP S/4HANA, and how to decide for a plant that is a bit of each.
+
+If you are still choosing the ERP itself, start with my comparison of the [best ERP for manufacturing](/best-erp-for-manufacturing/). For the Production Planning (PP) module as a whole, read my [SAP PP guide](/sap-pp-production-planning/).
+
+## Discrete, process and repetitive in SAP at a glance
+
+All three styles live in the same S/4HANA system and share the same material master, MRP run and finance. What differs is the execution object, the master data behind it and the way costs are collected.
+
+This is how the three compare when you configure them:
+
+| What changes | Discrete (PP) | Process (PP-PI) | Repetitive (REM) |
+|---|---|---|---|
+| Execution object | Production order | Process order | Planned orders on a run schedule, confirmed by period |
+| How it is made | Routing with operations at work centres | Master recipe with operations and phases at resources | Routing or rate routing on a production line |
+| What goes in | BOM | BOM, often with co-products and by-products | BOM, components backflushed |
+| Cost object | The order | The order, split across co-products | Product cost collector per production version |
+| Typical traceability | Serial numbers or lot per order | Batch genealogy | Batches possible, cost by period |
+| Fits | Assembled or machined products, make-to-order | Formulas, blending, reactions, variable yield | Same product on the same line for long runs |
+
+Two points matter more than the table. The style is chosen per material and production line, not per company, so one plant can run all three. The style is also a costing decision, which is why finance has to be in the room when it is made.
+
+## Master data: BOMs and routings vs master recipes
+
+Discrete manufacturing describes a product as a BOM and a routing. The routing lists operations, each at a work centre with standard times that drive scheduling, capacity and cost.
+
+PP-PI replaces the routing with a master recipe. In SAP's [master recipe documentation](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/21aead0c98bd4755abdacd91c99e3393/9741b753128eb44ce10000000a174cb4.html), a recipe has a header and operations carried out at a primary resource, and operations break down further into phases. The standard values on those phases calculate dates, capacity and costs.
+
+The production version ties it together in both styles. It links a material to the BOM alternative and the routing or recipe used for MRP, costing and order creation. One material can have several versions for different lot sizes or validity dates.
+
+Three master data differences catch teams out:
+
+1. **Phases and process instructions.** A recipe can carry process instructions that are passed to the shop floor as a control recipe. Discrete routings have nothing equivalent, so this is new design work, not a conversion.
+2. **Negative components.** In process BOMs, by-products are entered as components with a negative quantity. Legacy systems rarely hold them that way, so they have to be rebuilt.
+3. **Resources instead of work centres.** The concept is the same, but process teams think in vessels, tanks and lines. Agree naming before data migration starts.
+
+In my experience data migration takes 30 to 40 percent of the effort on an SAP programme. In a process plant, recipes and batch classifications are a large part of that, and they are usually in worse shape than anyone expects.
+
+## Batch management and co-products
+
+Batch management is where process manufacturing differs most from discrete. Every receipt, consumption and stock movement of a batch-managed material carries a batch number, and the batch carries its properties.
+
+SAP stores those properties in the classification system, against [batch classes](https://help.sap.com/docs/SAP_S4HANA_CLOUD/32da8359c8ee4e8b8e8c5e15cacba5aa/546ac23df1254af3baca5d9afe99ed04.html). Batch determination then uses them to pick stock that meets a requirement, such as first-in first-out or a minimum purity. The batch where-used list traces a batch backwards to its inputs and forwards to customers, which is what an auditor or a customer complaint will ask for.
+
+Co-products are the second difference. In SAP's [joint production](https://help.sap.com/docs/SAP_S4HANA_CLOUD/4032610758dc437089f0c28320eec93f/753b77a7bb224b5dac3c80ebc0f57b13.html) logic, each co-product gets its own order item, and costs collected on the order are split across them using equivalence numbers in an apportionment structure. By-products get no order item; their value reduces the cost of the main product.
+
+The equivalence numbers are a finance decision, usually based on market prices. If nobody agrees them before go-live, every order settles with numbers a consultant typed in during the build.
+
+Discrete plants can use batches too. Many do for purchased raw materials, and some for finished goods where customers need lot traceability, but the order and costing logic stays discrete.
+
+## Quality: in-process and goods receipt inspection
+
+Quality Management (QM) works the same way across all three styles, but process plants tend to use more of it. Two inspection types do most of the work in production, as SAP's [QM in production learning content](https://learning.sap.com/courses/performing-quality-management-in-production/processing-of-inspection-lots-for-the-goods-receipt-for-the-production-order_df917051-61e8-48a4-b0c9-9e5eb5678406) describes.
+
+In-process inspection (origin 03) creates an inspection lot when the order is released, with inspection steps taken from the routing or recipe. It is not stock-relevant. Goods receipt inspection (origin 04) creates a lot when the finished goods are received, the stock sits in quality inspection, and the usage decision releases or blocks it.
+
+Decide early which checks live in SAP and which live in a manufacturing execution system (MES) or laboratory system. Two systems holding the same result is how a plant ends up with a batch released in one and blocked in the other.
+
+## Costing: by order, by co-product or by period
+
+This is the section to share with your CFO. The production style decides what finance can see.
+
+Discrete and process orders are both cost objects. Actual costs post to the order, the order is compared with its standard, and variances are settled at period end, by order. In process orders with co-products, the cost is split across the co-products before settlement.
+
+Repetitive manufacturing works differently. SAP's [notes for repetitive manufacturing environments](https://help.sap.com/docs/SAP_S4HANA_ON-PREMISE/48b24fbadbee4e0b9dae0e2b72762e68/d3a4b9537cceb44ce10000000a174cb4.html) recommend a product cost collector per production version. Costs from goods movements and confirmations post to the collector, not to any order, and variances are worked out per period.
+
+That trade-off is the whole decision. You get far less transaction overhead on the floor, and you lose the cost of any individual lot.
+
+Two more finance points apply to every style:
+
+- **The Material Ledger is on by default in S/4HANA.** Actual costing with it is optional and is switched on per plant, so decide whether you need actual product costs before you design the period-end close.
+- **Work in progress and scrap need their own settings.** On product cost collectors, work in progress is calculated with a results analysis key, and it is easy to leave out during the build and discover at the first month end.
+
+The most common reason I see manufacturing ERP projects fail is that the design is not agreed in its totality, especially in finance. The production style, the cost objects and the co-product split are exactly the decisions that get left to the PP consultant and then fought over at the first close.
+
+## Plastics and steel: why mixed-mode is normal
+
+Most plants do not fit one category. Plastics and steel, the two process-heavy industries I have implemented ERP in, are good examples of why.
+
+The points below describe these industries in general terms, not any one client.
+
+1. **The front of the line behaves like process manufacturing.** Resin blending, melting and casting produce batches, with variable yield and properties that have to be recorded.
+2. **The back of the line often behaves like discrete or repetitive.** Moulded parts, extruded profiles, cut sheets or coils are counted, packed and shipped as units, often on long runs of the same product.
+3. **Material is reused.** Regrind in plastics and scrap in steel go back into the process, which raises the question of by-product, co-product or simple scrap in the BOM.
+4. **Customers specify properties, not just part numbers.** Grade, thickness, colour or melt properties sit in batch characteristics that have to follow the material from order to shipment.
+
+There is no single template. In my experience how a discrete set-up looks depends on what the client needs, and a mixed plant adds more choices, not fewer.
+
+A common pattern is PP-PI for the batch-producing stages and repetitive or discrete for conversion and packing, linked by a batch-managed intermediate material. Whether that is right for you depends on where you need cost by lot, where you need traceability, and how much transaction volume the floor can carry.
+
+Planning adds another layer. If characteristics or a bottleneck line drive your schedule, read my comparison of [MRP Live vs PP/DS vs IBP](/mrp-live-vs-pp-ds-vs-ibp/) before you assume MRP alone will do.
+
+## How to choose the style for each line
+
+Make the decision line by line, with production, quality and finance together. These questions settle most of it:
+
+1. **Does the product come from a formula, a reaction or blending with variable yield?** Use PP-PI.
+2. **Does one run produce several saleable products?** Use PP-PI with co-products, and get finance to agree the apportionment.
+3. **Do you need the cost of each lot or customer order?** Use production or process orders, not repetitive.
+4. **Is it the same product on the same line for weeks, with stable routings?** Repetitive is worth considering.
+5. **Do customers or regulators expect batch genealogy?** Batch-manage the materials, whichever order type you choose.
+6. **Will an MES run the floor?** Decide which system owns confirmations, quality results and genealogy before configuring either. My article on [ERP and MES in manufacturing](/erp-and-mes-manufacturing/) covers that split.
+
+Then test the decision end to end. In my experience testing takes about 35 percent of the effort on an SAP programme. In mixed-mode plants, the defects to look for sit at the hand-offs between styles: the intermediate batch, the backflush and the period-end settlement.
+
+## Next step
+
+Take one product family, from raw material to shipment, and write down which style each stage would run in, what it costs by and who signs off the cost split. If finance and production cannot agree on one page, they will not agree in the system.
+
+If you want a second view on that design before configuration starts, you can [talk to me about your SAP programme](/contact-noel-erp-support/).
+
+## Frequently asked questions
+
+<details>
+<summary>What is the difference between discrete and process manufacturing in SAP?</summary>
+
+Discrete manufacturing runs on production orders built from a BOM and a routing, and suits products that are assembled or machined. Process manufacturing uses PP-PI process orders built from master recipes, and suits formulas and batches with variable yield, co-products and by-products. Both run in the same S/4HANA system, and many plants use both.
+
+</details>
+
+<details>
+<summary>What is SAP PP-PI used for?</summary>
+
+PP-PI (Production Planning for Process Industries) handles batch and recipe-based production in industries such as chemicals, food, pharmaceuticals, plastics and metals. It uses master recipes with operations and phases, process orders, co-products and by-products, and passes process instructions to the floor as control recipes.
+
+</details>
+
+<details>
+<summary>When should I use repetitive manufacturing in SAP?</summary>
+
+Use it when the same product runs on the same line for long periods and you do not need the cost of each lot. Costs collect by period on a product cost collector per production version, which cuts transaction effort but removes per-order cost visibility.
+
+</details>
+
+<details>
+<summary>Can one SAP plant run discrete and process manufacturing together?</summary>
+
+Yes. The style is chosen per material and production line, not per plant. A common pattern is PP-PI for batch-producing stages and discrete or repetitive for conversion and packing, linked by a batch-managed intermediate material.
+
+</details>
+
+<details>
+<summary>How are co-products costed in SAP?</summary>
+
+Costs are collected on the order and split across the co-products using equivalence numbers in an apportionment structure, usually based on market prices. By-products get no order item, and their value reduces the cost of the main product. Finance should agree the equivalence numbers before go-live.
+
+</details>
+
+<details>
+<summary>Do I need batch management for discrete manufacturing?</summary>
+
+Not always. Discrete plants often batch-manage purchased raw materials, and finished goods where customers need lot traceability. If nobody needs to trace or select stock by property, batch management adds transaction effort without a return.
+
+</details>

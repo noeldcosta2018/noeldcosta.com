@@ -1,0 +1,236 @@
+---
+title: "MRP Live vs PP/DS vs IBP: which SAP planning tool"
+slug: "mrp-live-vs-pp-ds-vs-ibp"
+date: "2026-10-15"
+updated: "2026-10-15"
+hero: "/images/manufacturing/mrp-live-vs-pp-ds-vs-ibp.webp"
+heroAlt: "A planning desk overlooking a factory with a material list, a production schedule and a demand curve on screen"
+category: "erp-strategy"
+tags: ["manufacturing-erp", "mrp", "sap-pp", "sap-technical-decisions"]
+author: "Noel D'Costa"
+metaTitle: "MRP Live vs PP/DS vs IBP: SAP Planning Tools Compared"
+metaDescription: "MRP Live vs PP/DS vs IBP: what each SAP planning tool plans, its horizon and capacity logic, and the signals that tell a manufacturer when to step up."
+primaryKeyword: "mrp live vs pp/ds"
+excerpt: "MRP Live plans materials at infinite capacity, embedded PP/DS schedules bottleneck resources at finite capacity, and SAP IBP plans the network and the months ahead. What each one plans, and when a manufacturer should step up."
+experienceSource: "Noel's first-person experience implementing ERP in plastics, steel and defence manufacturing (confirmed by Noel, 15 October 2026). No client names. Product facts checked against official vendor documentation, October 2026."
+keyTakeaways:
+  - "MRP Live plans what to make and buy at infinite capacity. Embedded PP/DS schedules at finite capacity. SAP IBP plans the network and the months ahead"
+  - "They are layers, not rivals. Many manufacturers run MRP Live alone, some add PP/DS, fewer need IBP"
+  - "Step up to PP/DS when planners keep overriding MRP on a constrained resource, not because the licence is available"
+  - "Step up to IBP when the planning problem spans plants, channels and functions, not when one line is overloaded"
+  - "Predictive MRP (pMRP) inside S/4HANA tests medium-term capacity before you buy anything new"
+  - "None of the three fixes bad master data. Lead times, lot sizes and production versions decide the output"
+pullQuote: "Buy the planning layer for the question you cannot answer today, not for the one the demo answered best."
+mentions:
+  - "SAP S/4HANA"
+  - "MRP Live"
+  - "SAP PP/DS"
+  - "SAP IBP"
+  - "Predictive MRP (pMRP)"
+  - "SAP APO"
+  - "SAP PP"
+  - "SAP Integration Suite"
+---
+
+MRP Live plans what to make and buy, and when, at infinite capacity inside SAP S/4HANA. Embedded PP/DS schedules critical materials on bottleneck resources at finite capacity, and SAP IBP plans demand, inventory and supply across the business over months.
+
+So the MRP Live vs PP/DS question is about the plant: do you need finite scheduling on a constrained line? The PP/DS vs IBP question is about scope: is your planning problem inside one plant or across the network?
+
+I have used both MRP Live and embedded PP/DS on implementations, and I have sent clients to IBP when the case called for it. This article sets out what each tool plans and the signals that tell you to step up. If you are still choosing the ERP itself, start with my comparison of the [best ERP for manufacturing](/best-erp-for-manufacturing/).
+
+## Four planning tools, four different questions
+
+SAP gives a manufacturer on S/4HANA four planning options. Classic MRP and MRP Live are two ways of running the same material planning.
+
+PP/DS adds detailed scheduling in the same system. IBP is a separate cloud product above it.
+
+The table puts them side by side.
+
+| Tool | What it plans | Capacity logic | Typical horizon | Where it runs |
+|---|---|---|---|---|
+| Classic MRP (MD01, MD02, MD03) | Planned orders and purchase requisitions | Infinite | Days to months | S/4HANA application server |
+| MRP Live (MD01N) | The same, faster, across one or several plants | Infinite | Days to months | Inside the SAP HANA database |
+| Embedded PP/DS | Sequence and timing of orders on resources | Finite, with setup and sequence logic | Hours to weeks | Inside S/4HANA |
+| SAP IBP | Demand, inventory and supply across the network | Constrained, in time buckets or by order | Weeks to years | Separate SAP cloud product |
+
+Read the capacity column first. It is the clearest dividing line between the tools.
+
+## MRP Live and classic MRP: the default
+
+Every SAP manufacturer starts here. MRP nets forecasts and sales orders against stock and open receipts, explodes the bill of materials, and proposes what to produce and what to buy. My [SAP PP guide](/sap-pp-production-planning/) covers the module, the master data and the planning cycle in detail.
+
+MRP Live is the S/4HANA version of that run. SAP's [MRP Live learning module](https://learning.sap.com/courses/exploring-production-planning-in-sap-s-4hana/outlining-material-requirements-planning-with-mrp-live-1) explains that it pushes the planning logic down into the HANA database and can plan one or several plants online. The same lesson confirms the classic planning modes are still available in S/4HANA.
+
+### What MRP does not do
+
+MRP assumes capacity is unlimited. It will schedule two hundred hours of work into a hundred-hour week.
+
+Capacity evaluation and levelling exist in S/4HANA, but they sit beside the MRP run rather than inside it. That gap is a daily problem when one line or one oven decides the output of the whole plant.
+
+### Classic MRP or MRP Live
+
+For most new S/4HANA designs, MRP Live is the default. Some classic functions behave differently or are not optimised for HANA, and SAP Knowledge Base Article 2640393 sets out the differences between MRP Live and classic MRP.
+
+Read that note against your own design before you commit. The practical points to check:
+
+1. Whether your lot-sizing procedures and MRP types are supported in MRP Live
+2. Whether you rely on a restricted scope of planning or on MRP lists as a snapshot
+3. Whether multi-level make-to-order or project planning runs are part of your process
+4. Whether every in-house material has a valid production version, which MRP Live needs
+
+### Predictive MRP: a step before you step up
+
+Predictive material and resource planning (pMRP) is a simulation tool inside S/4HANA. SAP's [pMRP lesson](https://learning.sap.com/courses/exploring-production-planning-in-sap-s-4hana/introducing-predictive-mrp-pmrp-) describes it as a successor to long-term planning in ECC, used to find capacity problems early on a simplified plan.
+
+Planners change demand, capacity or sources of supply in a simulation and compare it with the reference plan. Nothing changes in operative MRP until a simulation is released.
+
+Run pMRP on a medium-term capacity question before you decide that only PP/DS or IBP will do.
+
+## Embedded PP/DS: when finite capacity matters
+
+PP/DS (Production Planning and Detailed Scheduling) is the advanced planning engine that used to run in SAP APO. In S/4HANA it is embedded, so there is no separate planning server to run and no data to copy across.
+
+SAP's [PP/DS learning content](https://learning.sap.com/courses/exploring-advanced-production-planning-with-sap-s-4hana-pp-ds/outlining-advanced-planning-pp-ds-in-sap-s-4hana-1) describes finite planning with exact times in the plant. Resources can be set as finite, standard heuristics shape the planning steps, and an optimiser in detailed scheduling can reduce setup times, setup costs and delays by changing the sequence and resource of existing orders.
+
+### How PP/DS and MRP Live share the work
+
+The split is by material. Materials flagged for advanced planning go to PP/DS, and the rest stay in MRP Live. SAP's own guidance is to plan critical products on bottleneck resources in PP/DS, and less critical, consumption-based materials in MRP Live.
+
+Two design rules follow from that:
+
+1. Put every material that loads the bottleneck resource into PP/DS. A constrained line with half its products planned at infinite capacity is not finitely planned.
+2. Keep PP/DS materials out of the MRP Live planning scope, or the next MRP run can overwrite the detailed schedule.
+
+### What PP/DS costs you
+
+PP/DS needs more master data than MRP, and more discipline to keep it current. Resources, setup groups, setup matrices and realistic operation times all have to be right before the schedule means anything.
+
+Licensing is the other check. Ask SAP to confirm in writing how your contract covers PP/DS before the design depends on it.
+
+PP/DS earns its place in plants where sequence drives cost: changeovers between colours, grades, sizes or formulations. Plastics and steel are typical examples of that kind of production in general terms. The detail of discrete, process and repetitive set-ups is in my guide to [SAP discrete vs process manufacturing](/sap-discrete-vs-process-manufacturing/).
+
+## SAP IBP: when the problem is the network
+
+[SAP Integrated Business Planning for Supply Chain](https://help.sap.com/docs/SAP_INTEGRATED_BUSINESS_PLANNING/6b0a6820ebf94ff4a15d68af6db7745b/b48f855725308a1be10000000a44147b.html) is a separate cloud product. It covers sales and operations planning, demand, inventory, response and supply, and demand-driven replenishment.
+
+IBP answers questions MRP and PP/DS never ask. How much should the business sell, stock and supply, and which plant should make what?
+
+### Time-series and order-based planning
+
+IBP response and supply plans in two ways. Time-series planning works in buckets, with heuristics and an optimiser that build a constrained, cost-based supply plan over the medium and long term.
+
+Order-based planning works on individual orders over a shorter horizon. SAP's [order-based planning course](https://learning.sap.com/courses/discovering-order-based-supply-planning-response-with-sap-ibp) covers rough-cut capacity planning, an operational supply plan, deployment and real-time integration with production planning. This is where IBP comes closest to the plant, and where overlaps with PP/DS get argued.
+
+### What IBP still needs from S/4HANA
+
+IBP plans. S/4HANA executes. Master data and transactions flow up from S/4HANA, plans flow back down, and MRP or PP/DS still turn them into orders the plant can run.
+
+IBP adds a second system and an integration to own. My guide on [why SAP IBP matters](/why-sap-integrated-business-planning-sap-ibp-matters/) covers the applications and integration routes in depth.
+
+I have implemented IBP for defence manufacturing. Whether it is worth it depends on how complex the planning is, and in many plants it is not.
+
+<explainer-layers title="Where each SAP planning tool sits" caption="Each layer answers a different question. Most manufacturers need the bottom layer, some need the middle one, and fewer need the top." layers="SAP IBP => How much to sell, stock and supply, across plants and months|Embedded PP/DS => In what sequence each bottleneck resource runs, at finite capacity|MRP Live or classic MRP => What to make and buy, and when, at infinite capacity|Master data => BOMs, routings, production versions, lead times, lot sizes" tones="|accent||"></explainer-layers>
+
+## When to step up: the decision criteria
+
+There is no rule that a manufacturer of a certain size needs PP/DS or IBP. The decision should follow the planning problem you have, and the signals below are general guidance for finding it.
+
+The table maps common signals to the tool that usually addresses them.
+
+| Signal in your plant or business | Usually points to |
+|---|---|
+| Planners accept most MRP proposals and capacity rarely binds | MRP Live alone |
+| You need to see medium-term capacity problems before committing | pMRP inside S/4HANA |
+| Planners rebuild the schedule for one line by hand every week | Embedded PP/DS |
+| Changeovers drive cost and sequence matters | Embedded PP/DS |
+| Orders are pegged across several BOM levels and delays ripple | Embedded PP/DS |
+| Supply decisions span several plants and distribution centres | SAP IBP |
+| Demand needs statistical forecasting across many customers and channels | SAP IBP |
+| A monthly sales and operations process needs finance in the room | SAP IBP |
+| Scarce supply has to be allocated by customer priority | SAP IBP response and supply |
+
+A single plant with one bottleneck often needs MRP Live and PP/DS, and nothing more. A multi-plant group with seasonal demand may need IBP for the network plan and PP/DS for the lines that actually constrain output.
+
+### Questions to answer before you buy
+
+Work through these with the planners:
+
+1. Where do planners override the system today, and how many hours a week does it take?
+2. Is the constraint a resource in one plant, or a decision across plants and channels?
+3. Does sequence change cost, through setups, cleaning or scrap?
+4. Is there an agreed sales and operations process, or does each function bring its own numbers?
+5. Is the master data good enough for MRP today? If not, a more advanced tool will plan the same errors faster.
+
+If question 5 gets a no, fix that first.
+
+Classic SOP is compatibility scope in S/4HANA, with IBP as SAP's named successor, so that deadline can force the IBP question earlier than the planning problem would. Check the usage rights in your own contract before you treat it as urgent.
+
+### How the layers work together
+
+Manufacturers that step up add a layer; they do not replace the one below.
+
+PP/DS and MRP Live run in the same S/4HANA system on the same data, so the main risk is overlap: two engines planning the same material. IBP runs in its own cloud tenant, so the risk shifts to integration and to who owns the plan when the two systems disagree.
+
+Three ownership decisions prevent most of the trouble:
+
+1. Name which tool plans each material group and each horizon, and write it into the design.
+2. Name who resolves a conflict between the IBP supply plan and the S/4HANA schedule.
+3. Name one owner for each master data domain the planning tools consume.
+
+Planning design also touches finance. Planned orders, production versions and capacity drive product costing and inventory valuation. The most common reason I see manufacturing ERP projects fail is that the design is not agreed in its totality, especially in finance, so bring the controller into planning design early.
+
+## Where to start
+
+Start with the plan you already have. Run MRP Live on clean master data, measure where planners override it, and test medium-term capacity in pMRP.
+
+If the overrides cluster on a few resources, scope PP/DS for those resources only. If they cluster on decisions between plants, channels or functions, that is an IBP conversation, and it starts with the planning process rather than the software.
+
+For defence and aerospace planning, contract costing and project systems usually shape the design as much as the planning engine. My guide to [ERP for defence manufacturing](/erp-for-defence-manufacturing/) covers that side. If you want a second view on which planning layer your plants actually need, [talk to me about your SAP programme](/contact-noel-erp-support/).
+
+## Frequently asked questions
+
+<details>
+<summary>What is the difference between MRP Live and PP/DS?</summary>
+
+MRP Live plans what to make and buy, and when, at infinite capacity. Embedded PP/DS schedules critical materials on bottleneck resources at finite capacity, with setup and sequence logic.
+
+Both run inside S/4HANA. Materials flagged for advanced planning go to PP/DS, and the rest stay in MRP Live.
+
+</details>
+
+<details>
+<summary>What is the difference between PP/DS and IBP?</summary>
+
+PP/DS schedules the plant over hours to weeks, inside S/4HANA. SAP IBP is a separate cloud product that plans demand, inventory and supply across plants and channels over weeks to years.
+
+They answer different questions, and some manufacturers run both: IBP for the network plan, PP/DS for the lines that constrain output.
+
+</details>
+
+<details>
+<summary>Does SAP IBP replace MRP in S/4HANA?</summary>
+
+No. IBP plans at the network level and sends plans back to S/4HANA. MRP Live or PP/DS still turns those plans into planned orders and purchase requisitions the plant can execute.
+
+</details>
+
+<details>
+<summary>Is classic MRP still available in S/4HANA?</summary>
+
+Yes. SAP's learning content confirms the classic planning modes are still available, and MRP Live (MD01N) is the recommended run. SAP Knowledge Base Article 2640393 lists the differences between the two, so check it against your lot-sizing procedures and MRP types.
+
+</details>
+
+<details>
+<summary>Do I need PP/DS if I have MRP Live?</summary>
+
+Only if finite capacity matters to your output. If planners keep rebuilding the schedule for a bottleneck line by hand, or changeovers drive cost, PP/DS is worth evaluating. If capacity rarely binds, MRP Live with capacity evaluation is usually enough.
+
+</details>
+
+<details>
+<summary>What is pMRP in SAP S/4HANA?</summary>
+
+Predictive material and resource planning (pMRP) is a simulation tool in S/4HANA for finding capacity problems early on a simplified plan. SAP describes it as a successor to long-term planning in ECC. Simulations do not change operative MRP until a planner releases them.
+
+</details>
