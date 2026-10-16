@@ -53,7 +53,10 @@ export default function YouTubeVideo(props: Props) {
     name: title,
     description: title,
     thumbnailUrl: [thumbnail],
-    ...(meta?.publishedAt ? { uploadDate: meta.publishedAt } : {}),
+    // Google wants a full datetime with a time zone, not a bare date.
+    ...(meta?.publishedAt
+      ? { uploadDate: /^\d{4}-\d{2}-\d{2}$/.test(meta.publishedAt) ? `${meta.publishedAt}T00:00:00Z` : meta.publishedAt }
+      : {}),
     ...(meta?.duration ? { duration: meta.duration } : {}),
     embedUrl: `https://www.youtube-nocookie.com/embed/${id}`,
     contentUrl: `https://www.youtube.com/watch?v=${id}`,
