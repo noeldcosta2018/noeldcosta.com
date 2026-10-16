@@ -105,7 +105,7 @@ export default function SiteRootLayout({
         />
         {children}
         <ChatWidget copy={chatCopy("en")} />
-        <CookieConsent copy={consentCopy("en")} policyHref="/privacy/" />
+        <CookieConsent copy={consentCopy("en")} policyHref="/privacy/" termsHref="/terms/" />
       </body>
     </html>
   );
