@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 export type ConsentCopy = {
   text: string;
   policy: string;
+  terms: string;
+  close: string;
   preferences: string;
   essentialOnly: string;
   acceptAll: string;
@@ -46,7 +48,7 @@ export function readConsent(): Consent | null {
  * paint on mobile). "open" shows it again from the footer link; "closed" hides
  * it once the visitor has chosen.
  */
-export default function CookieConsent({ copy, policyHref }: { copy: ConsentCopy; policyHref: string }) {
+export default function CookieConsent({ copy, policyHref, termsHref }: { copy: ConsentCopy; policyHref: string; termsHref: string }) {
   const [state, setState] = useState<"auto" | "open" | "closed">("auto");
   const [prefs, setPrefs] = useState(false);
   const [analytics, setAnalytics] = useState(false);
@@ -63,6 +65,14 @@ export default function CookieConsent({ copy, policyHref }: { copy: ConsentCopy;
     return () => window.removeEventListener(OPEN_CONSENT_EVENT, reopen);
   }, []);
 
+  // Close hides the bar without saving a choice: nothing optional runs, and it
+  // shows again on the next page load.
+  function dismiss() {
+    document.documentElement.classList.remove("consent-needed");
+    setState("closed");
+    setPrefs(false);
+  }
+
   function decide(allowAnalytics: boolean) {
     const consent: Consent = { v: 1, analytics: allowAnalytics, at: new Date().toISOString() };
     try {
@@ -76,6 +86,8 @@ export default function CookieConsent({ copy, policyHref }: { copy: ConsentCopy;
     setPrefs(false);
   }
 
+  // Laid out like the cookie notice on X (Noel, 17 October 2026): text and a close
+  // button, then settings on the left and two matching choices on the right.
   return (
     <section
       className={`nd-cookie${state === "open" ? " is-open" : state === "closed" ? " is-closed" : ""}`}
@@ -84,9 +96,14 @@ export default function CookieConsent({ copy, policyHref }: { copy: ConsentCopy;
       aria-label={copy.title}
     >
       <div className="nd-cookie-inner">
+        <button type="button" className="nd-cookie-close" aria-label={copy.close} onClick={dismiss}>
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
         <p className="nd-cookie-text">
           {copy.text}{" "}
-          <a href={policyHref}>{copy.policy}</a>
+          <a href={policyHref}>{copy.policy}</a> · <a href={termsHref}>{copy.terms}</a>
         </p>
         {prefs && (
           <div className="nd-cookie-prefs">
@@ -108,20 +125,22 @@ export default function CookieConsent({ copy, policyHref }: { copy: ConsentCopy;
         )}
         <div className="nd-cookie-actions">
           {prefs ? (
-            <button type="button" className="nd-btn nd-btn-secondary" onClick={() => decide(analytics)}>
+            <button type="button" className="nd-cookie-pill outline" onClick={() => decide(analytics)}>
               {copy.save}
             </button>
           ) : (
-            <button type="button" className="nd-btn nd-btn-secondary" onClick={() => setPrefs(true)}>
-              {copy.preferences}
+            <button type="button" className="nd-cookie-pill outline" onClick={() => setPrefs(true)}>
+              {copy.title}
             </button>
           )}
-          <button type="button" className="nd-btn nd-btn-secondary" onClick={() => decide(false)}>
-            {copy.essentialOnly}
-          </button>
-          <button type="button" className="nd-btn nd-btn-primary" onClick={() => decide(true)}>
-            {copy.acceptAll}
-          </button>
+          <span className="nd-cookie-choices">
+            <button type="button" className="nd-cookie-pill" onClick={() => decide(false)}>
+              {copy.essentialOnly}
+            </button>
+            <button type="button" className="nd-cookie-pill" onClick={() => decide(true)}>
+              {copy.acceptAll}
+            </button>
+          </span>
         </div>
       </div>
     </section>
