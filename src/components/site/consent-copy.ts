@@ -10,6 +10,8 @@ export function consentCopy(locale: Locale | undefined): ConsentCopy {
       "This site uses essential cookies to work, for example to remember your theme and language. With your consent, it may also use analytics cookies to see which articles help readers. There are no advertising cookies. You can change your choice at any time under Cookie settings at the bottom of the page.",
     ),
     policy: tr("Privacy Policy"),
+    terms: tr("Terms"),
+    close: tr("Close"),
     preferences: tr("Preferences"),
     essentialOnly: tr("Essential only"),
     acceptAll: tr("Accept all"),

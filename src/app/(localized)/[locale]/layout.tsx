@@ -102,7 +102,7 @@ export default async function LocalizedLayout({
         />
         {children}
         <ChatWidget copy={chatCopy(documentAttributes.contentLocale)} locale={documentAttributes.lang} />
-        <CookieConsent copy={consentCopy(documentAttributes.contentLocale)} policyHref="/privacy/" />
+        <CookieConsent copy={consentCopy(documentAttributes.contentLocale)} policyHref="/privacy/" termsHref="/terms/" />
       </body>
     </html>
   );

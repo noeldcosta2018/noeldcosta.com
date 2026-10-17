@@ -18,8 +18,9 @@ export const outfit = Outfit({
   display: "swap",
 });
 
-// Menu: Instrument Sans for the main menu, its dropdowns and the mobile menu.
-// Preloaded because the menu is on every page.
+// Instrument Sans (Noel, 17 October 2026): description text, plus the main
+// menu, its dropdowns and the mobile menu. Headings stay in Archivo; buttons
+// stay in Outfit. Preloaded because the menu is on every page.
 export const instrumentSans = Instrument_Sans({
   variable: "--font-instrument",
   subsets: ["latin"],
