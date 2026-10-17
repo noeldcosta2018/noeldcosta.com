@@ -1,4 +1,4 @@
-import { Archivo, Caveat, Outfit, JetBrains_Mono, Noto_Kufi_Arabic, IBM_Plex_Sans_Arabic } from "next/font/google";
+import { Archivo, Caveat, Instrument_Sans, Outfit, JetBrains_Mono, Noto_Kufi_Arabic, IBM_Plex_Sans_Arabic } from "next/font/google";
 
 // Display: Archivo with its width axis, set to 125% (Expanded) by .nd-display.
 // Free stand-in for the GT Standard Extended face in the MDLBeast reference.
@@ -14,6 +14,14 @@ export const archivo = Archivo({
 export const outfit = Outfit({
   variable: "--font-outfit",
   // Only Latin is preloaded; latin-ext (Croatian, Turkish and others) still loads on demand.
+  subsets: ["latin"],
+  display: "swap",
+});
+
+// Menu: Instrument Sans for the main menu, its dropdowns and the mobile menu.
+// Preloaded because the menu is on every page.
+export const instrumentSans = Instrument_Sans({
+  variable: "--font-instrument",
   subsets: ["latin"],
   display: "swap",
 });
@@ -61,4 +69,4 @@ export const caveat = Caveat({
   preload: false,
 });
 
-export const fontVariables = `${archivo.variable} ${outfit.variable} ${jetbrainsMono.variable} ${kufiArabic.variable} ${plexArabic.variable} ${caveat.variable}`;
+export const fontVariables = `${archivo.variable} ${outfit.variable} ${instrumentSans.variable} ${jetbrainsMono.variable} ${kufiArabic.variable} ${plexArabic.variable} ${caveat.variable}`;
