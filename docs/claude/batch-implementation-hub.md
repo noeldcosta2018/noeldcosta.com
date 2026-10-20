@@ -20,3 +20,13 @@ Decision: the existing `/sap-implementation/` page (already ranking, already a p
 ## Checks
 - Build clean (2,967 pages), 330 tests pass, typecheck clean.
 - Preview: hub section renders with its seven H3 groups and appears in the page contents; German article shows the localised hub link `/de/sap-implementation/`.
+
+## 3. Rebuild of /sap-implementation/ (21 October 2026, approved by Noel)
+
+Noel found the live page confusing. The WordPress export had untitled numbered card images in every phase, run-on arrow link rows, two duplicate success sections, a 13-question FAQ without a heading and four identical call buttons, and the 35-link hub list made it longer.
+
+- Rebuilt from Noel's existing text only, about 1,900 words (was about 4,800). URL, title, H1, hero and meta description unchanged.
+- Order: intro and one call button; where an implementation begins; the six phases (stepper plus one short section per phase, each ending with a "Go deeper" line of two or three links); topic-by-topic table (7 rows, all cluster links kept); what makes implementations succeed (merged with the benefits); common challenges (with the Oracle and Microsoft advice); how I can help with the six free tools; six-question FAQ in details blocks (FAQPage schema emitted).
+- Industry image tiles replaced by links to /for-manufacturing/, /for-retail/ and /sap-for-aviation/.
+- All 16 locale bodies rebuilt from the new English, frontmatter kept. Structure checked against English (headings, stepper, table, FAQ, link order). French non-breaking spaces restored by script.
+- Build clean; tests pass (the sitemap contract test timed out under load and passes on its own).
