@@ -37,6 +37,7 @@ import ContactBlock from "@/components/article/contact/ContactBlock";
 import CalendlyEmbed from "@/components/article/contact/CalendlyEmbed";
 import BookingFlow from "@/components/article/contact/BookingFlow";
 import InlineCta from "@/components/article/contact/InlineCta";
+import GoDeeper from "@/components/article/GoDeeper";
 import { bookingCopy } from "@/components/article/contact/booking-copy";
 import type { Locale } from "@/lib/locales";
 import ContactHero from "@/components/article/contact/ContactHero";
@@ -274,6 +275,7 @@ export default function MdxBody({
             "calendly-embed",
             "booking-flow",
             "cta-button",
+            "go-deeper",
             "youtube-video",
             "contact-hero",
             ...EXPLAINER_TAGS,
@@ -394,6 +396,9 @@ export default function MdxBody({
         // Branded inline call to action with a hand-drawn arrow (InlineCta.tsx).
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         "cta-button": ((props: any) => <InlineCta href={props.href} label={props.label} />) as never,
+        // Related guides as a card row at the end of a section (GoDeeper.tsx).
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "go-deeper": ((props: any) => <GoDeeper title={props.title} labels={props.labels} hrefs={props.hrefs} locale={locale} />) as never,
         // Publication logos for "Featured on" — replaces WP gallery
         // with empty <img src=""> tags and descriptive alt text.
         "featured-on": (() => <FeaturedOn />) as never,
