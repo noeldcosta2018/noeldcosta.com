@@ -114,6 +114,8 @@ export const WORDPRESS_TAG_SLUGS = [
 const TAG_NAMES: Record<string, string> = {
   "ai-governance": "AI governance",
   "ai-on-consulting": "AI in consulting",
+  "ai-roadmap": "AI roadmap",
+  "banking": "Banking",
   "case-study": "Case study",
   "cfo": "CFO",
   "cfo-erp": "ERP for CFOs",
@@ -138,6 +140,7 @@ const TAG_NAMES: Record<string, string> = {
   "erp-selection": "ERP selection",
   "erp-team-structure": "ERP team structure",
   "eu-ai-act": "EU AI Act",
+  "financial-services": "Financial services",
   "fmcg": "FMCG",
   "grow-with-sap": "GROW with SAP",
   "iso-42001": "ISO 42001",
