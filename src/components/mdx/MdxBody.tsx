@@ -27,6 +27,7 @@ import {
   ExplainerLayers,
   ExplainerMatrix,
   ExplainerOrg,
+  ExplainerFixes,
   ExplainerTimeline,
   explainerProps,
 } from "@/components/article/explainers";
@@ -386,6 +387,8 @@ export default function MdxBody({
         "explainer-before-after": ((props: any) => <ExplainerBeforeAfter {...explainerLabels(locale)} {...explainerProps(props)} />) as never,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         "explainer-org": ((props: any) => <ExplainerOrg {...explainerLabels(locale)} {...explainerProps(props)} />) as never,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "explainer-fixes": ((props: any) => <ExplainerFixes {...explainerLabels(locale)} {...explainerProps(props)} />) as never,
         // Structured testimonials card grid for the About / story page.
         // Data lives in src/components/article/testimonials/data.ts so
         // the MDX side is a single self-closing tag.

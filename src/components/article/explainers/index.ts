@@ -15,6 +15,7 @@ export { default as ExplainerFunnel } from "./ExplainerFunnel";
 export { default as ExplainerMatrix } from "./ExplainerMatrix";
 export { default as ExplainerBeforeAfter } from "./ExplainerBeforeAfter";
 export { default as ExplainerOrg } from "./ExplainerOrg";
+export { default as ExplainerFixes } from "./ExplainerFixes";
 export { explainerProps } from "./parse";
 
 /** Tag names, for MdxBody's block-level paragraph unwrapping. */
@@ -29,4 +30,5 @@ export const EXPLAINER_TAGS = [
   "explainer-matrix",
   "explainer-before-after",
   "explainer-org",
+  "explainer-fixes",
 ] as const;
