@@ -1,7 +1,7 @@
 import FadeUp from "@/components/article/FadeUp";
 
 /**
- * Side-by-side comparison: two banded cards, one per option. Use when an article weighs two named approaches against each
+ * Side-by-side comparison: two editorial columns, one per option. Use when an article weighs two named approaches against each
  * other (Big Bang vs Phased, Greenfield vs Brownfield, Fit-to-standard
  * vs Customisation).
  *
@@ -42,32 +42,30 @@ export default function CompareSplit(props: CompareSplitProps) {
   const leftPoints = splitPoints(props["left-points"]);
   const rightPoints = splitPoints(props["right-points"]);
 
-  // The band colour tells the two options apart: accent for the first,
-  // secondary accent for the second.
   const sides = [
-    { label: leftLabel, points: leftPoints, band: "var(--accent)" },
-    { label: rightLabel, points: rightPoints, band: "var(--accent2)" },
+    { label: leftLabel, points: leftPoints, tone: "a" },
+    { label: rightLabel, points: rightPoints, tone: "b" },
   ];
 
+  // Editorial layout: two columns on hairlines, each headed by its option
+  // name over a fine tone rule, points numbered. No cards, no bullets.
   return (
     <FadeUp as="figure" className="not-prose nd-block">
       {title && (
         <h2 data-heading-source="CompareSplit" className="nd-block-title">{title}</h2>
       )}
-      <div data-heading-source="CompareSplit" className="nd-compare">
+      <div data-heading-source="CompareSplit" className="nd-vs">
         {sides.map((side, i) => (
-          <div
-            key={i}
-            className="nd-card nd-glow banded"
-            style={{ ["--band" as string]: side.band }}
-          >
-            <span className="nd-card-band" style={{ background: side.band }} aria-hidden="true" />
-            <h3 className="nd-compare-label">{side.label}</h3>
-            <ul className="nd-points-list">
+          <div key={i} className={`nd-vs-col tone-${side.tone}`}>
+            <h3 className="nd-vs-label">{side.label}</h3>
+            <ol className="nd-vs-points">
               {side.points.map((p, idx) => (
-                <li key={idx}>{p}</li>
+                <li key={idx}>
+                  <span className="n" aria-hidden="true">{String(idx + 1).padStart(2, "0")}</span>
+                  <span>{p}</span>
+                </li>
               ))}
-            </ul>
+            </ol>
           </div>
         ))}
       </div>

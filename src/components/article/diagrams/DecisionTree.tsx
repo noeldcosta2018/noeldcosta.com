@@ -12,8 +12,8 @@ import FadeUp from "@/components/article/FadeUp";
  *     options="Legacy is fragmented and we want process redesign => Greenfield|Processes are sound, ECC is stable => Brownfield|Multi-entity, want partial reuse => Bluefield"
  *   ></decision-tree>
  *
- * Each option is `condition => outcome`. Branches render as cards under
- * the question with a small connector visual.
+ * Each option is `condition => outcome`. Branches render as editorial
+ * columns under the question: the outcome on top, the condition below.
  */
 type DecisionTreeProps = {
   question?: string;
@@ -57,12 +57,12 @@ export default function DecisionTree(props: DecisionTreeProps) {
       >
         {branches.map((b, i) => (
           <div key={i} className="nd-dt-col">
-            <div className="nd-card nd-glow nd-dt-branch">
-              <p className="cond">{b.condition}</p>
+            <div className="nd-dt-branch">
               <p className="out">
                 <span aria-hidden="true">→</span>
                 {b.outcome}
               </p>
+              <p className="cond">{b.condition}</p>
             </div>
           </div>
         ))}
