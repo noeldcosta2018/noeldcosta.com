@@ -17,6 +17,6 @@ Each article: stepper (four stages), value matrix (where to start), layer diagra
 
 Experience claims are limited to sourced facts: ERP in plastics, steel and defence manufacturing (confirmed by Noel 15 October 2026) and his DXC role with banking clients in MEA (client-list.md, public). No client names, numbers or anecdotes. Regulations are stated generally: BCBS 239, EU AI Act high-risk categories (creditworthiness of individuals; life and health insurance pricing; safety components), PRA SS1/23, the UAE enabling technologies guidelines, FCA Consumer Duty, IFRS 17, Solvency II, PCI DSS, ISA-95, IEC 62443, OPC UA, ISO 20022.
 
-English only. Translations follow Noel's approval.
+Translated into all 16 locales on 22 October 2026 (one agent per locale, checker OK on all 64 files, structure checked against English, French non-breaking spaces added by script). Manifest and routing test counts raised to 119 post families.
 
 Checks: build clean, typecheck clean, 332 of 333 tests pass in the full run; the sitemap contract test timed out under load and passes on its own.

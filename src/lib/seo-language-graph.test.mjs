@@ -55,7 +55,7 @@ function expectReciprocalMember(metadata, expected, locale, keys = POST_LANGUAGE
 }
 
 describe("Phase 4A reciprocal manifest-backed SEO language graph", () => {
-  it("limits the graph inventory to 115 post families and 28 equivalent page families", () => {
+  it("limits the graph inventory to 119 post families and 28 equivalent page families", () => {
     const postFamilies = localeContentManifest.items.filter(
       (item) =>
         item.kind === "post" &&
@@ -67,7 +67,7 @@ describe("Phase 4A reciprocal manifest-backed SEO language graph", () => {
         buildPageMetadata(getPage(item.slug, "en")).alternates?.languages,
     );
 
-    expect(postFamilies).toHaveLength(115);
+    expect(postFamilies).toHaveLength(119);
     expect(pageFamilies.map((item) => item.slug)).toEqual(
       localeContentManifest.items
         .filter(
@@ -103,7 +103,7 @@ describe("Phase 4A reciprocal manifest-backed SEO language graph", () => {
           buildPageMetadata(getPage(item.slug, "en")).alternates?.languages,
       );
 
-      expect(eligiblePosts).toHaveLength(115);
+      expect(eligiblePosts).toHaveLength(119);
       expect(eligiblePages).toHaveLength(28);
 
       for (const item of eligiblePosts) {
@@ -471,8 +471,8 @@ describe("Phase 4A reciprocal manifest-backed SEO language graph", () => {
   });
 
   it("preserves the approved route parameter inventory", () => {
-    expect(getLocalizedArticleParams()).toHaveLength(115 * 16);
+    expect(getLocalizedArticleParams()).toHaveLength(119 * 16);
     expect(getLocalizedPageParams()).toHaveLength(29 * 16);
-    expect(getLocalizedContentParams()).toHaveLength(115 * 16 + 29 * 16);
+    expect(getLocalizedContentParams()).toHaveLength(119 * 16 + 29 * 16);
   });
 });
