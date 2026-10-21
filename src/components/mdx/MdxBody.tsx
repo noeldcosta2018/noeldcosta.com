@@ -36,6 +36,7 @@ import TestimonialsGrid from "@/components/article/testimonials/TestimonialsGrid
 import ContactBlock from "@/components/article/contact/ContactBlock";
 import CalendlyEmbed from "@/components/article/contact/CalendlyEmbed";
 import BookingFlow from "@/components/article/contact/BookingFlow";
+import InlineCta from "@/components/article/contact/InlineCta";
 import { bookingCopy } from "@/components/article/contact/booking-copy";
 import type { Locale } from "@/lib/locales";
 import ContactHero from "@/components/article/contact/ContactHero";
@@ -272,6 +273,7 @@ export default function MdxBody({
             "safeguard-band",
             "calendly-embed",
             "booking-flow",
+            "cta-button",
             "youtube-video",
             "contact-hero",
             ...EXPLAINER_TAGS,
@@ -389,6 +391,9 @@ export default function MdxBody({
         // Structured contact card — fixes WP-import bugs (broken email,
         // mismatched tel href, mailto used for "Website" link).
         "contact-block": (() => <ContactBlock />) as never,
+        // Branded inline call to action with a hand-drawn arrow (InlineCta.tsx).
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        "cta-button": ((props: any) => <InlineCta href={props.href} label={props.label} />) as never,
         // Publication logos for "Featured on" — replaces WP gallery
         // with empty <img src=""> tags and descriptive alt text.
         "featured-on": (() => <FeaturedOn />) as never,
