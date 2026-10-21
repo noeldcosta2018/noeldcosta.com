@@ -398,7 +398,7 @@ export default function MdxBody({
         "cta-button": ((props: any) => <InlineCta href={props.href} label={props.label} />) as never,
         // Related guides as a card row at the end of a section (GoDeeper.tsx).
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        "go-deeper": ((props: any) => <GoDeeper title={props.title} labels={props.labels} hrefs={props.hrefs} locale={locale} />) as never,
+        "go-deeper": ((props: any) => <GoDeeper title={props.title}>{props.children}</GoDeeper>) as never,
         // Publication logos for "Featured on" — replaces WP gallery
         // with empty <img src=""> tags and descriptive alt text.
         "featured-on": (() => <FeaturedOn />) as never,
