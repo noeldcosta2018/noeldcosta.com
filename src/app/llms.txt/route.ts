@@ -66,7 +66,7 @@ export async function GET() {
 
   lines.push("## Also by Noel");
   lines.push("- [ERPCV](https://erpcv.com/): Career documents and paid one-to-one career advice for ERP consultants");
-  lines.push("- [SAPopedia](https://www.sapopedia.com/): SAP career paths, professional skills courses and Noel's books");
+  lines.push("- [SAPopedia](https://ai.sapopedia.com/): SAP career paths, professional skills courses and Noel's books");
   lines.push("- [YouTube](https://www.youtube.com/@NoelDCostaERPAI): Talks on SAP, ERP programmes, data and AI");
   lines.push("");
 

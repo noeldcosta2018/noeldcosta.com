@@ -20,9 +20,9 @@ export const CALENDLY_URL = "https://calendly.com/noeldcosta/30min";
 export const ERPCV = "https://erpcv.com/";
 export const ERPCV_ADVISORY = "https://erpcv.com/advisory";
 export const ERPCV_DIAGNOSIS = "https://erpcv.com/diagnosis";
-export const SAPOPEDIA = "https://www.sapopedia.com/";
+export const SAPOPEDIA = "https://ai.sapopedia.com/";
 // Books are sold on SAPopedia. Replace with the exact books page when Noel sends it.
-export const SAPOPEDIA_BOOKS = "https://www.sapopedia.com/";
+export const SAPOPEDIA_BOOKS = "https://ai.sapopedia.com/";
 
 export const EXPERTISE_GROUPS: MenuGroup[] = [
   {
