@@ -11,6 +11,8 @@ export type Crumb = { label: string; href?: string };
  * - portrait: transparent cutout that drifts with the cursor
  * - video: a muted B-roll loop behind the scrim
  * - cover: a full-bleed image (article hero) behind the scrim
+ * - photo: a full-height photograph on the right, faded into the page (the
+ *   homepage treatment), for landing pages that lead with Noel
  */
 export default function PageBanner({
   crumbs,
@@ -20,6 +22,7 @@ export default function PageBanner({
   portrait,
   video,
   cover,
+  photo,
   long,
   compact,
   children,
@@ -34,6 +37,7 @@ export default function PageBanner({
   portrait?: { src: string; width: number; height: number };
   video?: { src: string; poster: string };
   cover?: { src: string; alt?: string };
+  photo?: { src: string; width: number; height: number };
   long?: boolean;
   compact?: boolean;
   children?: ReactNode;
@@ -44,7 +48,7 @@ export default function PageBanner({
   portraitNote?: string;
 }) {
   return (
-    <section className={`nd-banner${compact ? " compact" : ""}`} aria-label={label}>
+    <section className={`nd-banner${compact ? " compact" : ""}${photo ? " has-photo" : ""}`} aria-label={label}>
       <div className="bg" aria-hidden="true" />
       {video && <LoopVideo className="media loop" src={video.src} poster={video.poster} />}
       {cover && (
@@ -55,6 +59,10 @@ export default function PageBanner({
       )}
       <div className="scrim" aria-hidden="true" />
       <div className="nd-spotlight" aria-hidden="true" />
+      {photo && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className="media photo" src={photo.src} width={photo.width} height={photo.height} alt="Noel D'Costa" fetchPriority="high" />
+      )}
       {portrait && (
         // Desktop only: phones get a 1px placeholder, so the portrait is not downloaded there.
         <picture>

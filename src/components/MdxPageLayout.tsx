@@ -86,6 +86,10 @@ function englishPath(page: PageRecord): string {
 
 /** Banner media by section: B-roll for expertise, the approved portraits for about and contact. */
 function bannerMedia(section: SectionEntry | undefined, slug: string) {
+  // Landing page for business leaders: leads with the homepage photograph.
+  if (slug === "supporting-your-business") {
+    return { photo: { src: "/media/noel-office-tall-1100.webp", width: 1100, height: 1522 } };
+  }
   if (/^contact[-_]/.test(slug)) {
     return {
       video: { src: "/media/video/close-loop.mp4", poster: "/media/video/close-loop-poster.jpg" },
@@ -205,7 +209,7 @@ export default function MdxPageLayout({
           lede={lede}
           long={visualLength(title) > 46}
           {...media}
-          portraitNote={media.portrait ? tr("That's me") : undefined}
+          portraitNote={"portrait" in media ? tr("That's me") : undefined}
         >
           {isLibrary && (
             <div className="nd-meta">
