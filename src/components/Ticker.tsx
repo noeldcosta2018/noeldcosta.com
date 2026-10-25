@@ -3,7 +3,7 @@ const ITEMS = [
   { mod: "EDGE Group", txt: "25 Entities → 1 ERP", badge: "$60M SAVED", type: "p" },
   { mod: "Agentic AI", txt: "SAP BTP + Business AI", badge: "ACTIVE", type: "g" },
   { mod: "Etihad Airways", txt: "Route Profitability", badge: "$400M+", type: "p" },
-  { mod: "Command Central", txt: "ERP Tracking Tool", badge: "BUILT", type: "g" },
+  { mod: "ProjectCAPEX", txt: "ERP Tracking Tool", badge: "BUILT", type: "g" },
   { mod: "ERPCV", txt: "1,200+ Career Packs", badge: "89% MORE INTERVIEWS", type: "p" },
   { mod: "DXC Technology", txt: "800+ Consultants", badge: "$300M", type: "p" },
 ];
