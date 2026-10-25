@@ -10,6 +10,7 @@ import MobileContents from "@/components/article/MobileContents";
 import KeyTakeaways from "@/components/article/KeyTakeaways";
 import PullQuote from "@/components/article/PullQuote";
 import ProductPromoCard from "@/components/article/ProductPromoCard";
+import ProjectCapexMark from "@/components/ProjectCapexMark";
 import AuthorBox from "@/components/article/AuthorBox";
 import CTASection from "@/components/article/CTASection";
 import RelatedArticles, {
@@ -320,17 +321,18 @@ export default function PostPage({
                   />
                 </div>
 
-                {/* Mid-article Command Centre reference */}
+                {/* Mid-article ProjectCAPEX reference */}
                 {hasSplit && showEnglishModules && (
                   <ProductPromoCard
                     tone="dark"
                     kicker={tr("Built by Noel")}
-                    title="Command Centre"
+                    title="ProjectCAPEX"
+                    logo={<ProjectCapexMark />}
                     description={tr(
-                      "Executive visibility, risk posture, and decision governance for ERP and SAP programmes. See where delivery is actually bleeding before it hits the steering committee.",
+                      "Executive visibility, cost control and decision governance for ERP and SAP programmes. Plans, budget versus actual, cost forecasts, RAID and approvals in one place. See where delivery is actually bleeding before it hits the steering committee.",
                     )}
-                    href="https://commandcc.io"
-                    cta={tr("Try Command Centre free")}
+                    href="https://projectcapex.com"
+                    cta={tr("Try ProjectCAPEX free")}
                     external
                   />
                 )}

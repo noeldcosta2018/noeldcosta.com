@@ -107,7 +107,7 @@ working on one of these, stop and ask.
   GTranslate stays. The Next.js site serves English only. GTranslate
   proxies everything else externally.
 - Migration of every WordPress post. Top 20-30 only in this build.
-- A redesign of erpcv.com or commandcc.io. Those sites stay as-is.
+- A redesign of erpcv.com or projectcapex.com. Those sites stay as-is.
 - Custom analytics or A/B testing infrastructure.
 
 ---
@@ -233,7 +233,7 @@ Goal: ship a homepage that wins the 90-second scan for the CEO buyer.
 | H-06 | How I work (4 steps) | `src/components/HowIWork.tsx` (NEW) | pending | H-01 | `_docs/homepage/06-how-i-work.md` |
 | H-07 | What I believe (5 opinions) | `src/components/WhatIBelieve.tsx` (NEW) | pending | H-01, BRAND.md | `_docs/homepage/07-what-i-believe.md` |
 | H-08 | AI capabilities | `src/components/AICapabilities.tsx` | pending | H-01 | `_docs/homepage/08-ai-capabilities.md` |
-| H-09 | Tools (Command Central + ERPCV) | `src/components/Tools.tsx` | pending | H-01 | `_docs/homepage/09-tools.md` |
+| H-09 | Tools (ProjectCAPEX + ERPCV) | `src/components/Tools.tsx` | pending | H-01 | `_docs/homepage/09-tools.md` |
 | H-10 | Testimonials | `src/components/Testimonials.tsx` | pending | H-01, F-08 | `_docs/homepage/10-testimonials.md` |
 | H-11 | About / Credentials | `src/components/Credentials.tsx` | pending | H-01 | `_docs/homepage/11-credentials.md` |
 | H-12 | YouTube section | `src/components/YouTubeSection.tsx` | pending | H-01 | `_docs/homepage/12-youtube.md` |

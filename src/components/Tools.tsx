@@ -1,6 +1,8 @@
 "use client";
 
-// TODO: update Tools.tsx hrefs — this component currently showcases commercial products (Command Central, ERPCV),
+import ProjectCapexMark from "@/components/ProjectCapexMark";
+
+// TODO: update Tools.tsx hrefs — this component currently showcases commercial products (ProjectCAPEX, ERPCV),
 // not the 5 LLM tool slugs. When this section is repurposed to list the free tools, replace with:
 //   { name: "ERP Cost Calculator", href: "/erp-implementation-cost-calculator", ... }
 //   { name: "SAP Cost Calculator", href: "/sap-implementation-cost-calculator", ... }
@@ -9,18 +11,13 @@
 //   { name: "Solution Builder", href: "/sap-solution-builder", ... }
 const TOOLS = [
   {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-        <path d="M3 9h18M9 21V9"/>
-      </svg>
-    ),
-    name: "Command Central",
+    icon: <ProjectCapexMark size={20} />,
+    name: "ProjectCAPEX",
     type: "Implementation",
-    title: "Track your ERP implementation in one place.",
+    title: "Plan projects. Control costs. Deliver.",
     body: "Progress, risks, milestones, team performance. Built because every project I walked into had tracking spread across 15 different spreadsheets. Real-time dashboards. Not another status deck.",
-    cta: "Explore Command Central →",
-    href: "https://commandcc.io",
+    cta: "Explore ProjectCAPEX →",
+    href: "https://projectcapex.com",
   },
   {
     icon: (

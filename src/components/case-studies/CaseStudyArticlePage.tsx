@@ -8,6 +8,7 @@ import { CloseBand } from "@/components/home/HomeSections";
 import KeyTakeaways from "@/components/article/KeyTakeaways";
 import PullQuote from "@/components/article/PullQuote";
 import ProductPromoCard from "@/components/article/ProductPromoCard";
+import ProjectCapexMark from "@/components/ProjectCapexMark";
 import AuthorBox from "@/components/article/AuthorBox";
 import MobileContents from "@/components/article/MobileContents";
 import { getPost } from "@/lib/content";
@@ -129,15 +130,16 @@ export default function CaseStudyArticlePage({
                   />
                 </div>
 
-                {/* Mid-article Command Centre reference */}
+                {/* Mid-article ProjectCAPEX reference */}
                 {hasSplit && (
                   <ProductPromoCard
                     tone="dark"
                     kicker="Built by Noel"
-                    title="Command Centre"
-                    description="Executive visibility, risk posture and decision governance for ERP and SAP programmes. See where delivery is slipping before it reaches the steering committee."
-                    href="https://commandcc.io"
-                    cta="Try Command Centre free"
+                    title="ProjectCAPEX"
+                    logo={<ProjectCapexMark />}
+                    description="Executive visibility, cost control and decision governance for ERP and SAP programmes. Plans, budget versus actual, cost forecasts, RAID and approvals in one place. See where delivery is slipping before it reaches the steering committee."
+                    href="https://projectcapex.com"
+                    cta="Try ProjectCAPEX free"
                     external
                     image="/images/wp/2025/02/dashboard.webp"
                   />

@@ -71,7 +71,7 @@ Most posts came from WordPress and have these recurring issues:
 ### CTAs and broken WP shortcodes
 
 - [ ] **Strip inline mailto CTAs.** Lines like `[Talk to Noel – Free 15-Min Call](mailto:...)` must go. The AuthorBox at the bottom is the canonical CTA.
-- [ ] **Strip mid-article CTA blocks** that came through as raw HTML or broken links. Command Centre and ERPCV cards are auto-injected by `PostPage`.
+- [ ] **Strip mid-article CTA blocks** that came through as raw HTML or broken links. ProjectCAPEX and ERPCV cards are auto-injected by `PostPage`.
 - [ ] **Fix broken article-link sections.** WordPress occasionally exported `[Category\n\n### Title](url)` patterns that render as broken links. Convert to a 2x2 dark card grid (see `sap-performance-testing-it-leaders/en.mdx` for the inline-HTML pattern).
 
 ### Tables and lists
@@ -186,7 +186,7 @@ Verify by visual review:
 - [ ] Reading progress bar at top
 - [ ] Sticky TOC rail on desktop (right side, dark corbeau background, papaya numbers)
 - [ ] Inline mobile TOC (collapsible details) for narrow viewports
-- [ ] Mid-article Command Centre dark card with dashboard image (auto-injected if `splitAtMidH2` finds a midpoint)
+- [ ] Mid-article ProjectCAPEX dark card with the four-tile mark (auto-injected if `splitAtMidH2` finds a midpoint)
 - [ ] ERPCV dark card before the AuthorBox (auto-injected)
 - [ ] Combined orange/papaya AuthorBox at the end (author bio + "Book a 30-min call" CTA)
 - [ ] Related articles grid with staggered fade-up + hover lift
