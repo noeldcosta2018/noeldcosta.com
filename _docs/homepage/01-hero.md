@@ -152,7 +152,7 @@ target="_blank" rel="noopener noreferrer"
 - AI capability cards — H-08
 - Stat blocks (70% / $4.5M / 53%) — H-03
 - Newsletter signup
-- Tool/product cards (ERPCV, Command Central) — H-09
+- Tool/product cards (ERPCV, ProjectCAPEX) — H-09
 - Scroll-down arrow / "scroll to explore" cue
 
 ---

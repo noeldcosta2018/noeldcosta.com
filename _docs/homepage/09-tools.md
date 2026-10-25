@@ -1,6 +1,6 @@
 # H-09 — Tools brief
 
-Two product cards on a dark background. Command Central (implementation tracker) and ERPCV (consultant career pack). The section says: I don't just advise, I build.
+Two product cards on a dark background. ProjectCAPEX (implementation tracker, formerly Command Central) and ERPCV (consultant career pack). The section says: I don't just advise, I build.
 
 ---
 
@@ -15,7 +15,7 @@ Two product cards on a dark background. Command Central (implementation tracker)
 
 ## Buyer alignment
 
-For the CEO buyer this section is secondary. Per BUYER-CEO.md they don't care about tools on first visit. But the Command Central card reinforces the "in the room running these" claim from H-05 — the buyer's PM tool was built by the same person they are considering hiring. That is a credibility signal even when they don't intend to use the product.
+For the CEO buyer this section is secondary. Per BUYER-CEO.md they don't care about tools on first visit. But the ProjectCAPEX card reinforces the "in the room running these" claim from H-05 — the buyer's PM tool was built by the same person they are considering hiring. That is a credibility signal even when they don't intend to use the product.
 
 For the consultant audience that landed here from a YouTube link, the ERPCV card is the path into erpcv.com. Per CLAUDE.md these two audiences must not be cross-pollinated in copy — they sit in two physically separate cards on the same dark band, with distinct `type` labels (`Implementation` vs `Career`) so each reader sees their own.
 
@@ -60,20 +60,20 @@ I don't just advise. I build products. Used by consultants and companies across 
 
 Note: this sub uses the "I don't just X, I Y" pattern that VOICE.md flags. Keep on the radar for a future copy pass — it likely needs rewriting to comply.
 
-### Card 1 — Command Central
+### Card 1 — ProjectCAPEX
 
-Name: `Command Central`
+Name: `ProjectCAPEX` (icon: the four-tile ProjectCAPEX mark, `src/components/ProjectCapexMark.tsx`)
 Type pill: `Implementation`
 Title:
 ```
-Track your ERP implementation in one place.
+Plan projects. Control costs. Deliver.
 ```
 Body:
 ```
 Progress, risks, milestones, team performance. Built because every project I walked into had tracking spread across 15 different spreadsheets. Real-time dashboards. Not another status deck.
 ```
-CTA: `Explore Command Central →`
-Href: `https://commandcc.io`
+CTA: `Explore ProjectCAPEX →`
+Href: `https://projectcapex.com`
 
 ### Card 2 — ERPCV
 
@@ -125,7 +125,7 @@ Two cards side-by-side. Card chrome: header strip (icon + name + type pill) on a
 ## Out of scope
 
 - Inline product previews or demos.
-- A pricing table (ERPCV pricing is one phrase in the body; Command Central is a separate site).
+- A pricing table (ERPCV pricing is one phrase in the body; ProjectCAPEX is a separate site).
 - Comparison cards across other products.
 - A third card. The two products are the homepage set.
 - Internal anchor scrolls. Both CTAs are outbound to the product sites.
@@ -145,7 +145,7 @@ This is also why the H-09 section eyebrow currently reads "[ 04 · Built by me ]
 File: `src/components/Tools.tsx`
 
 Key bits:
-- Data: `TOOLS` array (currently two entries: Command Central and ERPCV)
+- Data: `TOOLS` array (currently two entries: ProjectCAPEX and ERPCV)
 - Section id: `tools` (linked from H-04 services CTA)
 - `'use client'` directive at the top — required for the spotlight mousemove
 - TODO comment block at top of file flagging the planned shift to the five LLM tools

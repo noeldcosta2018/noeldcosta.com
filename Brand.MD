@@ -7,7 +7,8 @@ clients. I've delivered $700M+ in transformations across EDGE Group,
 Etihad Airways, ADNOC, PIF entities, DXC, and the UAE Government.
 
 I also build products. ERPCV (career documents for ERP consultants).
-Command Central (ERP implementation tracking tool). Both are real,
+ProjectCAPEX (ERP programme planning and cost control, formerly
+Command Central). Both are real,
 shipped, and used by people in the industry.
 
 I write and speak about ERP and AI on YouTube and across publications
@@ -93,8 +94,9 @@ soft takes. Each one has consequences for how I work.
 
 ## Visual identity
 
-Inherits the Command Center design system (same as commandcc.io and
-erpcv.com). Three properties, one design language.
+Inherits the Command Center design system (first built for the product
+now called ProjectCAPEX, and shared with erpcv.com). Three properties,
+one design language.
 
 - Cream/bone backgrounds (#f4ede4 page bg, #fffdf9 card bg)
 - Near-black text with blue undertone (Corbeau #0e1020)
@@ -112,7 +114,8 @@ Full system in DESIGN_SYSTEM.md.
 Three properties. Same person.
 - noeldcosta.com (this site, eventually) — partner-track. Enterprise advisory.
 - erpcv.com — consultant-track. Career products.
-- commandcc.io — implementation-track. PM tool for ERP programmes.
+- projectcapex.com (ProjectCAPEX) — implementation-track. PM tool for ERP
+  programmes. "Plan projects. Control costs. Deliver."
 
 All three should feel like siblings: same designer, same person behind
 them, different jobs. Cross-link in footers. Don't co-mingle audiences
