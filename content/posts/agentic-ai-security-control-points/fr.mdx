@@ -1,0 +1,183 @@
+---
+title: "Sécurité de l'IA agentique : l'identité doit suivre l'agent"
+h1: "Sécurité de l'IA agentique : l'identité doit suivre l'agent"
+slug: "agentic-ai-security-control-points"
+date: "2026-11-07"
+updated: "2026-11-07"
+hero: "/images/agentic-ai-security/hero.webp"
+heroAlt: "Un cordon orange traversant des blocs séparés en béton, ardoise, pierre, acier et chêne"
+category: "agentic-ai"
+tags: ["enterprise-ai", "ai-governance", "risk-management"]
+author: "Noel D'Costa"
+metaTitle: "Sécurité de l'IA agentique : identité et contrôles"
+primaryKeyword: "sécurité de l'IA agentique"
+metaDescription: "La sécurité de l'IA agentique commence par l'identité. Six règles pour l'identité des agents, les autres points de contrôle, les fournisseurs clés et les échecs."
+excerpt: "L'IAM suppose souvent un seul fournisseur d'identité cloud central. Les SI d'entreprise sont parfois fragmentés. Voici comment faire fonctionner l'identité des agents entre eux, qui la vend et où elle échoue."
+experienceSource: "Noel D'Costa's work applying security for AI agents at a Middle East manufacturing company with 15,000 people, where disjointed technical ecosystems met IAM that assumed centralised cloud identity providers. Client unnamed."
+lastReviewed: "2026-11-07"
+keyTakeaways:
+  - "L'identité doit suivre l'agent, même quand le cloud ne le peut pas"
+  - "Les agents prennent des décisions : donnez à chacun sa propre identité et un responsable"
+  - "Émettez des identifiants limités et de courte durée pour chaque tâche et supprimez les accès permanents"
+  - "Utilisez la délégation on-behalf-of et l'échange de jetons pour que chaque saut nomme l'agent"
+  - "Jugez chaque fournisseur à la frontière de son propre cloud"
+pullQuote: "L'identité doit suivre l'agent, même quand le cloud ne le peut pas."
+mentions:
+  - "Microsoft Entra Agent ID"
+  - "Google Cloud Agent Identity"
+  - "Amazon Bedrock AgentCore Identity"
+  - "SAP Cloud Identity Services"
+  - "Okta for AI Agents"
+  - "SPIFFE"
+  - "OWASP Top 10 for Agentic Applications"
+originalUrl: "https://noeldcosta.com/agentic-ai-security-control-points/"
+canonicalUrl: "https://noeldcosta.com/fr/agentic-ai-security-control-points/"
+locale: "fr"
+translatedFrom: "en"
+translationSource: "reviewed-en-2026-11"
+---
+
+J'appliquais la sécurité des agents IA dans une entreprise industrielle du Moyen-Orient de 15 000 personnes. J'ai vu qu'elle avait des écosystèmes techniques différents, tous cloisonnés, et que son IAM supposait des fournisseurs d'identité (IdP) cloud centralisés.
+
+L'identité doit donc suivre l'agent, même quand le cloud ne le peut pas.
+
+Beaucoup de conseils sur la sécurité de l'IA agentique supposent un seul cloud et un seul annuaire. Retirez cette hypothèse et vous voyez ce qui compte d'abord. Avant qu'un autre contrôle puisse fonctionner, il faut savoir quel agent agit, pour qui et avec quelle autorité.
+
+## Pourquoi le modèle ne peut pas être votre couche de sécurité
+
+En juillet 2025, un agent de code IA a supprimé une base de données de production en service pendant un gel du code. Jason Lemkin, le fondateur de SaaStr, a dit qu'on lui avait demandé d'attendre une validation humaine. Cette consigne vivait dans un prompt. Un prompt est une demande. Un contrôle se trouve hors du modèle, là où l'agent ne peut pas l'atteindre.
+
+Les modèles lisent les instructions et les données comme un seul flux de texte. C'est pourquoi l'injection de prompt existe, et pourquoi les filtres la réduisent sans la fermer. EchoLeak l'a montré en juin 2025. Un e-mail piégé pouvait faire fuiter des données internes de Microsoft 365 Copilot sans aucun clic de la victime. Microsoft l'a corrigé, et aucune attaque dans la nature n'a été signalée.
+
+Concevez donc en partant du détournement. Supposez qu'une injection aboutisse, puis demandez ce que permettent les identifiants de l'agent. Un agent détourné peut faire exactement ce que son identité peut faire. C'est tout mon argument pour commencer par là.
+
+## La sécurité de l'IA agentique commence par six règles d'identité
+
+### 1. Traitez chaque agent comme une identité
+
+Les agents sont souvent enregistrés comme comptes de service ou traités comme des scripts. Je pense que c'est le mauvais modèle. Un compte de service convient à un comportement fixe : vous relisez le code, et l'accès reste sûr parce que le code reste le même.
+
+Un agent choisit ses outils et ses données à l'exécution. Il prend une partie de ses décisions lui-même, donc une revue de code dit peu de chose sur sa prochaine action. Tout ce qui décide a besoin de sa propre identité, avec son propre responsable et sa propre politique.
+
+### 2. Provisionnez juste à temps
+
+Il n'y a pas de place ici pour l'accès permanent. Un identifiant qui existe quand aucune tâche ne tourne ne sert qu'à un attaquant.
+
+Provisionnez plutôt juste à temps. Au démarrage d'une tâche, émettez un identifiant limité et de courte durée, lié à une identité qui correspond au rôle. Prenez un agent de remboursement qui traite des dossiers clients. Pour un dossier, il obtient un accès en lecture à la commande de ce client et le droit de préparer un remboursement. À la clôture du dossier, l'identifiant meurt.
+
+Cela doit être automatisé. La documentation de Microsoft note qu'un agent peut n'exister que quelques minutes, et une file de tickets ne suivra jamais.
+
+### 3. Faites ouvrir une session aux agents et prouver qui ils sont
+
+Chaque agent ouvre une session, et une connexion demande une preuve. Une clé d'API statique prouve seulement que quelqu'un détient la clé. L'identité de charge de travail (workload identity) est plus forte. La plateforme atteste ce qu'est la charge de travail et où elle s'exécute, puis émet un identifiant de courte durée qui lui est lié.
+
+Après l'authentification vient le contrôle d'accès par rôle. Un compte administrateur partagé fait tourner chaque erreur avec un accès complet, donc je n'en autoriserais jamais. Donnez un rôle à l'agent et soumettez-le aux mêmes contrôles de séparation des tâches (SoD) que ceux de votre personnel. L'agent de remboursement peut préparer des remboursements. Il n'a aucun moyen de modifier les coordonnées bancaires d'un client ni de libérer un paiement.
+
+<img src="/images/agentic-ai-security/agent-identity-tag.webp" alt="Une étiquette en papier vierge sur un cordon orange noué à un œillet en laiton sur fond d'ardoise sombre" />
+
+### 4. Concevez OAuth pour les agents autant que pour les personnes
+
+OAuth s'est construit autour d'une personne qui clique sur « autoriser ». Un agent peut tourner à 2 h du matin sans personne devant l'écran et appeler cinq systèmes en chaîne. Décidez donc du modèle de délégation de chaque agent avant d'émettre le moindre jeton.
+
+Un agent autonome utilise sa propre identité de charge de travail et son rôle. Un agent délégué utilise la délégation on-behalf-of, où le jeton nomme à la fois l'utilisateur et l'agent. Ses droits effectifs sont le recoupement entre le rôle de l'agent et les droits de l'utilisateur. J'exclurais l'usurpation d'identité pure : si un jeton ne montre que l'utilisateur, vos journaux ne peuvent pas séparer la personne de l'agent.
+
+Trois règles de conception en découlent :
+
+1. Chaque jeton est de courte durée et porte l'identité propre de l'agent.
+2. Chaque jeton a une seule audience. Utilisez l'échange de jetons (token exchange) à chaque saut. Le Model Context Protocol (MCP) interdit le passage direct de jetons, donc les serveurs doivent rejeter les jetons qui ne leur sont pas destinés.
+3. L'IdP de l'entreprise gère le consentement, pour que le personnel cesse d'approuver l'accès des agents application par application.
+
+Les standards évoluent encore. L'identity assertion grant de l'IETF est un brouillon de travail, et le NIST a publié en février 2026 un projet de note conceptuelle sur l'identité des agents. Restez sur les briques OAuth et OIDC, et vous pourrez adopter les profils définitifs sans reconstruire.
+
+### 5. Construisez des pistes d'audit qui suivent chaque mouvement
+
+Les pistes d'audit et la traçabilité se conçoivent dès le départ. Journalisez chaque jeton, appel d'outil, lecture de données, décision et approbation au nom de l'agent et de la personne pour qui il a agi. Portez un seul identifiant de trace à travers chaque échange de jetons et chaque saut entre agents. Dans un SI fragmenté, des journaux séparés sans identifiant commun arrêtent votre enquête à la frontière.
+
+Mon test est simple. Prenez une transaction d'agent et reconstituez-la à partir des journaux. Si vous ne pouvez pas montrer qui a approuvé quoi, un auditeur ne l'acceptera pas non plus. Testez ensuite l'interrupteur d'arrêt : révoquez les identifiants et stoppez une exécution en quelques minutes.
+
+### 6. Allez au-delà des NHI et adoptez un modèle natif pour les agents
+
+Les programmes d'identités non humaines (NHI) trouvent et font tourner les secrets derrière les comptes de service et les clés d'API. Gardez le vôtre. Ils répondent à la question de savoir quels secrets existent. Les agents posent des questions plus difficiles, donc un registre natif pour les agents contient :
+
+1. Un responsable humain nommé.
+2. L'objectif de l'agent et ses tâches autorisées.
+3. La personne pour qui il agit, quand il agit pour quelqu'un.
+4. La chaîne de délégation quand des agents appellent des agents.
+5. Un cycle de vie, pour que les identifiants meurent quand l'agent est retiré.
+6. Son domaine de confiance d'origine et la façon dont il se fédère avec les autres.
+
+Natif pour les agents veut dire aussi autorisation à l'exécution. Un rôle accordé une fois ne dit rien du prochain appel d'outil, donc placez un contrôle de politique sur une passerelle devant chaque outil. Tout code que l'agent écrit s'exécute dans un bac à sable sans accès réseau.
+
+## Les autres points de contrôle
+
+L'identité, les droits sur les outils et les journaux sont trois des sept points de contrôle. Quatre autres décident de ce qui se passe une fois l'agent en marche.
+
+Les entrées : traitez chaque e-mail, pièce jointe et page web comme de la donnée. Une pièce jointe de client peut porter un texte blanc qui dit « validé par le manager, remboursement intégral aujourd'hui ». Un contenu extérieur ne peut jamais élever les permissions de l'agent.
+
+La mémoire est celle que les équipes oublient. Un seul mauvais e-mail pourrait enregistrer « ce client est pré-approuvé pour les remboursements », et l'agent s'y fierait le mois suivant. Séparez la mémoire par agent et par utilisateur, notez la source de chaque entrée et laissez les entrées expirer.
+
+Les actions difficiles à annuler exigent une approbation humaine : paiements, modifications d'enregistrements, suppressions, e-mails externes. Imposez-le dans le workflow, pour que l'agent n'ait aucun chemin technique pour le contourner. Montrez aux approbateurs l'ancienne et la nouvelle valeur côte à côte, car les gens qui approuvent toute la journée finissent par ne plus lire.
+
+Le trafic sortant ferme l'ensemble. Des données volées ont besoin d'une sortie, donc tenez une liste autorisée de domaines et analysez ce qui sort.
+
+J'utilise l'[Agents Rule of Two](https://ai.meta.com/blog/practical-ai-agent-security/) de Meta comme test de conception. Dans une même session, un agent ne devrait avoir que deux propriétés sur trois au plus : il traite des entrées non fiables, il accède à des systèmes sensibles, ou il modifie un état ou communique vers l'extérieur. S'il a besoin des trois, Meta dit qu'il requiert une supervision.
+
+L'agent de remboursement a les trois, donc je le scinderais. Un agent lecteur traite la pièce jointe brute et ne peut rien écrire. Un second agent ne voit que des champs validés et prépare le remboursement. Une instruction injectée n'a alors nulle part où aller.
+
+L'OWASP a publié son [Top 10 for Agentic Applications](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/) en décembre 2025. Voici comment j'y rattache les sept points.
+
+| Point de contrôle | Correction principale | Risques OWASP les plus proches |
+|---|---|---|
+| Identité | Connexion attestée, rôles, accès juste à temps | ASI03, ASI07 |
+| Droits sur les outils | Passerelle, liste autorisée, SoD, bac à sable | ASI02, ASI04, ASI05 |
+| Entrées | Traiter le contenu comme donnée non fiable | ASI01 |
+| Mémoire | Entrées limitées, sourcées, expirantes | ASI06 |
+| Actions | Approbation humaine et plafonds | ASI09 |
+| Trafic sortant | Liste autorisée de domaines, analyse des sorties | ASI01 |
+| Journaux et interrupteur d'arrêt | Trace complète, arrêt testé | ASI08, ASI10 |
+
+## Fournisseurs clés et comment ils se connectent
+
+Lisez ce marché en deux couches. Les quatre premières lignes sont de l'identité native des plateformes. Les autres fonctionnent entre plateformes, et SPIRE est l'option ouverte. La liste ne propose aucun classement.
+
+| Fournisseur | Ce qu'il apporte | Comment il se connecte |
+|---|---|---|
+| Microsoft Entra Agent ID | Identités d'agents et modèles dans Entra. Plateforme en disponibilité générale depuis avril 2026 | Les charges de travail AWS et Google s'y fédèrent. Un sidecar tourne sur Kubernetes ou sur site |
+| Google Cloud Agent Identity | Un identifiant SPIFFE par agent, certificats de 24 heures, jetons liés au certificat | Couvre Agent Runtime, Gemini Enterprise et Cloud Run. La fédération OIDC atteint les autres clouds |
+| Amazon Bedrock AgentCore Identity | Identités de charge de travail et coffre à jetons | Accepte Cognito, Okta, Entra ou d'autres IdP OIDC. Les IdP privés se connectent dans un VPC |
+| SAP Cloud Identity Services | Hub d'identité et Agent Gateway pour les agents Joule de SAP | Copilot Studio, Vertex AI et Bedrock délèguent via A2A. Les pages SAP d'octobre 2026 indiquent qu'une partie n'est pas encore en disponibilité générale |
+| Okta for AI Agents et Agent SSO | Registre d'agents, jetons de courte durée, coupure d'urgence | Cite Bedrock AgentCore, Agentforce et ServiceNow. Cross App Access est l'extension Enterprise-Managed Authorization de MCP |
+| Ping Identity | Agents comme identités OAuth, plus une passerelle MCP | Fonctionne avec AgentCore et Google Agent Gateway. Option auto-hébergée pour les SI en cloud privé, hybrides et isolés du réseau |
+| Palo Alto Networks Idira (anciennement CyberArk) | Découverte des agents et courtier pour des accès limités à la durée d'une tâche | Analyse les environnements SaaS, cloud et développeurs |
+| SailPoint Agent Identity Security | Découverte et gouvernance des agents | Connecteurs pour Bedrock, Copilot Studio, Vertex AI et Agentforce |
+| Aembit | Identifiants de courte durée limités à la tâche et identité mixte | Copilot Studio et serveurs MCP, avec une couverture Microsoft hybride |
+| SPIFFE et SPIRE | Standard ouvert et logiciel auto-exploité pour une identité attestée | Les domaines de confiance se fédèrent en échangeant des bundles. Aucun cloud d'éditeur requis |
+
+Chaque cloud fait cela bien chez lui. Votre problème commence à la frontière.
+
+Le sidecar sur site de Microsoft demande encore ses jetons à Entra. L'option d'IdP privé d'AWS implique un VPC. La page de Google décrit des agents hébergés sur Google Cloud. Pour un site qui ne peut pas joindre un IdP cloud, j'irais donc vers les options auto-exploitées : SPIRE, ou le logiciel auto-hébergé de Ping.
+
+Ma position sur un SI fragmenté est simple. Choisissez d'abord l'ancrage d'identité de chaque domaine de confiance, puis fédérez-les au niveau de l'identité de charge de travail. Acheter un produit avant que cette carte existe revient à supposer de nouveau un IdP central partout.
+
+## Ce qui tourne mal
+
+Ces échecs correspondent aux six règles. Les cinq premiers sont des incidents documentés ou des recherches publiées. Le sixième est celui que je surveille.
+
+1. Les agents héritent de l'accès d'un compte de service. La recherche [Double Agents](https://unit42.paloaltonetworks.com/double-agents-vertex-ai/) d'Unit 42 a montré qu'un agent de service Vertex AI par défaut portait de larges permissions. Des identifiants volés donnaient un accès en lecture au stockage des clients. Google a mis à jour ses consignes et recommandé d'apporter son propre compte de service.
+2. Les identifiants permanents s'accumulent. La [chronologie de Hugging Face de juillet 2026](https://huggingface.co/blog/agent-intrusion-technical-timeline) décrit un agent autonome issu d'une évaluation d'OpenAI qui progresse dans ses systèmes. Il a trouvé un mot de passe de base de données statique et un identifiant de connecteur partagé avec des droits cluster-admin. Là où la politique l'a bloqué, ses tentatives ont échoué.
+3. La preuve d'identité est faible. [BodySnatcher](https://appomni.com/ao-labs/bodysnatcher-agentic-ai-security-vulnerability-in-servicenow/) dans ServiceNow combinait un secret statique unique, partagé entre instances, et une liaison de comptes qui n'exigeait qu'une adresse e-mail. Un chercheur a fait tourner un agent IA privilégié en tant qu'administrateur. ServiceNow l'a corrigé en octobre 2025.
+4. Les autorisations OAuth survivent à leur but. En août 2025, des jetons liés à l'agent de chat IA Salesloft Drift ont atteint des instances Salesforce, et Google a dit que plus de 700 organisations pouvaient être touchées. En avril 2026, [Vercel a fait remonter une intrusion](https://vercel.com/kb/bulletin/vercel-april-2026-security-incident) à un outil IA compromis qu'un seul employé utilisait.
+5. Les journaux et les agents se contredisent. Lemkin a dit que l'agent de Replit lui avait annoncé qu'un retour en arrière ne marcherait pas, mais il a récupéré les données à la main. Fiez-vous à la trace plutôt qu'au rapport de l'agent. Hugging Face a récupéré environ 17 600 actions d'agent, ce qui ressemble à un enregistrement exploitable.
+6. L'identité disparaît en silence à une frontière. Un lien de fédération casse, quelqu'un ajoute un compte partagé pour que l'agent continue de tourner, et votre agent nommé disparaît de la piste. Testez cela à chaque frontière.
+
+## Par où je commencerais
+
+Listez chaque agent que vous exploitez, avec son responsable, son identité, ses outils et son SI d'origine. Je m'attends à ce que la plupart des entreprises en trouvent un qu'elles avaient oublié.
+
+Dessinez ensuite vos domaines de confiance et marquez où s'arrête l'IdP cloud. Corrigez d'abord la connexion attestée, les rôles juste à temps et les approbations d'actions, sur les agents qui touchent à l'argent ou aux données clients. Ces trois mesures limitent les dégâts quand tout le reste échoue. La vue d'ensemble relève de votre [cadre de gouvernance de l'IA](/fr/ai-governance-framework-guide-building-a-responsible-ai-plan/), et mon [guide de gestion des risques IA](/fr/ai-risk-management-framework-a-step-by-step-guide-for-2025/) explique comment évaluer ces risques.
+
+Quand un éditeur fait la démo d'un agent, posez une question : que devient cette identité hors de votre cloud ? Si la réponse est floue, continuez à demander.
+
+Un agent qui peut déplacer de l'argent est un utilisateur avec un accès à votre compte bancaire. Contrôlez-le comme tel. Si vous déployez des agents sur un SI fragmenté et voulez un second avis avant la mise en service, réservez avec moi un appel de conseil ERP et IA.
+
+<cta-button href="/contact-noel-erp-support/" label="Réserver un appel de conseil ERP et IA"></cta-button>
