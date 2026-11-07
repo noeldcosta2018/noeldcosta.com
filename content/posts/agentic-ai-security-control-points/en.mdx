@@ -1,0 +1,177 @@
+---
+title: "Agentic AI security: identity has to follow the agent"
+slug: "agentic-ai-security-control-points"
+date: "2026-11-07"
+updated: "2026-11-07"
+hero: "/images/agentic-ai-security/hero.webp"
+heroAlt: "One orange cord running through separate concrete, slate, stone, steel and oak blocks"
+category: "agentic-ai"
+tags: ["enterprise-ai", "ai-governance", "risk-management"]
+author: "Noel D'Costa"
+metaTitle: "Agentic AI Security: Agent Identity & Controls"
+primaryKeyword: "agentic ai security"
+metaDescription: "Agentic AI security starts with identity. Six rules for agent identity, the other control points, key providers and what goes wrong in disjointed estates."
+excerpt: "IAM often assumes one central cloud identity provider. Enterprise IT can be disjointed. Here is how to make agent identity work across them, who sells it and where it fails."
+experienceSource: "Noel D'Costa's work applying security for AI agents at a Middle East manufacturing company with 15,000 people, where disjointed technical ecosystems met IAM that assumed centralised cloud identity providers. Client unnamed."
+lastReviewed: "2026-11-07"
+keyTakeaways:
+  - "Identity has to follow the agent, even when the cloud can't"
+  - "Agents make decisions, so give each one its own identity and owner"
+  - "Issue scoped, short-lived credentials per task and retire standing access"
+  - "Use on-behalf-of delegation and token exchange so every hop names the agent"
+  - "Judge every provider at the edge of its own cloud"
+pullQuote: "Identity has to follow the agent, even when the cloud can't."
+mentions:
+  - "Microsoft Entra Agent ID"
+  - "Google Cloud Agent Identity"
+  - "Amazon Bedrock AgentCore Identity"
+  - "SAP Cloud Identity Services"
+  - "Okta for AI Agents"
+  - "SPIFFE"
+  - "OWASP Top 10 for Agentic Applications"
+---
+
+I was applying security for AI agents at a Middle East manufacturing company with 15,000 people. I realised they had different technical ecosystems, all disjointed, and that their IAM assumed centralised cloud identity providers (IdPs).
+
+So identity has to follow the agent, even when the cloud can't.
+
+A lot of agentic AI security advice assumes one cloud and one directory. Take that assumption away and you see what matters first. Before any other control can work, you need to know which agent is acting, for whom and with what authority.
+
+## Why the model can't be your security layer
+
+In July 2025 an AI coding agent deleted a live production database during a code freeze. SaaStr founder Jason Lemkin said it had been told to wait for human approval. That instruction lived in a prompt. A prompt is a request. A control sits outside the model, where the agent cannot reach it.
+
+Models read instructions and data as one stream of text. That is why prompt injection exists, and why filters reduce it without closing it. EchoLeak showed this in June 2025. A crafted email could make Microsoft 365 Copilot leak internal data with no click from the victim. Microsoft fixed it, and no attacks in the wild were reported.
+
+So design for the hijack. Assume an injection lands, then ask what the agent's credentials allow. A hijacked agent can do exactly what its identity can do. That is my whole case for starting there.
+
+## Agentic AI security starts with six identity rules
+
+### 1. Treat every agent as an identity
+
+Agents are often registered as service accounts or treated like scripts. I think that is the wrong model. A service account suits fixed behaviour: you review the code, and the access stays safe because the code stays the same.
+
+An agent chooses its tools and data at runtime. It makes some of its own decisions, so a code review tells you little about its next action. Anything that decides needs its own identity, with its own owner and policy.
+
+### 2. Provision just in time
+
+Standing access has no place here. A credential that exists while no task runs serves only an attacker.
+
+Provision just in time instead. When a task starts, issue a scoped, short-lived credential tied to an identity that matches the role. Take a refund agent that handles customer cases. For one case it gets read access to that customer's order and the right to draft a refund. When the case closes, the credential dies.
+
+This has to be automated. Microsoft's documentation notes that an agent might exist for only minutes, and a ticket queue will never keep up.
+
+### 3. Make agents log in and prove who they are
+
+Every agent logs in, and a login needs proof. A static API key proves only that someone holds the key. Workload identity is stronger. The platform attests what the workload is and where it runs, then issues a short-lived credential bound to it.
+
+After authentication comes role-based access. A shared admin account means every mistake runs with full access, so I would never allow one. Give the agent a role and put it through the same segregation of duties (SoD) checks you run for staff. The refund agent can draft refunds. It has no route to change a customer's bank details or release a payment.
+
+<img src="/images/agentic-ai-security/agent-identity-tag.webp" alt="Blank paper tag on an orange cord tied to a brass eyelet in dark slate" />
+
+### 4. Design OAuth for agents as well as people
+
+OAuth grew up around a person clicking "allow". An agent may run at 2am with nobody at the screen and call five systems in a chain. So decide the delegation model for each agent before you issue a single token.
+
+An autonomous agent uses its own workload identity and role. A delegated agent uses on-behalf-of delegation, where the token names both the user and the agent. Its effective rights are the overlap of the agent's role and the user's rights. I would rule out plain impersonation: if a token shows only the user, your logs can't separate the person from the agent.
+
+Three design rules follow:
+
+1. Every token is short-lived and carries the agent's own identity.
+2. Every token has one audience. Use token exchange at each hop. The Model Context Protocol (MCP) forbids token passthrough, so servers must reject tokens not issued for them.
+3. The company's IdP manages consent, so staff stop approving agent access one app at a time.
+
+Standards are still moving. The IETF's identity assertion grant is a working draft, and NIST published a draft concept paper on agent identity in February 2026. Stay on OAuth and OIDC building blocks, and you can adopt the final profiles without a rebuild.
+
+### 5. Build audit trails that track every move
+
+Audit trails and traceability need designing in from the start. Log every token, tool call, data read, decision and approval against the agent and the person it acted for. Carry one trace ID through every token exchange and agent hop. In a disjointed estate, separate logs with no shared ID mean your investigation stops at the border.
+
+My test is simple. Pick one agent transaction and rebuild it from the logs. If you can't show who approved what, an auditor won't accept it either. Then test the off switch: revoke the credentials and stop a run within minutes.
+
+### 6. Go beyond NHIs and adopt an agent-native model
+
+Non-human identity (NHI) programmes find and rotate the secrets behind service accounts and API keys. Keep yours. They answer which secrets exist. Agents raise harder questions, so an agent-native record holds:
+
+1. A named human owner.
+2. The agent's purpose and allowed tasks.
+3. The person it is acting for, when it acts for someone.
+4. The delegation chain when agents call agents.
+5. A lifecycle, so credentials die when the agent retires.
+6. Its home trust domain and how it federates into the others.
+
+Agent-native also means runtime authorization. A role granted once says nothing about the next tool call, so put a policy check at a gateway in front of every tool. Any code the agent writes runs in a sandbox with no network access.
+
+## The other control points
+
+Identity, tool permissions and logs are three of seven control points. Four more decide what happens once the agent is running.
+
+Inputs: treat every email, attachment and web page as data. A customer attachment can carry white text saying "manager approved, refund in full today". Outside content can never raise the agent's permissions.
+
+Memory is the one teams forget. One bad email could store "this customer is pre-approved for refunds", and the agent would trust it next month. Separate memory by agent and user, record the source of each entry and let entries expire.
+
+Actions that are hard to undo need human approval: payments, record changes, deletions, external emails. Enforce that in the workflow, so the agent has no technical path around it. Show approvers the old and new values side by side, because people who approve all day stop reading.
+
+Outbound traffic closes the set. Stolen data needs a way out, so keep an allow list of domains and scan what leaves.
+
+I use Meta's [Agents Rule of Two](https://ai.meta.com/blog/practical-ai-agent-security/) as a design test. In one session, an agent should have at most two of three properties: it processes untrustworthy inputs, it reaches sensitive systems, or it changes state or communicates externally. If it needs all three, Meta says it requires supervision.
+
+The refund agent has all three, so I would split it. A reader agent handles the raw attachment and can write nothing. A second agent sees only validated fields and drafts the refund. An injected instruction then has nowhere to go.
+
+OWASP published its [Top 10 for Agentic Applications](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/) in December 2025. This is how I map the seven points to it.
+
+| Control point | Main fix | Closest OWASP risks |
+|---|---|---|
+| Identity | Attested login, roles, just-in-time access | ASI03, ASI07 |
+| Tool permissions | Gateway, allow list, SoD, sandbox | ASI02, ASI04, ASI05 |
+| Inputs | Treat content as untrusted data | ASI01 |
+| Memory | Scoped, sourced, expiring entries | ASI06 |
+| Actions | Human approval and limits | ASI09 |
+| Outbound traffic | Domain allow list, output scanning | ASI01 |
+| Logs and off switch | Full trace, tested shutdown | ASI08, ASI10 |
+
+## Key providers and how they connect
+
+Read this market in two layers. The first four rows are platform-native identity. The rest work across platforms, and SPIRE is the open option. The list carries no ranking.
+
+| Provider | What it gives you | How it connects |
+|---|---|---|
+| Microsoft Entra Agent ID | Agent identities and blueprints in Entra. Platform generally available since April 2026 | AWS and Google workloads federate in. A sidecar runs on Kubernetes or on-premises |
+| Google Cloud Agent Identity | A SPIFFE ID per agent, 24-hour certificates, tokens bound to the certificate | Covers Agent Runtime, Gemini Enterprise and Cloud Run. OIDC federation reaches other clouds |
+| Amazon Bedrock AgentCore Identity | Workload identities and a token vault | Accepts Cognito, Okta, Entra or other OIDC IdPs. Private IdPs connect inside a VPC |
+| SAP Cloud Identity Services | Identity hub and Agent Gateway for SAP's Joule agents | Copilot Studio, Vertex AI and Bedrock delegate over A2A. SAP's October 2026 pages say parts of this are not yet generally available |
+| Okta for AI Agents and Agent SSO | Agent registry, short-lived tokens, kill switch | Names Bedrock AgentCore, Agentforce and ServiceNow. Cross App Access is MCP's Enterprise-Managed Authorization extension |
+| Ping Identity | Agents as OAuth identities, plus an MCP gateway | Works with AgentCore and Google Agent Gateway. Self-managed option for private-cloud, hybrid and air-gapped estates |
+| Palo Alto Networks Idira (formerly CyberArk) | Agent discovery and a broker for task-long access | Scans SaaS, cloud and developer environments |
+| SailPoint Agent Identity Security | Discovery and governance of agents | Connectors for Bedrock, Copilot Studio, Vertex AI and Agentforce |
+| Aembit | Short-lived, task-scoped credentials and blended identity | Copilot Studio and MCP servers, with hybrid Microsoft coverage |
+| SPIFFE and SPIRE | Open standard and self-run software for attested identity | Trust domains federate by exchanging bundles. No vendor cloud needed |
+
+Each cloud does this well at home. Your problem starts at the border.
+
+Microsoft's on-premises sidecar still requests its tokens from Entra. AWS's private IdP option means a VPC. Google's page describes agents hosted on Google Cloud. So for a site that can't reach a cloud IdP, I would go to the self-run options: SPIRE, or Ping's self-managed software.
+
+My position on a disjointed estate is simple. Choose the identity anchor for each trust domain first, then federate them at the workload identity level. Buying a product before that map exists just assumes a central IdP all over again.
+
+## What goes wrong
+
+These failures map to the six rules. The first five are documented incidents or published research. The sixth is the one I watch for.
+
+1. Agents inherit a service account's access. Unit 42's [Double Agents research](https://unit42.paloaltonetworks.com/double-agents-vertex-ai/) showed a default Vertex AI service agent carrying broad permissions. Stolen credentials gave read access to customer storage. Google updated its guidance and recommended bringing your own service account.
+2. Standing credentials pile up. [Hugging Face's July 2026 timeline](https://huggingface.co/blog/agent-intrusion-technical-timeline) describes an autonomous agent from an OpenAI evaluation moving through its systems. It found a static database password and a shared connector credential with cluster-admin rights. Where policy did block it, the attempts failed.
+3. Proof of identity is weak. [BodySnatcher](https://appomni.com/ao-labs/bodysnatcher-agentic-ai-security-vulnerability-in-servicenow/) in ServiceNow combined one static secret, shared across instances, with account linking that needed only an email address. A researcher ran a privileged AI agent as an administrator. ServiceNow fixed it in October 2025.
+4. OAuth grants outlive their purpose. In August 2025, tokens tied to the Salesloft Drift AI chat agent reached Salesforce instances, and Google said more than 700 organisations may have been affected. In April 2026, [Vercel traced a breach](https://vercel.com/kb/bulletin/vercel-april-2026-security-incident) to a compromised AI tool that one employee used.
+5. Logs and agents disagree. Lemkin said the Replit agent told him a rollback wouldn't work, yet he recovered the data manually. Trust the trace over the agent's own report. Hugging Face recovered about 17,600 agent actions, which is what a usable record looks like.
+6. Identity silently drops at a boundary. A federation link breaks, someone adds a shared account to keep the agent running, and your named agent disappears from the trail. Test this at every border.
+
+## Where I would start
+
+List every agent you run, with its owner, identity, tools and home estate. I would expect most companies to find one they forgot.
+
+Then draw your trust domains and mark where the cloud IdP stops. Fix attested login, just-in-time roles and action approvals first, on the agents that touch money or customer data. Those three limit the damage when everything else fails. The wider picture belongs in your [AI governance framework](/ai-governance-framework-guide-building-a-responsible-ai-plan/), and my [AI risk management guide](/ai-risk-management-framework-a-step-by-step-guide-for-2025/) covers how to score these risks.
+
+When a vendor demos an agent, ask one question: what happens to this identity outside your cloud? If the answer is vague, keep asking.
+
+An agent that can move money is a user with a route to your bank account. Control it like one. If you're putting agents across a disjointed estate and want a second opinion before go-live, book an ERP and AI advisory call with me.
+
+<cta-button href="/contact-noel-erp-support/" label="Book an ERP and AI advisory call"></cta-button>
