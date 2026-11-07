@@ -28,10 +28,12 @@ const BOOKS: Record<string, { title: string; type: "free" | "paid" }> = {
   "sap-careers": { title: "5 SAP Careers Worth $200K+ in the AI Era", type: "free" },
   "autonomous-agents": { title: "Autonomous Agents in the SAP Enterprise", type: "free" },
   "agent-manager": { title: "From SAP Project Manager to Agent Manager", type: "free" },
+  "erp-skill": { title: "The $200,000 ERP Skill", type: "free" },
   playbook: { title: "The SAP Consultant's Playbook for the AI Era", type: "paid" },
 };
 
-// The words shown in the SAPopedia form at each step (ai.sapopedia.com, October 2026).
+// The words shown in the SAPopedia form at each step (ai.sapopedia.com, November 2026).
+// Free books now ask the reader to subscribe on YouTube (step 1) before this form (step 2).
 const SHOWN = {
   free: "SAPopedia: The book downloads as soon as you submit. I'll only email again when the next book ships.",
   paid: "SAPopedia: Name and email, then we send you to Stripe. Same email I'll use to notify you when the next book ships.",
