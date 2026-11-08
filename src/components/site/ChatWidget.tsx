@@ -44,39 +44,9 @@ export default function ChatWidget({ copy, locale = "en" }: { copy: ChatCopy; lo
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const launcherRef = useRef<HTMLButtonElement>(null);
-  const [hint, setHint] = useState(false);
-
-  // Show the prompt bubble once per visit, on the first page that is not the
-  // contact page (the booking form is already the main action there).
-  // Hallmark audit, 7 Nov 2026: it used to appear on every page view.
-  useEffect(() => {
-    if (window.location.pathname.includes("contact-noel-erp-support")) return;
-    let seen = false;
-    try {
-      seen = sessionStorage.getItem("nd-chat-hint") === "off";
-    } catch {
-      /* storage unavailable: show the hint */
-    }
-    if (seen) return;
-    const t = window.setTimeout(() => {
-      setHint(true);
-      try {
-        sessionStorage.setItem("nd-chat-hint", "off");
-      } catch {
-        /* storage unavailable */
-      }
-    }, 2500);
-    return () => window.clearTimeout(t);
-  }, []);
-
-  function dismissHint() {
-    setHint(false);
-    try {
-      sessionStorage.setItem("nd-chat-hint", "off");
-    } catch {
-      /* storage unavailable: hidden for this page only */
-    }
-  }
+  // No pop-up prompt beside the launcher (Hallmark audit, 8 Nov 2026): an
+  // unasked "Need help? Just ask." bubble is a chat-widget template tell.
+  // The launcher alone stays; copy.hint and copy.dismiss remain in chat-copy.ts.
 
   useEffect(() => {
     const list = listRef.current;
@@ -301,23 +271,6 @@ export default function ChatWidget({ copy, locale = "en" }: { copy: ChatCopy; lo
       )}
 
       <div className="nd-chat-dock">
-        {/* A one-line prompt beside the launcher, until the visitor opens the
-            chat or dismisses it (remembered for the visit). */}
-        {hint && !open && (
-          <div className="nd-chat-hint">
-            <button type="button" className="text" onClick={() => {
-                setOpen(true);
-                dismissHint();
-              }}>
-              {copy.hint}
-            </button>
-            <button type="button" className="x" aria-label={copy.dismiss} onClick={dismissHint}>
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
-                <path d="M6 6l12 12M18 6L6 18" />
-              </svg>
-            </button>
-          </div>
-        )}
         <button
           ref={launcherRef}
           type="button"
@@ -327,7 +280,6 @@ export default function ChatWidget({ copy, locale = "en" }: { copy: ChatCopy; lo
           title={copy.launcher}
           onClick={() => {
             setOpen((o) => !o);
-            if (hint) dismissHint();
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
