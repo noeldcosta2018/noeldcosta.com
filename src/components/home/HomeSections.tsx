@@ -1,5 +1,4 @@
 import Link from "next/link";
-import LoopVideo from "@/components/site/LoopVideo";
 import SignupForm from "@/components/site/SignupForm";
 import { signupCopy } from "@/components/site/signup-copy";
 import { translator } from "@/i18n";
@@ -671,7 +670,6 @@ export function CloseBand({
   const { tr, href } = tools(locale);
   return (
     <section className="nd-section nd-close" aria-labelledby="cta-title">
-      <LoopVideo className="band-video" src="/media/video/close-loop.mp4" poster="/media/video/close-loop-poster.jpg" />
       <div className="band-scrim" aria-hidden="true" />
       <div className="nd-container nd-cta-row">
         <div>

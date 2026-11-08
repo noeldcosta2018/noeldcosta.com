@@ -83,7 +83,9 @@ function englishPath(page: PageRecord): string {
   return path.replace(/^\/(ar|de|es|fr|hi|it|ja|ko|nl|pt|ru|tr|zh-CN|zh-TW|el|hr)\//, "/");
 }
 
-/** Banner media by section: B-roll for expertise, the approved portraits for about and contact. */
+/** Banner media by section: the approved portraits for about and contact. No
+ *  B-roll since 8 Nov 2026: the loops were a darkened skyline, a generated
+ *  crowd of office workers and a generated boardroom (Hallmark audit). */
 function bannerMedia(section: SectionEntry | undefined, slug: string) {
   // Landing page for business leaders: leads with the homepage photograph.
   if (slug === "supporting-your-business") {
@@ -91,18 +93,11 @@ function bannerMedia(section: SectionEntry | undefined, slug: string) {
   }
   if (/^contact[-_]/.test(slug)) {
     return {
-      video: { src: "/media/video/close-loop.mp4", poster: "/media/video/close-loop-poster.jpg" },
       portrait: { src: "/media/noel-academy.webp", width: 1122, height: 1402 },
     };
   }
   if (section?.section === "About" && (section.group === "My story" || section.group === "About")) {
     return { portrait: { src: "/media/noel-hero.webp", width: 1122, height: 1402 } };
-  }
-  if (section?.section === "Expertise") {
-    return { video: { src: "/media/video/hero-loop.mp4", poster: "/media/video/hero-loop-poster.jpg" } };
-  }
-  if (section?.section === "AI Academy") {
-    return { video: { src: "/media/video/academy-loop.mp4", poster: "/media/video/academy-loop-poster.jpg" } };
   }
   return {};
 }

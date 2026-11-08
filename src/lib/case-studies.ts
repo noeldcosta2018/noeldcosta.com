@@ -101,8 +101,8 @@ export const CASE_STUDIES: CaseStudy[] = [
     duration: "18 months",
     role: "Migration advisor",
     cover: {
-      src: "/images/wp/2025/09/6.webp",
-      alt: "SAP migration team reviewing S/4HANA cutover plan on whiteboard with ECC system architecture diagrams in background",
+      src: "/images/case-studies/sap-ecc-to-s4hana-migration-case-study.webp",
+      alt: "A neat coil of orange cord on a concrete slab beside a pile of cut grey cable offcuts",
     },
     headline: {
       primary: "Decade of custom ECC.",
@@ -126,8 +126,8 @@ export const CASE_STUDIES: CaseStudy[] = [
     duration: "10 months",
     role: "Finance transformation lead",
     cover: {
-      src: "/images/wp/2025/08/2.webp",
-      alt: "Finance process modernization: CFO reviewing consolidated group financials on dashboard after SAP implementation",
+      src: "/images/case-studies/case-study-finance-process-modernization.webp",
+      alt: "Five wooden blocks in a row, the last one orange, beside a stack of bound ledgers",
     },
     headline: {
       primary: "15 days to close.",
@@ -151,8 +151,8 @@ export const CASE_STUDIES: CaseStudy[] = [
     duration: "14 months",
     role: "CX programme lead",
     cover: {
-      src: "/images/wp/2025/08/Untitled-design-4.webp",
-      alt: "Citizen engagement with SAP CX: government case worker reviewing unified citizen profile on Service Cloud dashboard",
+      src: "/images/case-studies/citizen-engagement-with-sap-cx-public-sector.webp",
+      alt: "A rubber stamp with an orange handle on a stack of blank forms",
     },
     headline: {
       primary: "Six weeks for a permit.",
@@ -176,8 +176,8 @@ export const CASE_STUDIES: CaseStudy[] = [
     duration: "3 weeks",
     role: "Independent SOW reviewer",
     cover: {
-      src: "/images/wp/2025/08/3-3.webp",
-      alt: "ERP implementation contract negotiation. CFO reviewing statement of work with advisor before signing",
+      src: "/images/case-studies/erp-implementation-contract-negotiation-cost-review-cfo.webp",
+      alt: "A thick bound document with a block of pages set aside under an orange clip",
     },
     headline: {
       primary: "120-page SOW.",
@@ -201,8 +201,8 @@ export const CASE_STUDIES: CaseStudy[] = [
     duration: "6 months",
     role: "Recovery lead",
     cover: {
-      src: "/images/wp/2025/04/1-2.webp",
-      alt: "ERP recovery case study. FMCG finance team reviewing unified SAP Analytics Cloud dashboard combining Oracle and SAP data",
+      src: "/images/case-studies/erp-recovery-fmcg-sap-analytics-cloud.webp",
+      alt: "Two grey concrete blocks tied to one white block with orange cords",
     },
     headline: {
       primary: "Two ERPs, two answers.",
@@ -226,8 +226,8 @@ export const CASE_STUDIES: CaseStudy[] = [
     duration: "12 weeks",
     role: "Selection advisor",
     cover: {
-      src: "/images/wp/2025/03/6-2.webp",
-      alt: "ERP system selection case study: manufacturing leadership team reviewing vendor scorecard and TCO model",
+      src: "/images/case-studies/erp-system-selection-case-study-manufacturing.webp",
+      alt: "Three model blocks, two pushed aside and one with an orange band in front",
     },
     headline: {
       primary: "$1.2M nearly spent.",
@@ -251,8 +251,8 @@ export const CASE_STUDIES: CaseStudy[] = [
     duration: "6 months",
     role: "Digital Transformation Director",
     cover: {
-      src: "/images/wp/2025/03/Your-paragraph-text-3.webp",
-      alt: "Defence manufacturer sales team reviewing a unified customer information dashboard across CRM, CPQ, and SAP SD",
+      src: "/images/case-studies/my-journey-with-customer-information-solutions-defense.webp",
+      alt: "Three steel index-card trays and one blank card with an orange tab",
     },
     headline: {
       primary: "Three systems.",
@@ -276,8 +276,8 @@ export const CASE_STUDIES: CaseStudy[] = [
     duration: "16 months",
     role: "Programme advisor",
     cover: {
-      src: "/images/wp/2025/04/3-1.webp",
-      alt: "UAE government ministry procurement team reviewing SAP Ariba tender evaluation dashboard and supplier onboarding progress",
+      src: "/images/case-studies/sap-ariba-implementation-uae-public-sector.webp",
+      alt: "A stack of envelopes tied with orange string beside a grey archive box",
     },
     headline: {
       primary: "Paper tenders.",

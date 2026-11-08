@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   INDUSTRY_LABEL,
@@ -8,7 +9,8 @@ import {
 /**
  * Featured case study on the portfolio page: a wide nd-card with the
  * headline and outcome on one side and the signed-off figures on the other.
- * No cover image (Hallmark audit, 7 Nov 2026: the covers were generated stock). The page H1 lives in the banner above, so the headline is an H2.
+ * The cover is the still-life art from 8 Nov 2026 (the old covers were
+ * generated stock with invented charts). The page H1 lives in the banner above, so the headline is an H2.
  * Server component; values render as written so the first HTML carries them.
  */
 
@@ -42,6 +44,10 @@ export default function CaseStudyHero({ c, stats }: Props) {
             </Link>
           </div>
         </div>
+        <div className="aside">
+          <figure className="cover">
+            <Image src={c.cover.src} alt={c.cover.alt} fill priority quality={75} sizes="(min-width: 1024px) 420px, 100vw" />
+          </figure>
         <dl className={stats.length > 1 ? "nda-facts" : "nda-facts one"}>
           {stats.map((s) => (
             <div key={s.label}>
@@ -50,6 +56,7 @@ export default function CaseStudyHero({ c, stats }: Props) {
             </div>
           ))}
         </dl>
+        </div>
       </div>
     </article>
   );

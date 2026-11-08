@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Footer from "@/components/Footer";
-import LoopVideo from "@/components/site/LoopVideo";
 import SignupForm from "@/components/site/SignupForm";
 import AcademyChrome from "@/components/academy/AcademyChrome";
 import AcademyImage, { ACADEMY_MEDIA, academyImageExists } from "@/components/academy/AcademyImage";
@@ -282,7 +281,9 @@ export default function AiAcademyPage() {
                   height={1402}
                   fetchPriority="high"
                 />
-                <LoopVideo className="ar-hero-video" src="/media/video/academy-loop.mp4" poster="/media/noel-academy.webp" />
+                {/* The boardroom loop (academy-loop.mp4) was removed on 8 Nov 2026: it is
+                    generated footage with generated people, and a person appears
+                    from nowhere mid-loop. Real photo only (CLAUDE.md). */}
               </div>
             </div>
           </div>

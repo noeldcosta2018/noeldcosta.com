@@ -217,7 +217,6 @@ export default function ToolShell({
           title={title ? tr(title) : name}
           highlight={title && highlight ? tr(highlight) : undefined}
           lede={tr(description)}
-          video={{ src: "/media/video/hero-loop.mp4", poster: "/media/video/hero-loop-poster.jpg" }}
         >
           <div className="nda-banner-actions nda-noprint">
             <a className="nd-btn nd-btn-primary magnetic" href="#tool">

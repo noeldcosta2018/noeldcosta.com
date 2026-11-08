@@ -93,7 +93,6 @@ export default function CaseStudyPortfolioPage() {
               <span className="nd-mark">the numbers are the ones that were signed off.</span>
             </>
           }
-          video={{ src: "/media/video/hero-loop.mp4", poster: "/media/video/hero-loop-poster.jpg" }}
         >
           <div className="nda-banner-meta">
             <span className="nd-pill">{CASE_STUDIES.length} case studies</span>

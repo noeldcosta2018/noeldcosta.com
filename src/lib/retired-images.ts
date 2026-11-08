@@ -2,18 +2,16 @@
  * Hero images that are no longer shown on the page (Hallmark audit, 7 Nov 2026).
  *
  * Each one is a generated stock picture whose main subject is a screen,
- * tablet or print-out showing invented charts or dashboards. AGENTS.md rejects
- * fake dashboards, and a made-up chart next to an article about real numbers
- * undercuts it. The files and the `hero` frontmatter stay as they are, so
+ * tablet or print-out showing invented charts or dashboards (AGENTS.md rejects
+ * fake dashboards), or a generated person, including generated scenes of Noel
+ * (CLAUDE.md: real photos of Noel only, no generated people). The files and the `hero` frontmatter stay as they are, so
  * Open Graph images, structured data and the image sitemap do not change;
  * only the on-page hero and the archive thumbnails fall back to the image-free
- * layout. Remove a path from this list when its post gets a replacement image.
+ * layout. Remove a path from this list when its post gets a replacement image
+ * (the four AI roadmap heroes were replaced on 8 Nov 2026, see
+ * docs/claude/assets/hallmark-replacement-briefs.md).
  */
 export const RETIRED_HEROES: ReadonlySet<string> = new Set([
-  "/images/ai-roadmap/ai-roadmap-banking.webp",
-  "/images/ai-roadmap/ai-roadmap-financial-services.webp",
-  "/images/ai-roadmap/ai-roadmap-manufacturing.webp",
-  "/images/ai-roadmap/ai-roadmap-retail.webp",
   "/images/data-ai/databricks-genie-agent-bricks.webp",
   "/images/data-ai/databricks-pricing-explained.webp",
   "/images/data-ai/erp-data-into-snowflake.webp",
@@ -71,6 +69,37 @@ export const RETIRED_HEROES: ReadonlySet<string> = new Set([
   "/images/testing/sap-regression-testing.webp",
   "/images/testing/sap-test-automation-guide.webp",
   "/images/testing/sap-test-data-management.webp",
+  // Generated people (8 Nov 2026): CLAUDE.md allows real photos of Noel only
+  // and no generated or stock people. Includes generated scenes of Noel and
+  // one hero whose subject is kiosk screens.
+  "/images/data-ai/databricks-vs-microsoft-fabric.webp",
+  "/images/data-ai/snowflake-vs-databricks.webp",
+  "/images/heroes/2025-the-year-sap-generative-ai-redefines-middle-east-careers.webp",
+  "/images/heroes/adopt-my-requirements-gathering-template-7-hacks-to-follow.webp",
+  "/images/heroes/best-erp-for-manufacturing.webp",
+  "/images/heroes/best-erp-software-small-business-a-real-world-guide-for-2025.webp",
+  "/images/heroes/citizen-engagement-with-sap-cx-public-sector.webp",
+  "/images/heroes/erp-implementation-kpis-metrics.webp",
+  "/images/heroes/erp-modernization-sap-servicenow.webp",
+  "/images/heroes/how-to-create-an-sap-implementation-project-charter.webp",
+  "/images/heroes/mastering-sap-implementation-a-step-by-step-guide-for-2025.webp",
+  "/images/heroes/oracle-erp-vs-sap.webp",
+  "/images/heroes/project-planning-and-control-get-sap-projects-back-on-track.webp",
+  "/images/heroes/resource-allocation-planning-for-sap-projects.webp",
+  "/images/heroes/sap-ariba-your-2025-guide-to-sourcing-supplier-management.webp",
+  "/images/heroes/sap-conversational-ai-and-successfactors-for-hr-in-2025.webp",
+  "/images/heroes/sap-implementation-public-sector-compliance.webp",
+  "/images/heroes/sap-license-negotiation-10-key-points-to-consider-in-2024.webp",
+  "/images/heroes/sap-training-strategies-for-employees-to-drive-adoption.webp",
+  "/images/heroes/sap-vs-oracle-which-erp-is-better-for-your-business.webp",
+  "/images/manufacturing/erp-for-defence-manufacturing.webp",
+  "/images/migration/choose-s4hana-migration-partner.webp",
+  "/images/migration/s4hana-migration-cost.webp",
+  "/images/migration/sap-programme-recovery.webp",
+  "/images/partners/how-to-choose-sap-implementation-partner.webp",
+  "/images/partners/sap-partner-vs-independent-consultant.webp",
+  "/images/testing/sap-testing-explained.webp",
+  "/images/testing/sap-user-acceptance-testing.webp",
 ]);
 
 /** True when a hero path should not be displayed (it is still used for metadata). */

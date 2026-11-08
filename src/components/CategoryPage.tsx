@@ -279,7 +279,6 @@ export default function CategoryPage({ category, locale = "en" }: { category: st
           highlight={tagline}
           long={label.length + tagline.length > 40}
           lede={tr(meta.description)}
-          video={{ src: "/media/video/hero-loop.mp4", poster: "/media/video/hero-loop-poster.jpg" }}
         >
           <div className="nda-banner-meta">
             <Link className="nd-chip" href={`${href(ARTICLES_INDEX)}${area.anchor}`} style={{ textDecoration: "none" }}>
