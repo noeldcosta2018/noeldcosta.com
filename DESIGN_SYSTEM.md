@@ -1,5 +1,81 @@
 # Design System
 
+## Read this first: what actually ships (updated 8 November 2026)
+
+The live site no longer uses the Command Center tokens described further
+down. The revamp (see `CLAUDE.md`, "Current direction") replaced them with
+the `nd-` system. Until this file is rewritten in full, the section below is
+the source of truth and the Command Center section is history.
+
+### Source files
+
+- `src/app/nd-theme.css`: tokens (`:root`), dark default, light and hybrid
+  themes, every shared `nd-` component.
+- `src/app/nd-articles.css`, `nd-archives.css`, `nd-pages.css`: articles,
+  archives and case studies, contact, chat, recommendations.
+- `src/app/nd-academy.css`: the AI Academy sub-palette (see below).
+- `src/app/nd-doodles.css` and `src/components/doodles/Doodle.tsx`: the
+  hand-drawn marks.
+- `src/components/site/fonts.ts`: fonts.
+
+### Visual reference
+
+The layout, type and motion patterns follow the MDLBeast source approved in
+`CLAUDE.md` (6 October 2026). Reuse patterns only; never its copy, data,
+client names, logos or media.
+
+### Colour
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `--bg`, `--bg2` | `#06090e`, `#0a0e15` | Page and hero field (dark default) |
+| `--panel`, `--panel2` | `#0e131c`, `#121a26` | Cards and panels |
+| `--ink`, `--ink-soft` | `#eef2f7`, `#c4ccd6` | Headings, body |
+| `--mut`, `--mut2` | `#a8b3c5`, `#8e9aae` | Meta, labels |
+| `--accent` | `#ff7a2f` (dark), `#c2410c` (light) | Primary action, the one highlight per statement |
+| `--area-apps`, `--area-data`, `--area-ai` | `#2476d7`, `#0f828d`, `#be5926` | Only where colour carries meaning |
+
+`--accent2` (`#5b8def`) and `--bg-glow` remain in the token block but should
+not be used for decoration.
+
+### Type
+
+- Display: Archivo at 125% width (`.nd-display`), uppercase, for H1 and
+  section heads. Stand-in for GT Standard Extended.
+- Body: Outfit. Description text and the menus: Instrument Sans.
+- Hand notes: Caveat (`.nd-hand`, `HandNote`).
+- Figures and code: JetBrains Mono.
+- Arabic: Noto Kufi Arabic (display) and IBM Plex Sans Arabic (text).
+
+### Decoration rules (Hallmark audit, 7 November 2026)
+
+These came out of `docs/codex/reviews/hallmark-ai-slop-audit-2026-11-07.md`
+in the workspace root.
+
+1. Accent highlight (`.nd-hl`) only on the hero H1, page banners and the
+   closing band. Section heads (`.nd-h2`) are one colour.
+2. At most two hand-drawn notes per page, and only where Noel points at
+   something a reader could miss. No arrows around buttons. Ticks and
+   crosses in lists are icons, not notes, and are fine.
+3. Hero and banner fields are flat. No looping video under a scrim, no grid
+   wash, no cursor spotlight, no cursor-lit borders, no magnetic buttons.
+4. Figures render as written. No count-up.
+5. No generated pictures of screens, dashboards or charts. Retired article
+   heroes are listed in `src/lib/retired-images.ts`; case studies are
+   typographic.
+6. No drawn window chrome (traffic lights, URL bars) around screenshots.
+7. One product card and one booking card per article.
+
+### AI Academy sub-palette
+
+`/ai-academy/` uses a cream paper (`--ar-paper`), a yellow marker
+(`--ar-marker`) and offset card shadows that appear nowhere else. This is a
+deliberate sub-brand for the programme page. Keep it on that page only.
+
+---
+
+## History: Command Center design system (no longer shipped)
+
 Single source of truth for visual tokens.
 
 This site inherits the **Command Center design system** — the token

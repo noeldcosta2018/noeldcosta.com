@@ -126,7 +126,7 @@ export default function ContactBlock() {
           {...(item.external
             ? { target: "_blank", rel: "noopener noreferrer" }
             : {})}
-          className="nd-card nd-glow nd-contact-item"
+          className="nd-contact-item"
         >
           <span className="ico" aria-hidden="true">
             <Icon name={item.icon} />

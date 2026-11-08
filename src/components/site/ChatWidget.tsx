@@ -46,16 +46,26 @@ export default function ChatWidget({ copy, locale = "en" }: { copy: ChatCopy; lo
   const launcherRef = useRef<HTMLButtonElement>(null);
   const [hint, setHint] = useState(false);
 
-  // Show the prompt bubble a moment after load, unless dismissed earlier in this visit.
+  // Show the prompt bubble once per visit, on the first page that is not the
+  // contact page (the booking form is already the main action there).
+  // Hallmark audit, 7 Nov 2026: it used to appear on every page view.
   useEffect(() => {
-    let dismissed = false;
+    if (window.location.pathname.includes("contact-noel-erp-support")) return;
+    let seen = false;
     try {
-      dismissed = sessionStorage.getItem("nd-chat-hint") === "off";
+      seen = sessionStorage.getItem("nd-chat-hint") === "off";
     } catch {
       /* storage unavailable: show the hint */
     }
-    if (dismissed) return;
-    const t = window.setTimeout(() => setHint(true), 2500);
+    if (seen) return;
+    const t = window.setTimeout(() => {
+      setHint(true);
+      try {
+        sessionStorage.setItem("nd-chat-hint", "off");
+      } catch {
+        /* storage unavailable */
+      }
+    }, 2500);
     return () => window.clearTimeout(t);
   }, []);
 

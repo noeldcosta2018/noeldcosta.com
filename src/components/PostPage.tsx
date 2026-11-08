@@ -39,6 +39,7 @@ import { cleanWordPressArtifacts } from "@/lib/wp-cleanup";
 import { localizeHref, repairLinks } from "@/lib/link-repair";
 import { normalizeHeadingLevels } from "@/lib/md-repair";
 import { imageAvailable } from "@/components/article/image-available";
+import { isRetiredHero } from "@/lib/retired-images";
 import {
   getArticleCategoryLabel,
   getArticleMessages,
@@ -238,7 +239,7 @@ export default function PostPage({
   });
 
   const deck = fm.deck || fm.excerpt;
-  const hero = imageAvailable(fm.hero) ? fm.hero : undefined;
+  const hero = imageAvailable(fm.hero) && !isRetiredHero(fm.hero) ? fm.hero : undefined;
   const heroDimensions = getImageDimensions(hero);
 
   return (
@@ -357,21 +358,9 @@ export default function PostPage({
                   </div>
                 )}
 
-                {/* ERPCV reference */}
-                {showEnglishModules && (
-                  <ProductPromoCard
-                    tone="light"
-                    kicker={tr("Tool · Free to start")}
-                    title={tr("Build a professional ERP CV in minutes")}
-                    description={tr(
-                      "Turn years of SAP, Oracle, and Microsoft programme work into a polished CV structured by role, modules, and outcomes. Used by senior ERP consultants across the Middle East, Europe, and North America.",
-                    )}
-                    href="https://erpcv.com"
-                    cta={tr("Generate your ERP CV")}
-                    external
-                  />
-                )}
-
+                {/* One product card per article (the mid-article ProjectCAPEX one) and one
+                    booking card at the end. The ERPCV card was removed here after the
+                    Hallmark audit (7 Nov 2026): eight asks after one article read as a funnel. */}
                 {showEnglishModules && <AuthorBox locale={locale} />}
 
                 {showEnglishModules && (

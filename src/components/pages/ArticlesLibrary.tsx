@@ -1,3 +1,4 @@
+import { isRetiredHero } from "@/lib/retired-images";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import Link from "next/link";
@@ -22,8 +23,9 @@ export const LIBRARY_GROUPS = [
 ] as const;
 
 /** Local hero images are checked on disk so a missing file never shows as a broken image. */
+// Retired generated heroes fall back to the monogram tile (src/lib/retired-images.ts).
 function heroAvailable(src: string | undefined): boolean {
-  if (!src) return false;
+  if (!src || isRetiredHero(src)) return false;
   if (/^https?:\/\//.test(src)) return true;
   return existsSync(join(process.cwd(), "public", decodeURI(src)));
 }

@@ -5,7 +5,6 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import MdxBody from "@/components/mdx/MdxBody";
 import PageBanner from "@/components/site/PageBanner";
-import Doodle from "@/components/doodles/Doodle";
 import SideRail from "@/components/site/SideRail";
 import { CloseBand } from "@/components/home/HomeSections";
 import { getPage } from "@/lib/content";
@@ -80,7 +79,6 @@ export default async function AboutPage() {
                   <Link className="nd-btn nd-btn-primary" href={CONTACT} style={{ padding: "9px 14px", fontSize: 13 }}>
                     Discuss your project <span aria-hidden="true">→</span>
                   </Link>
-                  <Doodle name="arrow-hook" flip className="nd-rail-hook" />
                 </div>
               }
             />

@@ -4,7 +4,6 @@ import LoopVideo from "@/components/site/LoopVideo";
 import SignupForm from "@/components/site/SignupForm";
 import AcademyChrome from "@/components/academy/AcademyChrome";
 import AcademyImage, { ACADEMY_MEDIA, academyImageExists } from "@/components/academy/AcademyImage";
-import CountUp from "@/components/academy/CountUp";
 import Doodle, { HandNote } from "@/components/doodles/Doodle";
 import OutputCards from "@/components/academy/OutputCards";
 import WorryCheck from "@/components/academy/WorryCheck";
@@ -73,7 +72,7 @@ const NUMBERS = [
   { value: "30", label: "days, start to finish" },
   { value: "4", label: "pieces of real work, reviewed by me" },
   { value: "3-4", label: "hours a week" },
-  { value: "0", label: "lines of code" },
+  { value: "No", label: "code" },
 ];
 
 const WORRIES = [
@@ -212,11 +211,9 @@ const FAQ = [
 function Cta({ className }: { className?: string }) {
   return (
     <div className={`ar-cta-row${className ? ` ${className}` : ""}`}>
-      <Doodle name="arrow-hook" />
       <a className="nd-btn ar-cta" href={CTA.href}>
         {CTA.label}
       </a>
-      <Doodle name="arrow-hook" flip />
     </div>
   );
 }
@@ -251,8 +248,6 @@ export default function AiAcademyPage() {
 
         {/* 1. Hero */}
         <section className="ar-hero" id="ar-hero" aria-labelledby="ar-title">
-          <Doodle name="scribble" className="ar-edge ar-hero-scribble" />
-          <span className="ar-dots ar-hero-dots" aria-hidden="true" />
           <div className="nd-container ar-hero-grid">
             <div className="ar-hero-copy">
               <p className="nd-eyebrow">AI Ready in 30 Days · Taught by a CTO</p>
@@ -302,18 +297,17 @@ export default function AiAcademyPage() {
         <section data-tone="light" className="nd-section ar-nums" aria-labelledby="ar-nums-title">
           <div className="nd-container">
             <h2 id="ar-nums-title" className="nd-display nd-h2">
-              The whole programme, <span className="nd-mark">in four numbers</span>
+              The whole programme, in one line.
             </h2>
-            <ul className="ar-num-row">
+            {/* A sentence, not four count-up circles (Hallmark audit, 7 Nov 2026):
+                these are programme facts, not results. */}
+            <p className="ar-num-line">
               {NUMBERS.map(({ value, label }) => (
-                <li key={label} className="ar-num">
-                  <CountUp value={value} /> <span>{label}</span>
-                </li>
+                <span key={label}>
+                  <b>{value}</b> {label}
+                </span>
               ))}
-            </ul>
-            <HandNote text="None. Really." className="ar-nums-note">
-              <Doodle name="arrow-swoop" />
-            </HandNote>
+            </p>
           </div>
         </section>
 
@@ -334,16 +328,12 @@ export default function AiAcademyPage() {
                   Sound{" "}
                   <span className="ar-u">
                     familiar?
-                    <Doodle name="underline" />
                   </span>
                 </h3>
                 <p className="ar-tick-intro">Tick what applies to you.</p>
                 <WorryCheck items={WORRIES} verdict="Then I built this for you." />
               </div>
               <div className="ar-turn">
-                <HandNote text="Read this twice" className="ar-turn-note">
-                  <Doodle name="arrow-down" />
-                </HandNote>
                 <p>This is not about ability. Nobody has shown you a method.</p>
                 <p>
                   And your experience is <span className="nd-mark">the one thing AI can&apos;t supply.</span> It needs your judgment to
@@ -436,7 +426,6 @@ export default function AiAcademyPage() {
                 </li>
               </ol>
             </div>
-            <HandNote text="You decide. I show you how." className="ar-lanes-note" />
           </div>
         </section>
 
@@ -447,7 +436,7 @@ export default function AiAcademyPage() {
               Four weeks. <span className="nd-mark">One result</span> each week.
             </h2>
             <ol className="ar-timeline">
-              {WEEKS.map(({ label, title, text, learn, finish, bridge }, i) => (
+              {WEEKS.map(({ label, title, text, learn, finish }, i) => (
                 <li key={label} className="ar-week">
                   <span className="ar-week-n" aria-hidden="true">
                     {`0${i + 1}`}
@@ -469,16 +458,10 @@ export default function AiAcademyPage() {
                       </span>
                     </p>
                   </div>
-                  {bridge && (
-                    <HandNote text={bridge} className="ar-bridge">
-                      <Doodle name="arrow-down" />
-                    </HandNote>
-                  )}
                 </li>
               ))}
             </ol>
             <p className="nd-display ar-weeks-close">
-              <Doodle name="burst" />
               Day 30. You are AI ready.
             </p>
           </div>
@@ -488,9 +471,9 @@ export default function AiAcademyPage() {
         <section data-tone="light" className="nd-section ar-outputs-section" aria-labelledby="ar-outputs-title">
           <div className="nd-container">
             <h2 id="ar-outputs-title" className="nd-display nd-h2">
-              Real outputs. Not quiz answers.
+              What you will produce.
             </h2>
-            <p className="nd-lede">These are examples from my own setup. Yours will be built on your work.</p>
+            <p className="nd-lede">Illustrations of the four pieces of work. Yours are built on your own documents and data.</p>
             <OutputCards
               {...SHOT}
               cards={OUTPUTS.map((o) => ({ ...o, src: academyImageExists(o.file) ? `${ACADEMY_MEDIA}/${o.file}` : undefined }))}
@@ -519,7 +502,7 @@ export default function AiAcademyPage() {
                       <Doodle name="arrow-down" className="ar-narrow-only" />
                     </span>
                   ) : (
-                    <HandNote text="This is where it clicks" className="ar-step-note" />
+                    null
                   )}
                 </li>
               ))}
@@ -556,7 +539,6 @@ export default function AiAcademyPage() {
                       You have{" "}
                       <span className="ar-circled">
                         10 or more years
-                        <Doodle name="circle" />
                       </span>{" "}
                       of professional experience.
                     </span>
@@ -620,13 +602,9 @@ export default function AiAcademyPage() {
 
         {/* 8. Why learn it from a CTO */}
         <section className="nd-section ar-why" aria-labelledby="ar-why-title">
-          <Doodle name="scribble" className="ar-edge ar-why-scribble" />
           <div className="nd-container ar-why-grid">
             <div className="ar-why-photo">
               <AcademyImage file="noel-cutout.png" alt="Noel D'Costa" width={1200} height={1500} />
-              <HandNote text="25 years of this" className="ar-why-note">
-                <Doodle name="arrow-swoop" />
-              </HandNote>
             </div>
             <div className="ar-why-copy">
               <h2 id="ar-why-title" className="nd-display nd-h2">
@@ -688,7 +666,6 @@ export default function AiAcademyPage() {
             <h2 id="ar-faq-title" className="nd-display nd-h2">
               <span className="ar-u">
                 Questions
-                <Doodle name="underline" />
               </span>
             </h2>
             <div className="ar-accordion">
@@ -704,7 +681,6 @@ export default function AiAcademyPage() {
 
         {/* 11. Final call and waitlist form */}
         <section className="nd-section ar-final" id="waitlist" aria-labelledby="ar-final-title">
-          <Doodle name="scribble" className="ar-edge ar-final-scribble" />
           <div className="nd-container ar-final-inner">
             <h2 id="ar-final-title" className="nd-display nd-h2">
               Thirty days from now, <span className="nd-mark">you are AI ready.</span>
@@ -716,8 +692,6 @@ export default function AiAcademyPage() {
                   source={LAUNCH.formSource}
                   endpoint={LAUNCH.formEndpoint}
                   serverErrors={false}
-                  buttonBefore={<Doodle name="arrow-hook" />}
-                  buttonAfter={<Doodle name="arrow-hook" flip />}
                   copy={{
                     name: "Your name",
                     email: "Work email",
@@ -730,7 +704,6 @@ export default function AiAcademyPage() {
                     button: LAUNCH.waitlist.label,
                   }}
                 />
-                <HandNote text="Takes 20 seconds." className="ar-final-hand" />
                 <p className="ar-final-note">I will email you when enrolment opens. Nothing else.</p>
               </>
             ) : (

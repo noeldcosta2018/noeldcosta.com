@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { isRetiredHero } from "@/lib/retired-images";
 import { join } from "node:path";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -79,7 +80,8 @@ function topicKey(tag: string): string {
 // /public. Those cards get the typographic placeholder instead of a broken image.
 const heroCache = new Map<string, boolean>();
 function heroAvailable(src?: string): src is string {
-  if (!src) return false;
+  // Retired generated heroes get the placeholder too (src/lib/retired-images.ts).
+  if (!src || isRetiredHero(src)) return false;
   if (/^https?:\/\//.test(src)) return true;
   let ok = heroCache.get(src);
   if (ok === undefined) {

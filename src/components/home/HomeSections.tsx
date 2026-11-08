@@ -66,10 +66,7 @@ function SectionHead({
         <h2 id={id} className="nd-display nd-h2">
           {title}{" "}
           {underline ? (
-            <span className="nd-hl nd-u">
-              {highlight}
-              <Doodle name="underline" />
-            </span>
+            <span className="nd-hl">{highlight}</span>
           ) : (
             <span className="nd-hl">{highlight}</span>
           )}
@@ -96,11 +93,10 @@ export function HomeHero({ locale }: L) {
   const [heroLead, heroHighlight] = splitHeadline(tr("I help you build systems / and then make them smart."));
   return (
     <section className="nd-hero" aria-labelledby="hero-title">
+      {/* One flat field behind the hero (Hallmark audit, 7 Nov 2026): the skyline
+          loop, grid wash and cursor spotlight read as blurred particles. */}
       <div className="bg" aria-hidden="true" />
-      <LoopVideo className="media loop" src="/media/video/hero-loop.mp4" poster="/media/video/hero-loop-poster.jpg" />
       <div className="scrim" aria-hidden="true" />
-      <div className="wash nd-grid-wash" aria-hidden="true" />
-      <div className="nd-spotlight" aria-hidden="true" />
       <div className="nd-hero-inner">
         {/* Desktop portrait: Noel in a grey suit, on the right of the content
             column, placed against the headline so the top of the head sits just
@@ -172,7 +168,6 @@ export function HomeHero({ locale }: L) {
               {/* The circle sits beside the figure, not inside it: the count-up rewrites the figure's text. */}
               <span className="nd-stat-ring">
                 <span className="v" data-count>84</span>
-                <Doodle name="circle" className="nd-stat-circle" />
               </span>
             </div>
             <div className="nd-stat">
@@ -203,9 +198,6 @@ export function HowIHelp({ locale }: L) {
             </p>
           </div>
           <div className="nd-quote-col">
-            <HandNote text={tr("People I've worked with")} className="nd-quote-note">
-              <Doodle name="arrow-down" />
-            </HandNote>
             <blockquote className="nd-punchline" lang={en}>
               &ldquo;Noel led the technical delivery of the SAP Finance Transformation project at Etihad &hellip; the
               programme has delivered on time (18 months), on budget and with no major issues.&rdquo;
@@ -578,13 +570,8 @@ export function ArticlesAndTools({ locale }: L) {
           link={{ label: tr("All articles"), href: href(ARTICLES_INDEX) }}
         />
         <ul className="nd-grid-3">
-          {reads.map((r, i) => (
+          {reads.map((r) => (
             <li key={r.slug}>
-              {i === 0 && (
-                <HandNote text={tr("Start here")} className="nd-start-note">
-                  <Doodle name="arrow-down" />
-                </HandNote>
-              )}
               <Link className="nd-card banded nd-glow" href={r.href}>
                 <span className="nd-card-band" style={{ background: r.color }} aria-hidden="true" />
                 <div className="nd-label">{tr(r.label)}</div>
@@ -655,9 +642,6 @@ export function WorkingWithMe({ locale }: L) {
             loading="lazy"
             decoding="async"
           />
-          <HandNote text={tr("In the room myself")} className="nd-why-note">
-            <Doodle name="arrow-swoop" />
-          </HandNote>
         </div>
         <ol>
           {points.map((p, i) => (
@@ -698,11 +682,9 @@ export function CloseBand({
           <p className="nd-lede">{tr(lede)}</p>
         </div>
         <div className="nd-hook-row" style={{ flex: "none" }}>
-          <Doodle name="arrow-hook" />
-          <Link className="nd-btn nd-btn-primary magnetic" href={href(CONTACT)}>
+          <Link className="nd-btn nd-btn-primary" href={href(CONTACT)}>
             {tr("Discuss your project")} <span aria-hidden="true">→</span>
           </Link>
-          <Doodle name="arrow-hook" flip />
         </div>
       </div>
     </section>
@@ -801,7 +783,6 @@ export function SignupBand({ locale }: L) {
         </div>
         <div className="nd-signup-col">
           <SignupForm source="newsletter" copy={signupCopy(locale)} privacyHref={href("/privacy-policy-noeldcosta/")} />
-          <HandNote text={tr("Takes 20 seconds.")} className="nd-signup-note" />
         </div>
       </div>
     </section>

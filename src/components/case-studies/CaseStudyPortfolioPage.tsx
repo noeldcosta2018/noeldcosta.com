@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import PageBanner from "@/components/site/PageBanner";
-import Doodle from "@/components/doodles/Doodle";
 import { CloseBand } from "@/components/home/HomeSections";
 import {
   type CaseStudy,
@@ -117,7 +116,6 @@ export default function CaseStudyPortfolioPage() {
                   Programmes that show{" "}
                   <span className="nd-hl nd-u">
                     the range.
-                    <Doodle name="underline" />
                   </span>
                 </h2>
                 <p className="nd-lede">Different industries, same playbook.</p>

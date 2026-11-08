@@ -7,8 +7,8 @@ import {
 import { CLIENT_WORK } from "@/data/site-menu";
 
 /**
- * Banner for an individual case study: the cover image sits behind the scrim,
- * the split headline is the H1 (same text as before) and a glass fact strip
+ * Banner for an individual case study: no cover image (Hallmark audit,
+ * 7 Nov 2026: the covers were generated stock with invented charts), the split headline is the H1 (same text as before) and a glass fact strip
  * carries the headline stat plus client, industry, region, duration and role.
  * Server-rendered, no client JS.
  */
@@ -32,7 +32,6 @@ export default function CaseStudyArticleHero({ c }: { c: CaseStudy }) {
       highlight={c.headline.italic}
       long
       lede={c.outcome}
-      cover={{ src: c.cover.src }}
     >
       <dl className="nda-cs-meta">
         <div className="stat">
