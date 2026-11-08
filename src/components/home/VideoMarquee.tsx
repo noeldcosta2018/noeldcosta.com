@@ -79,7 +79,7 @@ export default async function VideoMarquee({ locale = "en" }: { locale?: Locale 
         <div className="nd-header-row">
           <div>
             <h2 id="videos-title" className="nd-display nd-h2">
-              {tr("Watch the")} <span className="nd-hl">{tr("thinking.")}</span>
+              {tr("Talks and videos")}
             </h2>
             <p className="nd-lede">
               {tr("{count} talks on SAP, ERP programmes, data and AI. Straight answers, from the work.").replace("{count}", String(videos.length))}

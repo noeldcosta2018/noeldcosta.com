@@ -46,28 +46,29 @@ function SectionHead({
   highlight,
   lede,
   link,
-  underline,
 }: {
   /** Section label. Used sparingly: at most one section in three carries one. */
   eyebrow?: string;
   id: string;
   title: string;
-  highlight: string;
+  /** Optional second phrase in the accent colour. Homepage section heads no
+   *  longer use one (Hallmark audit, 8 Nov 2026): every head written as a
+   *  "statement. punchline." pair had become a formula. */
+  highlight?: string;
   lede?: string;
   link?: { label: string; href: string };
-  /** A hand-drawn underline under the highlight. Keep it to short highlights. */
-  underline?: boolean;
 }) {
   return (
     <div className="nd-header-row">
       <div>
         {eyebrow && <div className="nd-eyebrow">{eyebrow}</div>}
         <h2 id={id} className="nd-display nd-h2">
-          {title}{" "}
-          {underline ? (
-            <span className="nd-hl">{highlight}</span>
-          ) : (
-            <span className="nd-hl">{highlight}</span>
+          {title}
+          {highlight && (
+            <>
+              {" "}
+              <span className="nd-hl">{highlight}</span>
+            </>
           )}
         </h2>
         {lede && <p className="nd-lede">{lede}</p>}
@@ -188,7 +189,7 @@ export function HowIHelp({ locale }: L) {
         <div className="nd-split">
           <div>
             <h2 id="how-title" className="nd-display nd-h2">
-              {tr("Three areas.")} <span className="nd-hl">{tr("One question.")}</span>
+              {tr("Will it work for your business?")}
             </h2>
             <p className="nd-lede">
               {tr(
@@ -289,9 +290,7 @@ export function Expertise({ locale }: L) {
         <SectionHead
           eyebrow={tr("Expertise")}
           id="expertise-title"
-          title={tr("Applications, data and AI.")}
-          highlight={tr("Connected.")}
-          underline
+          title={tr("What I work on")}
           lede={tr("Each area stands on its own. Most of my work touches at least two of them.")}
           link={{ label: tr("All expertise"), href: href(EXPERTISE) }}
         />
@@ -384,8 +383,7 @@ export function ClientWork({ locale }: L) {
         <SectionHead
           eyebrow={tr("Client work")}
           id="work-title"
-          title={tr("Programmes")}
-          highlight={tr("I've worked on.")}
+          title={tr("Programmes I've worked on")}
           lede={tr(
             "Some of this work was as an employee, some as an adviser. I say which, because it changes what I was responsible for.",
           )}
@@ -481,10 +479,8 @@ export function AcademyChapter({ locale }: L) {
     <section className="nd-section" id="ai-academy" aria-labelledby="academy-title">
       <div className="nd-container">
         <SectionHead
-          eyebrow={tr("AI Academy · for consultants")}
           id="academy-title"
-          title={tr("Bring AI into")}
-          highlight={tr("the way you consult.")}
+          title={tr("An AI academy for consultants")}
           lede={tr(
             "I'm building an academy for consultants who want to use AI in their work, automate the repetitive parts and build practical tools. The first programme is AI Automation Practitioner.",
           )}
@@ -492,18 +488,8 @@ export function AcademyChapter({ locale }: L) {
         />
         <div className="nd-academy" data-inview>
           <div className="nd-academy-goal nd-in">
-            {/* The figures restate the sentence beside them, so screen readers read the sentence only. */}
-            <div className="nd-academy-figures" aria-hidden="true">
-              <span>
-                <b data-count>3</b>
-                <small>{tr("working automations")}</small>
-              </span>
-              <i />
-              <span>
-                <b data-count>30</b>
-                <small>{tr("days")}</small>
-              </span>
-            </div>
+            {/* The big 3 / 30 figures were removed (Hallmark audit, 8 Nov 2026):
+                they restated this sentence as number theatre. */}
             <div className="nd-academy-goal-text">
               <span className="nd-pill">{tr("Launching soon")}</span>
               <p>{tr("The goal: build and deploy three working business automations in 30 days.")}</p>
@@ -563,8 +549,7 @@ export function ArticlesAndTools({ locale }: L) {
       <div className="nd-container">
         <SectionHead
           id="read-title"
-          title={tr("Read before")}
-          highlight={tr("you spend.")}
+          title={tr("Articles, tools and books")}
           lede={tr("Articles, calculators and books I wrote for people making these decisions.")}
           link={{ label: tr("All articles"), href: href(ARTICLES_INDEX) }}
         />
@@ -627,7 +612,7 @@ export function WorkingWithMe({ locale }: L) {
       <div className="nd-container nd-why">
         <div>
           <h2 id="why-title" className="nd-display nd-h2">
-            {tr("What you")} <span className="nd-hl">{tr("can expect.")}</span>
+            {tr("How I work")}
           </h2>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -696,8 +681,7 @@ export function Ecosystem({ locale }: L) {
       <div className="nd-container">
         <SectionHead
           id="eco-title"
-          title={tr("Two more places")}
-          highlight={tr("for consultants.")}
+          title={tr("Two more places for consultants")}
           lede={tr(
             "If you are a consultant rather than a buyer, these two are for you: one for your CV and career, one for learning and my books.",
           )}
@@ -771,7 +755,7 @@ export function SignupBand({ locale }: L) {
       <div className="nd-container nd-split">
         <div>
           <h2 id="signup-title" className="nd-display nd-h2">
-            {tr("New articles,")} <span className="nd-hl">{tr("first.")}</span>
+            {tr("Get new articles by email")}
           </h2>
           <p className="nd-lede">
             {tr(
