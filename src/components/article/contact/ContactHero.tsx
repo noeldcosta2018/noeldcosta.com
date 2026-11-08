@@ -3,17 +3,14 @@ import type { Locale } from "@/lib/locales";
 import { translator } from "@/i18n";
 
 /**
- * Hero for the Contact page: eyebrow, one display line, a short lede.
- * The booking flow does the heavy lifting below.
+ * Intro for the Contact page: one short lede above the booking flow. The
+ * eyebrow and the "30 minutes. No sales pitch." display line were removed
+ * after the Hallmark audit (7 Nov 2026): the banner H1 already says it.
  */
 export default function ContactHero({ locale }: { locale?: Locale }) {
   const tr = translator(locale);
   return (
     <FadeUp as="section" className="not-prose nd-contact-hero">
-      <p className="nd-eyebrow">{tr("Get in touch")}</p>
-      <p className="nd-display line">
-        {tr("30 minutes.")} <span className="nd-hl">{tr("No sales pitch.")}</span>
-      </p>
       <p className="nd-lede">
         {tr("Answer four quick questions, pick a time and you're booked. I'll tell you straight if I can help.")}
       </p>

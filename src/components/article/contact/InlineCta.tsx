@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Doodle from "@/components/doodles/Doodle";
 
 /**
  * A call to action inside an article or page body, styled as a brand button
@@ -19,7 +18,6 @@ export default function InlineCta({ href, label }: Props) {
   if (!href || !label) return null;
   return (
     <div className="not-prose nd-inline-cta">
-      <Doodle name="arrow-hook" className="nd-inline-cta-arrow" />
       <Link href={href} className="nd-btn nd-inline-cta-btn">
         {label}
         <span aria-hidden="true">→</span>

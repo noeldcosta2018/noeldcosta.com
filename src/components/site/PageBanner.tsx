@@ -58,7 +58,6 @@ export default function PageBanner({
         <img className="media cover" src={cover.src} alt={cover.alt || label || ""} aria-hidden="true" fetchPriority="high" />
       )}
       <div className="scrim" aria-hidden="true" />
-      <div className="nd-spotlight" aria-hidden="true" />
       {photo && (
         // eslint-disable-next-line @next/next/no-img-element
         <img className="media photo" src={photo.src} width={photo.width} height={photo.height} alt="Noel D'Costa" fetchPriority="high" />
@@ -83,7 +82,6 @@ export default function PageBanner({
           <Doodle name="arrow-swoop" />
         </HandNote>
       )}
-      <div className="wash nd-grid-wash" aria-hidden="true" />
       <div className="nd-banner-inner nd-reveal">
         <nav aria-label="Breadcrumb" className="nd-crumb" lang={crumbLang}>
           {crumbs.map((c, i) => (

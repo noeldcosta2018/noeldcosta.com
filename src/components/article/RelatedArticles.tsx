@@ -1,7 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
 import { CATEGORIES, type Locale, type PostRecord } from "@/lib/content";
-import { imageAvailable } from "@/components/article/image-available";
 import { translator } from "@/i18n";
 import { localizeHref } from "@/lib/link-repair";
 import { publicPrefixFromContentLocale } from "@/lib/locale-url";
@@ -64,15 +62,15 @@ export function pickRelated(
     title: post.frontmatter.title,
     category: post.frontmatter.category,
     excerpt: post.frontmatter.excerpt,
-    hero: imageAvailable(post.frontmatter.hero) ? post.frontmatter.hero : undefined,
   }));
 }
 
 const ARTICLES_INDEX = "/best-sap-articles-for-implementation-noel-dcosta/";
 
 /**
- * Related reading as a grid of post cards (the same nd-post-card used by the
- * archives). The caller supplies the eyebrow label so the block can be reused.
+ * Related reading as a grid of text-only post cards. No thumbnails (Hallmark
+ * audit, 7 Nov 2026): most migrated heroes are generated stock with invented
+ * dashboards, and they made every article end on them. The caller supplies the eyebrow label so the block can be reused.
  * With a locale, the interface text goes through the i18n dictionary and the
  * cards link to the translated article when it is published.
  */
@@ -116,23 +114,8 @@ export default function RelatedArticles({
             <Link
               key={r.slug}
               href={href(`/${r.slug}/`)}
-              className="nd-card nd-glow nd-post-card"
+              className="nd-card nd-post-card nd-related-card"
             >
-              <div className="thumb">
-                {r.hero ? (
-                  <Image
-                    src={r.hero}
-                    alt={r.title}
-                    fill
-                    sizes="(min-width: 1024px) 370px, (min-width: 640px) 50vw, 100vw"
-                    quality={70}
-                  />
-                ) : (
-                  <span className="ph" aria-hidden="true">
-                    {r.title.slice(0, 2).toUpperCase()}
-                  </span>
-                )}
-              </div>
               <div className="inner">
                 {catMeta && <span className="nd-label">{tr(catMeta.label)}</span>}
                 <h3>{r.title}</h3>

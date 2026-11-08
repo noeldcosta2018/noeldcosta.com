@@ -129,7 +129,6 @@ export default function TagPage({ tag, locale = "en" }: { tag: string; locale?: 
           title={name}
           long={name.length > 28}
           lede={lede}
-          video={{ src: "/media/video/hero-loop.mp4", poster: "/media/video/hero-loop-poster.jpg" }}
         >
           <div className="nda-banner-meta">
             {posts.length > 0 ? (

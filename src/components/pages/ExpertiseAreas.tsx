@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Doodle from "@/components/doodles/Doodle";
 
 // Anchored expertise sections on /erp-ai-services/ (English). Each anchor is a
 // destination in the Expertise menu. Copy comes from the approved revamp plan
@@ -126,7 +125,6 @@ function Circled({ text, phrase }: { text: string; phrase: string }) {
       {text.slice(0, at)}
       <span className="nd-circled">
         {phrase}
-        <Doodle name="circle" />
       </span>
       {text.slice(at + phrase.length)}
     </>

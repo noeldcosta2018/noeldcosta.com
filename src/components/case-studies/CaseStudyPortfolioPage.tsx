@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import PageBanner from "@/components/site/PageBanner";
-import Doodle from "@/components/doodles/Doodle";
 import { CloseBand } from "@/components/home/HomeSections";
 import {
   type CaseStudy,
@@ -94,7 +93,6 @@ export default function CaseStudyPortfolioPage() {
               <span className="nd-mark">the numbers are the ones that were signed off.</span>
             </>
           }
-          video={{ src: "/media/video/hero-loop.mp4", poster: "/media/video/hero-loop-poster.jpg" }}
         >
           <div className="nda-banner-meta">
             <span className="nd-pill">{CASE_STUDIES.length} case studies</span>
@@ -117,7 +115,6 @@ export default function CaseStudyPortfolioPage() {
                   Programmes that show{" "}
                   <span className="nd-hl nd-u">
                     the range.
-                    <Doodle name="underline" />
                   </span>
                 </h2>
                 <p className="nd-lede">Different industries, same playbook.</p>

@@ -39,9 +39,11 @@ export const AI_PROJECTS = [
 ];
 
 /**
- * The AI projects as image cards: two wide cards, then three. Used at the end
+ * The AI projects as a ruled list: sector, title, what I did. Used at the end
  * of Expertise on the homepage (h3 heading) and on /case-studies/ (h2).
- * Images are decorative (the text carries the meaning), lazy-loaded and sized.
+ * The Higgsfield stills are no longer shown here (Hallmark audit, 7 Nov 2026):
+ * five matching night scenes read as a stock gallery and pushed the project
+ * text down. The `image` fields stay so the stills can be reused elsewhere.
  */
 export default function AiProjects({ locale, level = 3 }: { locale?: Locale; level?: 2 | 3 }) {
   const tr = translator(locale);
@@ -58,12 +60,8 @@ export default function AiProjects({ locale, level = 3 }: { locale?: Locale; lev
       <ul className="nd-aip not-prose" data-inview>
         {AI_PROJECTS.map((p, i) => (
           <li key={p.title} className="nd-aip-card nd-in" style={{ ["--d" as string]: i }}>
-            <div className="nd-aip-media">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.image} alt={tr(p.title)} aria-hidden="true" width={800} height={538} loading="lazy" decoding="async" />
-              <span className="nd-aip-sector">{tr(p.sector)}</span>
-            </div>
             <div className="nd-aip-body">
+              <span className="nd-aip-sector">{tr(p.sector)}</span>
               <CardHeading>{tr(p.title)}</CardHeading>
               <p>{tr(p.text)}</p>
             </div>

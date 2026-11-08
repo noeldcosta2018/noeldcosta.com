@@ -15,7 +15,6 @@ export default function NotFoundView() {
           title="This page has"
           highlight="moved on."
           lede="The address may have changed, or the page is being refreshed. Everything I have written is in the library, and the rest of the site is one click away."
-          video={{ src: "/media/video/close-loop.mp4", poster: "/media/video/close-loop-poster.jpg" }}
         >
           <div className="nd-actions">
             <Link className="nd-btn nd-btn-primary magnetic" href={ARTICLES_INDEX}>

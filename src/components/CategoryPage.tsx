@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { isRetiredHero } from "@/lib/retired-images";
 import { join } from "node:path";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -79,7 +80,8 @@ function topicKey(tag: string): string {
 // /public. Those cards get the typographic placeholder instead of a broken image.
 const heroCache = new Map<string, boolean>();
 function heroAvailable(src?: string): src is string {
-  if (!src) return false;
+  // Retired generated heroes get the placeholder too (src/lib/retired-images.ts).
+  if (!src || isRetiredHero(src)) return false;
   if (/^https?:\/\//.test(src)) return true;
   let ok = heroCache.get(src);
   if (ok === undefined) {
@@ -277,7 +279,6 @@ export default function CategoryPage({ category, locale = "en" }: { category: st
           highlight={tagline}
           long={label.length + tagline.length > 40}
           lede={tr(meta.description)}
-          video={{ src: "/media/video/hero-loop.mp4", poster: "/media/video/hero-loop-poster.jpg" }}
         >
           <div className="nda-banner-meta">
             <Link className="nd-chip" href={`${href(ARTICLES_INDEX)}${area.anchor}`} style={{ textDecoration: "none" }}>
