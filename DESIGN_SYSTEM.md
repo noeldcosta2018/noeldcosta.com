@@ -79,8 +79,8 @@ deliberate sub-brand for the programme page. Keep it on that page only.
 Single source of truth for visual tokens.
 
 This site inherits the **Command Center design system** — the token
-architecture first built for the product now called ProjectCAPEX
-(projectcapex.com) and shared with erpcv.com. Same variable
+architecture first built for the product now called Capexo
+(capexo.co) and shared with erpcv.com. Same variable
 names. Same surface hierarchy. Same components.
 
 Three properties. One design language. Built once, used three times.

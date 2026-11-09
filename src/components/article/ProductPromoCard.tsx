@@ -6,16 +6,19 @@ type Tone = "dark" | "light";
 
 /**
  * In-article product reference.
- *   - dark: a dark island in both themes (ProjectCAPEX), with an optional
+ *   - dark: a dark island in both themes (Capexo), with an optional
  *     product screenshot panel on the trailing edge and an optional logo mark
  *     set before the title, which then reads as the product's wordmark
  *   - light: a standard card that follows the active theme (ERPCV)
  *
  * The title is an independent H2 inside a named heading region so the
  * heading audit treats it as complementary content, not article outline.
+ *
+ * No eyebrow above the title: the optional byline ("Built by Noel") sits in
+ * plain sentence case next to the domain, after the call to action.
  */
 export default function ProductPromoCard({
-  kicker,
+  byline,
   title,
   description,
   href,
@@ -25,7 +28,8 @@ export default function ProductPromoCard({
   image,
   logo,
 }: {
-  kicker: string;
+  /** Short attribution shown before the domain, e.g. "Built by Noel". */
+  byline?: string;
   title: string;
   description: string;
   href: string;
@@ -68,7 +72,6 @@ export default function ProductPromoCard({
       >
         {!isDark && <span className="nd-card-band" aria-hidden="true" />}
         <div className="nd-promo-copy">
-          <p className="nd-promo-kicker">{kicker}</p>
           {logo ? (
             <h2 className="nd-promo-title nd-promo-lockup">
               <span className="nd-promo-logo">{logo}</span>
@@ -93,7 +96,9 @@ export default function ProductPromoCard({
                 {ctaInner}
               </Link>
             )}
-            <span className="nd-promo-domain">{domainHint}</span>
+            <span className="nd-promo-domain">
+              {byline ? `${byline} · ${domainHint}` : domainHint}
+            </span>
           </div>
         </div>
         {hasImage && (

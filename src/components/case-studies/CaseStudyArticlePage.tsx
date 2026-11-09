@@ -8,7 +8,7 @@ import { CloseBand } from "@/components/home/HomeSections";
 import KeyTakeaways from "@/components/article/KeyTakeaways";
 import PullQuote from "@/components/article/PullQuote";
 import ProductPromoCard from "@/components/article/ProductPromoCard";
-import ProjectCapexMark from "@/components/ProjectCapexMark";
+import CapexoMark from "@/components/CapexoMark";
 import AuthorBox from "@/components/article/AuthorBox";
 import MobileContents from "@/components/article/MobileContents";
 import { getPost } from "@/lib/content";
@@ -130,16 +130,16 @@ export default function CaseStudyArticlePage({
                   />
                 </div>
 
-                {/* Mid-article ProjectCAPEX reference */}
+                {/* Mid-article Capexo reference */}
                 {hasSplit && (
                   <ProductPromoCard
                     tone="dark"
-                    kicker="Built by Noel"
-                    title="ProjectCAPEX"
-                    logo={<ProjectCapexMark />}
+                    byline="Built by Noel"
+                    title="Capexo"
+                    logo={<CapexoMark />}
                     description="Executive visibility, cost control and decision governance for ERP and SAP programmes. Plans, budget versus actual, cost forecasts, RAID and approvals in one place. See where delivery is slipping before it reaches the steering committee."
-                    href="https://projectcapex.com"
-                    cta="Try ProjectCAPEX free"
+                    href="https://capexo.co"
+                    cta="Try Capexo free"
                     external
                     image="/images/wp/2025/02/dashboard.webp"
                   />
