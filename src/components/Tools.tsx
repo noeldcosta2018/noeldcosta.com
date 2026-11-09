@@ -1,8 +1,8 @@
 "use client";
 
-import ProjectCapexMark from "@/components/ProjectCapexMark";
+import CapexoMark from "@/components/CapexoMark";
 
-// TODO: update Tools.tsx hrefs — this component currently showcases commercial products (ProjectCAPEX, ERPCV),
+// TODO: update Tools.tsx hrefs — this component currently showcases commercial products (Capexo, ERPCV),
 // not the 5 LLM tool slugs. When this section is repurposed to list the free tools, replace with:
 //   { name: "ERP Cost Calculator", href: "/erp-implementation-cost-calculator", ... }
 //   { name: "SAP Cost Calculator", href: "/sap-implementation-cost-calculator", ... }
@@ -11,13 +11,13 @@ import ProjectCapexMark from "@/components/ProjectCapexMark";
 //   { name: "Solution Builder", href: "/sap-solution-builder", ... }
 const TOOLS = [
   {
-    icon: <ProjectCapexMark size={20} />,
-    name: "ProjectCAPEX",
+    icon: <CapexoMark size={20} />,
+    name: "Capexo",
     type: "Implementation",
     title: "Plan projects. Control costs. Deliver.",
     body: "Progress, risks, milestones, team performance. Built because every project I walked into had tracking spread across 15 different spreadsheets. Real-time dashboards. Not another status deck.",
-    cta: "Explore ProjectCAPEX →",
-    href: "https://projectcapex.com",
+    cta: "Explore Capexo →",
+    href: "https://capexo.co",
   },
   {
     icon: (

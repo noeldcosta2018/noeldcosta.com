@@ -10,7 +10,7 @@ import MobileContents from "@/components/article/MobileContents";
 import KeyTakeaways from "@/components/article/KeyTakeaways";
 import PullQuote from "@/components/article/PullQuote";
 import ProductPromoCard from "@/components/article/ProductPromoCard";
-import ProjectCapexMark from "@/components/ProjectCapexMark";
+import CapexoMark from "@/components/CapexoMark";
 import AuthorBox from "@/components/article/AuthorBox";
 import CTASection from "@/components/article/CTASection";
 import RelatedArticles, {
@@ -322,18 +322,18 @@ export default function PostPage({
                   />
                 </div>
 
-                {/* Mid-article ProjectCAPEX reference */}
+                {/* Mid-article Capexo reference */}
                 {hasSplit && showEnglishModules && (
                   <ProductPromoCard
                     tone="dark"
-                    kicker={tr("Built by Noel")}
-                    title="ProjectCAPEX"
-                    logo={<ProjectCapexMark />}
+                    byline={tr("Built by Noel")}
+                    title="Capexo"
+                    logo={<CapexoMark />}
                     description={tr(
                       "Executive visibility, cost control and decision governance for ERP and SAP programmes. Plans, budget versus actual, cost forecasts, RAID and approvals in one place. See where delivery is actually bleeding before it hits the steering committee.",
                     )}
-                    href="https://projectcapex.com"
-                    cta={tr("Try ProjectCAPEX free")}
+                    href="https://capexo.co"
+                    cta={tr("Try Capexo free")}
                     external
                   />
                 )}
@@ -358,7 +358,7 @@ export default function PostPage({
                   </div>
                 )}
 
-                {/* One product card per article (the mid-article ProjectCAPEX one) and one
+                {/* One product card per article (the mid-article Capexo one) and one
                     booking card at the end. The ERPCV card was removed here after the
                     Hallmark audit (7 Nov 2026): eight asks after one article read as a funnel. */}
                 {showEnglishModules && <AuthorBox locale={locale} />}
