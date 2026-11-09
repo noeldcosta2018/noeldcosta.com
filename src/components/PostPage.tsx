@@ -330,7 +330,7 @@ export default function PostPage({
                     title="Capexo"
                     logo={<CapexoMark />}
                     description={tr(
-                      "Executive visibility, cost control and decision governance for ERP and SAP programmes. Plans, budget versus actual, cost forecasts, RAID and approvals in one place. See where delivery is actually bleeding before it hits the steering committee.",
+                      "Programme control for enterprise software rollouts on SAP, Oracle, Workday, Salesforce and more. Plans, RAID, budget and sign-off in one place, set up around each platform's own method and phases.",
                     )}
                     href="https://capexo.co"
                     cta={tr("Try Capexo free")}
