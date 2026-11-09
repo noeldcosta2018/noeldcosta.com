@@ -115,8 +115,9 @@ Full system in DESIGN_SYSTEM.md.
 Three properties. Same person.
 - noeldcosta.com (this site, eventually) — partner-track. Enterprise advisory.
 - erpcv.com — consultant-track. Career products.
-- capexo.co (Capexo) — implementation-track. PM tool for ERP
-  programmes. "Plan projects. Control costs. Deliver."
+- capexo.co (Capexo) — implementation-track. Programme control for
+  enterprise software rollouts (SAP, Oracle, Workday, Salesforce and
+  more). "Plan projects. Control costs. Deliver."
 
 All three should feel like siblings: same designer, same person behind
 them, different jobs. Cross-link in footers. Don't co-mingle audiences
