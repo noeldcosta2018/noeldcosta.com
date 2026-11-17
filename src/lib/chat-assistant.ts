@@ -1,6 +1,6 @@
 import index from "@/data/chat-index.json";
 import {
-  CALENDLY_URL,
+  BOOK_CALL_URL,
   CONTACT,
   ERPCV,
   ERPCV_ADVISORY,
@@ -61,7 +61,7 @@ About Noel (use only these facts):
 
 What you can do:
 1. Answer questions about SAP, ERP, data and AI programmes using the articles below. Link the most relevant one or two as markdown links with the exact URL given. Never invent URLs.
-2. Book an introductory meeting with Noel for organisations: a free 30-minute call. Tell the visitor to use the "Book an intro call" button in this chat, or the booking link ${CALENDLY_URL}, or the contact page ${CONTACT}.
+2. Book an introductory meeting with Noel for organisations: a free 30-minute call. Tell the visitor to use the "Book an intro call" button in this chat, or the booking link ${BOOK_CALL_URL}, or the contact page ${CONTACT}.
 3. Career advice for individuals is a paid service. Do not give personal career coaching here. Point people to one-to-one career advice on ERPCV (${ERPCV_ADVISORY}), the free CV diagnosis (${ERPCV_DIAGNOSIS}), ERPCV (${ERPCV}) and SAPopedia for career paths, courses and Noel's books (${SAPOPEDIA}). General, non-personal facts in articles may still be shared with a link.
 
 Rules:
@@ -76,4 +76,4 @@ Relevant articles and pages:
 ${library}`;
 }
 
-export const ASSISTANT_FALLBACK = `I can't answer right now. You can book a free 30-minute intro call with Noel here: ${CALENDLY_URL}, or use the contact page ${CONTACT}. For career advice, see ${ERPCV_ADVISORY}.`;
+export const ASSISTANT_FALLBACK = `I can't answer right now. You can book a free 30-minute intro call with Noel here: ${BOOK_CALL_URL}, or use the contact page ${CONTACT}. For career advice, see ${ERPCV_ADVISORY}.`;

@@ -1,7 +1,7 @@
 import AdminShell, { AdminErrors } from "@/components/admin/AdminShell";
 import { AdminDenied, adminGuard } from "@/components/admin/guard";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-import { CALENDLY_URL } from "@/data/site-menu";
+import { BOOK_CALL_URL } from "@/data/site-menu";
 
 /**
  * /admin/meetings: every meeting request sent through the site (the contact
@@ -55,7 +55,7 @@ export default async function MeetingsPage() {
       intro={
         <>
           Sent through the contact form and the chat, newest first. Calls booked directly on{" "}
-          <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">
+          <a href={BOOK_CALL_URL} target="_blank" rel="noopener noreferrer">
             Calendly
           </a>{" "}
           are in your Calendly account. Times are UAE time.

@@ -40,9 +40,7 @@ export default function CTABanner() {
           </p>
           <div className="flex gap-3 flex-wrap max-sm:flex-col">
             <a
-              href="https://calendly.com/noeldcosta/30min"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/book-a-call/"
               className="inline-flex items-center gap-1.5 bg-corbeau text-bone px-7 py-3.5 rounded-[10px] no-underline font-bold text-[0.92rem] transition-all hover:bg-haiti hover:-translate-y-px"
             >
               Book a 30-min call ↗

@@ -13,9 +13,7 @@ export default function StickyCTA() {
 
   return (
     <a
-      href="https://calendly.com/noeldcosta/30min"
-      target="_blank"
-      rel="noopener noreferrer"
+      href="/book-a-call/"
       style={{
         position: "fixed",
         bottom: 28,
