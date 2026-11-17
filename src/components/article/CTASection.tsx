@@ -5,7 +5,7 @@ import { localizeHref } from "@/lib/link-repair";
 import { publicPrefixFromContentLocale } from "@/lib/locale-url";
 import { CONTACT } from "@/data/site-menu";
 
-const CALENDLY = "https://calendly.com/noeldcosta/30min";
+const CALENDLY = "https://noeldcosta.com/book-a-call/";
 
 /**
  * Closing call to action for articles: the primary site action (a 30-minute

@@ -138,9 +138,7 @@ export default function Hero() {
               style={{ marginTop: 28, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, animationDelay: '1000ms' }}
             >
               <a
-                href="https://calendly.com/noeldcosta/30min"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/book-a-call/"
                 style={{
                   background: 'var(--cc-corbeau)',
                   color: 'var(--cc-bone)',

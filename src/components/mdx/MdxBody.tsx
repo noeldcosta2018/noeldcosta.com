@@ -1,3 +1,4 @@
+import CallIntake from "@/components/site/CallIntake";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkCjkFriendly from "remark-cjk-friendly";
@@ -35,11 +36,8 @@ import { explainerLabels, playLabel, tableLabel } from "@/components/article/exp
 import YouTubeVideo from "@/components/article/video/YouTubeVideo";
 import TestimonialsGrid from "@/components/article/testimonials/TestimonialsGrid";
 import ContactBlock from "@/components/article/contact/ContactBlock";
-import CalendlyEmbed from "@/components/article/contact/CalendlyEmbed";
-import BookingFlow from "@/components/article/contact/BookingFlow";
 import InlineCta from "@/components/article/contact/InlineCta";
 import GoDeeper from "@/components/article/GoDeeper";
-import { bookingCopy } from "@/components/article/contact/booking-copy";
 import type { Locale } from "@/lib/locales";
 import ContactHero from "@/components/article/contact/ContactHero";
 import FeaturedOn from "@/components/article/featured/FeaturedOn";
@@ -421,9 +419,9 @@ export default function MdxBody({
         "safeguard-band": (() => <SafeguardBand />) as never,
         // Lazy-loaded Calendly inline widget for the Contact page.
         // Loads on first user interaction or after a 2s delay.
-        "calendly-embed": (() => <CalendlyEmbed />) as never,
+        "calendly-embed": (() => <CallIntake />) as never,
         // Contact page booking flow: questions, slot picker, details, booking.
-        "booking-flow": (() => <BookingFlow copy={bookingCopy(locale as Locale | undefined)} locale={locale ?? "en"} />) as never,
+        "booking-flow": (() => <CallIntake />) as never,
         // Click-to-load YouTube video with VideoObject schema.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         "youtube-video": ((props: any) => <YouTubeVideo {...playLabel(locale)} {...props} />) as never,

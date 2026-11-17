@@ -14,7 +14,9 @@ export const CLIENT_WORK = "/case-studies/";
 export const EXPERTISE = "/erp-ai-services/";
 export const LINKEDIN = "https://www.linkedin.com/in/noeldcosta/";
 export const YOUTUBE = "https://www.youtube.com/@NoelDCostaERPAI";
-export const CALENDLY_URL = "https://calendly.com/noeldcosta/30min";
+// Every call is booked through the intake, which sends career advice to the paid ERPCV booking
+// and consulting to the free calendar (Noel, 16 November 2026).
+export const BOOK_CALL_URL = "https://noeldcosta.com/book-a-call/";
 
 // Noel's other sites.
 export const ERPCV = "https://erpcv.com/";

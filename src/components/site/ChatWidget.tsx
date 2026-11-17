@@ -5,7 +5,7 @@ import type { ChatCopy } from "./chat-copy";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
-const CALENDLY = "https://calendly.com/noeldcosta/30min";
+const CALENDLY = "/book-a-call/";
 const ADVISORY = "https://erpcv.com/advisory";
 
 
@@ -214,7 +214,7 @@ export default function ChatWidget({ copy, locale = "en" }: { copy: ChatCopy; lo
                 </div>
                 <p className="fine">
                   {copy.bookFine}{" "}
-                  <a href={CALENDLY} target="_blank" rel="noopener noreferrer">
+                  <a href={CALENDLY}>
                     {copy.calendar}
                   </a>
                   . <a href={ADVISORY} target="_blank" rel="noopener noreferrer">{copy.careerPaid}</a>

@@ -3,7 +3,7 @@ export const runtime = "nodejs";
 import type { NextRequest } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { EMAIL_RE, allow, clean, clientIp, json } from "@/lib/forms";
-import { CALENDLY_URL } from "@/data/site-menu";
+import { BOOK_CALL_URL } from "@/data/site-menu";
 
 /**
  * POST /api/meeting
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
   } catch {
     return json({ ok: false, error: "Invalid request." }, 400);
   }
-  if (clean(body.website, 200)) return json({ ok: true, bookingUrl: CALENDLY_URL });
+  if (clean(body.website, 200)) return json({ ok: true, bookingUrl: BOOK_CALL_URL });
 
   const name = clean(body.name, 120);
   const email = clean(body.email, 254).toLowerCase();
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
   try {
     supabase = getSupabaseAdmin();
   } catch {
-    return json({ ok: true, bookingUrl: CALENDLY_URL, saved: false });
+    return json({ ok: true, bookingUrl: BOOK_CALL_URL, saved: false });
   }
 
   // Find or create the contact without touching an existing consent choice.
@@ -65,6 +65,6 @@ export async function POST(request: NextRequest) {
     source: body.source === "contact" ? "contact" : "chatbot",
   });
 
-  if (error) return json({ ok: false, error: "Something went wrong. Please use the booking link instead.", bookingUrl: CALENDLY_URL }, 500);
-  return json({ ok: true, bookingUrl: CALENDLY_URL, saved: true });
+  if (error) return json({ ok: false, error: "Something went wrong. Please use the booking link instead.", bookingUrl: BOOK_CALL_URL }, 500);
+  return json({ ok: true, bookingUrl: BOOK_CALL_URL, saved: true });
 }

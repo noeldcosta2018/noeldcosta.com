@@ -1,6 +1,6 @@
 import FadeUp from "@/components/article/FadeUp";
 
-const CALENDLY = "https://calendly.com/noeldcosta/30min";
+const CALENDLY = "/book-a-call/";
 
 /**
  * Hero block for the About / story page. Sits below the page title and
@@ -13,8 +13,6 @@ export default function AboutHero() {
       <div className="nd-actions">
         <a
           href={CALENDLY}
-          target="_blank"
-          rel="noopener noreferrer"
           className="nd-btn nd-btn-primary magnetic"
         >
           Book a 30-min call <span aria-hidden="true">→</span>

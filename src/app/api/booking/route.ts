@@ -15,7 +15,14 @@ import { NEED_LABELS, SIZE_LABELS, STAGE_LABELS } from "@/components/article/con
  * the slot or is unreachable, the request is still saved and the visitor gets
  * the booking link instead.
  */
+// Retired 16 November 2026: this booked Cal.com's "30min" event, which is now ERPCV's paid
+// career call, without payment. Every call is booked through /book-a-call/ instead.
 export async function POST(request: NextRequest) {
+  void request;
+  return json({ ok: false, error: "retired", bookingUrl: "https://noeldcosta.com/book-a-call/" }, 410);
+}
+
+async function retiredBooking(request: NextRequest) {
   const ip = clientIp(request);
   if (!allow(`booking:${ip}`, 5, 30 * 60 * 1000)) {
     return json({ ok: false, error: "rate" }, 429);

@@ -98,9 +98,7 @@ export default function WhatIBelieve() {
 
         <div className="mt-14 flex flex-wrap items-center gap-4">
           <a
-            href="https://calendly.com/noeldcosta/30min"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/book-a-call/"
             className="inline-flex items-center gap-2 bg-papaya text-corbeau font-semibold text-[0.95rem] no-underline px-6 py-3 rounded-lg transition-colors hover:bg-[#fdaa78] min-h-[44px]"
           >
             Book a 30-min call

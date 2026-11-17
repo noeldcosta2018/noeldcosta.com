@@ -10,7 +10,8 @@
 
 const API = "https://api.cal.com/v2";
 const USERNAME = process.env.CAL_USERNAME || "noel-benjamin-dcosta-xay9yo";
-const EVENT_SLUG = process.env.CAL_EVENT_SLUG || "30min";
+// The free consulting event. "30min" is ERPCV's paid career call and must never be booked here.
+const EVENT_SLUG = process.env.CAL_EVENT_SLUG || "business-consulting-call";
 const DAY = 24 * 60 * 60 * 1000;
 
 export const CAL_BOOKING_URL = `https://cal.com/${USERNAME}/${EVENT_SLUG}`;
